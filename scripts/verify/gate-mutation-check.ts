@@ -122,11 +122,23 @@ async function main(): Promise<void> {
     console.log(`✓ baseline: ${MUTATIONS.length} 件すべてで、実物の gate が安全側の答えを返している。\n`);
 
     for (const [i, m] of MUTATIONS.entries()) {
-      if (!src.includes(m.find)) {
-        // ★An anchor that no longer matches is a silent pass otherwise: the mutation is never applied,
-        // the copy behaves like the original, and "nothing flipped" would look like a failing pin.
-        problems.push(`${m.name}: ★ANCHOR MISSING — コードが変わって変異を当てられない（この検査は無効）`);
-        console.error(`✗ ${m.name}: anchor not found`);
+      // ★Count, don't test membership. `String.replace(string, …)` substitutes only the FIRST match,
+      // so an anchor occurring twice mutates one site and leaves the other intact — the observable may
+      // not flip, and this harness would then print "この性質は固定されていない", ★accusing the test
+      // suite of a fault that is really in this file. A false accusation sends the reader to the wrong
+      // place, which is worse than a missing check.
+      // ★This is the SAME SHAPE as the bug this PR closes: `new Map()` silently keeps the LAST of
+      // duplicate keys; `src.replace` silently takes the FIRST of duplicate anchors. Both resolve an
+      // ambiguity by picking one and saying nothing. ★product課 found it here, in the tool written to
+      // close it there. Measured 2026-09-04: all 6 anchors occur exactly once, so this is latent.
+      const hits = src.split(m.find).length - 1;
+      if (hits !== 1) {
+        problems.push(
+          hits === 0
+            ? `${m.name}: ★ANCHOR MISSING — コードが変わって変異を当てられない（この検査は無効）`
+            : `${m.name}: ★ANCHOR AMBIGUOUS（${hits}箇所）— 変異が1箇所にしか当たらず、判定が信用できない`
+        );
+        console.error(`✗ ${m.name}: anchor ${hits === 0 ? "not found" : `ambiguous (${hits} occurrences)`}`);
         continue;
       }
       const file = join(dir, `gate-${i}-${m.name}.ts`);
@@ -159,4 +171,13 @@ async function main(): Promise<void> {
   process.exitCode = 0;
 }
 
-main();
+// ★A crash must not borrow the code that means "an assertion is not pinning what it claims". Node
+// exits 1 on an unhandled rejection, which is exactly this harness's "not pinned" verdict — so a typo
+// in here would read as a finding about the test suite. Not a safety hole (execFileSync throws on any
+// non-zero, so the unit test goes red either way) but a diagnosis cost, and this whole file exists to
+// make failures point at the right place. 64 = EX_USAGE, distinct from every verdict above.
+main().catch((e) => {
+  console.error("★CRASH: このハーネス自身が落ちた（テストの判定ではない）");
+  console.error(e);
+  process.exit(64);
+});
