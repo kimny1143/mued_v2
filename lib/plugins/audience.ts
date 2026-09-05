@@ -63,8 +63,13 @@ export function isPluginAudienceUnified(plugin: PluginKey): boolean {
  *
  *   true      → configured AND equal to MUEDSP_AUDIENCE_ID (counted by the North Star)
  *   false     → not configured at all
- *   "<tail>"  → configured, but pointing at a DIFFERENT audience — last 4 chars, so whoever is
- *               debugging can tell which one without the endpoint publishing ids in the clear
+ *   "<tail>"  → configured, but pointing at a DIFFERENT audience — AT MOST its last 4 characters,
+ *               so whoever is debugging can tell which one without the endpoint publishing ids in
+ *               the clear. ★"At most": `slice(-4)` returns the whole string when it is shorter than
+ *               four, so this is a ceiling, not a fixed width (product課, #978). That case only
+ *               arises for a value too short to be a Resend id at all — i.e. already malformed —
+ *               and the whole of such a value discloses nothing, but the doc should not claim an
+ *               invariant the code does not have.
  *
  * ★Both non-true cases mean the same thing operationally (these registrations are not in
  * muedsp_reachable), which is why the verdict is not three equal citizens: `true` is the only shape

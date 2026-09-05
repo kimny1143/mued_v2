@@ -21,7 +21,7 @@ export async function GET() {
     // Per plugin: does its configured Resend audience match the one the North Star counts?
     //   true     → yes; these registrations are in muedsp_reachable
     //   false    → env not set at all
-    //   "<tail>" → set, but to a DIFFERENT audience (last 4 chars only)
+    //   "<tail>" → set, but to a DIFFERENT audience (at most its last 4 characters)
     //
     // ★Only `true` is acceptable — the other two differ in cause, not in consequence. The tail is
     // there to answer the next question ("then where did the leads go?"), and appears ONLY when

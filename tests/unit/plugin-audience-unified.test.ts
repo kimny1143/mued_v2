@@ -28,6 +28,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { MUEDSP_AUDIENCE_ID, PLUGIN_DIST, type PluginKey } from "../../lib/plugins/registry";
+import { pluginAudienceStatus } from "../../lib/plugins/audience";
 
 const ENV = PLUGIN_DIST.muedrive.audienceEnvName;
 let saved: string | undefined;
@@ -79,6 +80,16 @@ describe("isPluginAudienceUnified — points at the audience the North Star coun
     process.env[ENV] = "6293ccef-c19f-4a4e-bb52-4bd8a6ef5c6f";
     expect(mod.pluginAudienceStatus("muedrive")).toBe("5c6f"); // ★wrong → last 4 of that id, nothing more
     expect(String(mod.pluginAudienceStatus("muedrive")).length).toBe(4);
+  });
+
+  it("★a value shorter than the tail is returned whole — the doc says AT MOST 4, not exactly 4", () => {
+    // product課 (#978): slice(-4) on "abc" is "abc", so "last 4 chars" was not an invariant. Pinned
+    // here so the doc and the code cannot drift apart again. Such a value is already malformed for a
+    // Resend id, and disclosing it reveals nothing — the defect was the claim, not the behaviour.
+    process.env[ENV] = "abc";
+    expect(pluginAudienceStatus("muedrive")).toBe("abc");
+    process.env[ENV] = "6293ccef-c19f-4a4e-bb52-4bd8a6ef5c6f";
+    expect(String(pluginAudienceStatus("muedrive")).length).toBeLessThanOrEqual(4);
   });
 
   it("★the canonical id is declared ONCE — the collector imports it rather than re-declaring it", async () => {
