@@ -14,7 +14,7 @@
 // addMuedsatSubscriber (proven in tests/unit/plugin-subscribe.test.ts).
 import { Resend } from "resend";
 import { logger } from "@/lib/utils/logger";
-import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
+import { PLUGIN_DIST, MUEDSP_AUDIENCE_ID, type PluginKey } from "@/lib/plugins/registry";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
@@ -34,6 +34,54 @@ export function pluginAudienceId(plugin: PluginKey): string | undefined {
 /** True when the plugin's Resend audience is configured (env present) — sync will actually run. */
 export function isPluginAudienceEnabled(plugin: PluginKey): boolean {
   return !!pluginAudienceId(plugin) && !!RESEND_API_KEY;
+}
+
+/**
+ * ★True when this plugin's configured audience IS the audience the North Star counts.
+ *
+ * ★Deliberately stronger than isPluginAudienceEnabled, and deliberately NOT the id itself. "Is it
+ * configured" cannot distinguish "points at the North Star audience" from "points at some other
+ * valid audience" — both are `true`, and only one of them gets counted. Emitting the id (or a
+ * fragment of it) would leave the comparison to a human reading two strings; computing it here makes
+ * it an instrument that keeps working when nobody is looking. (insight課's design, 2026-09-05.)
+ *
+ * ★Both failure modes collapse to false ON PURPOSE — unset and set-to-something-else have the same
+ * consequence: registrations for this plugin are not in the North Star denominator.
+ *
+ * ★Why this exists at all: lib/plugins/subscribe-handler.ts only alerts when
+ * `audienceConfigured && !listCaptured`, so an UNCONFIGURED audience drops leads with no log and no
+ * operator alert. That scoping was right when "unconfigured" meant "staged, not provisioned yet";
+ * it now cannot be told apart from "misconfigured in production".
+ */
+export function isPluginAudienceUnified(plugin: PluginKey): boolean {
+  return pluginAudienceId(plugin) === MUEDSP_AUDIENCE_ID;
+}
+
+/**
+ * ★Three-valued report for /api/health. The machine renders the verdict; a human only needs to read
+ * anything when the verdict is bad, and only then is any part of the id disclosed.
+ *
+ *   true      → configured AND equal to MUEDSP_AUDIENCE_ID (counted by the North Star)
+ *   false     → not configured at all
+ *   "<tail>"  → configured, but pointing at a DIFFERENT audience — AT MOST its last 4 characters,
+ *               so whoever is debugging can tell which one without the endpoint publishing ids in
+ *               the clear. ★"At most": `slice(-4)` returns the whole string when it is shorter than
+ *               four, so this is a ceiling, not a fixed width (product課, #978). That case only
+ *               arises for a value too short to be a Resend id at all — i.e. already malformed —
+ *               and the whole of such a value discloses nothing, but the doc should not claim an
+ *               invariant the code does not have.
+ *
+ * ★Both non-true cases mean the same thing operationally (these registrations are not in
+ * muedsp_reachable), which is why the verdict is not three equal citizens: `true` is the only shape
+ * a caller should accept. The tail exists to answer the NEXT question, not this one.
+ * (conductor's arbitration, 2026-09-05, combining insight課's server-side comparison with the
+ * observation that a bare boolean tells a debugger nothing about where the leads actually went.)
+ */
+export function pluginAudienceStatus(plugin: PluginKey): boolean | string {
+  const id = pluginAudienceId(plugin);
+  if (!id) return false;
+  if (id === MUEDSP_AUDIENCE_ID) return true;
+  return id.slice(-4);
 }
 
 /**

@@ -34,7 +34,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 import { mkdirSync, writeFileSync } from "node:fs";
 import { db } from "@/db";
-import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
+import { PLUGIN_DIST, MUEDSP_AUDIENCE_ID, type PluginKey } from "@/lib/plugins/registry";
 import { sql } from "drizzle-orm";
 
 const KEY = process.env.RESEND_API_KEY;
@@ -44,7 +44,6 @@ if (!KEY) {
 }
 const H = { Authorization: `Bearer ${KEY}` };
 
-const MUEDSP_AUDIENCE_ID = "243e06eb-1ddc-441d-a241-1e2044ef4b5f";
 const GENERAL_AUDIENCE_ID = "6293ccef-c19f-4a4e-bb52-4bd8a6ef5c6f";
 
 const arg = process.argv[2];

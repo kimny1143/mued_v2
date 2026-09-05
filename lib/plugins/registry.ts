@@ -13,6 +13,17 @@ import { MUEDRIVE_LIVE, MUEDRIVE_DOWNLOAD_URL, MUEDRIVE_PRESS_TOKEN, MUEDRIVE_VE
 
 export type PluginKey = "muedsat" | "muedlim" | "muedrive";
 
+/**
+ * ★The one Resend audience the North Star counts. `muedsp_reachable` is the distinct count of
+ * subscribed contacts in THIS audience (scripts/aggregate-plugin-funnel-daily.ts), so a plugin whose
+ * own audience env points anywhere else contributes nothing to it — silently.
+ *
+ * ★Declared here, once, and imported by both the app and the collector. The collector used to
+ * hardcode this same literal; a second definition of a fact is how MUEDrive shipped counting zero
+ * (see PLUGIN_KEYS in that file — the identical mistake, one type declaration earlier).
+ */
+export const MUEDSP_AUDIENCE_ID = "243e06eb-1ddc-441d-a241-1e2044ef4b5f";
+
 export interface PluginDist {
   key: PluginKey;
   /** staged flag — the section/discoverability is gated on this. */
