@@ -7,7 +7,7 @@
  * whose blocking path is unverified is not a gate.
  */
 import { describe, it, expect } from "vitest";
-import { auditVerdict, bypassExpired } from "@/lib/ci/audit-verdict";
+import { auditVerdict, bypassExpired, mayRefetch } from "@/lib/ci/audit-verdict";
 
 const report = (sev: Record<string, number>, vulns: Record<string, { severity: string }> = {}) => ({
   vulnerabilities: vulns,
@@ -113,5 +113,61 @@ describe("bypassExpired — ★the workaround has a clock", () => {
 
   it("★is expired the day after — so the bypass cannot quietly outlive the outage", () => {
     expect(bypassExpired("2026-08-09", new Date("2026-08-10T00:00:01Z"))).toBe(true);
+  });
+});
+
+describe("mayRefetch — the line between retrying transport and retrying a verdict", () => {
+  it("★a 'vulnerable' verdict is NEVER re-fetched — it answered, and it answered no", () => {
+    expect(mayRefetch({ kind: "vulnerable", blocking: 2, names: ["a", "b"] })).toBe(false);
+  });
+
+  it("a 'clean' verdict is not re-fetched either — it answered", () => {
+    expect(mayRefetch({ kind: "clean", low: 6, moderate: 8 })).toBe(false);
+  });
+
+  it("★only 'not-performed' may be re-fetched — that is the one carrying no answer", () => {
+    expect(mayRefetch({ kind: "not-performed", reason: "HTTP 503" })).toBe(true);
+    expect(mayRefetch({ kind: "not-performed", reason: "HTTP 400" })).toBe(true);
+  });
+
+  it("★every verdict kind is covered — a new kind must not default into retryable", () => {
+    // If AuditVerdict grows a fourth kind, this fails until someone decides which side it is on.
+    // ★Silence would put it on the retry side by omission, which is the wrong default for a gate.
+    const kinds = ["clean", "vulnerable", "not-performed"] as const;
+    const decided = kinds.filter((k) =>
+      [true, false].includes(mayRefetch({ kind: k } as unknown as Parameters<typeof mayRefetch>[0])),
+    );
+    expect(decided).toHaveLength(kinds.length);
+  });
+});
+
+describe("★auditVerdict — schema drift, BOTH directions (product課 #979)", () => {
+  it("has `vulnerabilities`, lacks `metadata` → vulnerable (the direction already defended)", () => {
+    const v = auditVerdict({ vulnerabilities: { lodash: { severity: "critical" } } } as never);
+    expect(v.kind).toBe("vulnerable");
+  });
+
+  it("★has `metadata.vulnerabilities`, lacks the map → vulnerable, NOT not-performed", () => {
+    // ★The mirror that was missing. Filing this as not-performed hands a payload that says
+    // "high: 3" to the retry loop, which then re-fetches a verdict that already exists — breaking
+    // the rule that a decided result is never re-asked.
+    const v = auditVerdict({ metadata: { vulnerabilities: { high: 3, critical: 0 } } } as never);
+    expect(v.kind).toBe("vulnerable");
+    expect(v.kind === "vulnerable" && v.blocking).toBe(3);
+  });
+
+  it("★and such a payload must NOT be re-fetchable", () => {
+    const v = auditVerdict({ metadata: { vulnerabilities: { critical: 1 } } } as never);
+    expect(mayRefetch(v)).toBe(false); // ★this is the property the asymmetry actually broke
+  });
+
+  it("neither present, no findings → still not-performed (the real transport failure)", () => {
+    expect(auditVerdict({ statusCode: 503 } as never).kind).toBe("not-performed");
+    expect(mayRefetch(auditVerdict({ statusCode: 503 } as never))).toBe(true);
+  });
+
+  it("★metadata with only low/moderate is not blocking — the mirror must not over-trigger", () => {
+    const v = auditVerdict({ metadata: { vulnerabilities: { low: 6, moderate: 8 } } } as never);
+    expect(v.kind).toBe("not-performed"); // no map, no blocking counts → genuinely nothing learned
   });
 });
