@@ -59,7 +59,14 @@ function summary(text: string): void {
  * passes: that rule is about re-drawing a VERDICT. This loop re-draws only the FETCH.
  *
  *     "could we ask?"    → transport. Flaky, and retrying changes nothing about the answer.
- *     "what did it say?" → verdict. A function of package-lock.json; asking again returns the same.
+ *     "what did it say?" → verdict. Asking again inside this window returns the same.
+ *
+ * ★PRECISION, because the budget is the load-bearing part: the answer is a function of
+ * package-lock.json AND the advisory database. The lockfile cannot move mid-run, and the advisory DB
+ * is effectively frozen across 90 seconds — so "asking again cannot change it" is true HERE, and true
+ * BECAUSE the window is short. ★Anyone widening RETRY_BUDGET_MS to hours breaks that premise before
+ * they break anything else: over hours a new advisory can land, and the loop would then be re-asking
+ * a question whose answer genuinely changed. ★The bound is not a performance knob. (product課, #979.)
  *
  * ★So the loop exits the instant a verdict EXISTS — `clean` and `vulnerable` both break immediately.
  * ★A `vulnerable` result is never re-asked. Only `not-performed` (no answer at all) is retried, and
@@ -88,7 +95,12 @@ function askOnce(): { verdict: ReturnType<typeof auditVerdict>; rawPreview: stri
   } catch (err) {
     // npm exits non-zero for BOTH modes, and still writes the JSON to stdout — read it rather than
     // trusting the exit code, which is the very signal we cannot interpret.
-    raw = (err as { stdout?: Buffer | string }).stdout?.toString() ?? "";
+    // ★Read BOTH streams. stderr is piped but was never consumed, so a failure that writes only
+    // there produced an empty rawPreview and a generic reason — the same collapse #975 fixed by
+    // keeping 403 distinguishable from 404. stdout first (npm writes the JSON there even when it
+    // exits non-zero); stderr only as the fallback that used to be silently discarded.
+    const e = err as { stdout?: Buffer | string; stderr?: Buffer | string };
+    raw = e.stdout?.toString() || e.stderr?.toString() || "";
   }
 
   let parsed: Parameters<typeof auditVerdict>[0] = null;

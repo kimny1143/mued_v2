@@ -140,3 +140,34 @@ describe("mayRefetch — the line between retrying transport and retrying a verd
     expect(decided).toHaveLength(kinds.length);
   });
 });
+
+describe("★auditVerdict — schema drift, BOTH directions (product課 #979)", () => {
+  it("has `vulnerabilities`, lacks `metadata` → vulnerable (the direction already defended)", () => {
+    const v = auditVerdict({ vulnerabilities: { lodash: { severity: "critical" } } } as never);
+    expect(v.kind).toBe("vulnerable");
+  });
+
+  it("★has `metadata.vulnerabilities`, lacks the map → vulnerable, NOT not-performed", () => {
+    // ★The mirror that was missing. Filing this as not-performed hands a payload that says
+    // "high: 3" to the retry loop, which then re-fetches a verdict that already exists — breaking
+    // the rule that a decided result is never re-asked.
+    const v = auditVerdict({ metadata: { vulnerabilities: { high: 3, critical: 0 } } } as never);
+    expect(v.kind).toBe("vulnerable");
+    expect(v.kind === "vulnerable" && v.blocking).toBe(3);
+  });
+
+  it("★and such a payload must NOT be re-fetchable", () => {
+    const v = auditVerdict({ metadata: { vulnerabilities: { critical: 1 } } } as never);
+    expect(mayRefetch(v)).toBe(false); // ★this is the property the asymmetry actually broke
+  });
+
+  it("neither present, no findings → still not-performed (the real transport failure)", () => {
+    expect(auditVerdict({ statusCode: 503 } as never).kind).toBe("not-performed");
+    expect(mayRefetch(auditVerdict({ statusCode: 503 } as never))).toBe(true);
+  });
+
+  it("★metadata with only low/moderate is not blocking — the mirror must not over-trigger", () => {
+    const v = auditVerdict({ metadata: { vulnerabilities: { low: 6, moderate: 8 } } } as never);
+    expect(v.kind).toBe("not-performed"); // no map, no blocking counts → genuinely nothing learned
+  });
+});

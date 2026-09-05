@@ -52,6 +52,25 @@ export function auditVerdict(parsed: AuditReportish | null): AuditVerdict {
       return { kind: "vulnerable", blocking: named.length, names: named };
     }
 
+    // ★The mirror image, and it was missing. The scan above covers "has `vulnerabilities`, lacks
+    // `metadata`"; this covers "has `metadata.vulnerabilities`, lacks the map". Both are schema
+    // drift, both carry an ANSWER, and without this one a payload that says `high: 3` was filed as
+    // not-performed — which the retry loop then re-fetches for the whole budget, violating this
+    // gate's own rule that a decided verdict is never re-asked. Fail-closed saved us (an expired
+    // bypass blocks not-performed), so only the diagnosis was wrong — but the asymmetry was real:
+    // one direction was defended and its mirror was not. (product課, #979.)
+    const meta = parsed?.metadata?.vulnerabilities ?? {};
+    const metaBlocking = (meta.high ?? 0) + (meta.critical ?? 0);
+    if (metaBlocking > 0) {
+      return {
+        kind: "vulnerable",
+        blocking: metaBlocking,
+        // ★No names available — the map this payload lacks is where names live. Say so, rather than
+        // emit an empty list that reads as "blocking count with no detail found".
+        names: [`${metaBlocking} high/critical reported in metadata (per-package names unavailable — payload lacks the vulnerabilities map)`],
+      };
+    }
+
     const reason =
       parsed?.statusCode || parsed?.message
         ? `HTTP ${parsed.statusCode ?? "?"} from ${parsed.uri ?? "the audit API"}`
