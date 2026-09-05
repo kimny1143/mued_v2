@@ -282,9 +282,20 @@ const PORTAL_REG_COUNTING_SINCE = "2026-07-23";
  * 割った手元には「位置の分からない切れ目」が残っていた。
  */
 const PORTAL_REG_DASHBOARD_LINK_SINCE = "2026-09-03";
+/**
+ * ★portal_registrations の分母に含める module。insight課 が (b)（MUEDrive 包含）を決定した
+ * (gw-data-analysis PR #378, 2026-08-28) ので3製品へ広げる。
+ *
+ * ★★意図的に PLUGIN_DIST から導出していない。上の PLUGIN_KEYS は導出しており（「4つ目の module を
+ *   足す時にこの file を編集しなくてよい」）、★ここはその逆を選ぶ: ★4つ目が live になった日に分母が
+ *   ★黙って広がってはいけない。広げるかは毎回 insight課 の判断 —— それが元のコメントの主旨だった。
+ *   ∴ ★ここでの「導出しない」は横着ではなく、★自動化してはいけない一線の側。
+ */
+const PORTAL_REG_MODULES: PluginKey[] = ["muedsat", "muedlim", "muedrive"];
+
 const PORTAL_REG_NOTE =
   "forward-only; not backfillable (recording shipped 2026-07-23). Portal arrivals before that date are only observable in GA4, not here. " +
-  "★Second discontinuity — see dashboard_link_since (#964; UTC, measured from git and the Vercel production deployment after it shipped): the dashboard did not link to the portal at all until then — before that deploy the only in-product door was the welcome/announcement email, so a rise after it is NOT by itself evidence that a mail landed. Column and query unchanged; only the inflow widened. ★Expect a one-time STEP, not a change in rate: the write is an UPDATE over existing entitlement rows WHERE portal_registered_at IS NULL, so what the dashboard link newly reaches is the standing backlog of owners who held an entitlement since July and never arrived — a cohort that drains once. Reading the step as campaign lift is the specific misread this note exists to prevent.";
+  "★Second discontinuity — see dashboard_link_since (#964; UTC, measured from git and the Vercel production deployment after it shipped): the dashboard did not link to the portal at all until then — before that deploy the only in-product door was the welcome/announcement email, so a rise after it is NOT by itself evidence that a mail landed. Column and query unchanged; only the inflow widened. ★Expect a one-time STEP, not a change in rate: the write is an UPDATE over existing entitlement rows WHERE portal_registered_at IS NULL, so what the dashboard link newly reaches is the standing backlog of owners who held an entitlement since July and never arrived — a cohort that drains once. Reading the step as campaign lift is the specific misread this note exists to prevent. ★Third discontinuity — see `denominator`: from 2026-09-05 this counts THREE modules (muedsat+muedlim+muedrive), on insight課's decision (#378). ★Expect a one-time STEP again, and again it is not rate: MUEDrive owners who had already reached the portal were being counted by nothing, and now they are counted. ★The value did not change because behaviour changed — the population did. Diff `denominator` between two reports to find the exact day; unlike the first two discontinuities there is no date constant to trust, because the report states what it counted rather than when it changed.";
 
 type PortalRegistrations = {
   cumulative: number;
@@ -293,6 +304,12 @@ type PortalRegistrations = {
   /** ★UTC date of the 2nd discontinuity — machine-readable so a consumer can split the series
    *  without parsing `note`. Absent in reports emitted before 2026-09-04. */
   dashboard_link_since: string;
+  /** ★WHAT was counted, not WHEN it changed. The first two discontinuities are dates, each of which
+   *  had to be measured after the fact (#968 backfilled one from two independent sources). This one
+   *  is self-describing: a consumer diffing two reports sees the string change, so the transition
+   *  day is derivable from the series and there is no constant to keep true.
+   *  ★Absent in reports emitted before 2026-09-05. */
+  denominator: string;
   note: string;
 };
 
@@ -313,11 +330,10 @@ async function portalRegistrations(day: string): Promise<PortalRegistrations> {
       count(DISTINCT lower(trim(email))) FILTER (WHERE portal_registered_at IS NOT NULL)::int AS cumulative,
       count(DISTINCT lower(trim(email))) FILTER (WHERE portal_registered_at::date = ${day}::date)::int AS day_utc
     FROM plugin_entitlements
-    -- ★DELIBERATELY still the two original modules. Adding MUEDrive here would change what this
-    -- number MEANS (it is a denominator carried across a time series), not fix a bug — unlike the
-    -- per-plugin breakdown above, which was simply blind to a third product. Whether the
-    -- denominator should widen is insight課's call; asked 2026-08-28, unanswered at time of writing.
-    WHERE plugin_key IN ('muedsat', 'muedlim')
+    -- ★Widened to 3 modules on insight課's decision (gw-data-analysis #378, 2026-08-28). Widening a
+    -- denominator changes what the number MEANS, not just its value, so the change is announced in
+    -- the same emission that makes it: the denominator field in the returned object.
+    WHERE plugin_key IN ${PORTAL_REG_MODULES}
       -- ★合成行の除外。★今日この行は値を変えない（既知の smoke 行は plugin_key='muedrive' で、
       --   この WHERE は既にそれを外している）。★(b) で分母が3製品へ広がった日に効く。
       AND source <> ${SYNTHETIC_SOURCE}
@@ -328,6 +344,7 @@ async function portalRegistrations(day: string): Promise<PortalRegistrations> {
     day_utc: r.day_utc,
     counting_since: PORTAL_REG_COUNTING_SINCE,
     dashboard_link_since: PORTAL_REG_DASHBOARD_LINK_SINCE,
+    denominator: PORTAL_REG_MODULES.join("+"),
     note: PORTAL_REG_NOTE,
   };
 }
@@ -377,10 +394,16 @@ async function dbOwnerUnionTotal(): Promise<number> {
   const rows = await db.execute(sql`
     SELECT count(DISTINCT lower(trim(email)))::int AS cnt
     FROM plugin_entitlements
-    -- ★DELIBERATELY still the two original modules. Adding MUEDrive here would change what this
-    -- number MEANS (it is a denominator carried across a time series), not fix a bug — unlike the
-    -- per-plugin breakdown above, which was simply blind to a third product. Whether the
-    -- denominator should widen is insight課's call; asked 2026-08-28, unanswered at time of writing.
+    -- ★STILL the two original modules — deliberately, and no longer for the original reason.
+    -- insight課 DID answer (#378: widen, scope = both functions), but shipping it here is deferred:
+    -- this value is emitted as a BARE SCALAR, so widening it would change the number with no way for
+    -- a consumer to see that the counting changed. portalRegistrations could go now because it is an
+    -- object and could carry the denominator field in the same emission; this one cannot until it
+    -- becomes {count, definition} — a breaking shape change insight課's renderer must guard for
+    -- first (freee課 flagged the mirror-image asymmetry in their #423).
+    -- ★Also pending: whether MUEDSP_AUDIENCE_ID (L47) is the MUEDsp brand segment or the renamed old
+    -- MUEDlim list. If the latter, the North Star denominator question is a Resend-side one and this
+    -- SQL is not where (b) lives at all. Escalated 2026-09-05; needs a production env read.
     WHERE plugin_key IN ('muedsat', 'muedlim')
       -- ★合成行の除外。★今日この行は値を変えない（既知の smoke 行は plugin_key='muedrive' で、
       --   この WHERE は既にそれを外している）。★(b) で分母が3製品へ広がった日に効く。
