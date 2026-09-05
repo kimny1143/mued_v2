@@ -70,6 +70,22 @@ jobs:
           echo "★local reference (2026-09-04): npm 10.9.2 → this same command SUCCEEDS"
           echo
 
+          # ★Positive control FIRST — without it, a (b') FAIL cannot distinguish the two answers this
+          # step exists to separate: "the audit endpoint is retired" (→ the data source must change)
+          # from "this runner cannot reach the registry at all" (→ changing the source fixes nothing).
+          # ★The implicit control was `npm ci` succeeding, and that proves nothing here: it runs with
+          # --prefer-offline against actions/setup-node's cache, so it completes from a warm cache
+          # with no network at all. (product課 found this; measured locally: `npm view` exits 0
+          # normally and 1 against an unreachable registry, so it discriminates.)
+          if npm view undici version >/dev/null 2>&1; then
+            echo "✓ positive control: this runner CAN reach the npm registry"
+          else
+            echo "✗ ★POSITIVE CONTROL FAILED: registry unreachable from this runner."
+            echo "  ★A (b') failure below would then say nothing about the audit endpoint —"
+            echo "  ★差し替えても直らない側の失敗。この run の (b') 結果は読まないこと。"
+          fi
+          echo
+
           out="${RUNNER_TEMP}/audit.json"; err="${RUNNER_TEMP}/audit.err"
           npm audit --omit=dev --json >"$out" 2>"$err" && rc=0 || rc=$?
           echo "exit=$rc  (★0 = clean, ★1 = vulnerabilities FOUND — both mean the audit RAN)"
