@@ -77,6 +77,20 @@ export function auditVerdict(parsed: AuditReportish | null): AuditVerdict {
  * a workaround that works is invisible, so without an expiry it silently outlives the outage it was
  * written for. After this date the next person is forced to look and decide.
  */
+/**
+ * ★May this verdict be re-fetched? Exactly one kind qualifies: the one that carries NO answer.
+ *
+ * ★Exported and tested because it is the line between "retry the transport" (legitimate — the answer
+ * is a function of package-lock.json, so asking again cannot change it) and "retry the verdict"
+ * (forbidden — that is re-rolling a gate until it passes). ★A `vulnerable` result must never come
+ * back here: it answered, and it answered no.
+ */
+export function mayRefetch(
+  verdict: AuditVerdict,
+): verdict is Extract<AuditVerdict, { kind: "not-performed" }> {
+  return verdict.kind === "not-performed";
+}
+
 export function bypassExpired(bypassUntil: string, now: Date): boolean {
   return now > new Date(`${bypassUntil}T23:59:59Z`);
 }

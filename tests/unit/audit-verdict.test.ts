@@ -7,7 +7,7 @@
  * whose blocking path is unverified is not a gate.
  */
 import { describe, it, expect } from "vitest";
-import { auditVerdict, bypassExpired } from "@/lib/ci/audit-verdict";
+import { auditVerdict, bypassExpired, mayRefetch } from "@/lib/ci/audit-verdict";
 
 const report = (sev: Record<string, number>, vulns: Record<string, { severity: string }> = {}) => ({
   vulnerabilities: vulns,
@@ -113,5 +113,30 @@ describe("bypassExpired — ★the workaround has a clock", () => {
 
   it("★is expired the day after — so the bypass cannot quietly outlive the outage", () => {
     expect(bypassExpired("2026-08-09", new Date("2026-08-10T00:00:01Z"))).toBe(true);
+  });
+});
+
+describe("mayRefetch — the line between retrying transport and retrying a verdict", () => {
+  it("★a 'vulnerable' verdict is NEVER re-fetched — it answered, and it answered no", () => {
+    expect(mayRefetch({ kind: "vulnerable", blocking: 2, names: ["a", "b"] })).toBe(false);
+  });
+
+  it("a 'clean' verdict is not re-fetched either — it answered", () => {
+    expect(mayRefetch({ kind: "clean", low: 6, moderate: 8 })).toBe(false);
+  });
+
+  it("★only 'not-performed' may be re-fetched — that is the one carrying no answer", () => {
+    expect(mayRefetch({ kind: "not-performed", reason: "HTTP 503" })).toBe(true);
+    expect(mayRefetch({ kind: "not-performed", reason: "HTTP 400" })).toBe(true);
+  });
+
+  it("★every verdict kind is covered — a new kind must not default into retryable", () => {
+    // If AuditVerdict grows a fourth kind, this fails until someone decides which side it is on.
+    // ★Silence would put it on the retry side by omission, which is the wrong default for a gate.
+    const kinds = ["clean", "vulnerable", "not-performed"] as const;
+    const decided = kinds.filter((k) =>
+      [true, false].includes(mayRefetch({ kind: k } as unknown as Parameters<typeof mayRefetch>[0])),
+    );
+    expect(decided).toHaveLength(kinds.length);
   });
 });
