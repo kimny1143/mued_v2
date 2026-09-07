@@ -13,6 +13,7 @@
     "verify:short-links": "tsx scripts/verify/short-links.ts",
     "verify:vector-drift": "tsx scripts/verify/vector-drift.ts",
     "verify:pr-gate": "tsx scripts/verify/pr-merge-gate.ts",
+    "verify:gate-mutations": "tsx scripts/verify/gate-mutation-check.ts",
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",

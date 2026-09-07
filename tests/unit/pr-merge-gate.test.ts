@@ -14,8 +14,9 @@
  * which meant the half of the gate that PRESSES MERGE was covered by nothing: an edit could make a
  * void verdict merge anyway and every assertion here would still pass.
  */
+import { execFileSync } from "node:child_process";
 import { describe, it, expect } from "vitest";
-import { classify, actionFor, fromRollup, type CheckRun } from "../../scripts/verify/pr-merge-gate";
+import { classify, actionFor, fromRollup, duplicateNames, type CheckRun } from "../../scripts/verify/pr-merge-gate";
 
 const ok = (name: string): CheckRun => ({ name, status: "completed", conclusion: "success" });
 const done = (name: string, conclusion: string | null): CheckRun => ({
@@ -132,6 +133,40 @@ describe("PR merge gate — actionFor (the half that presses the button)", () =>
     expect(actionFor({ kind: "ready" }, true)).toEqual({ exit: 0, merge: true });
     expect(actionFor({ kind: "ready" }, false)).toEqual({ exit: 0, merge: false });
   });
+});
+
+describe("PR merge gate — duplicateNames (the cross-check's own population)", () => {
+  it("★catches a name appearing twice — a Map would silently keep only the last", () => {
+    // The real precondition, measured on #968 head 84052ac5: a workflow_dispatch run and a
+    // pull_request run coexisted on one sha. Job names happened not to collide (8/8 unique), so this
+    // is latent rather than live — but the collision is one same-named job away.
+    const api = [
+      { name: "Build", status: "completed", conclusion: "success" },
+      { name: "Build", status: "completed", conclusion: "failure" }, // ★a different event's Build
+      { name: "Validate", status: "completed", conclusion: "success" },
+    ];
+    expect(duplicateNames(api)).toEqual(["Build"]);
+  });
+
+  it("returns nothing when every name is unique (the normal case must stay quiet)", () => {
+    expect(duplicateNames([ok("Validate"), ok("Test"), ok("Build")])).toEqual([]);
+    expect(duplicateNames([])).toEqual([]);
+  });
+});
+
+describe("PR merge gate — do the assertions above actually bite?", () => {
+  // ★A suite that only ever passes is indistinguishable from one whose assertions are decorative.
+  // The mutation harness removes each safety guard in a temp COPY of the gate and asserts the
+  // observable flips. Running it from here means it runs in CI — `npm run test:unit` is already a
+  // required check, so this needed no workflow change to become real rather than a script nobody
+  // invokes. ★If this fails, the gate is probably fine and THESE TESTS are not pinning what they say.
+  it("★every safety property flips when its guard is removed", () => {
+    const out = execFileSync("npx", ["tsx", "scripts/verify/gate-mutation-check.ts"], {
+      encoding: "utf8",
+      cwd: process.cwd(),
+    });
+    expect(out).toContain("すべての変異が観測値を反転させた");
+  }, 60_000);
 });
 
 describe("PR merge gate — fromRollup (the population)", () => {

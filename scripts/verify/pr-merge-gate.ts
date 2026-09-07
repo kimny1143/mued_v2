@@ -177,6 +177,19 @@ export function classify(runs: CheckRun[]): Verdict {
  * ★main() used to hold this inline, which meant the half of the gate that PRESSES MERGE was covered
  * by nothing: you could rebuild the #969 shape inside the gate itself with every assertion green.
  */
+/**
+ * Names appearing more than once in a check-run list.
+ *
+ * ★Exported because it gates a merge, and this file has already learned once that logic living
+ * inside `main()` is logic no test can reach. Keying a Map by name silently keeps the LAST entry, so
+ * without this the freshness cross-check would compare the rollup's `Build` against some other
+ * event's `Build` and print "✓ 一致" whenever their states happened to coincide — a wrong comparison
+ * reported as a success, which is the cross-check's purpose exactly inverted. (product課, #971)
+ */
+export function duplicateNames(runs: CheckRun[]): string[] {
+  return [...new Set(runs.map((r) => r.name).filter((n, i, a) => a.indexOf(n) !== i))];
+}
+
 export function actionFor(v: Verdict, doMerge: boolean): { exit: 0 | 1 | 2; merge: boolean } {
   if (v.kind === "void") return { exit: 2, merge: false };
   if (v.kind === "not_ready") return { exit: 1, merge: false };
@@ -414,6 +427,23 @@ function main(): void {
   const api = (
     JSON.parse(gh(["api", `repos/${repo}/commits/${meta.headRefOid}/check-runs`])) as { check_runs: CheckRun[] }
   ).check_runs;
+  // ★The population we excluded from the VERDICT is still present in the CROSS-CHECK's input: `api`
+  // is the raw check-runs list, which carries runs from other events on the same sha. `new Map()`
+  // resolves a duplicate name by silently keeping the last one — so if a second workflow ever has a
+  // job called `Build`, this would compare the rollup's `Build` against the OTHER `Build`, and print
+  // `✓ 鮮度: … すべてで一致` whenever their states happened to coincide. ★A wrong comparison reported
+  // as a success is worse than no comparison: it is the cross-check's whole purpose, inverted.
+  // ★Latent, not live: measured 8/8 unique on #968 and 3/3 on #971 (product課, 2026-09-04). Closed
+  // here rather than left as a note, because the precondition — two events on one sha — is already
+  // real in this repo and is what produced the original false positive.
+  const dupes = duplicateNames(api);
+  if (dupes.length > 0) {
+    console.error(`\n★VOID: check-runs に同名の run が複数ある: ${dupes.join(", ")}`);
+    console.error("  ★どの実行が rollup のどれに対応するかを決められない（別 event の run が同じ SHA に載っている）。");
+    console.error(`  → 次の一歩: gh api repos/${repo}/commits/${meta.headRefOid}/check-runs で同名の run の event を確認する。`);
+    process.exitCode = 2;
+    return;
+  }
   const byName = new Map(api.map((r) => [r.name, r]));
   // ★Compare normalised values, not raw ones: the two instruments spell "no answer" differently
   // (GraphQL `""` vs REST `null`) and case differently. Comparing raw made every in-flight PR look
