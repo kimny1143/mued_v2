@@ -511,12 +511,27 @@ function main(): void {
   //
   // ★So: default to the repo setting, and when deletion IS requested, refuse it while a dependent PR
   // exists rather than closing someone's work as a side effect.
-  const dependents = (
-    JSON.parse(gh(["pr", "list", "--state", "open", "--json", "number,baseRefName"])) as Array<{
-      number: number;
-      baseRefName: string;
-    }>
-  ).filter((p) => p.baseRefName === meta.headRefName);
+  // ★`gh pr list` defaults to --limit 30 (measured: `--help`, and merged-state returns exactly 30
+  // unlisted vs 50 with --limit 50). Without an explicit limit, a dependent PR beyond the 30th is
+  // INVISIBLE — dependents.length is 0, the branch is deleted, and #974 happens again. ★And it fails
+  // silently: no error, just a shorter list. (product課, #983.)
+  const DEP_LIMIT = 200;
+  const openPrs = JSON.parse(
+    gh(["pr", "list", "--state", "open", "--limit", String(DEP_LIMIT), "--json", "number,baseRefName"])
+  ) as Array<{ number: number; baseRefName: string }>;
+
+  // ★The window has two ends and only one of them was guarded. An empty list means "could not
+  // measure"; a FULL list means "there may be more beyond it" — and this check's whole job is to
+  // prove no dependent exists, which a truncated list cannot do.
+  if (openPrs.length >= DEP_LIMIT) {
+    console.error(`\n★VOID: open PR が ${openPrs.length} 件 ＝ 取得上限(${DEP_LIMIT})に達している。`);
+    console.error("  ★窓の外に依存 PR が在るかを、この検査は言えない（★「0 件」ではなく「数えられていない」）。");
+    console.error(`  → 次の一歩: DEP_LIMIT を上げて再実行するか、--delete-branch を外して merge する。`);
+    process.exitCode = 2;
+    return;
+  }
+
+  const dependents = openPrs.filter((p) => p.baseRefName === meta.headRefName);
 
   if (deleteBranch && dependents.length > 0) {
     console.error(`\n★VOID: この branch を base にしている open PR が ${dependents.length} 件 在る: ${dependents.map((d) => `#${d.number}`).join(", ")}`);
