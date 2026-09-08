@@ -47,14 +47,20 @@ interface Pr {
   headRefName: string;
   state: string;
   number: number;
+  headRefOid: string;
 }
+
+/** ★Fetch window. Saturation is treated as "cannot tell", not as "nothing found" — see below. */
+const PR_LIMIT = 1000;
 
 function main(): void {
   // ★One call for every PR, not one per branch: this repo has 527 remote branches and 968 PRs, so
   // per-branch queries would be 527 round trips and would rate-limit before finishing.
   let prs: Pr[];
   try {
-    prs = JSON.parse(sh("gh", ["pr", "list", "--state", "all", "--limit", "1000", "--json", "headRefName,state,number"]));
+    prs = JSON.parse(
+      sh("gh", ["pr", "list", "--state", "all", "--limit", String(PR_LIMIT), "--json", "headRefName,state,number,headRefOid"])
+    );
   } catch (e) {
     console.error("★VOID: could not list PRs — this check did NOT run.");
     console.error(String((e as { stderr?: Buffer }).stderr ?? e));
@@ -63,7 +69,19 @@ function main(): void {
     return;
   }
 
-  const everHadPr = new Set(prs.map((p) => p.headRefName));
+  // ★★Keyed by name AND head sha, not by name alone. Branch names get REUSED — measured 2026-09-08:
+  // ★14 names in this repo carry more than one PR. The sequence that hides an orphan is ordinary:
+  //   ① PR opens, merges, branch is deleted
+  //   ② someone recreates the SAME name later and pushes
+  //   ③ no PR is opened
+  // ★Name-only lookup then answers "yes, this name had a PR" — from step ①'s PR — and the new work
+  // is skipped. ★Not "unlikely": simply invisible when it happens. Pairing with the tip sha means a
+  // recreated branch only counts as landed if the PR actually covered THIS commit. (product課, #982.)
+  const prHeads = new Map<string, Set<string>>();
+  for (const p of prs) {
+    if (!prHeads.has(p.headRefName)) prHeads.set(p.headRefName, new Set());
+    prHeads.get(p.headRefName)!.add(p.headRefOid);
+  }
   const openBy = new Map(prs.filter((p) => p.state === "OPEN").map((p) => [p.headRefName, p.number]));
 
   const branches = sh("git", ["branch", "-r", "--format=%(refname:short)"])
@@ -79,6 +97,21 @@ function main(): void {
     return;
   }
 
+  // ★★A window has TWO ends and the check above guards only one. An empty list means "measured
+  // nothing"; a FULL list means "there is more beyond what I can see" — and a branch whose PR sits
+  // past the cut looks exactly like a branch that never had one. ★That is this file's own failure
+  // mode: it would start reporting landed work as orphaned, i.e. return to crying wolf.
+  // ★Measured 2026-09-08: --limit 1000 → 970, --limit 1500 → 970 ∴ true count 970, ★30 short of the
+  // window. This repo produced #971–#983 in a single day, so the margin is not comfortable.
+  // (product課, #982.)
+  if (prs.length >= PR_LIMIT) {
+    console.error(`★VOID: PR を ${prs.length} 件 取得 ＝ 上限(${PR_LIMIT})に達している。`);
+    console.error("  ★窓の外の PR は見えない ∴ ★『PR が一度も無い』を主張できない（★偽の orphan が出る）。");
+    console.error(`  → 次の一歩: PR_LIMIT を上げて再実行する（★現在の真値はおよそ ${prs.length} 件）。`);
+    process.exitCode = 2;
+    return;
+  }
+
   const allow = new Map(INTENTIONALLY_NO_PR.map((a) => [a.branch, a.why]));
   const orphans: Array<{ branch: string; commits: number; last: string }> = [];
   let ahead = 0;
@@ -87,7 +120,9 @@ function main(): void {
     const n = Number(sh("git", ["rev-list", "--count", `origin/main..origin/${b}`]) || "0");
     if (n === 0) continue;
     ahead++;
-    if (everHadPr.has(b) || allow.has(b)) continue;
+    if (allow.has(b)) continue;
+    const tip = sh("git", ["rev-parse", `origin/${b}`]);
+    if (prHeads.get(b)?.has(tip)) continue; // ★a PR covered THIS commit, not merely this name
     orphans.push({ branch: b, commits: n, last: sh("git", ["log", "-1", "--format=%cs", `origin/${b}`]) });
   }
 
