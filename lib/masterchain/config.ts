@@ -30,8 +30,26 @@ export const MASTERCHAIN_INTEREST_LIVE = false;
 // three? `public/downloads/*.pkg` is unauthenticated — measured: the individual .pkg files answer
 // 200 while the directory index is 404. That is the usual plugin-industry shape (open installer,
 // licence unlocks the DSP), and masterchain is licence-gated at runtime, so it is defensible — but
-// it is a business call about a paid artefact, so it is NOT made here. ★Setting this constant is
-// the whole of that decision: one string, no other code moves.
+// it is a business call about a paid artefact, so it is NOT made here.
+//
+// ★WHAT SETTING THIS CONSTANT ACTUALLY COSTS. An earlier version of this comment said "one string,
+// no other code moves" — ★that was wrong, and it was wrong in the place it would be READ: by whoever
+// sets the string (CCO review of #991). The free three are pinned by url + sha256 + byte count in
+// tests/unit/plugin-download-artifact-integrity.test.ts, because these files are served from a FIXED
+// path under a BARE filename, so replacing a build is an in-place overwrite that the URL, the
+// version constant and the review diff all render identically. ★masterchain was not in that table:
+// setting this string alone would have published a paid download that nothing verified — the check
+// the FREE modules have, missing from the one people pay for.
+//
+// ★So the pairing is now enforced rather than remembered: set this URL without adding the matching
+// sha256/bytes pin and that test goes RED and names what to add. ★"One string" is true in the sense
+// that matters — the string is all you decide; the gate tells you the rest.
+//
+// ★IF YOU EVER MAKE THIS READ FROM env, THE ESCAPING ASSUMPTION BREAKS (CCO nit, #991). The delivery
+// email interpolates it straight into `href="…"` with no escaping, which is safe ONLY because it is
+// a literal in this file that review sees — the same assumption the free three run on. ★An env-read
+// value is attacker-influenceable in a way a committed constant is not, so that change is the moment
+// to escape at the interpolation site, not later.
 //
 // ★WHILE IT IS EMPTY the email degrades honestly instead of silently: it tells the buyer the link
 // is coming and to reply to that email. ★That is a fallback, not a delivery — a paid purchase must
