@@ -211,6 +211,24 @@ function main(): void {
   if (openBy.size > 0) console.log(`open PRs: ${[...openBy.values()].map((n) => `#${n}`).join(", ")}`);
 
   if (orphans.length === 0) {
+    // ★THE ✓ LINE IS THE ONE PEOPLE QUOTE (CCO review of #990). A stale waiver was reported on
+    //   stderr and then this printed an unqualified ✓ on stdout immediately after — so a reader (or
+    //   a consumer capturing only stdout) sees "nothing unlanded" while the allowlist is out of
+    //   date. ★Usually harmless: a moved never-PR'd branch misses prHeads and becomes an orphan
+    //   anyway. ★What is left is the case where the waiver went stale AND a PR covers the new tip —
+    //   no unlanded work, but a triage decision that no longer describes what it waives.
+    //   ★So the tick is CONDITIONAL, and the finding is repeated on stdout: a check must not put its
+    //   caveat on a stream its reader may not be reading.
+    if (staleAllow.length > 0) {
+      console.log(
+        `\n★未着地の作業は 0 件。★ただし allowlist の waiver ${staleAllow.length} 件が失効している —— ` +
+          `★triage 済として免除した commit と、★いま branch が指している commit が違う。`,
+      );
+      for (const s of staleAllow) console.log(`  · ${s}`);
+      console.log("  → 次の一歩: ★その branch を見直し、INTENTIONALLY_NO_PR の tip を更新するか entry を外す。");
+      process.exitCode = 0; // ★not "unlanded work" — the table is stale, which is a different thing.
+      return;
+    }
     console.log("\n✓ 未着地の作業なし — push したまま PR を作っていない branch は 0 件。");
     process.exitCode = 0;
     return;
