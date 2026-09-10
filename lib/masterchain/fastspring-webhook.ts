@@ -265,9 +265,20 @@ export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Pr
   // already set, and re-sending would mail the same buyer a duplicate for one order.
   if (!existing?.licenseKey) {
     // ★locale: the order payload carries no language today (FastspringOrderParsed has no locale
-    // field), so this is 'en' until a popup custom tag supplies one — TODO(C1), same confirmation
-    // pass as the payload shape. Guessing from buyerCountry would be a proxy for the buyer's reading
+    // field), so this is 'en'. Guessing from buyerCountry would be a proxy for the buyer's reading
     // language, not a measurement of it.
+    //
+    // ★★DECIDED, NOT PENDING — kimny, 2026-09-10: 「英語メールで問題ない。なぜなら最近は Gmail でも
+    // 翻訳が入ることが多いからだ」. ★So the FastSpring popup custom tag is NOT being added, and this
+    // line is the finished state, not a placeholder. ★The sentence this replaces said 'en' held
+    // "until a popup custom tag supplies one", which now reads as work someone should pick up — and
+    // it was declined. (Same distinction as TODO(unattended) in scripts/verify/unlanded-work.ts: a
+    // note saying what to do and a decision not to do it are indistinguishable months later unless
+    // one of them says so.)
+    //
+    // ★The MECHANISM stays worth having: if a language ever does arrive in the payload, using it is
+    // still right, and that is why TODO(C1) below is untouched. ★What changed is that nobody should
+    // go create the tag to feed it. (conductor relayed; the reasoning above is kimny's own.)
     const delivery = await emailService
       .sendMasterchainLicenseDelivery({ email: parsed.email }, { locale: "en", licenseKey })
       .catch((err: unknown) => ({ success: false, error: String(err) }));
