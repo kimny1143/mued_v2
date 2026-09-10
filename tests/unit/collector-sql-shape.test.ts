@@ -89,6 +89,38 @@ const strip = (src: string) =>
     .replace(/^\s*--.*$/gm, "");
 
 /**
+ * ★The text INSIDE each sql`…` template, and nothing else.
+ *
+ * ★WHY THIS EXISTS (CCO review of #989). Rule B forbids `IN ${array}` in neon files, and the obvious
+ * next step is to make it case-insensitive — SQL keywords are. ★Measuring says no, and says why:
+ * over this guard's own population (46 files holding a raw template, comments stripped),
+ *
+ *     ANY(${x})  upper   2   ← positive control        any(${x})  lower   ★0
+ *     IN ${x}    upper   2                             ★in ${x}   lower   ★1
+ *     ZZZ(${x})          0   ← negative control
+ *
+ * and that one lowercase hit is ENGLISH PROSE in an ordinary template literal:
+ * `` `${name}: ✓ completed in ${dt}s` ``. ★`strip()` cannot save us — that is live code, not a
+ * comment. ★So a whole-file scan can never be case-insensitive for `IN`, while `ANY(` is
+ * distinctive enough to be safe either way (lowercase: 0). ★That asymmetry is not a property of the
+ * two drivers; it is an artefact of scanning whole files.
+ *
+ * ★Scoping to the template body removes it: inside a sql span, `in ${…}` is SQL, so rule B can be
+ * case-insensitive there without touching prose that merely lives in the same file.
+ */
+function sqlSpans(src: string): string[] {
+  const spans: string[] = [];
+  for (const m of src.matchAll(/\bsql`/g)) {
+    const rest = src.slice(m.index! + m[0].length);
+    const end = rest.indexOf("`");
+    // ★An unterminated span is reported whole rather than skipped: "cannot tell where it ends" must
+    //   not read as "there is nothing here" — that is the shape #907 had.
+    spans.push(end === -1 ? rest : rest.slice(0, end));
+  }
+  return spans;
+}
+
+/**
  * ★Population defined BY EXECUTION, not by a hand-written list. The rule is repo-wide, so the
  * guard must be too — an earlier version checked a single file, which would have stayed green the
  * day the same mistake appeared somewhere else. A literal array of paths is guaranteed to rot.
@@ -198,17 +230,26 @@ describe("drizzle raw-SQL shape", () => {
     expect(drizzleFiles).toContain(join(".", "scripts", "aggregate-plugin-funnel-daily.ts"));
     // ★The injected-`sql` files are unclassified, so they must land under the fail-closed rule.
     //   Named here so a future red on them is not "fixed" by inventing an exclusion (see above).
+    //   ★The entries are asserted to EXIST first (CCO review of #989): the earlier form wrapped the
+    //   assertion in `if (files.includes(f))`, so a rename or deletion silently ran zero checks —
+    //   the same "absence must not read as success" hole this repo closed in #988's floor table.
     for (const f of INJECTED_SQL_UNCLASSIFIED) {
-      if (files.includes(f)) expect(drizzleFiles).toContain(f);
+      expect(files, `${f} is named as injected-sql but is no longer in the population`).toContain(f);
+      expect(drizzleFiles).toContain(f);
     }
 
     // ★Rule A (drizzle): an interpolated array after ANY( becomes a ROW expression → 42809.
+    //   ★Whole-file scan, case-SENSITIVE, and that is measured rather than assumed: lowercase
+    //   `any(${x})` is 0 across this population, and `ANY(` is distinctive enough that prose does
+    //   not collide with it. (See sqlSpans() for the measurement that decided rule B differently.)
     const ruleA = drizzleFiles.filter((f) =>
       /ANY\(\$\{[A-Za-z_]+\}\)/.test(strip(readFileSync(f, "utf8"))),
     );
     // ★Rule B (neon): the array stays ONE parameter, so `IN ${a}` renders `IN $1` — no list.
+    //   ★Scanned INSIDE sql`…` spans only, which is what lets it be case-insensitive: `in ${x}`
+    //   appears in ordinary English prose elsewhere in these files (measured — see sqlSpans()).
     const ruleB = neonFiles.filter((f) =>
-      /\bIN\s+\$\{[A-Za-z_]+\}/.test(strip(readFileSync(f, "utf8"))),
+      sqlSpans(readFileSync(f, "utf8")).some((span) => /\bIN\s+\$\{[A-Za-z_]+\}/i.test(strip(span))),
     );
     expect({ drizzle_ANY: ruleA, neon_IN: ruleB }).toEqual({ drizzle_ANY: [], neon_IN: [] });
   });
@@ -242,7 +283,13 @@ describe("drizzle raw-SQL shape", () => {
         //   positive here costs more than a miss.
         const lastLine = span.slice(span.lastIndexOf("\n") + 1);
         const afterTick = end === -1 ? "" : rest.slice(end + 1).split("\n", 1)[0];
-        const closedCleanly = /^\s*[;,)\]}]*\s*$/.test(afterTick);
+        // ★A method chain closes the template just as cleanly as a semicolon does (CCO review of
+        //   #989): `` sql`… -- note`.as("x"); `` was flagged because only `[;,)\]}]` counted as a
+        //   clean close. ★Allowing a LEADING DOT is safe and narrow — #907's shape resumes prose
+        //   with a word (`` ` not ANY``), never with `.`, so this cannot excuse the real bug.
+        const closedCleanly =
+          /^\s*[;,)\]}]*\s*$/.test(afterTick) || // ★`;` `)` `,` … — the statement simply ended
+          /^\s*\.[A-Za-z_$][\w$]*/.test(afterTick); // ★`.as("x")` — a method chain on the template
         if (end !== -1 && /^\s*--/.test(lastLine) && !closedCleanly) {
           offenders.push(`${f}: a \`--\` line inside a sql template appears to contain a backtick`);
         }
