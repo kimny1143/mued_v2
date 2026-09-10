@@ -82,27 +82,84 @@ const ARTIFACTS = [
 /** public/ is the web root, so the URL pathname is the repo path under it. */
 const localPathFor = (url: string) => join(process.cwd(), "public", new URL(url).pathname);
 
-describe("masterchain (paid) download pin", () => {
-  it("★a published paid URL must arrive with a pin — neither half is valid alone", () => {
-    // ★The whole point of this block: it is the thing that makes "set one string" safe. It fails on
-    //   the FIRST commit that publishes the paid download without pinning what sits behind it, and
-    //   the message says what to run. ★Today both halves are empty, so this passes — but it passes
-    //   for a stated reason, not because nothing looked.
-    if (!MASTERCHAIN_DOWNLOAD_URL) {
-      expect(
-        MASTERCHAIN_PIN,
-        "MASTERCHAIN_PIN is set but MASTERCHAIN_DOWNLOAD_URL is empty — a pin for a download nobody can reach",
-      ).toBeNull();
-      return;
-    }
-    expect(
-      MASTERCHAIN_PIN,
-      "MASTERCHAIN_DOWNLOAD_URL is set but MASTERCHAIN_PIN is null — the paid download would ship " +
+/**
+ * ★The pairing rule, as a value rather than an assertion — so its RED lives IN this repo.
+ *
+ * ★WHY IT WAS EXTRACTED (CCO review of #992). Written as a bare assertion, this rule had a property
+ * no other check here has: ★both halves are empty today, so ★only the passing branch ever executes,
+ * and the branch that matters fires exactly once — ★on the day someone publishes. ★That day is the
+ * worst possible time to discover the check itself was wrong, and nobody re-runs a control that was
+ * driven by hand in a terminal months earlier. ([[feedback-make-it-show-up-not-remember-it]]; the
+ * `positive-control-verify` skill calls this meta-RED, and says to make it permanent.)
+ *
+ * ★A pure function fixes that without mocking: the real constants go through the same predicate the
+ * synthetic combinations do, so the publish-day path is executed on every CI run — today, with
+ * fabricated inputs, months before it is needed. ★This repo has reached for the same shape three
+ * times before (`actionFor`, `duplicateNames`, `mayRefetch`): a rule that lives only inside an `if`
+ * is a rule tests cannot reach.
+ */
+export type PinVerdict = { ok: true } | { ok: false; reason: string };
+
+export function masterchainPinVerdict(
+  url: string,
+  pin: { sha256: string; bytes: number } | null,
+): PinVerdict {
+  if (!url) {
+    // ★A pin with nothing to download is not harmless: it reads as coverage while covering nothing.
+    return pin === null
+      ? { ok: true }
+      : { ok: false, reason: "MASTERCHAIN_PIN is set but MASTERCHAIN_DOWNLOAD_URL is empty — a pin for a download nobody can reach" };
+  }
+  if (pin === null) {
+    return {
+      ok: false,
+      reason:
+        "MASTERCHAIN_DOWNLOAD_URL is set but MASTERCHAIN_PIN is null — the paid download would ship " +
         "with none of the checks the free modules have. Fill MASTERCHAIN_PIN from " +
         "`shasum -a 256 <pkg>` and `stat -f%z <pkg>`.",
-    ).not.toBeNull();
-    // ★…and it must actually reach the table above, not merely exist as a constant.
-    expect(ARTIFACTS.map((a) => a.name)).toContain("masterchain");
+    };
+  }
+  // ★Shape, not just presence: a pin that cannot be compared against is the same as no pin.
+  if (!/^[0-9a-f]{64}$/.test(pin.sha256)) {
+    return { ok: false, reason: `MASTERCHAIN_PIN.sha256 is not a 64-hex sha256: ${pin.sha256}` };
+  }
+  if (!Number.isInteger(pin.bytes) || pin.bytes <= 0) {
+    return { ok: false, reason: `MASTERCHAIN_PIN.bytes must be a positive integer: ${pin.bytes}` };
+  }
+  return { ok: true };
+}
+
+describe("masterchain (paid) download pin", () => {
+  it("★the repo's ACTUAL pairing is valid", () => {
+    const v = masterchainPinVerdict(MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_PIN);
+    expect(v.ok ? null : v.reason).toBeNull();
+    // ★When both halves exist the entry must actually reach the table above, not merely exist as a
+    //   constant — "the pairing is valid" and "the artifact is covered" are different claims.
+    if (MASTERCHAIN_DOWNLOAD_URL && MASTERCHAIN_PIN) {
+      expect(ARTIFACTS.map((a) => a.name)).toContain("masterchain");
+    }
+  });
+
+  it("★★the publish-day RED runs TODAY — every branch, on fabricated inputs", () => {
+    // ★These four are the controls that were previously driven by hand. Kept here, they re-run on
+    //   every CI run instead of living in a terminal transcript nobody will open on publish day.
+    const PIN = { sha256: "a".repeat(64), bytes: 3_584_446 };
+    const URL = "https://mued.jp/downloads/MUEDsp-masterchain-1.0.0-installer.pkg";
+
+    expect(masterchainPinVerdict("", null).ok).toBe(true); // today's state
+    expect(masterchainPinVerdict(URL, PIN).ok).toBe(true); // published + pinned
+
+    const urlOnly = masterchainPinVerdict(URL, null); // ★the publish-day mistake
+    expect(urlOnly.ok).toBe(false);
+    expect(urlOnly.ok === false && urlOnly.reason).toContain("shasum -a 256");
+
+    const pinOnly = masterchainPinVerdict("", PIN); // ★the mirror
+    expect(pinOnly.ok).toBe(false);
+    expect(pinOnly.ok === false && pinOnly.reason).toContain("nobody can reach");
+
+    // ★A pin that is present but unusable is not a pin. Both spellings of that.
+    expect(masterchainPinVerdict(URL, { sha256: "abc", bytes: 1 }).ok).toBe(false);
+    expect(masterchainPinVerdict(URL, { ...PIN, bytes: 0 }).ok).toBe(false);
   });
 
   it("★the free three stay covered regardless — this block never shrinks that table", () => {
