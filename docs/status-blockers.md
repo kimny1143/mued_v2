@@ -96,3 +96,28 @@ done
 
 ★★**(0o) memory 監査の★残2件**: **(i) 未索引 memory 26件**（★母集団は `ls memory/`）／**(ii) 孤立 branch 1本＝正本 `docs/status-blockers.md`**。
 
+
+
+## 2026-09-10T11:37:37+09:00 に追記 — memory の file 参照 全数スイープ
+
+### (0r)
+
+★★**(0r) memory が名指しする file の dangling ref = 32 / 162**（2026-09-10T11:37:37+09:00 実測・母集団は `grep -rhoE` で memory 全件から抽出した distinct path・★symlink なので起点に末尾 `/` を付けて叩いた・陽性対照 `package.json` 通過）。★**手法の正本＝memory [[feedback-memory-refs-reveal-unlanded-work]]**。
+
+★**内訳（32件）**:
+
+| 区分 | 件数 | 扱い |
+|---|---:|---|
+| ★**#987 で解消**（cert 3 + cryo 2 + backfill 2 + yuu doc 1） | **8** | ★merge されたら再スイープで 0 になるはず |
+| ★**当課の repo でない**（conductor `docs/inbox`・`docs/drafts` / MUEDear `docs/muedear-*`・`components/Screens` / template `docs/templates`・`docs/design-system-changelog.md`） | **11** | ★対象外（別 repo の path を当 repo に照合しているだけ） |
+| ★**散文中のプレースホルダ**（`lib/y.ts` / `scripts/x.ts`） | **2** | ★対象外（`gotcha-git-add-aborts-on-deleted-pathspec` の例示） |
+| ★**本日 訂正済** | **2** | `scripts/rescue-dial-yuu-final.ts`（★main に無い＋★その r2-first は製品が revert 済 ＝ 写すと危ない、を本文と索引に明記）／`tests/unit/api/checkout-subscription.test.ts`（★file 自体が削除済 ＝「探しに行かないこと」を追記） |
+| ★**未処理（当 repo・要判定）** | **9** | 下記 |
+
+★**未処理 9件**:
+- `components/dial/{before-after,stem,waveform}-player.tsx` / `lib/utils/waveform.ts` / `db/migrations/0041_trial_events.sql` — ★すべて `pr-design-notes-20260416.md` 由来。★**設計案として書かれた path が実装 path として読まれる形**の可能性が高い（A/B プレイヤーは今も dsp release 待ち＝未実装）。→ ★**memory 側に「案であって実装ではない」を書くのが正解の見込み**
+- `components/features/landing-content.tsx` — ★**後継が在る**（`components/features/landing/integrated-landing-content-v2.tsx` 他2つ）。★ref を差し替えるだけ
+- `docs/muedial/reference-track-poc.md` / `scripts/_yuu-monitor.ts` / `scripts/measure-free15-live-n.ts` — ★main に同名も後継も無い。★**削除されたのか未着地なのかを1件ずつ判定する**（★`measure-free15-live-n.ts` は `reference-dial-prod-db-direct-query` が**手法として**名指ししているので優先度が高い）
+- `app/[locale]/ai-mixing/page.tsx` — ★どの memory 由来か未特定（`[locale]` が grep の文字クラスとして解釈され、逆引きに失敗した）。★**逆引きは `grep -F` で撃ち直す**
+
+★**注意**: ★**この 32 という数は「そのフィルタで見えたもの」**（→ [[feedback-zero-hits-means-your-filter-not-absence]]）。★抽出の正規表現が拾う拡張子は `ts|tsx|md|sql|json|mjs` のみで、★**バッククォート無しで書かれた path や、拡張子の無い dir 参照は母集団に入っていない**。
