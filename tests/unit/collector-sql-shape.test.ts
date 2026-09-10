@@ -27,10 +27,31 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
+import { neon } from "@neondatabase/serverless";
 
 const dialect = new PgDialect();
 const render = (q: ReturnType<typeof sql>) => dialect.sqlToQuery(q).sql;
 const KEYS = ["muedsat", "muedlim", "muedrive"];
+
+/**
+ * ★WHICH `sql` IS IN SCOPE DECIDES WHETHER THE FORM IS A BUG. Two drivers ship in this repo and they
+ * serialize an interpolated array in OPPOSITE ways — measured 2026-09-10, and both canaried below so
+ * the premise is executed rather than asserted in prose:
+ *
+ *   drizzle-orm               `= ANY(${ids})` → `ANY(($1, $2, $3))`  ★row expression → Postgres 42809
+ *   @neondatabase/serverless  `= ANY(${ids})` → `ANY($1)`, one param, array intact  ★correct
+ *
+ * ∴ a neon file writing `= ANY(${ids})` is not the #903 bug — it is the idiomatic form for that
+ * driver, and the only form that works there. ★The exclusion is by PROOF, not by convenience:
+ *   · only a file that IMPORTS the neon driver leaves the population,
+ *   · an unclassified file STAYS in (absence of evidence is not evidence of neon),
+ *   · and a file importing BOTH goes red below instead of silently leaving.
+ * ★Narrowing a detector is where blind spots are made, so the size of the exclusion is asserted the
+ * same way SELF's is, and the file this guard was written for (#903) is asserted to still be inside.
+ */
+const importsNeon = (src: string) => /from\s*["']@neondatabase\/serverless["']/.test(src);
+const importsDrizzleSql = (src: string) =>
+  /import\s*\{[^}]*\bsql\b[^}]*\}\s*from\s*["']drizzle-orm["']/.test(src);
 
 /**
  * ★Remove every comment syntax these files use — THREE of them, not two: block, TS line, and SQL
@@ -74,6 +95,20 @@ describe("drizzle raw-SQL shape", () => {
     expect(render(sql`SELECT 1 WHERE plugin_key = ANY(${KEYS})`)).toContain("ANY(($1, $2, $3))");
   });
 
+  it("★canary: the neon driver keeps an interpolated array as ONE parameter", () => {
+    // ★The premise the exclusion rests on, executed. A neon query object is LAZY — it is not sent
+    //   until it is awaited — so this constructs one and reads what it built, touching no network.
+    //   ★Do not await it and do not attach .then/.catch: either would execute the query.
+    //   If a future neon expands the array the way drizzle does, this goes red — and then the
+    //   exclusion below has to go, not this canary.
+    const sqlNeon = neon("postgresql://user:pass@example.neon.tech/db");
+    const q = sqlNeon`SELECT 1 FROM t WHERE id = ANY(${KEYS})` as unknown as {
+      queryData: { strings: string[]; values: unknown[] };
+    };
+    expect(q.queryData.values).toEqual([KEYS]); // ★ONE value, and it is the array itself
+    expect(q.queryData.strings.join("$")).toContain("ANY(");
+  });
+
   it("★`IN ${array}` renders a plain parenthesised list", () => {
     const rendered = render(sql`SELECT 1 WHERE plugin_key IN ${KEYS}`);
     expect(rendered).toContain("IN ($1, $2, $3)");
@@ -92,9 +127,25 @@ describe("drizzle raw-SQL shape", () => {
     //   quietly useless, so the exclusion is named, and its SIZE is asserted: if a second file ever
     //   ends up here, this line goes red instead of silently widening the blind spot.
     const SELF = join(".", "tests", "unit", "collector-sql-shape.test.ts");
-    const population = files.filter((f) => f !== SELF);
-    expect(files.length - population.length).toBe(1); // ★exactly one file excluded, and it is SELF
     expect(files).toContain(SELF);
+    const withSrc = files.filter((f) => f !== SELF).map((f) => [f, readFileSync(f, "utf8")] as const);
+
+    // ★The one way the neon exclusion could hide a real drizzle bug: a file that is both. Measured
+    //   0 today. If one ever appears, this goes red HERE rather than that file quietly leaving.
+    //   ★SELF is out of this set on purpose — it imports both drivers to canary both renderings,
+    //   which is precisely the shape this asserts nobody else has. It is excluded BY NAME above,
+    //   never by class, so it can never be the thing that hides an offender.
+    const mixed = withSrc.filter(([, s]) => importsNeon(s) && importsDrizzleSql(s)).map(([f]) => f);
+    expect(mixed).toEqual([]);
+
+    const neonFiles = withSrc.filter(([, s]) => importsNeon(s)).map(([f]) => f);
+    const population = withSrc.filter(([, s]) => !importsNeon(s)).map(([f]) => f);
+
+    // ★Every excluded file is accounted for by name-or-class: SELF, plus the proven-neon set.
+    expect(files.length - population.length).toBe(1 + neonFiles.length);
+    // ★…and the narrowing did not remove the file this guard exists for (#903, drizzle).
+    expect(population).toContain(join(".", "scripts", "aggregate-plugin-funnel-daily.ts"));
+    expect(population.length).toBeGreaterThan(20); // ★still a repo-wide check, not a two-file one
 
     const offenders = population.filter((f) =>
       /ANY\(\$\{[A-Za-z_]+\}\)/.test(strip(readFileSync(f, "utf8"))),
