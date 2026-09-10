@@ -13,6 +13,7 @@ import { logger } from '@/lib/utils/logger';
 import { MUEDSAT_DOWNLOAD_URL } from '@/lib/muedsat/config';
 import { MUEDLIM_DOWNLOAD_URL } from '@/lib/muedlim/config';
 import { MUEDRIVE_DOWNLOAD_URL } from '@/lib/muedrive/config';
+import { MASTERCHAIN_DOWNLOAD_URL } from '@/lib/masterchain/config';
 import { signUnsubscribeToken } from '@/lib/plugins/unsubscribe-token';
 
 // ========================================
@@ -914,10 +915,25 @@ Hoo MCP経由の自動送信
    * The plugin reads ~/Library/Application Support/glasswerks/MUEDsp/license.key, so the copy has to
    * say what to DO with the text — a key with no destination is not a delivery.
    *
+   * ★AND A KEY WITH NO PLUGIN IS NOT A DELIVERY EITHER (2026-09-10). This email shipped the licence
+   * key alone: the buyer paid $69, was told where to save a key, and was never told where to get the
+   * software it unlocks. The fulfilment spec commits to both —
+   * `docs/paid-line/c1-fastspring-product-and-fulfillment-spec.md:66`, 「ライセンスキーはメールで
+   * お送りします」+ ダウンロードリンク. ★Nobody was stranded: the purchase path is fail-CLOSED on two
+   * unset kimny-gated secrets, so no order has ever completed. It is a launch blocker, found before
+   * it could become an incident.
+   *
+   * ★Same `hasLink` shape as the free three (muedsat/muedlim/muedrive) — the button appears only
+   * when the URL is configured. ★For a PAID product the empty branch says more than the free one
+   * does: a buyer who has already paid needs a way to reach a human, so it names the reply path.
+   * See lib/masterchain/config.ts for why the URL is still empty (it is a kimny decision about where
+   * the paid binary lives, and setting that constant is the whole of it).
+   *
    * ★Deliberately no unsubscribe link and no forward hook: transactional. See the send method.
    */
   masterchainLicenseDelivery(data: { locale: 'ja' | 'en'; licenseKey: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
+    const hasLink = !!MASTERCHAIN_DOWNLOAD_URL;
     const subject = isJa
       ? '[MUEDsp] masterchain のライセンスキー'
       : '[MUEDsp] Your masterchain license key';
@@ -933,9 +949,30 @@ Hoo MCP経由の自動送信
       ? 'このメールは保管してください。キーを再取得できます。'
       : 'Keep this email — it is how you get the key again.';
 
+    // ★The plugin itself. Ordered BEFORE the key on purpose: install first, then licence — that is
+    //   the order the buyer has to do it in, and a key pasted with nothing to unlock is confusing.
+    const downloadHtml = hasLink
+      ? `<p style="text-align: center;">
+           <a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
+             ${isJa ? 'masterchain をダウンロード' : 'Download masterchain'}
+           </a>
+         </p>
+         <p style="color: #6b7280; font-size: 13px; text-align: center;">VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon &amp; Intel)</p>`
+      : `<div class="info-box">
+           <p style="margin: 0;">${isJa
+             ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
+             : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you."}</p>
+         </div>`;
+    const downloadText = hasLink
+      ? `${isJa ? 'ダウンロード' : 'Download'}: ${MASTERCHAIN_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS`
+      : (isJa
+        ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
+        : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you.");
+
     const html = `
       <h2 style="color: #f5a524; margin-top: 0;">${isJa ? 'MUEDsp masterchain' : 'MUEDsp masterchain'}</h2>
       <p>${intro}</p>
+      ${downloadHtml}
       <p>${howTo}</p>
       <p style="background: #f4f4f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; word-break: break-all;">${path}</p>
       <pre style="background: #111113; color: #e5e7eb; padding: 16px; border-radius: 6px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all;">${data.licenseKey}</pre>
@@ -946,7 +983,7 @@ Hoo MCP経由の自動送信
     const textHowTo = isJa
       ? `下のブロックを（-----BEGIN と -----END の行を含めて）すべてコピーし、次の場所に license.key という名前で保存してください。`
       : `Copy the whole block below (including the -----BEGIN and -----END lines) and save it as license.key here:`;
-    const text = `${intro}\n\n${textHowTo}\n${path}\n\n${data.licenseKey}\n\n${keep}\n\nglasswerks inc. — mued.jp`;
+    const text = `${intro}\n\n${downloadText}\n\n${textHowTo}\n${path}\n\n${data.licenseKey}\n\n${keep}\n\nglasswerks inc. — mued.jp`;
 
     return { subject, html, text };
   },
