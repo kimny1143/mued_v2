@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
-vi.mock('@/lib/utils/logger', () => ({ logger: { warn: vi.fn() } }));
+vi.mock('@/lib/utils/logger', () => ({ logger: { warn: vi.fn(), error: vi.fn() } }));
 
 const mockContactsCreate = vi.fn().mockResolvedValue({});
 vi.mock('resend', () => ({
@@ -55,6 +55,9 @@ describe('muedsat/audience — configured', () => {
   }
 
   it('subscribe → contacts.create (subscribed) with the dedicated audience id', async () => {
+    // ★The SDK resolves `{ data, error }` — never a bare value. `mockReset: true` (vitest config)
+    //   clears the module-level implementation between tests, so each case states its own.
+    mockContactsCreate.mockResolvedValueOnce({ data: { id: 'con_1' }, error: null });
     const mod = await freshConfiguredModule();
     const result = await mod.addMuedsatSubscriber({ email: 'producer@example.com', locale: 'ja' });
     expect(result).toBe(true);
@@ -67,8 +70,24 @@ describe('muedsat/audience — configured', () => {
     );
   });
 
-  it('a Resend failure (e.g. duplicate) is swallowed and returns false (best-effort)', async () => {
+  it('a THROWN Resend failure is swallowed and returns false (best-effort)', async () => {
     mockContactsCreate.mockRejectedValueOnce(new Error('resend 409 duplicate'));
+    const mod = await freshConfiguredModule();
+    await expect(
+      mod.addMuedsatSubscriber({ email: 'producer@example.com' }),
+    ).resolves.toBe(false);
+  });
+
+  it('★★an API REJECTION returns false — the SDK resolves {data,error} instead of throwing', async () => {
+    // ★★THE RED THIS FILE DID NOT HAVE. resend@6.12.4 does not throw on an API error: its
+    //   fetchRequest catches a non-ok response and RETURNS `{ data: null, error }`. So the old
+    //   `await …; return true;` inside try/catch reported SUCCESS for every rejection the API
+    //   itself reported — the catch above was unreachable for exactly the failures that happen.
+    //   ★The test above (a THROWN error) passed the whole time and covered none of this.
+    mockContactsCreate.mockResolvedValueOnce({
+      data: null,
+      error: { name: 'validation_error', message: 'Contact already exists' },
+    });
     const mod = await freshConfiguredModule();
     await expect(
       mod.addMuedsatSubscriber({ email: 'producer@example.com' }),
