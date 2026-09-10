@@ -24,6 +24,14 @@
  * in the same branch and goes green with a warning. That is bounded by BYPASS_UNTIL, not by cause.
  * (It does still block if the unreadable payload names a high/critical finding — see auditVerdict.)
  *
+ * ★WHAT THIS GATE STRUCTURALLY CANNOT SAY (CCO review of #986, 2026-09-10). It reads the RESOLVED
+ * tree, so it tells you a vulnerable version came back — never why it must not. After #986 the fix
+ * lived only in package-lock.json: the declared ranges still ADMITTED the vulnerable versions
+ * (`^0.35.0` admits sharp 0.35.3; `^3.15.1` admits js-yaml 3.15.1 — the vulnerable range's top edge).
+ * The declared floors, and the advisory each one answers, are asserted offline in
+ * ★tests/unit/dependency-security-floors.test.ts — which still runs when the registry is down, the
+ * outage this file exists for.
+ *
  * Usage:  npx tsx scripts/verify/audit-prod-deps.ts
  */
 import { execFileSync } from "node:child_process";

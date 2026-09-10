@@ -81,7 +81,7 @@
     "inversify": "^7.10.3",
     "isomorphic-dompurify": "^2.31.0",
     "lucide-react": "^0.544.0",
-    "next": "^16.2.11",
+    "next": "^16.3.4",
     "next-intl": "^4.7.0",
     "openai": "^6.0.0",
     "puppeteer": "^25.6.0",
@@ -110,12 +110,12 @@
     "minimatch@5": "^10.2.5",
     "minimatch@9": "^10.2.5",
     "js-yaml@4": "^4.3.1",
-    "sharp": "^0.35.0",
+    "sharp": "^0.35.4",
     "fast-uri@3": "^3.1.7",
     "browserslist@4": "^4.28.8",
     "postcss@8": "^8.5.18",
     "ip-address@10": "^10.3.1",
-    "js-yaml@3": "^3.15.1",
+    "js-yaml@3": "^3.15.2",
     "nanoid@3": "^3.3.18"
   },
   "devDependencies": {
