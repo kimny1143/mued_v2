@@ -227,6 +227,12 @@ function main(): void {
       for (const s of staleAllow) console.log(`  · ${s}`);
       console.log("  → 次の一歩: ★その branch を見直し、INTENTIONALLY_NO_PR の tip を更新するか entry を外す。");
       // ★not "unlanded work" — the table is stale, which is a different thing.
+      // ★TODO(unattended) — ★NOT DONE, deliberately. This paragraph describes a change; it is not
+      // one. ★The distinction is the whole point of the marker: a comment saying what to emit and a
+      // line that emits it read identically six months later, and the reader concludes the handling
+      // exists. (CCO review of #994 — this peer's own message claimed the line was "written" when
+      // only its rationale was.)
+      //
       // ★IF THIS EVER RUNS UNATTENDED (CCO review of #993): a consumer reading only rc cannot see a
       // stale waiver. ★The fix is NOT to change rc — that would fold "the table is out of date" into
       // "there is unlanded work", and this file's whole argument is that a check must not put two
