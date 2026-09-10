@@ -75,6 +75,13 @@
  *             2 = ★the measurement is void — we could not tell. ★2 is NOT "no problem found".
  *             3 = ★the merge landed but something after it failed (the PR IS merged).
  *
+ * ★THIS IS A DIFFERENT DIALECT FROM THE ORG'S (CCO review, 2026-09-10). The shared block-22
+ * convention is 0/2/3 with ★2 = "violation found"; here 2 = ★"could not measure". Inside this file
+ * the docstring and the implementation agree, so nothing is broken today — but ★the day a caller
+ * consumes both, this file's 2 reads as "violation" (safe direction) and ★its 1 has no meaning in
+ * the org table at all, so it can fall to a default branch (★unsafe direction). ★Translate at the
+ * boundary; do not renumber either side, which would silently change what existing callers see.
+ *
  * Usage:
  *   npm run verify:pr-gate -- 968            # report only
  *   npm run verify:pr-gate -- 968 --merge    # merge only if the verdict is ready

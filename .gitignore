@@ -109,3 +109,14 @@ docs/monetization/
 
 # collector 出力 (aggregate-plugin-funnel-daily.ts・件数のみ PII-free だが git には入れない)
 /reports/
+
+# ★Scratch files used to hand long commit messages / PR bodies to gh and git.
+# ★They are written INSIDE the repo on purpose: the CWD guard blocks writes to the scratchpad,
+#   and CLAUDE.md forbids passing this text through a bash heredoc (backticks in a double-quoted
+#   string are executed by the shell). ★2026-09-10: one of them was swept into a commit by
+#   `git add -A` — which this repo's own guidance says to always use. ∴ the fix belongs here,
+#   not in remembering a narrower `git add`.
+.commit-msg.tmp
+.pr-body.tmp
+.status-fields.tmp
+.status-event.tmp

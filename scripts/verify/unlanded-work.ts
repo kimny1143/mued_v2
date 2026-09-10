@@ -23,6 +23,13 @@
  * ★So the predicate is "no pull request has EVER existed for this head", not "no open one".
  *
  * Exit: 0 = nothing unlanded · 1 = unlanded work found · 2 = the check could not run (never "clean").
+ *
+ * ★DIFFERENT DIALECT FROM THE ORG'S (CCO review, 2026-09-10). The shared block-22 convention is
+ * 0/2/3 with ★2 = "violation found"; here 2 = ★"could not measure". Docstring and implementation
+ * agree inside this file, so nothing is broken today — but ★a caller consuming both reads this
+ * file's 2 as "violation" (safe direction), while ★its 1 is absent from the org table and can fall
+ * to a default branch (★unsafe direction). ★Translate at the boundary rather than renumbering
+ * either side.
  */
 import { execFileSync } from "node:child_process";
 

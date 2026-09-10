@@ -106,6 +106,19 @@ describe("dependency security floors", () => {
     expect(atLeast(minOf("^16.3.4"), parse("16.3.3"))).toBe(true);
   });
 
+  it("★the table is not empty — it.each([]) registers NOTHING and the file still goes green", () => {
+    // ★CCO review of #988, and their reading was right: this file asserted "for all floors" without
+    //   first asserting there ARE floors. ★Measured 2026-09-10 — a probe with an empty array and one
+    //   real test reported `Tests 1 passed`: the parametrised cases simply never existed, and
+    //   nothing anywhere said so. ★An emptied FLOORS would have removed every floor check while the
+    //   suite stayed green — the exact shape #987 guards against three files over
+    //   (`files.length > 20`), applied here to its own table.
+    expect(FLOORS.length).toBeGreaterThanOrEqual(3);
+    // ★Names too, not just a count: a table trimmed to three unrelated rows would still pass a
+    //   bare length check, and these three are the ones #986 actually had to move.
+    expect(FLOORS.map((f) => f.key).sort()).toEqual(["js-yaml@3", "next", "sharp"]);
+  });
+
   it("★minOf() refuses a range shape it was not built for", () => {
     // ★A silent fallback here is how a guard goes quietly useless: someone writes ">=1.2.3" and the
     //   floor stops being checked while the suite stays green.
