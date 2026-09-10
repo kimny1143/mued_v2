@@ -29,9 +29,29 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 import { MUEDLIM_DOWNLOAD_URL } from "@/lib/muedlim/config";
 import { MUEDRIVE_DOWNLOAD_URL } from "@/lib/muedrive/config";
 import { MUEDSAT_DOWNLOAD_URL } from "@/lib/muedsat/config";
+
+/**
+ * ★The paid module's pin, kept separate because it does not exist yet.
+ *
+ * ★WHY IT IS HERE WHILE STILL NULL (CCO review of #991). Everything above protects the three FREE
+ * downloads; masterchain — the one people pay $69 for — was in none of it. `lib/masterchain/config.ts`
+ * told the next reader that publishing it was "one string, no other code moves", so on the day
+ * someone set that string they would have shipped a paid download with ★no existence check, no sha,
+ * no byte count — ★the guard the free modules have, absent from the product with money attached.
+ *
+ * ★A comment could not fix that: it would be read by the same person who was already reading the
+ * wrong sentence. ★So the pairing is asserted below — URL set ⇔ pin present — and this slot exists
+ * so the fix is "fill in two numbers", not "discover that a whole test file needs editing".
+ *
+ * ★TO PUBLISH: put the notarised .pkg in public/downloads/, set MASTERCHAIN_DOWNLOAD_URL, and fill
+ * this in from `shasum -a 256 <file>` and `stat -f%z <file>`. The tests above then cover it exactly
+ * as they cover the free three.
+ */
+const MASTERCHAIN_PIN: { sha256: string; bytes: number } | null = null;
 
 const ARTIFACTS = [
   {
@@ -52,10 +72,47 @@ const ARTIFACTS = [
     sha256: "77a13bd14bb3e00effe7156d4ffc0d06f98b7c98e174064931801d0c51d08cdc",
     bytes: 3_584_446,
   },
+  // ★Present only once BOTH the URL and the pin exist — so the same two tests below start covering
+  //   the paid artifact the moment it is published, with no separate wiring to remember.
+  ...(MASTERCHAIN_DOWNLOAD_URL && MASTERCHAIN_PIN
+    ? [{ name: "masterchain", url: MASTERCHAIN_DOWNLOAD_URL, ...MASTERCHAIN_PIN }]
+    : []),
 ];
 
 /** public/ is the web root, so the URL pathname is the repo path under it. */
 const localPathFor = (url: string) => join(process.cwd(), "public", new URL(url).pathname);
+
+describe("masterchain (paid) download pin", () => {
+  it("★a published paid URL must arrive with a pin — neither half is valid alone", () => {
+    // ★The whole point of this block: it is the thing that makes "set one string" safe. It fails on
+    //   the FIRST commit that publishes the paid download without pinning what sits behind it, and
+    //   the message says what to run. ★Today both halves are empty, so this passes — but it passes
+    //   for a stated reason, not because nothing looked.
+    if (!MASTERCHAIN_DOWNLOAD_URL) {
+      expect(
+        MASTERCHAIN_PIN,
+        "MASTERCHAIN_PIN is set but MASTERCHAIN_DOWNLOAD_URL is empty — a pin for a download nobody can reach",
+      ).toBeNull();
+      return;
+    }
+    expect(
+      MASTERCHAIN_PIN,
+      "MASTERCHAIN_DOWNLOAD_URL is set but MASTERCHAIN_PIN is null — the paid download would ship " +
+        "with none of the checks the free modules have. Fill MASTERCHAIN_PIN from " +
+        "`shasum -a 256 <pkg>` and `stat -f%z <pkg>`.",
+    ).not.toBeNull();
+    // ★…and it must actually reach the table above, not merely exist as a constant.
+    expect(ARTIFACTS.map((a) => a.name)).toContain("masterchain");
+  });
+
+  it("★the free three stay covered regardless — this block never shrinks that table", () => {
+    // ★Guards the edit that would quietly narrow the population while looking like a paid-line change.
+    expect(ARTIFACTS.map((a) => a.name)).toEqual(
+      expect.arrayContaining(["MUEDlim", "MUEDsat", "MUEDrive"]),
+    );
+    expect(ARTIFACTS.length).toBeGreaterThanOrEqual(3);
+  });
+});
 
 describe.each(ARTIFACTS)("$name public download artifact", ({ url, sha256, bytes }) => {
   it("resolves to a repo-hosted /downloads file this gate can actually read", () => {
