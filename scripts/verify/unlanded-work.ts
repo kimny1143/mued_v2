@@ -226,7 +226,13 @@ function main(): void {
       );
       for (const s of staleAllow) console.log(`  · ${s}`);
       console.log("  → 次の一歩: ★その branch を見直し、INTENTIONALLY_NO_PR の tip を更新するか entry を外す。");
-      process.exitCode = 0; // ★not "unlanded work" — the table is stale, which is a different thing.
+      // ★not "unlanded work" — the table is stale, which is a different thing.
+      // ★IF THIS EVER RUNS UNATTENDED (CCO review of #993): a consumer reading only rc cannot see a
+      // stale waiver. ★The fix is NOT to change rc — that would fold "the table is out of date" into
+      // "there is unlanded work", and this file's whole argument is that a check must not put two
+      // different findings down the same pipe (see the 0/1/2 note in the header). ★Emit a
+      // machine-readable last line instead (e.g. `stale_waivers=N`), so the two stay separable.
+      process.exitCode = 0;
       return;
     }
     console.log("\n✓ 未着地の作業なし — push したまま PR を作っていない branch は 0 件。");
