@@ -335,6 +335,7 @@ function gh(args: string[]): string {
 
 interface PrMeta {
   headRefOid: string;
+  headRefName: string;
   state: string;
   title: string;
   mergeable: string;
@@ -346,11 +347,13 @@ interface PrMeta {
 function main(): void {
   const argv = process.argv.slice(2);
   const doMerge = argv.includes("--merge");
+  // ★Opt-in only: the repo says delete_branch_on_merge=false, so the gate must not decide otherwise.
+  const deleteBranch = argv.includes("--delete-branch");
   const numbers = argv.filter((a) => /^\d+$/.test(a));
-  const unknown = argv.filter((a) => a !== "--merge" && !/^\d+$/.test(a));
+  const unknown = argv.filter((a) => !["--merge", "--delete-branch"].includes(a) && !/^\d+$/.test(a));
 
   if (numbers.length !== 1 || unknown.length > 0) {
-    console.error("usage: npm run verify:pr-gate -- <pr-number> [--merge]");
+    console.error("usage: npm run verify:pr-gate -- <pr-number> [--merge] [--delete-branch]");
     if (numbers.length > 1) console.error(`  ★PR 番号が ${numbers.length} 個 あります: ${numbers.join(", ")}`);
     if (unknown.length > 0) console.error(`  ★解釈できない引数: ${unknown.join(", ")}`);
     process.exitCode = 2;
@@ -370,7 +373,7 @@ function main(): void {
   const meta = JSON.parse(
     gh([
       "pr", "view", pr, "--json",
-      "headRefOid,state,title,mergeable,mergeStateStatus,files,statusCheckRollup",
+      "headRefOid,headRefName,state,title,mergeable,mergeStateStatus,files,statusCheckRollup",
     ])
   ) as PrMeta;
 
@@ -496,9 +499,55 @@ function main(): void {
   // ★--match-head-commit binds the merge to the sha we actually measured. Without it the gate reads
   // sha A, spends ~1.2s on further calls, and merges whatever the head is by then — reproducing the
   // very bug it exists to prevent, silently. With it, GitHub refuses server-side.
-  console.log(`\nmerging (squash, delete branch), pinned to ${meta.headRefOid.slice(0, 8)}…`);
+  // ★Branch deletion is the REPO's decision, not this script's. Measured: this repo has
+  // `delete_branch_on_merge=false`, and the gate was passing --delete-branch unconditionally —
+  // overriding the setting on every merge.
+  //
+  // ★That is not cosmetic. Deleting a branch that another open PR uses as its BASE makes GitHub
+  // ★auto-close that PR, silently: no error, no notification, and it cannot be reopened once the base
+  // is gone. It happened on 2026-09-05 — merging #971 deleted `feat/pr-merge-gate` and closed #974
+  // (the PR that fixed a bug in THIS FILE), which had to be re-opened as #980 with its commits
+  // rebased by hand. ★Nothing on either side reported it; a reviewer noticed hours later.
+  //
+  // ★So: default to the repo setting, and when deletion IS requested, refuse it while a dependent PR
+  // exists rather than closing someone's work as a side effect.
+  // ★`gh pr list` defaults to --limit 30 (measured: `--help`, and merged-state returns exactly 30
+  // unlisted vs 50 with --limit 50). Without an explicit limit, a dependent PR beyond the 30th is
+  // INVISIBLE — dependents.length is 0, the branch is deleted, and #974 happens again. ★And it fails
+  // silently: no error, just a shorter list. (product課, #983.)
+  const DEP_LIMIT = 200;
+  const openPrs = JSON.parse(
+    gh(["pr", "list", "--state", "open", "--limit", String(DEP_LIMIT), "--json", "number,baseRefName"])
+  ) as Array<{ number: number; baseRefName: string }>;
+
+  // ★The window has two ends and only one of them was guarded. An empty list means "could not
+  // measure"; a FULL list means "there may be more beyond it" — and this check's whole job is to
+  // prove no dependent exists, which a truncated list cannot do.
+  if (openPrs.length >= DEP_LIMIT) {
+    console.error(`\n★VOID: open PR が ${openPrs.length} 件 ＝ 取得上限(${DEP_LIMIT})に達している。`);
+    console.error("  ★窓の外に依存 PR が在るかを、この検査は言えない（★「0 件」ではなく「数えられていない」）。");
+    console.error(`  → 次の一歩: DEP_LIMIT を上げて再実行するか、--delete-branch を外して merge する。`);
+    process.exitCode = 2;
+    return;
+  }
+
+  const dependents = openPrs.filter((p) => p.baseRefName === meta.headRefName);
+
+  if (deleteBranch && dependents.length > 0) {
+    console.error(`\n★VOID: この branch を base にしている open PR が ${dependents.length} 件 在る: ${dependents.map((d) => `#${d.number}`).join(", ")}`);
+    console.error("  ★--delete-branch すると GitHub がそれらを★黙って close する（★reopen 不可）。");
+    console.error(`  → 次の一歩: --delete-branch を外して merge し、★その後 依存 PR の base を main へ付け替える。`);
+    process.exitCode = 2;
+    return;
+  }
+
+  const mergeArgs = ["pr", "merge", pr, "--squash", "--match-head-commit", meta.headRefOid];
+  if (deleteBranch) mergeArgs.splice(3, 0, "--delete-branch");
+  console.log(
+    `\nmerging (squash${deleteBranch ? ", delete branch" : ", branch kept — repo setting"}), pinned to ${meta.headRefOid.slice(0, 8)}…`
+  );
   try {
-    console.log(gh(["pr", "merge", pr, "--squash", "--delete-branch", "--match-head-commit", meta.headRefOid]).trim());
+    console.log(gh(mergeArgs).trim());
   } catch (e) {
     const err = e as GhError;
     // ★やった ≠ 届いた, applied to the gate itself: gh can fail AFTER the merge landed (branch
