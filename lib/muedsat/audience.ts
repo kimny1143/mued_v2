@@ -44,15 +44,23 @@ export async function addMuedsatSubscriber(opts: {
   const resend = getClient();
   if (!resend || !opts.email) return false; // no-op when unconfigured
   try {
-    await resend.contacts.create({
+    // ★The SDK RETURNS `{ data, error }` on an API failure rather than throwing (resend@6.12.4 —
+    //   measurement and source line in lib/masterchain/audience.ts). Without reading `error`, the
+    //   `catch` never fires for an API rejection and `return true` runs regardless.
+    const { error } = await resend.contacts.create({
       audienceId: AUDIENCE_ID!,
       email: opts.email,
       unsubscribed: false,
     });
+    if (error) {
+      logger.error("[muedsat/audience] Resend REJECTED the subscribe", {
+        error: error.message ?? String(error),
+      });
+      return false;
+    }
     return true;
   } catch (err) {
-    // Best-effort: a duplicate (already subscribed) or transient error must not surface to the caller.
-    logger.warn("[muedsat/audience] best-effort subscribe failed", { err: String(err) });
+    logger.error("[muedsat/audience] could not reach Resend to subscribe", { err: String(err) });
     return false;
   }
 }

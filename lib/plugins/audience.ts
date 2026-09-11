@@ -96,15 +96,24 @@ export async function addPluginSubscriber(
   const resend = getClient();
   if (!resend || !audienceId || !opts.email) return false; // no-op when unconfigured
   try {
-    await resend.contacts.create({
+    // ★The SDK RETURNS `{ data, error }` on an API failure rather than throwing (resend@6.12.4 —
+    //   see lib/masterchain/audience.ts for the measurement and the source line). Without reading
+    //   `error`, the `catch` never fires for an API rejection and `return true` runs regardless.
+    const { error } = await resend.contacts.create({
       audienceId,
       email: opts.email,
       unsubscribed: false,
     });
+    if (error) {
+      logger.error(`[plugins/audience] Resend REJECTED the subscribe (${plugin})`, {
+        error: error.message ?? String(error),
+      });
+      return false;
+    }
     return true;
   } catch (err) {
-    // Best-effort: a duplicate (already subscribed) or transient error must not surface to the caller.
-    logger.warn(`[plugins/audience] best-effort subscribe failed (${plugin})`, { err: String(err) });
+    // ★Distinct from the rejection above: this is "could not reach Resend", not "Resend said no".
+    logger.error(`[plugins/audience] could not reach Resend to subscribe (${plugin})`, { err: String(err) });
     return false;
   }
 }
@@ -120,14 +129,25 @@ export async function unsubscribePluginContact(plugin: PluginKey, email: string)
   const resend = getClient();
   if (!resend || !audienceId || !email) return false; // no-op when unconfigured
   try {
-    await resend.contacts.update({
+    // ★★The same SDK shape, and the consequence here is the worst of the four sites: a person clicks
+    //   one-click unsubscribe, Resend rejects the update, and the old code reported success — so the
+    //   mail keeps arriving and nothing anywhere says the withdrawal did not take. ★A silent failure
+    //   on a consent-withdrawal path is not "best-effort"; it is telling someone they are off a list
+    //   they are still on.
+    const { error } = await resend.contacts.update({
       audienceId,
       email: email.trim().toLowerCase(),
       unsubscribed: true,
     });
+    if (error) {
+      logger.error(`[plugins/audience] Resend REJECTED the unsubscribe (${plugin})`, {
+        error: error.message ?? String(error),
+      });
+      return false;
+    }
     return true;
   } catch (err) {
-    logger.warn(`[plugins/audience] best-effort unsubscribe failed (${plugin})`, { err: String(err) });
+    logger.error(`[plugins/audience] could not reach Resend to unsubscribe (${plugin})`, { err: String(err) });
     return false;
   }
 }
