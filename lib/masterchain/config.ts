@@ -30,7 +30,11 @@ export const MASTERCHAIN_INTEREST_LIVE = false;
 // three? `public/downloads/*.pkg` is unauthenticated — measured: the individual .pkg files answer
 // 200 while the directory index is 404. That is the usual plugin-industry shape (open installer,
 // licence unlocks the DSP), and masterchain is licence-gated at runtime, so it is defensible — but
-// it is a business call about a paid artefact, so it is NOT made here.
+// it is a business call about a paid artefact, so it was NOT made here — ★and it has since been
+// MADE: kimny chose the public shelf (逐語「公開URLで、keyで守る」), then rejected a Dropbox
+// route outright (逐語「それは言語道断だぞ」, relayed by conductor 2026-09-11). ★So masterchain
+// sits on the same shelf as the free three, gated by the licence at runtime rather than by the
+// obscurity of its URL.
 //
 // ★WHAT SETTING THIS CONSTANT ACTUALLY COSTS. An earlier version of this comment said "one string,
 // no other code moves" — ★that was wrong, and it was wrong in the place it would be READ: by whoever
@@ -58,4 +62,5 @@ export const MASTERCHAIN_INTEREST_LIVE = false;
 // FASTSPRING_WEBHOOK_SECRET (401) and licence issuance throws without MASTERCHAIN_LICENSE_PRIVATE_KEY
 // (both kimny-gated and unset), which is why this is a launch blocker and not a live incident.
 //
-export const MASTERCHAIN_DOWNLOAD_URL = "";
+export const MASTERCHAIN_DOWNLOAD_URL =
+  "https://mued.jp/downloads/MUEDsp-masterchain-0.1.3-installer.pkg";
