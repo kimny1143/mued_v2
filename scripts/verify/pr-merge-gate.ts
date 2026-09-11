@@ -367,6 +367,11 @@ export interface WorkflowChange {
   baseSource?: string;
   /** Added/removed lines from this file's hunk, `+`/`-` prefix stripped. */
   changedLines: string[];
+  /**
+   * ★Did we actually find this file's hunk in the diff? `false` means the lines above are empty
+   * because nothing was READ — not because nothing changed. ★The two must not collapse.
+   */
+  diffFound: boolean;
 }
 
 /** null = this PR cannot move a REQUIRED name; a string = the reason it is void. */
@@ -380,6 +385,22 @@ export function ciVoidReason(
     return `REQUIRED の名前が どの workflow にも見つからない（${orphaned.join(", ")}）— 逆引きが何も言っていない`;
   }
   for (const c of changes) {
+    // ★★A RENAME IS INVISIBLE TO THE HUNK LOOKUP, AND SILENCE LOOKED LIKE INNOCENCE (CCO review of
+    //   #1005; reproduced here before fixing). Git writes `diff --git a/<old> b/<new>` for a rename,
+    //   so a search keyed on the NEW path with both sides equal never matches:
+    //
+    //     pure rename          diff --git a/…/test.yml b/…/ci.yml   similarity index 100%
+    //     ★rename + an edit    diff --git a/…/ci.yml  b/…/ci2.yml   similarity index ★99%
+    //     mode change / new    diff --git a/…/ci.yml  b/…/ci.yml    ← both sides equal, found
+    //
+    //   ★The second line is the hazard: git still calls it a rename at 99%, so renaming the file that
+    //   defines REQUIRED *while editing its `name:` lines* produced an empty changedLines, a
+    //   `baseSource` of undefined (the new path is not on base), `definesRequired === false`, and no
+    //   orphan (the OLD path still defines it on base) — ★every signal absent, and the PR sailed
+    //   through as "judged". ★Not finding the hunk is a failed read, so it is void.
+    if (!c.diffFound) {
+      return `${c.path} の diff hunk が見つからない（rename の可能性）— 変更を読めていない`;
+    }
     const movesAName = c.changedLines.some((l) => /^\s*-?\s*name:\s*\S/.test(l));
     const definesRequired = c.baseSource ? required.some((r) => declaredNames(c.baseSource!).has(r)) : false;
     if (definesRequired && movesAName) {
@@ -425,6 +446,8 @@ function collectWorkflowChanges(pr: string, meta: PrMeta): WorkflowChange[] {
   const diff = gh(["pr", "diff", pr]);
   return paths.map((path) => {
     // ★Slice this file's hunk out of the unified diff; `+++`/`---` are headers, not content.
+    // ★Both sides equal on purpose: a rename writes different sides, and we WANT that to miss so the
+    //   caller can void on it rather than read an empty hunk as "nothing changed".
     const start = diff.indexOf(`diff --git a/${path} b/${path}`);
     const rest = start >= 0 ? diff.slice(start + 1) : "";
     const end = rest.indexOf("\ndiff --git ");
@@ -439,7 +462,7 @@ function collectWorkflowChanges(pr: string, meta: PrMeta): WorkflowChange[] {
     } catch {
       baseSource = undefined; // the PR adds this file
     }
-    return { path, baseSource, changedLines };
+    return { path, baseSource, changedLines, diffFound: start >= 0 };
   });
 }
 

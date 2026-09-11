@@ -32,6 +32,7 @@ const TEST_YML = "jobs:\n  validate:\n    name: Validate\n  test:\n    name: Tes
 
 const change = (p: Partial<WorkflowChange> & { path: string }): WorkflowChange => ({
   changedLines: [],
+  diffFound: true,
   ...p,
 });
 
@@ -105,6 +106,35 @@ describe("ciVoidReason — the narrowed ⑤", () => {
 
   it("★a PR touching no workflow at all is not void", () => {
     expect(ciVoidReason([], REQUIRED, DEFINERS)).toBeNull();
+  });
+
+
+  it("★★VOIDs when the file's hunk was not found — a rename makes the change unreadable", () => {
+    // ★★CCO caught this: git writes `diff --git a/<old> b/<new>` for a rename, so a lookup keyed on
+    //   the new path with both sides equal never matches. ★Reproduced before fixing:
+    //     pure rename       a/test.yml b/ci.yml    similarity index 100%
+    //     ★rename + edit    a/ci.yml   b/ci2.yml   similarity index ★99%   ← still a rename
+    //     mode change / new a/ci.yml   b/ci.yml    ← both sides equal, found
+    //   ★The 99% row is the hazard: renaming the REQUIRED-defining file WHILE editing its `name:`
+    //   lines left every signal absent — empty hunk, no baseSource, no orphan — and passed.
+    const r = ciVoidReason(
+      [change({ path: ".github/workflows/ci2.yml", changedLines: [], diffFound: false })],
+      REQUIRED,
+      DEFINERS,
+    );
+    expect(r).toContain("ci2.yml");
+    expect(r).toContain("rename");
+  });
+
+  it("★an empty hunk that WAS found stays allowed — 'read and unchanged' ≠ 'not read'", () => {
+    // ★The distinction the flag exists for. Without it, both are the empty array.
+    expect(
+      ciVoidReason(
+        [change({ path: ".github/workflows/other.yml", baseSource: "jobs:\n  a:\n    name: Collect\n", changedLines: [], diffFound: true })],
+        REQUIRED,
+        DEFINERS,
+      ),
+    ).toBeNull();
   });
 
   it("★self-RED: the healthy inputs above really are healthy", () => {
