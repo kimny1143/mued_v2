@@ -100,6 +100,26 @@ done
 
 ## 2026-09-10T11:37:37+09:00 に追記 — memory の file 参照 全数スイープ
 
+### (0s)
+
+★★**(0s) memory の索引被覆 = ★23 / 128 が MEMORY.md に索引行を持たない**（2026-09-11T16:33:56+09:00 実測）。
+
+★**(0r) を閉じる過程で出てきた、★同じ機構の別の面。** ★**(0r) は「memory → file」の dangling ref**、★**(0s) は「MEMORY.md → memory」の被覆**。
+
+★**なぜ効くか**: ★**MEMORY.md は SessionStart で毎回 注入される索引**で、★**索引に無い memory は「recall が拾えば出る」だけになる。**
+★**実例（本日）**: ★`pr-design-notes-20260416.md`（210行）は ★索引行ゼロ・★他 memory からの `[[link]]` もゼロで、★**5ヶ月 誰にも読まれないまま ★価格が誤ったまま残っていた**（`$8`/`$15` ⇔ 正本 `749`/`1399`）。★**畳むまで、それが在ることに気づく経路が無かった。**
+
+★★**本日 2件だけ 直した ——★★二重に見えなくなっていた分**:
+| file | 直す前 | 直した内容 |
+|---|---|---|
+| `muedlobe-game-tests.md`（87行） | ★**frontmatter 自体が無い**（description 空）＋ ★索引行も無し | frontmatter + 索引行 |
+| `remotion-game-animations.md`（90行） | ★同上 | frontmatter + 索引行 |
+
+★★**`description` が空だと ★recall が関連性を判定する手掛かりが無い** ∴ ★**索引にも無い ＋ description も無い ＝ ★到達経路がゼロ。** ★**この2件だけは「被覆が薄い」でなく「★不在」だったので先に直した。**
+★**再監査**: ★description 空 **2 → 0**／★索引なし **25 → 23**（★陽性control: description を持つ file 126 件）。
+
+★★**残 23 件は ★まだ判定していない。** ★**一括で索引を生やすのは誤り**——★中身を見ると ★`RESOLVED` / `完了記録` の project memory が多く（★2026-03〜04 の dial・muednote 系）、★**索引に足すのでなく ★畳む対象の可能性が高い。** ★**1件ずつ「まだ真か」を見るのが手順**（→ [[feedback-a-filled-in-value-hides-the-defect]] と同じで、★件数で処理すると中身を失う）。
+
 ### (0r)
 
 ★★**(0r) memory が名指しする file の dangling ref = 32 / 162**（2026-09-10T11:37:37+09:00 実測・母集団は `grep -rhoE` で memory 全件から抽出した distinct path・★symlink なので起点に末尾 `/` を付けて叩いた・陽性対照 `package.json` 通過）。★**手法の正本＝memory [[feedback-memory-refs-reveal-unlanded-work]]**。
