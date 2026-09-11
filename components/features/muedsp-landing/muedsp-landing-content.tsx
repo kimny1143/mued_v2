@@ -182,7 +182,33 @@ export function MuedspLandingContent() {
               {/* Price statement lives entirely in copy (priceNote) — single source, no hardcoded
                   number (keeps price/no-discount wording under content課's control). */}
               <p className="max-w-sm text-[15px] leading-relaxed text-white/70">{tmc("priceNote")}</p>
-              {/* Valhalla-type structural Buy slot — present but inert until launch (FastSpring MoR). */}
+              {/* Valhalla-type structural Buy slot — present but inert until launch (FastSpring MoR).
+
+                  ★★WHOEVER WIRES THE POPUP: PASS THESE TAGS, OR THE LAUNCH IS UNMEASURABLE.
+
+                  ★The receiving half already exists and is waiting for them —
+                  `parseFastspringOrderCompleted` (lib/masterchain/fastspring-webhook.ts) reads the
+                  order's custom tags and stores them on `masterchain_purchases.firstTouch`. ★Nothing
+                  else supplies them: FastSpring only carries what the popup session was given, so a
+                  tag not set HERE is gone by the time the webhook runs, and the order is
+                  unattributable ★forever — an order cannot be re-bought with better instrumentation.
+
+                    tags.gaClientId       ← GA4 client id; without it the purchase event is skipped
+                    tags.utmSource
+                    tags.utmMedium
+                    tags.utmCampaign      ← this is what says "the launch email sold it"
+                    tags.utmContent
+                    tags.utmTerm
+                    tags.marketingConsent ← gates the buyers-audience add; a purchase is not an opt-in
+
+                  ★WHY THIS NOTE IS HERE AND NOT IN A DOC (insight measured 2026-09-10, via conductor):
+                  the send side does not exist yet — this button is `disabled`, there is no storefront
+                  id, no product path, no popup script. ★So the gap cannot be closed by code today and
+                  cannot be caught by a test either: there is no path to exercise. ★What it CAN have
+                  is the contract sitting where the person doing the wiring will already be looking.
+
+                  ★The list above is kept honest by tests/unit/fastspring-tag-contract.test.ts — add a
+                  tag to the parser without adding it here and that test goes red. */}
               <button
                 type="button"
                 disabled
