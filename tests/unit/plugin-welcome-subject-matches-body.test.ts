@@ -51,7 +51,14 @@ const saysDownload = (subject: string) => /ダウンロード|download/i.test(su
 /** ★The download link specifically — not "a link". See the header note. */
 const offersDownload = (mail: Rendered, url: string) => url !== "" && mail.text.includes(url);
 
-afterEach(() => vi.doUnmock("@/lib/muedsat/config"));
+// ★All three, not only the first (CCO, review of #1008). ★`vi.doMock` registrations SURVIVE
+//   `vi.resetModules()` — measured, not reasoned: mock → resetModules → import without re-mocking
+//   still returned the mocked value, and only `doUnmock` cleared it. ★It changed no result here,
+//   because every `render` re-mocks before importing; it left two of the three products mocked for
+//   whatever ran next, which is the kind of thing that is harmless until it isn't.
+afterEach(() => {
+  for (const p of PRODUCTS) vi.doUnmock(p.mod);
+});
 
 describe("free-plugin welcome emails — subject ⇔ body", () => {
   it("★★the subject says 'download' exactly when the body carries the download link", async () => {
