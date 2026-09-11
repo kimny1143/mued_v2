@@ -157,6 +157,24 @@ jobs:
           }
           JSON
 
+          # ★kimny の PWA が読む4つの数字 (conductor 2026-09-11・台帳 task-pwa-numbers-panel)。
+          # ★gw-dash は conductor repo しか読めない (functions/api/conductor.ts が REPO を
+          #   ハードコードし path を whitelist している = 意図的な境界)。★そこへ 2つ目の repo を
+          #   読ませる代わりに、★この branch に1ファイル足し、cowork の既存集約が conductor repo へ
+          #   写す。★この workflow の GitHub 資格情報は既定の GITHUB_TOKEN だけで、他 repo へは
+          #   push も PR も出せない (実測: secret は CLOUDFLARE_* / DATABASE_URL* / GITHUB_TOKEN /
+          #   RESEND_API_KEY の6つのみ・PAT 0件)。★cross-repo PAT の新規登録は kimny gate。
+          # ★導出は lib/funnel/numbers.ts (unit-test 済) に置き、ここは呼ぶだけ。
+          #   ★この step は1日1回・無人でしか走らない = 手で再実行されない形なので、
+          #   ★確かめたいロジックはテストから届く場所に置く。
+          # ★入力が欠けたら throw して publish ごと止める = 前日のファイルが残る
+          #   (★盤面には古い measured_at が出る。★0 を出すと「誰も登録しなかった」という主張になる)。
+          SOURCE_REPORT="reports/plugin-funnel/$REPORT_NAME" \
+          TRIGGER="$TRIGGER" \
+          RUN_URL="$RUN_URL" \
+            npx tsx "$GITHUB_WORKSPACE/scripts/emit-funnel-numbers.ts" \
+              "reports/plugin-funnel/$REPORT_NAME" funnel-numbers.json
+
           # このデータ branch には app も pages も無いので、Vercel が preview build を試みると
           # 必ず「Couldn't find any `pages` or `app` directory」で ERROR になる。publish 自体は
           # 成功しているのに kimny へ毎日 失敗メールが届き、本物の失敗が埋もれる
