@@ -81,6 +81,36 @@ describe("masterchain licence delivery email", () => {
     expect(withLink.html).not.toEqual(without.html);
   });
 
+
+  it("★★the SUBJECT follows the body — it never promises a download the mail lacks", async () => {
+    // ★The wording was proposed unconditionally. Rendering all four variants showed it true in two
+    //   and false in two: with no URL the body says "the link is coming", so an unconditional subject
+    //   names something the mail does not contain. ★That would undo the honest degrade IN THE SUBJECT
+    //   while the body-level test above stayed green — a property broken from a different line.
+    const withLink = await render(URL);
+    expect(withLink.subject).toMatch(/ダウンロード|download/i);
+
+    for (const locale of ["ja", "en"] as const) {
+      const without = await render("", locale);
+      expect(without.subject, `${locale}: subject promises a download the body does not carry`)
+        .not.toMatch(/ダウンロード|download/i);
+      // ★…and the body really is the "link is coming" shape, so the two are being compared honestly.
+      expect(without.text).not.toContain("https://");
+    }
+  });
+
+  it("★subject and body agree in BOTH directions", async () => {
+    // ★One rule, stated as an equivalence, so neither side can drift alone: says-download ⇔ has-URL.
+    for (const url of [URL, ""]) {
+      for (const locale of ["ja", "en"] as const) {
+        const m = await render(url, locale);
+        const subjectSaysDownload = /ダウンロード|download/i.test(m.subject);
+        const bodyHasUrl = m.text.includes("https://");
+        expect(subjectSaysDownload, `url=${url || "(empty)"} locale=${locale}`).toBe(bodyHasUrl);
+      }
+    }
+  });
+
   it("★install comes before the key — that is the order the buyer has to do it in", async () => {
     const mail = await render(URL);
     expect(mail.html.indexOf(URL)).toBeLessThan(mail.html.indexOf(KEY));

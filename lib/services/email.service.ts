@@ -934,9 +934,24 @@ Hoo MCP経由の自動送信
   masterchainLicenseDelivery(data: { locale: 'ja' | 'en'; licenseKey: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MASTERCHAIN_DOWNLOAD_URL;
-    const subject = isJa
-      ? '[MUEDsp] masterchain のライセンスキー'
-      : '[MUEDsp] Your masterchain license key';
+    // ★The subject follows the BODY's condition, not the product's name (conductor decided the
+    //   wording 2026-09-11; kimny approved it — kimny saw the wording, conductor approved the
+    //   branching as implementation granularity).
+    //
+    // ★WHY IT IS CONDITIONAL. The wording was proposed unconditionally. Rendering all four variants
+    //   showed it true in two and false in two: with no download URL the body says "the link is
+    //   coming", so a subject promising a download names something the mail does not contain. ★That
+    //   would undo, in the subject line, the honest degrade this template does in the body — and
+    //   #991's test asserts that degrade, so the property would have stayed green while breaking.
+    //
+    // ★No new voice: both strings already existed. Only the condition is new.
+    const subject = hasLink
+      ? isJa
+        ? '[MUEDsp] masterchain のダウンロードとライセンスキー'
+        : '[MUEDsp] Your masterchain download and license key'
+      : isJa
+        ? '[MUEDsp] masterchain のライセンスキー'
+        : '[MUEDsp] Your masterchain license key';
 
     const path = '~/Library/Application Support/glasswerks/MUEDsp/license.key';
     const intro = isJa
