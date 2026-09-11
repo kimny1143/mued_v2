@@ -51,7 +51,13 @@ import { MUEDSAT_DOWNLOAD_URL } from "@/lib/muedsat/config";
  * this in from `shasum -a 256 <file>` and `stat -f%z <file>`. The tests above then cover it exactly
  * as they cover the free three.
  */
-const MASTERCHAIN_PIN: { sha256: string; bytes: number } | null = null;
+const MASTERCHAIN_PIN: { sha256: string; bytes: number } | null = {
+  // ★Measured on the COPY under public/downloads/, not on dsp's source and not from the relayed
+  //   message — `shasum -a 256` / `stat -f%z`, 2026-09-11. dsp's declared values matched, and
+  //   `cmp` against the source was byte-identical, so three independent readings agree.
+  sha256: "d9c21c25c0aa47a33cc1c627df0223d9c5b7972412fd70454d120822298351db",
+  bytes: 4_133_469,
+};
 
 const ARTIFACTS = [
   {
