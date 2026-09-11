@@ -1015,7 +1015,22 @@ Hoo MCP経由の自動送信
     const portal = portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedsat);
     const forward = forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedsat);
 
-    const subject = isJa ? '[MUEDsat] ダウンロードリンクをお届けします' : '[MUEDsat] Your download link';
+    // ★The subject follows the BODY's condition. Same defect #1007 fixed in masterchain; CCO found
+    //   this sibling while reviewing it.
+    //
+    // ★LATENT, NOT LIVE — and the distinction is the lesson. All three free URLs hold a real .pkg
+    //   today, so the body always renders the link and the subject happens to be true. ★The only
+    //   reason the identical shape was VISIBLE in masterchain is that its URL is still empty. ★A
+    //   value that happens to be filled in is hiding the defect, not the code being different.
+    //
+    // ★No new voice: the fallback reuses this email's own h2, a few lines below.
+    const subject = hasLink
+      ? isJa
+        ? '[MUEDsat] ダウンロードリンクをお届けします'
+        : '[MUEDsat] Your download link'
+      : isJa
+        ? 'MUEDsat をありがとうございます'
+        : 'Thanks for grabbing MUEDsat';
 
     const unsubHtml = `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
       ? `<a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a>`
@@ -1075,7 +1090,14 @@ Hoo MCP経由の自動送信
     const portal = portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedlim);
     const forward = forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedlim);
 
-    const subject = isJa ? 'MUEDlim のダウンロードリンクです' : 'Your MUEDlim download link';
+    // ★Same as MUEDsat above — subject conditional on the body, fallback reuses this email's h2.
+    const subject = hasLink
+      ? isJa
+        ? 'MUEDlim のダウンロードリンクです'
+        : 'Your MUEDlim download link'
+      : isJa
+        ? 'MUEDlim をありがとうございます'
+        : 'Thanks for grabbing MUEDlim';
 
     const unsubHtml = `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
       ? `<a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a>`
@@ -1134,7 +1156,14 @@ Hoo MCP経由の自動送信
     const portal = portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedrive);
     const forward = forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedrive);
 
-    const subject = isJa ? 'MUEDrive のダウンロードリンクです' : 'Your MUEDrive download link';
+    // ★Same as MUEDsat above — subject conditional on the body, fallback reuses this email's h2.
+    const subject = hasLink
+      ? isJa
+        ? 'MUEDrive のダウンロードリンクです'
+        : 'Your MUEDrive download link'
+      : isJa
+        ? 'MUEDrive をありがとうございます'
+        : 'Thanks for grabbing MUEDrive';
 
     const unsubHtml = `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
       ? `<a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a>`
