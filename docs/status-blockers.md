@@ -114,11 +114,27 @@ done
 | ★**本日 訂正済** | **2** | `scripts/rescue-dial-yuu-final.ts`（★main に無い＋★その r2-first は製品が revert 済 ＝ 写すと危ない、を本文と索引に明記）／`tests/unit/api/checkout-subscription.test.ts`（★file 自体が削除済 ＝「探しに行かないこと」を追記） |
 | ★**未処理（当 repo・要判定）** | **9 → ★8**（うち1件は同日 判定・訂正済） | 下記 |
 
-★**未処理 9件**:
-- `components/dial/{before-after,stem,waveform}-player.tsx` / `lib/utils/waveform.ts` / `db/migrations/0041_trial_events.sql` — ★すべて `pr-design-notes-20260416.md` 由来。★**設計案として書かれた path が実装 path として読まれる形**の可能性が高い（A/B プレイヤーは今も dsp release 待ち＝未実装）。→ ★**memory 側に「案であって実装ではない」を書くのが正解の見込み**
-- `components/features/landing-content.tsx` — ★**後継が在る**（`components/features/landing/integrated-landing-content-v2.tsx` 他2つ）。★ref を差し替えるだけ
-- ★**`scripts/measure-free15-live-n.ts` = 判定済・訂正済**（同日）。★**どの branch にも一度も commit されていない**（`git log --all --diff-filter=AD` で 0 件）＝ ★**ローカル限りの使い捨てを memory が「パターン」として名指ししていた**。★**同 memory が名指しする残り2本（`verify-free15-tz-and-prod.ts` / `diagnose-prod-gap.ts`）も同じ**——★**しかもこの2本は上のスイープに入っていなかった**（memory 側が `scripts/` 接頭辞なしで書いており、正規表現が拾わなかった）＝ ★**「32」がフィルタ依存であることの実例が、同じ行から出た**。→ ★`reference-dial-prod-db-direct-query` を訂正し、★**main に在る durable な等価物 `docs/dial/free15-measurement-field-map.md`（96行・コホート定義＋実 SQL）へ向け直した**。
-- `docs/muedial/reference-track-poc.md` / `scripts/_yuu-monitor.ts` — ★main に同名も後継も無い。★**削除されたのか未着地なのかを1件ずつ判定する**
-- `app/[locale]/ai-mixing/page.tsx` — ★どの memory 由来か未特定（`[locale]` が grep の文字クラスとして解釈され、逆引きに失敗した）。★**逆引きは `grep -F` で撃ち直す**
+★★**未処理 9件 → 2026-09-11 に ★0件。★1件ずつ判定し、★memory 側を直した。**
+
+| path | 判定（`git log --all --diff-filter=AD`） | 直した先 |
+|---|---|---|
+| `components/dial/before-after-player.tsx` | ★**在って消えた** — `b8ce8efd`「integrate UnifiedSessionPlayer, remove legacy players」 | ★新 memory |
+| `components/dial/stem-player.tsx` | ★**一度も commit されていない**（0件） | ★新 memory |
+| `components/dial/waveform-player.tsx` | ★同上 | ★新 memory |
+| `lib/utils/waveform.ts` | ★同上 | ★新 memory |
+| `db/migrations/0041_trial_events.sql` | ★同上 | ★新 memory |
+| `components/features/landing-content.tsx` | ★**削除済**（#655「remove dead v1 landing chain」）・★`isFree15PromoActive` も **0件**（陽性control `IntegratedLandingContent` 3件） | `project-free15-muedjp-promo` に註記 |
+| `docs/muedial/reference-track-poc.md` | ★**一度も commit されていない**（0件） | `dial-reference-track-poc` に註記 |
+| `scripts/_yuu-monitor.ts` | ★**一度も commit されていない**（0件・陽性control `scripts/*.ts` 60件） | `project-dial-stuck-processing-fix` の★自己矛盾を除去 |
+| `app/[locale]/ai-mixing/page.tsx` | ★**未 merge の branch `feat/seo-lp-ai-mixing` 限り**（`a10ac2de` は main の祖先でない） | ★既に正しく註記済＝変更不要 |
+
+★**逆引きは `grep -F` で撃ち直した** ——★前回 `[locale]` が文字クラスとして解釈されて失敗していた所。★今回は9件すべて逆引きできた。
+
+★★**5件を1つの memory に畳んだ**: 出所の `pr-design-notes-20260416.md`（210行）は ★**MEMORY.md に索引行が無く**・★**他 memory からの `[[link]]` も 0**・★**価格が誤り**（`$8`/`$15` ⇔ 正本 `lib/dial/pricing.ts` は `749`/`1399`）。
+★∴ ★**`reference-dial-player-design-superseded` に置き換え、★索引行を追加した**（★索引に無いものは索引からは永久に辿れない＝ [[feedback-shipped-but-unreachable-is-silent]] の memory 版）。★元文は session scratchpad へ退避（★誤った価格を repo に持ち込まないため repo には入れない）。
+
+★★**そして今回いちばん効いた1行**: ★**`app/[locale]/ai-mixing/page.tsx` は「消えた」のではなく ★未着地だった。** ★**dangling ref のスイープが、★未 merge の作業を1件 掘り当てた**（★手法 memory [[feedback-memory-refs-reveal-unlanded-work]] が主張していたとおりの効き方）。
+
+★**再スイープ（2026-09-11T16:23:57+09:00）**: 9 path すべて ★『名指す memory = 1件・かつ その1件が判定を持つ』。★陽性control（`package.json` を含む memory 7件）通過。
 
 ★**注意**: ★**この 32 という数は「そのフィルタで見えたもの」**（→ [[feedback-zero-hits-means-your-filter-not-absence]]）。★抽出の正規表現が拾う拡張子は `ts|tsx|md|sql|json|mjs` のみで、★**バッククォート無しで書かれた path や、拡張子の無い dir 参照は母集団に入っていない**。
