@@ -7,9 +7,19 @@
 //     foundation for a future account/subscription layer. It runs in the webhook tx; a failure
 //     rolls back → 5xx → FastSpring retries (dedup by orderId).
 //   - FAIL-OPEN (never blocks fulfillment): GA4 MP purchase (reusing #664's trackServerPurchase,
-//     the second rail paired with Stripe/dial), the transactional welcome/delivery email (key + DL
-//     link — TODO, needs an email.service method + copy), and the buyers marketing audience add
+//     the second rail paired with Stripe/dial), and the buyers marketing audience add
 //     (consent-gated per #670 — a purchase is not itself a marketing opt-in).
+//   - ★CRITICAL, and NOT fail-open: the licence delivery email. See the call site near the bottom —
+//     a send failure throws, the tx rolls back, and FastSpring retries, because a recorded purchase
+//     whose buyer got nothing is worse than a retry.
+//
+// ★THIS PARAGRAPH USED TO SAY THE DELIVERY EMAIL WAS "TODO, needs an email.service method + copy",
+// ★and it was WRONG for a day — the method landed in #991 (emailTemplates.masterchainLicenseDelivery
+// / emailService.sendMasterchainLicenseDelivery) and is called below. ★On 2026-09-11 that stale
+// sentence was read as current and became an instruction to build what already existed; the work was
+// stopped by measuring, not by anyone noticing the comment. ★A header that describes a plan is
+// indistinguishable from one describing the code once the plan has shipped — which is the same
+// failure as a TODO that survives the decision not to do it (see the locale note further down).
 //
 // The order.completed payload SHAPE is placeholder here (parseFastspringOrderCompleted): the exact
 // field paths + the popup custom-tags carrying gaClientId/utm are confirmed at C1 against a `.test.`
@@ -17,6 +27,7 @@
 import { trackServerPurchase, type GA4PurchaseParams } from "@/lib/analytics/ga4-server";
 import { masterchainPurchases } from "@/db/schema";
 import { addMasterchainContact } from "@/lib/masterchain/audience";
+import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 import { issueLicense, LICENSE_VERSION } from "@/lib/masterchain/license";
 import { emailService } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
@@ -279,11 +290,32 @@ export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Pr
     // ★The MECHANISM stays worth having: if a language ever does arrive in the payload, using it is
     // still right, and that is why TODO(C1) below is untouched. ★What changed is that nobody should
     // go create the tag to feed it. (conductor relayed; the reasoning above is kimny's own.)
+    // ★A DELIVERY WITHOUT A DOWNLOAD LINK IS NOT A FAILURE, BUT IT MUST NOT BE SILENT (conductor,
+    //   2026-09-11). The email degrades honestly when MASTERCHAIN_DOWNLOAD_URL is unset — it carries
+    //   the key, the path, and "the link is coming, reply here" — so the buyer is not stranded and
+    //   nothing broken is sent. ★What was missing is that NOBODY ON OUR SIDE could tell it happened.
+    //
+    // ★Two states, two lines, on purpose: "not configured yet" is a pre-launch condition, while
+    //   "configured but the send failed" is an incident. ★Collapsing them is the shape #1002 fixed
+    //   one level down — a configured-but-failed write that printed like a no-op.
+    if (!MASTERCHAIN_DOWNLOAD_URL) {
+      logger.error("[fastspring] delivering a PAID licence with NO download link — URL is unset", {
+        orderId: parsed.orderId,
+        next: "set MASTERCHAIN_DOWNLOAD_URL (+ the sha256/bytes pin) once the .pkg is on the shelf",
+      });
+    }
+
     const delivery = await emailService
       .sendMasterchainLicenseDelivery({ email: parsed.email }, { locale: "en", licenseKey })
       .catch((err: unknown) => ({ success: false, error: String(err) }));
 
     if (!delivery.success) {
+      // ★THE `.catch` ABOVE IS NOT FAIL-OPEN, AND IT READS LIKE IT IS (conductor asked, 2026-09-11 —
+      //   a fair misreading). It does not swallow the failure; it NORMALISES the two failure shapes
+      //   into one, because `send` can either throw (transport) or resolve `{success:false}` (the
+      //   provider said no — the same Resend semantics #1002 turned on). ★The decision is this `if`,
+      //   which throws. ★Net behaviour: fail-CLOSED.
+      //
       // Fail-CLOSED: roll back → non-2xx → FastSpring retries. The retry is safe because the purchase
       // row was never committed, so the next attempt re-issues and re-sends exactly once.
       throw new Error(
