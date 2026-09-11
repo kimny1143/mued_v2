@@ -329,6 +329,120 @@ class GhError extends Error {
   }
 }
 
+// ── ⑤ narrowed: which workflow edits can actually move a REQUIRED name ────────────────────────────
+//
+// ★WHY THIS IS NOT "any file under .github/workflows/" ANY MORE. The rule was: touch a workflow, get
+// VOID. ★It is a correct refusal with too wide a population — measured 2026-09-11 on PR #1004, which
+// added a step to `plugin-funnel-collector.yml` while every REQUIRED name (Validate/Test/Build) lives
+// in `test.yml`, and whose diff moved ★zero `name:` lines. The gate could not certify it, so a human
+// re-derived exactly that and merged by hand. ★A gate that refuses work it could have judged trains
+// people to merge around it, which is the pressure that eventually loosens it.
+//
+// ★WHERE THE POPULATION COMES FROM — and why not from the server. conductor proposed deriving
+// REQUIRED from branch protection. ★Measured: ruleset 14319569 "main-protection" carries a
+// `pull_request` rule and ★zero required_status_checks contexts. There is no server-side list; the
+// hand-written REQUIRED above exists precisely BECAUSE nothing is enforced server-side. ★So the
+// population is reverse-looked-up from the workflow files instead: whichever file defines a REQUIRED
+// name is in scope, computed each run. Add a fourth required check and its file joins automatically —
+// no list to keep in step.
+//
+// ★TWO STAGES, and each covers what the other misses (conductor's framing):
+//   ① touched a file that DEFINES a REQUIRED name … alone, a comment edit in test.yml would VOID.
+//   ② the diff MOVED a `name:` line ………………… alone, a NEW file defining a job called "Test"
+//                                                  would slip through — it defines nothing on base.
+//   ∴ ① AND ② for existing definers, OR ② alone when the added line names a REQUIRED check.
+//
+// ★AND ZERO HITS IS NOT "FINE". If a REQUIRED name is defined by no workflow at all, the reverse
+// lookup has told us nothing — the name may have been renamed out from under us. ★That is a failed
+// measurement, not a clean one, and it VOIDs (the 0/1/2 discipline this file already uses).
+
+/** Job/step names a workflow file declares. Deliberately includes step names: over-matching here costs a VOID, under-matching costs a false green. */
+export function declaredNames(source: string): Set<string> {
+  return new Set([...source.matchAll(/^\s*-?\s*name:\s*(.+?)\s*$/gm)].map((m) => m[1].replace(/^["']|["']$/g, "")));
+}
+
+export interface WorkflowChange {
+  path: string;
+  /** The file's content on the BASE. `undefined` when the PR adds the file. */
+  baseSource?: string;
+  /** Added/removed lines from this file's hunk, `+`/`-` prefix stripped. */
+  changedLines: string[];
+}
+
+/** null = this PR cannot move a REQUIRED name; a string = the reason it is void. */
+export function ciVoidReason(
+  changes: WorkflowChange[],
+  required: readonly string[],
+  definers: Map<string, string[]>,
+): string | null {
+  const orphaned = required.filter((r) => (definers.get(r) ?? []).length === 0);
+  if (orphaned.length > 0) {
+    return `REQUIRED の名前が どの workflow にも見つからない（${orphaned.join(", ")}）— 逆引きが何も言っていない`;
+  }
+  for (const c of changes) {
+    const movesAName = c.changedLines.some((l) => /^\s*-?\s*name:\s*\S/.test(l));
+    const definesRequired = c.baseSource ? required.some((r) => declaredNames(c.baseSource!).has(r)) : false;
+    if (definesRequired && movesAName) {
+      return `${c.path} は REQUIRED を定義しており、その name: 行が動いている`;
+    }
+    // ★A file that defines nothing on base can still ADD a REQUIRED name — a brand-new workflow with
+    //   a job called "Test" would otherwise be invisible to stage ①.
+    const addsRequired = c.changedLines.some((l) => {
+      const m = /^\s*-?\s*name:\s*(.+?)\s*$/.exec(l);
+      return !!m && required.includes(m[1].replace(/^["']|["']$/g, ""));
+    });
+    if (addsRequired) return `${c.path} の diff が REQUIRED の名前を含む name: 行を動かしている`;
+  }
+  return null;
+}
+
+/** REQUIRED name → the workflow files defining it, read from the BASE (origin/main). */
+function requiredDefiners(): Map<string, string[]> {
+  const out = new Map<string, string[]>(REQUIRED.map((r) => [r, [] as string[]]));
+  let listing: string;
+  try {
+    listing = execFileSync("git", ["ls-tree", "--name-only", "origin/main", ".github/workflows/"], { encoding: "utf8" });
+  } catch {
+    return out; // ★Cannot read the base → every name looks orphaned → VOID. The safe direction.
+  }
+  for (const path of listing.split("\n").filter(Boolean)) {
+    let src = "";
+    try {
+      src = execFileSync("git", ["show", `origin/main:${path}`], { encoding: "utf8", maxBuffer: 8 * 1024 * 1024 });
+    } catch {
+      continue;
+    }
+    const names = declaredNames(src);
+    for (const r of REQUIRED) if (names.has(r)) out.get(r)!.push(path);
+  }
+  return out;
+}
+
+/** The PR's workflow-file changes, with each file's base content and its changed lines. */
+function collectWorkflowChanges(pr: string, meta: PrMeta): WorkflowChange[] {
+  const paths = meta.files.map((f) => f.path).filter((p) => p.startsWith(".github/workflows/"));
+  if (paths.length === 0) return [];
+  const diff = gh(["pr", "diff", pr]);
+  return paths.map((path) => {
+    // ★Slice this file's hunk out of the unified diff; `+++`/`---` are headers, not content.
+    const start = diff.indexOf(`diff --git a/${path} b/${path}`);
+    const rest = start >= 0 ? diff.slice(start + 1) : "";
+    const end = rest.indexOf("\ndiff --git ");
+    const body = start >= 0 ? (end >= 0 ? rest.slice(0, end) : rest) : "";
+    const changedLines = body
+      .split("\n")
+      .filter((l) => (l.startsWith("+") || l.startsWith("-")) && !l.startsWith("+++") && !l.startsWith("---"))
+      .map((l) => l.slice(1));
+    let baseSource: string | undefined;
+    try {
+      baseSource = execFileSync("git", ["show", `origin/main:${path}`], { encoding: "utf8", maxBuffer: 8 * 1024 * 1024 });
+    } catch {
+      baseSource = undefined; // the PR adds this file
+    }
+    return { path, baseSource, changedLines };
+  });
+}
+
 function gh(args: string[]): string {
   try {
     return execFileSync("gh", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -399,10 +513,10 @@ function main(): void {
   }
 
   // ⑤ A PR that edits the workflows cannot be certified against check names those workflows define.
-  const touchesCi = meta.files.filter((f) => f.path.startsWith(".github/workflows/"));
-  if (touchesCi.length > 0) {
-    console.error(`\n★VOID: この PR は .github/workflows/ を変更している（${touchesCi.map((f) => f.path).join(", ")}）。`);
-    console.error("  ★REQUIRED の名前は、この PR 自身が定義している。∴ この gate は自分を certify できない。");
+  const ciVoid = ciVoidReason(collectWorkflowChanges(pr, meta), REQUIRED, requiredDefiners());
+  if (ciVoid) {
+    console.error(`\n★VOID: ${ciVoid}`);
+    console.error("  ★REQUIRED の名前は、この PR 自身が定義しうる。∴ この gate は自分を certify できない。");
     console.error("  → 次の一歩: 変更後の job 名を目で確認し、人が判断して merge する。");
     process.exitCode = 2;
     return;
