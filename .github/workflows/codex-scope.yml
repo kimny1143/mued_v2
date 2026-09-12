@@ -28,24 +28,23 @@ jobs:
           ref: ${{ github.event.pull_request.base.ref }}
           persist-credentials: false
 
-      # ★Pin node — and pin it LOW on purpose. Measured across 5 local versions (2026-09-12),
-      # independently reproducing CCO's matrix:
-      #     v18.20.4  process.getBuiltinModule undefined → dies at check-codex-scope.ts:6
-      #     v20.19.1 / 22.7 / 22.11 / 22.15 → RUNS (reaches its own GITHUB_EVENT_PATH error)
-      #     any of the above + one `const x: number` → SyntaxError
+      # ★Pin node so this step does not silently inherit the runner image's version. ★The floor is
+      # `process.getBuiltinModule` (checker :6-:7), added in 20.16 / 22.3 — NOT native type stripping.
+      # Measured across five runtimes 2026-09-12: v18.20.4 has no getBuiltinModule and dies at :6;
+      # 20.19.1 / 22.7 / 22.11 / 22.15 all run the checker fine.
       #
-      # ★The real floor is `process.getBuiltinModule` (20.16 / 22.3), NOT native type stripping —
-      # the checker's own docstring says it "intentionally uses JavaScript syntax that is also valid
-      # TypeScript" so it runs with no install. ★I previously claimed this needed >=22.18 and that
-      # NODE_VERSION '20' would break it. Both were wrong; '20' runs it fine.
-      #
-      # ★Why '20' rather than '22': it keeps that docstring HONEST. Type stripping is on by default
-      # from 22.18, so on 22.x a stray type annotation is silently stripped and the file quietly stops
-      # being plain JS. On 20 the same line fails loudly in CI. ★A high pin would hide the erosion;
-      # a low pin makes the file's own declared constraint machine-enforced.
+      # ★'22' and not '20', after two reversals worth recording:
+      #   - I first claimed NODE_VERSION '20' would break this. ★False — it runs.
+      #   - I then pinned low on purpose, to make a stray type annotation fail loudly (on >=22.18 it
+      #     is silently stripped instead). ★That property is real, but Node 20 reached EOL 2026-04-30,
+      #     and pinning an unsupported runtime to buy a lint-like guarantee is the wrong trade.
+      # ★So the guarantee is asserted directly in tests/unit/codex-scope.test.ts ("the CI entry point
+      # stays plain JavaScript"), which is runtime-independent and carries its own positive control.
+      # ★'20' is also not uniform: v20.10.0 predates getBuiltinModule, so the safety came from
+      # setup-node resolving '20' to the latest 20.x, never from the spec itself (CCO).
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Compare PR files with the declared paths
         env:
