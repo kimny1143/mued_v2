@@ -1,0 +1,63 @@
+name: Codex scope
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  verify-declared-paths:
+    name: Verify declared paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # ★Run the checker from the BASE BRANCH, never from the PR. A PR must not be able to weaken the
+      # checker and then have that weakened checker approve its own diff.
+      #
+      # ★`base.ref` (the branch) and not `base.sha` (the commit the PR branched from). Both are
+      # outside the PR's control, so they are equally trustworthy — but `base.sha` goes stale: a PR
+      # branched before the checker landed resolves to a commit that does not contain it, and the job
+      # dies with a raw `Cannot find module` until someone rebases. ★Reading the branch head means the
+      # checker is always the current one and no rebase is ever required.
+      - name: Checkout trusted checker
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          persist-credentials: false
+
+      # ★Pin node so this step does not silently inherit the runner image's version. ★The floor is
+      # `process.getBuiltinModule` (checker :6-:7), added in 20.16 / 22.3 — NOT native type stripping.
+      # Measured across five runtimes 2026-09-12: v18.20.4 has no getBuiltinModule and dies at :6;
+      # 20.19.1 / 22.7 / 22.11 / 22.15 all run the checker fine.
+      #
+      # ★'22' and not '20', after two reversals worth recording:
+      #   - I first claimed NODE_VERSION '20' would break this. ★False — it runs.
+      #   - I then pinned low on purpose, to make a stray type annotation fail loudly (on >=22.18 it
+      #     is silently stripped instead). ★That property is real, but Node 20 reached EOL 2026-04-30,
+      #     and pinning an unsupported runtime to buy a lint-like guarantee is the wrong trade.
+      # ★So the guarantee is asserted directly in tests/unit/codex-scope.test.ts ("the CI entry point
+      # stays plain JavaScript"), which is runtime-independent and carries its own positive control.
+      # ★'20' is also not uniform: v20.10.0 predates getBuiltinModule, so the safety came from
+      # setup-node resolving '20' to the latest 20.x, never from the spec itself (CCO).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Compare PR files with the declared paths
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # ★Bootstrap only. The checker cannot exist on the base branch in the PR that introduces it,
+          # so without this the guard could never be merged. ★This branch closes permanently the moment
+          # this PR lands: from then on the base branch always has the checker.
+          # ★Residual, stated rather than hidden: a PR targeting some OTHER base branch that lacks the
+          # checker also lands here and is not verified. Acceptable while every PR targets main; if
+          # that changes, assert the base branch instead of exiting 0.
+          if [ ! -f scripts/ci/check-codex-scope.ts ]; then
+            echo "::notice::checker is absent from base branch '${{ github.event.pull_request.base.ref }}' — nothing to verify against. This is expected only for the PR that introduces the checker."
+            exit 0
+          fi
+          node scripts/ci/check-codex-scope.ts
