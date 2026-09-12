@@ -28,23 +28,24 @@ jobs:
           ref: ${{ github.event.pull_request.base.ref }}
           persist-credentials: false
 
-      # ★Pin node, because this step runs a bare `.ts` through `node` and that only works on some
-      # versions. ★Measured on v22.15 (2026-09-12), correcting an earlier overstatement of mine:
-      #     checker as-is (.ts)        → RUNS (reaches its own "GITHUB_EVENT_PATH is required")
-      #     same file + `const x: number` → SyntaxError: Missing initializer
-      # ★So it works today NOT because node strips types here, but because the file contains no
-      # TypeScript syntax at all — it is JSDoc-typed JS wearing a .ts name. Native stripping is
-      # default from 22.18; below that, annotation-free is the only thing that runs.
+      # ★Pin node — and pin it LOW on purpose. Measured across 5 local versions (2026-09-12),
+      # independently reproducing CCO's matrix:
+      #     v18.20.4  process.getBuiltinModule undefined → dies at check-codex-scope.ts:6
+      #     v20.19.1 / 22.7 / 22.11 / 22.15 → RUNS (reaches its own GITHUB_EVENT_PATH error)
+      #     any of the above + one `const x: number` → SyntaxError
       #
-      # ★What the pin actually buys, stated narrowly:
-      #   (1) the moment anyone adds a real type annotation, `tsc` stays green while `node` breaks —
-      #       the pin keeps that from being a surprise in CI;
-      #   (2) without it the job silently inherits the runner image's node (22.23.2 today).
-      # ★Do NOT set this from the repo's NODE_VERSION ('20'): that is an older major whose handling of
-      # a `.ts` entrypoint I have NOT measured, so "align it with the repo" is not a safe edit here.
+      # ★The real floor is `process.getBuiltinModule` (20.16 / 22.3), NOT native type stripping —
+      # the checker's own docstring says it "intentionally uses JavaScript syntax that is also valid
+      # TypeScript" so it runs with no install. ★I previously claimed this needed >=22.18 and that
+      # NODE_VERSION '20' would break it. Both were wrong; '20' runs it fine.
+      #
+      # ★Why '20' rather than '22': it keeps that docstring HONEST. Type stripping is on by default
+      # from 22.18, so on 22.x a stray type annotation is silently stripped and the file quietly stops
+      # being plain JS. On 20 the same line fails loudly in CI. ★A high pin would hide the erosion;
+      # a low pin makes the file's own declared constraint machine-enforced.
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
 
       - name: Compare PR files with the declared paths
         env:
