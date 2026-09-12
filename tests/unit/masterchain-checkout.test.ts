@@ -104,6 +104,27 @@ describe("★tags — a purchase is not an opt-in", () => {
   });
 });
 
+describe("★loadCheckoutScript always settles", () => {
+  it("★★resolves when the script element already finished loading (does not hang)", async () => {
+    // ★CCO, review of #1025: a script that has already fired `load` will never fire it again, so
+    //   subscribing to it leaves the promise pending forever. ★Reachable after a first load that
+    //   returned 200 with the wrong body (no builder) followed by a client-side remount.
+    // ★The race is the assertion: without the fix this resolves to "hung" instead of a boolean.
+    const m = await load(CONFIGURED);
+    const el = document.createElement("script");
+    el.id = "fsc-api";
+    el.dataset.fsSettled = "1";
+    document.head.appendChild(el);
+
+    const result = await Promise.race([
+      m.loadCheckoutScript(),
+      new Promise((r) => setTimeout(() => r("hung"), 150)),
+    ]);
+    expect(result).not.toBe("hung");
+    expect(result).toBe(false); // settled, and no builder was exposed
+  });
+});
+
 describe("★openCheckout never throws its way out", () => {
   it("★returns false when the builder is absent rather than blowing up the click handler", async () => {
     const m = await load(CONFIGURED);

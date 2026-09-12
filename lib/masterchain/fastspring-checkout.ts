@@ -149,25 +149,36 @@ export function loadCheckoutScript(): Promise<boolean> {
   if (typeof document === "undefined") return Promise.resolve(false);
   if (builder()) return Promise.resolve(true);
 
-  const existing = document.getElementById(SCRIPT_ID);
-  if (existing) {
-    return new Promise((resolve) => {
-      existing.addEventListener("load", () => resolve(builder() !== undefined), { once: true });
-      existing.addEventListener("error", () => resolve(false), { once: true });
-    });
-  }
+  const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
 
+  // ★A script element that has ALREADY finished will never fire `load` or `error` again, so
+  //   subscribing to it would leave the promise pending forever (CCO, review of #1025). ★Reachable:
+  //   first load returns 200 with the wrong body → no builder → a client-side remount subscribes to
+  //   the settled element. ★The failure is fail-closed (the button stays disabled) but it is still a
+  //   promise that never settles, so it is recorded in state rather than left to the event.
+  if (existing?.dataset.fsSettled === "1") return Promise.resolve(builder() !== undefined);
+
+  const el = existing ?? document.createElement("script");
   return new Promise((resolve) => {
-    const el = document.createElement("script");
-    el.id = SCRIPT_ID;
-    el.src = BUILDER_SRC;
-    el.async = true;
-    el.setAttribute("data-storefront", STOREFRONT);
-    // ★`load` does not mean the builder exists — a 200 that returns the wrong body would still fire
-    //   it. Check for the object rather than trusting the event.
-    el.addEventListener("load", () => resolve(builder() !== undefined), { once: true });
-    el.addEventListener("error", () => resolve(false), { once: true });
-    document.head.appendChild(el);
+    const settle = () => {
+      el.dataset.fsSettled = "1";
+      // ★`load` does not mean the builder exists — a 200 that returns the wrong body still fires it.
+      //   Check for the object rather than trusting the event.
+      resolve(builder() !== undefined);
+    };
+    el.addEventListener("load", settle, { once: true });
+    el.addEventListener("error", () => {
+      el.dataset.fsSettled = "1";
+      resolve(false);
+    }, { once: true });
+
+    if (!existing) {
+      el.id = SCRIPT_ID;
+      el.src = BUILDER_SRC;
+      el.async = true;
+      el.setAttribute("data-storefront", STOREFRONT);
+      document.head.appendChild(el);
+    }
   });
 }
 

@@ -43,10 +43,40 @@ function tagNames(file: string): string[] {
   return [...new Set([...src.matchAll(/\btags\.([A-Za-z_]\w*)/g)].map((m) => m[1]))].sort();
 }
 
-/** ★Every source file under the given roots — an EXCLUSION-based population, not a list of names. */
+/**
+ * ★Every shipped source file, taken by EXCLUSION rather than by a list of roots.
+ *
+ * ★This is the second time this guard's population has been wrong, one level apart:
+ *   · the old guard listed two FILENAMES — a wrapper anywhere else went undetected;
+ *   · this guard's first version listed three DIRECTORIES (lib/components/app) — measured 2026-09-13
+ *     by CCO: `hooks/` (13 files, 11 of them `use client`) and `workers/` sit outside it, and
+ *     `hooks/` is the first place anyone would put a `useCheckout()`.
+ *
+ * ★An inclusion list fails SILENT: a directory added tomorrow is unscanned by default. An exclusion
+ * list fails SAFE: it is scanned unless someone deliberately exempts it. ★That asymmetry is the whole
+ * reason this is written the way it is — the guard exists for a second checkout that does not exist
+ * yet, so it must cover the places it has not been put yet.
+ */
+const NOT_SHIPPED = new Set([
+  "node_modules",
+  ".next",
+  ".git",
+  "coverage",
+  "dist",
+  "build",
+  // ★Not shipped to a browser, so a marker here cannot become a live second checkout path. ★`tests`
+  //   in particular MUST be exempt: this very file names the markers, and scanning it would make the
+  //   guard trip on itself.
+  "tests",
+  "e2e",
+  "scripts",
+  "docs",
+  "apps",
+]);
+
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
-    if (entry === "node_modules" || entry === ".next" || entry.startsWith(".")) continue;
+    if (NOT_SHIPPED.has(entry) || entry.startsWith(".")) continue;
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) walk(full, out);
     else if (/\.(ts|tsx)$/.test(entry)) out.push(full);
@@ -82,7 +112,7 @@ describe("FastSpring custom-tag contract", () => {
   it("★★the integration has exactly one origin — no second, unattributed checkout path", () => {
     // ★Replaces the old "the send side does not exist" guard, whose population was two filenames and
     //   which this PR would otherwise have silenced rather than tripped.
-    const files = [...walk("lib"), ...walk("components"), ...walk("app")];
+    const files = walk(".");
     // ★Positive control: the walk found a real tree, not an empty one.
     expect(files.length).toBeGreaterThan(100);
 
