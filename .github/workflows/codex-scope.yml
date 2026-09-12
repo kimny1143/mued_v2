@@ -1,0 +1,28 @@
+name: Codex scope
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  verify-declared-paths:
+    name: Verify declared paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Run the checker from the base commit. A PR must not be able to weaken the checker and use
+      # that modified checker to approve its own diff.
+      - name: Checkout trusted checker
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: Compare PR files with the declared paths
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/check-codex-scope.ts
