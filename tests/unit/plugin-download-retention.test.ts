@@ -3,7 +3,7 @@
  * deployable history, the file behind it must remain in public/downloads/.  Do not replace this
  * with a snapshot of the directory — a snapshot can be edited alongside a deleted artifact.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { relative, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import * as ts from "typescript";
@@ -101,7 +101,18 @@ function historicallyDeliveredUrls(): UrlCollection {
       "--format=",
       "--name-only",
       "-G",
-      "const [A-Z][A-Z0-9_]*_DOWNLOAD_URL",
+      // ★`[[:space:]]+` rather than one literal space. Measured against the narrow form:
+      //     `const X_DOWNLOAD_URL`   old 1 / new 1
+      //     `const  X_DOWNLOAD_URL`  old 0 / new 1   ← closed
+      //     `const\tX_DOWNLOAD_URL`  old 0 / new 1   ← closed
+      //     `const\nX_DOWNLOAD_URL`  old 0 / new 0   ← ★STILL OPEN, and structurally so:
+      //   git's pickaxe matches within a diff line, so no single-line regex can span the
+      //   newline. ★Closing it would mean dropping -G discovery and enumerating candidate
+      //   config paths across history instead — not worth it for a form no formatter emits
+      //   (this repo has none) and that nobody writes by hand.
+      // ★Why any of this is worth widening: the miss is SILENT. A missed file drops its URLs
+      //   from the population, and the six existing URLs keep `history.urls.size > 0` green.
+      "const[[:space:]]+[A-Z][A-Z0-9_]*_DOWNLOAD_URL",
       "--",
     ]),
   ).filter((path) => /\.[cm]?[jt]sx?$/.test(path));
@@ -156,7 +167,15 @@ function invalidDownloadUrls(urls: Iterable<string>): string[] {
 
 function isTracked(localPath: string): boolean {
   const repositoryPath = relative(REPOSITORY_ROOT, localPath);
-  return existsSync(localPath) && git(["ls-files", "--error-unmatch", "--", repositoryPath], true) !== null;
+  // ★`isFile()` is load-bearing: `git ls-files --error-unmatch -- <dir>` SUCCEEDS for a tracked
+  //   directory (measured: `public/downloads` → rc=0, 8 entries), and `existsSync` is true for it
+  //   too. Without this, a delivery URL that ever ended in `/downloads/` would resolve to the
+  //   directory and be reported as retained. ★Negative control: a path that does not exist → rc=1.
+  return (
+    existsSync(localPath) &&
+    statSync(localPath).isFile() &&
+    git(["ls-files", "--error-unmatch", "--", repositoryPath], true) !== null
+  );
 }
 
 function missingArtifacts(urls: Iterable<string>): string[] {
