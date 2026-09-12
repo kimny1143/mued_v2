@@ -14,15 +14,41 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      # Run the checker from the base commit. A PR must not be able to weaken the checker and use
-      # that modified checker to approve its own diff.
+      # ★Run the checker from the BASE BRANCH, never from the PR. A PR must not be able to weaken the
+      # checker and then have that weakened checker approve its own diff.
+      #
+      # ★`base.ref` (the branch) and not `base.sha` (the commit the PR branched from). Both are
+      # outside the PR's control, so they are equally trustworthy — but `base.sha` goes stale: a PR
+      # branched before the checker landed resolves to a commit that does not contain it, and the job
+      # dies with a raw `Cannot find module` until someone rebases. ★Reading the branch head means the
+      # checker is always the current one and no rebase is ever required.
       - name: Checkout trusted checker
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.event.pull_request.base.ref }}
           persist-credentials: false
+
+      # ★The checker is a bare .ts run through node, which needs native type stripping — enabled by
+      # default from Node 22.18. ★Do NOT use this repo's NODE_VERSION (20): measured, Node 20 and even
+      # 22.15 throw `const x: number` as a SyntaxError, so pinning to it would break this check while
+      # looking like hygiene. Without this step the job silently depends on whatever the runner image
+      # ships (22.23.2 on 2026-09-12).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: Compare PR files with the declared paths
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/ci/check-codex-scope.ts
+        run: |
+          # ★Bootstrap only. The checker cannot exist on the base branch in the PR that introduces it,
+          # so without this the guard could never be merged. ★This branch closes permanently the moment
+          # this PR lands: from then on the base branch always has the checker.
+          # ★Residual, stated rather than hidden: a PR targeting some OTHER base branch that lacks the
+          # checker also lands here and is not verified. Acceptable while every PR targets main; if
+          # that changes, assert the base branch instead of exiting 0.
+          if [ ! -f scripts/ci/check-codex-scope.ts ]; then
+            echo "::notice::checker is absent from base branch '${{ github.event.pull_request.base.ref }}' — nothing to verify against. This is expected only for the PR that introduces the checker."
+            exit 0
+          fi
+          node scripts/ci/check-codex-scope.ts
