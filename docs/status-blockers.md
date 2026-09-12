@@ -100,6 +100,43 @@ done
 
 ## 2026-09-10T11:37:37+09:00 に追記 — memory の file 参照 全数スイープ
 
+### (0s) 進捗 — 2026-09-12
+
+★**索引なし ★23 → ★15**（2026-09-12T14:54:15+09:00 実測）。★内訳:
+
+| 回 | 何をしたか | 索引なし |
+|---|---|---:|
+| 1 | ★到達経路ゼロの2件に frontmatter + 索引（`muedlobe-game-tests` / `remotion-game-animations`） | 25 → 23 |
+| 2 | ★durable な5件を索引（下記） | 23 → 18 |
+| 3 | ★「解決済み」記録3本を★畳んで1本に集約 | 18 → ★**15** |
+
+★**2回目に索引した5件**（★とくに1件目は索引に無いのが危険だった）:
+- ★**`reference-vercel-preview-shares-prod`** — ★**preview deploy は prod Neon を読み書きする／RoEx key も prod。「preview だから安全」は偽**
+- `feedback-hook-matcher-required` — matcher 無しの PostToolUse は全ツールで発火し、SendMessage が3回ブロックされた
+- `feedback-plan-approval-flow` ／ `feedback-profile-collection-ux` ／ `user-communication-preferences`
+
+★**索引しなかった2件と理由**: `feedback-no-self-termination` / `feedback-continuous-operation-vocabulary` ＝ ★**CLAUDE.md 共通block の「自己終了禁止」「dormant自己宣言禁止」と同内容** ∴ ★**索引に足すのでなく畳む候補**（★repo が既に記録しているものを memory に持たない）。
+
+★★**3回目＝「解決済み」記録3本を畳んだ。★畳む根拠を実測で取った。**
+
+★3本（`dial-analyzer-take-switch-bug` / `dial-naming-final-vs-mixcheck` / `dial-preview-flow-improvement`）は ★**2026-04-27 に「直っていることを確認した」と書き、★根拠に行番号を引いていた。★4.5ヶ月後に測ったら全部ずれていた**:
+
+```
+★use-audio-analyzer.ts          … memo 55  → ★実際 56（1 ずれ）
+★lib/ai/prompts/dial.ts         … memo 773 → ★実際 789（16 ずれ）
+★★app/dial/session/[id]/page.tsx … memo 307 の `sublabel:` が ★★0 件
+   ＝ ★その code は refactor で消えた（★表示は `app/api/dial/chat/route.ts` へ移り、
+      ★「Final Mix」「Mix Check」を区別するという ★結論は今も真）
+★陽性control … 3 file とも ★実在する（★不在で 0 になったのではない）
+```
+
+★★**∴ 「確認した」の記録は ★根拠の側から腐る。★結論は真のまま、★根拠が偽になる** ——★**そして読む側は根拠を辿るので行き止まりに着く。**
+
+★**durable な1点だけ残した** → `gotcha-webaudio-source-once-per-element`（★`createMediaElementSource()` は element × AudioContext ごとに1回・★Take 切替は graph を組み直す）。★**行番号でなく★壊してはいけない制約を書いた**（★制約は refactor で動かない）。
+★**元の3本は session scratchpad へ退避**（★repo には入れない ——★ずれた行番号を repo に持ち込まないため）。
+
+★**残 15 件**は引き続き1件ずつ。★**一括で索引を生やさない。**
+
 ### (0s)
 
 ★★**(0s) memory の索引被覆 = ★23 / 128 が MEMORY.md に索引行を持たない**（2026-09-11T16:33:56+09:00 実測）。
