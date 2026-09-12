@@ -14,6 +14,12 @@
 //
 // STAGED behind MUEDSP_LIVE (page.tsx robots). Saturation-block copy reuses the LIVE muedsat.*
 // namespace; suite + masterchain copy is muedsp.* (content課 canonical).
+import { useEffect, useState } from "react";
+import {
+  MASTERCHAIN_CHECKOUT_ENABLED,
+  loadCheckoutScript,
+  openCheckout,
+} from "@/lib/masterchain/fastspring-checkout";
 import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -57,6 +63,22 @@ function SignupForm({ plugin = "muedsat" as PluginKey } = {}) {
 }
 
 export function MuedspLandingContent() {
+  // ★The button goes live only after the builder script is actually usable — not merely because the
+  //   env is set. `loadCheckoutScript()` resolves false when unconfigured, when the script 404s, and
+  //   when it loads but exposes no builder. ★With the env unset this effect returns immediately and
+  //   appends nothing to the document.
+  const [checkoutEnabled, setCheckoutEnabled] = useState(false);
+  useEffect(() => {
+    if (!MASTERCHAIN_CHECKOUT_ENABLED) return;
+    let alive = true;
+    void loadCheckoutScript().then((ok) => {
+      if (alive) setCheckoutEnabled(ok);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const locale = useLocale();
   const isJa = locale === "ja";
 
@@ -182,41 +204,38 @@ export function MuedspLandingContent() {
               {/* Price statement lives entirely in copy (priceNote) — single source, no hardcoded
                   number (keeps price/no-discount wording under content課's control). */}
               <p className="max-w-sm text-[15px] leading-relaxed text-white/70">{tmc("priceNote")}</p>
-              {/* Valhalla-type structural Buy slot — present but inert until launch (FastSpring MoR).
+              {/* Valhalla-type structural Buy slot — LIVE only when the storefront is configured.
 
-                  ★★WHOEVER WIRES THE POPUP: PASS THESE TAGS, OR THE LAUNCH IS UNMEASURABLE.
+                  ★★THE TAG CONTRACT HAS MOVED INTO CODE (2026-09-13). It is now
+                  `CHECKOUT_TAG_NAMES` in lib/masterchain/fastspring-checkout.ts, pinned to the parser
+                  by tests/unit/fastspring-tag-contract.test.ts. ★The prose list that used to sit here
+                  was correct but untypeable; the guard beside it said "the day a popup is wired … the
+                  contract should move into code", and this is that day.
 
-                  ★The receiving half already exists and is waiting for them —
-                  `parseFastspringOrderCompleted` (lib/masterchain/fastspring-webhook.ts) reads the
-                  order's custom tags and stores them on `masterchain_purchases.firstTouch`. ★Nothing
-                  else supplies them: FastSpring only carries what the popup session was given, so a
-                  tag not set HERE is gone by the time the webhook runs, and the order is
-                  unattributable ★forever — an order cannot be re-bought with better instrumentation.
-
-                    tags.gaClientId       ← GA4 client id; without it the purchase event is skipped
-                    tags.utmSource
-                    tags.utmMedium
-                    tags.utmCampaign      ← this is what says "the launch email sold it"
-                    tags.utmContent
-                    tags.utmTerm
-                    tags.marketingConsent ← gates the buyers-audience add; a purchase is not an opt-in
-
-                  ★WHY THIS NOTE IS HERE AND NOT IN A DOC (insight measured 2026-09-10, via conductor):
-                  the send side does not exist yet — this button is `disabled`, there is no storefront
-                  id, no product path, no popup script. ★So the gap cannot be closed by code today and
-                  cannot be caught by a test either: there is no path to exercise. ★What it CAN have
-                  is the contract sitting where the person doing the wiring will already be looking.
-
-                  ★The list above is kept honest by tests/unit/fastspring-tag-contract.test.ts — add a
-                  tag to the parser without adding it here and that test goes red. */}
-              <button
-                type="button"
-                disabled
-                aria-disabled="true"
-                className="shrink-0 cursor-not-allowed rounded-[var(--radius-lg)] border border-white/15 bg-white/[0.04] px-5 py-3 font-semibold text-white/40"
-              >
-                {tmc("buyLabel")}
-              </button>
+                  ★WHY THE BUTTON MAY STILL BE INERT: `MASTERCHAIN_CHECKOUT_ENABLED` needs BOTH
+                  NEXT_PUBLIC_FASTSPRING_STOREFRONT and NEXT_PUBLIC_FASTSPRING_PRODUCT_PATH. Neither
+                  is set yet — the storefront is a FastSpring account setting and the SKU / product
+                  path is ★still a kimny decision (docs/paid-line/c1-…spec.md:25, :101). ★With either
+                  missing the button renders exactly as before: disabled, same label, no script
+                  loaded. ★Nothing about this change is visible to a customer until those are set. */}
+              {checkoutEnabled ? (
+                <button
+                  type="button"
+                  onClick={() => openCheckout()}
+                  className="shrink-0 rounded-[var(--radius-lg)] border border-[var(--accent)]/40 bg-[var(--accent)] px-5 py-3 font-semibold text-black transition hover:brightness-110"
+                >
+                  {tmc("buyLabel")}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  className="shrink-0 cursor-not-allowed rounded-[var(--radius-lg)] border border-white/15 bg-white/[0.04] px-5 py-3 font-semibold text-white/40"
+                >
+                  {tmc("buyLabel")}
+                </button>
+              )}
             </div>
             <a
               href="#get"
