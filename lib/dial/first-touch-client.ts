@@ -25,8 +25,14 @@ const UTM_PARAM_MAP: Array<[string, keyof FirstTouch]> = [
   ['utm_term', 'utmTerm'],
 ];
 
-/** GA4 client_id from the _ga cookie (format GA1.1.{id}.{ts} → "{id}.{ts}"). */
-function readGaClientId(): string | undefined {
+/**
+ * GA4 client_id from the _ga cookie (format GA1.1.{id}.{ts} → "{id}.{ts}").
+ *
+ * ★Exported so the masterchain checkout can reuse it rather than re-deriving the cookie format.
+ * The `_ga` layout is a fact about GA4, not about MUEDial — a second copy would be a second place
+ * to be wrong, and the two copies could not disagree loudly (both would just return undefined).
+ */
+export function readGaClientId(): string | undefined {
   try {
     const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/);
     if (!match) return undefined;
