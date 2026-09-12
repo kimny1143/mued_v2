@@ -136,7 +136,13 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     steps:
+      # ★fetch-depth: 0 —— plugin-download-retention.test.ts が母集団を git 履歴から導く
+      #   （`*_DOWNLOAD_URL` が過去に持った全ての値）。★既定の shallow (depth=1) では
+      #   その履歴が存在しないので、★配布物が全件そろっていても必ず RED になる。
+      # ★この job だけ。validate / build は履歴を読まないので shallow のまま。
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
