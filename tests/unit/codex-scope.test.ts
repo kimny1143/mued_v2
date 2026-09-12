@@ -120,7 +120,16 @@ describe("★the CI entry point stays plain JavaScript", () => {
   //   it costs nothing and does not depend on any runtime version.
   const SOURCE = "scripts/ci/check-codex-scope.ts";
 
-  /** `node --check` parses without executing. Renamed to .cjs so it is parsed as the CommonJS it claims to be. */
+  // ★`--check` IS LOAD-BEARING: it parses without executing, and the PARSE path does not strip types.
+  //   Measured on v23.9.0 (stripping on by default): `--check` on an annotated file → rc=1, while
+  //   RUNNING the same file → rc=0, stripped silently. ★So if someone "strengthens" this by executing
+  //   the file instead of checking it, the positive control below dies quietly on >=22.18.
+  //   (CCO corrected my original reasoning here: I credited the .cjs rename, which is not what makes
+  //   this work today.)
+  // ★The .cjs rename stays as forward insurance: stripping is gated on the extension (.ts/.mts/.cts),
+  //   so .cjs remains outside that gate even if `--check` ever starts stripping.
+  // ★Verified across five runtimes, both sides of the 22.18 boundary — 18.20.4 / 20.10.0 / 20.19.1 /
+  //   22.15.0 (stripping off) and 23.9.0 (stripping on): real file rc=0, annotated rc=1 in all five.
   const parses = (contents: string): boolean => {
     const file = join(mkdtempSync(join(tmpdir(), "codex-scope-")), "probe.cjs");
     writeFileSync(file, contents);
