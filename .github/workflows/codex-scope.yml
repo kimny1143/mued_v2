@@ -28,11 +28,20 @@ jobs:
           ref: ${{ github.event.pull_request.base.ref }}
           persist-credentials: false
 
-      # ★The checker is a bare .ts run through node, which needs native type stripping — enabled by
-      # default from Node 22.18. ★Do NOT use this repo's NODE_VERSION (20): measured, Node 20 and even
-      # 22.15 throw `const x: number` as a SyntaxError, so pinning to it would break this check while
-      # looking like hygiene. Without this step the job silently depends on whatever the runner image
-      # ships (22.23.2 on 2026-09-12).
+      # ★Pin node, because this step runs a bare `.ts` through `node` and that only works on some
+      # versions. ★Measured on v22.15 (2026-09-12), correcting an earlier overstatement of mine:
+      #     checker as-is (.ts)        → RUNS (reaches its own "GITHUB_EVENT_PATH is required")
+      #     same file + `const x: number` → SyntaxError: Missing initializer
+      # ★So it works today NOT because node strips types here, but because the file contains no
+      # TypeScript syntax at all — it is JSDoc-typed JS wearing a .ts name. Native stripping is
+      # default from 22.18; below that, annotation-free is the only thing that runs.
+      #
+      # ★What the pin actually buys, stated narrowly:
+      #   (1) the moment anyone adds a real type annotation, `tsc` stays green while `node` breaks —
+      #       the pin keeps that from being a surprise in CI;
+      #   (2) without it the job silently inherits the runner image's node (22.23.2 today).
+      # ★Do NOT set this from the repo's NODE_VERSION ('20'): that is an older major whose handling of
+      # a `.ts` entrypoint I have NOT measured, so "align it with the repo" is not a safe edit here.
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
