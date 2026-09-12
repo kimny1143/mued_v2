@@ -100,6 +100,37 @@ done
 
 ## 2026-09-10T11:37:37+09:00 に追記 — memory の file 参照 全数スイープ
 
+### (0s) 進捗 — 2026-09-12（第2便）
+
+★**索引なし ★15 → ★13**。★**CLAUDE.md 共通block と重複する2件を畳んだ** —— `feedback-no-self-termination` / `feedback-continuous-operation-vocabulary`。
+
+★**単なる重複ではなく ★memory 側の方が★粗かった**（★実測）:
+```
+★CLAUDE.md … 「★task区切り報告（「PR #X merged」）はOK、★session終了宣言と区別」
+              「★『stand-by + observation継続』表現はOK、★self-promoted dormant はNG」
+★★memory   … ★この区別を持たない（「終了表現を避ける」だけ）
+★★∴ 粗い方が recall されると ★正当な区切り報告まで抑制しうる ＝ ★残す方が害
+```
+
+★★**併せて「型を status.md の『常設』行に置いていた」問題を直した。**
+
+★**機序**: ★`status.md` は更新のたびに前へ足されるので、★**古い記述は毎回 末尾へ押し出される** ∴ ★**「常設」と自分で書いても、機構は常設を保証しない**（★注入は各欄 6,000 B で打ち切り）。
+
+★**常設行を実測したら、★正本が memory に無いものが2件 在った**:
+
+| 常設行 | memory の正本 | 対応 |
+|---|---|---|
+| 測る時の3軸 liveness/aim/fidelity | ★在り | ★既にポインタ表記だった |
+| (a) collector は `workflow_dispatch` 先行 | ★在り | — |
+| (b) HTTP 200 が証拠にならない | ★在り | — |
+| ★**(c) flip の機構は製品ごとに違う** | ★**0件** | ★新規 `reference-live-flag-gates-different-surfaces-per-product` |
+| ★**Tier の根拠は parse** | ★**0件** | ★新規 `feedback-tier-is-decided-by-parse-not-by-counting` |
+| ★**外部コマンドは実物を1回 撃つ** | ★**0件** | ★新規 `feedback-the-check-must-not-share-an-origin-with-the-checked` |
+
+★**3件とも memory へ移し、★status.md 側は ★正本名を指すだけに落とした**（★型は memory・現在形は status.md）。
+
+★**削除後の監査**: ★畳んだ5件への dangling 参照 ★**0件** ／ ★MEMORY.md の全リンク ★**112件すべて実在**（★(0r) と同種の負債を新たに作っていないこと）。
+
 ### (0s) 進捗 — 2026-09-12
 
 ★**索引なし ★23 → ★15**（2026-09-12T14:54:15+09:00 実測）。★内訳:
