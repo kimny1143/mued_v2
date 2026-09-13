@@ -313,7 +313,7 @@ export default function SettingsPage() {
                   <Button
                     onClick={handleSave}
                     disabled={isSaving || !hasChanges || isOverLimit || !hooEnabled}
-                    className="bg-accent text-[var(--ink-0)] hover:bg-[#ffc76b] text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="bg-accent text-[var(--ink-0)] hover:bg-[#ffc76b] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {isSaving ? (
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />

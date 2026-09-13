@@ -107,9 +107,12 @@
   border-top: 1px solid var(--border-default);
   color: var(--text-secondary);
 }
-:where(a, button, input, select, textarea, summary):focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
+/* Base layer: a default ring, but utilities (outline-none, focus-visible:*) still win. */
+@layer base {
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
 }
 @media (max-width: 767px) {
   .brand-header-inner {
