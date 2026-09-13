@@ -30,32 +30,36 @@ export const MUEDRIVE_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Served from mued.jp static
 // hosting (public/downloads/). NOT a secret (public CDN URL).
-// Package: MUEDrive 0.1.0-alpha — first release. Three-position CHARACTER (tube / warm / console) +
-//   DRIVE / FOCUS / MIX / OUTPUT and a true BYPASS. THREE formats (VST3 · AU · AAX (Pro Tools)),
-//   macOS Universal, notarized + stapled (Developer ID Installer: glasswerks inc. F529L4WT3V).
-//   sha256: 77a13bd14bb3e00effe7156d4ffc0d06f98b7c98e174064931801d0c51d08cdc
-//   size:   3,584,446 B
-//   Verify after any swap: shasum -a 256 public/downloads/MUEDrive-0.1.0-alpha-installer.pkg
+// Package: MUEDrive 0.1.2 — dsp's signed re-release (dsp #731); first shipped as 0.1.0-alpha.
+//   ★What changed functionally vs 0.1.0 is dsp's record, NOT re-measured here.
+//   Three-position CHARACTER (tube / warm / console) + DRIVE / FOCUS / MIX / OUTPUT and a true BYPASS.
+//   THREE formats (VST3 · AU · AAX (Pro Tools)), macOS Universal, notarized + stapled
+//   (Developer ID Installer: glasswerks inc. F529L4WT3V).
+//   sha256: cf5a9a7b1a6ea984091b1f7329ce54b4c0229ef3ec259bfdc16559362b51e5b3
+//   size:   3,584,930 B
+//   ★Verified 2026-09-13 before shipping (independent inspector + 2 refuters): binaries are MUEDrive,
+//   every bundle 0.1.2, no format dropped vs 0.1.0-alpha, notarized/stapled, AAX dsig names MUEDrive.
+//   ★Provenance note: the 0.1.0-alpha this replaces (77a13bd1…) is NOT byte-identical to dsp's
+//   dist/MUEDrive-0.1.0-alpha (31715d…) — where the previously live build came from is unresolved.
+//   Verify after any swap: shasum -a 256 public/downloads/MUEDrive-0.1.2-installer.pkg
 //
 // No 0.1.0-alias problem here (unlike MUEDsat/MUEDlim): MUEDrive has never been emailed under an
 // older filename, so this URL is the only one that has ever existed for it.
-export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-0.1.0-alpha-installer.pkg";
+export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-0.1.2-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Bumped when a new build ships. NOT a secret.
 //
-// ★This constant is deliberately NOT kept in sync with the .pkg filename. It reads plain semver while
-// MUEDRIVE_DOWNLOAD_URL still points at "MUEDrive-0.1.0-alpha-installer.pkg" — that is the intended state, not drift.
-// kimny 2026-09-03 (「版表記は alpha 外します」): a maker's "unfinished" label must not ride along with
-// a shipped product. Renaming the CURRENT file to match would strand every subscriber holding that
-// literal URL in already-sent mail (which cannot be edited) and force another byte-identical alias.
-// ★So: do NOT "fix" the mismatch by renaming the shipped file, and do NOT re-derive the on-screen
-// label from the URL (tests/unit/components/plugin-version-display.test.tsx pins both directions).
-//
-// ★The tag still retires at zero cost — on the NEXT build, not by renaming this one. Ship the next
-// one as "MUEDrive-0.1.1-installer.pkg" (no "-alpha", no alias needed: no sent mail points at that
-// version yet). What is expensive is renaming the current file; dropping the tag going forward is free.
-export const MUEDRIVE_VERSION = "0.1.0";
+// ★2026-09-13: the mismatch this block used to defend is RESOLVED, exactly as it predicted. The block said:
+//   "Ship the next one as \"MUEDrive-0.1.2-installer.pkg\" (no \"-alpha\", no alias needed: no sent mail points at
+//   that version yet)." ★0.1.2 shipped under that name, so URL and VERSION now agree without renaming
+//   any file that sent mail points at.
+// ★The rule that still holds: the OLD filenames stay on the shelf. Mail already sent quotes them and
+//   cannot be edited (see the alias history above). ★Never "tidy" public/downloads/ by deleting them.
+// ★URL and VERSION now carry the same semver, and tests/unit/plugin-version-matches-download.test.ts
+//   fails if they part again. (The on-screen label is still pinned separately by
+//   tests/unit/components/plugin-version-display.test.tsx — plain semver, never the filename.)
+export const MUEDRIVE_VERSION = "0.1.2";
 
 // Press / reviewer bypass — DESIGN ROOM ONLY (dormant until a token is set; not a public feature).
 // When non-empty, `?press=<token>` reveals MUEDRIVE_DOWNLOAD_URL directly, skipping the email gate.

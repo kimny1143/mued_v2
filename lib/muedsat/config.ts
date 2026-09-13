@@ -28,34 +28,35 @@ export const MUEDSAT_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Served from mued.jp static
 // hosting (public/downloads/, #598). NOT a secret (public CDN URL).
-// Package: MUEDsat 0.1.1-alpha — crash fix over 0.1.0 (audio unchanged). Notarized + stapled
-//   (Developer ID Installer: glasswerks inc. F529L4WT3V).
-//   sha256: b3ac87fc4a789660c398421fe64a2f5a34e78d8c2c263e28c4d3a439ad332d0c
-//   size:   3,405,698 B
-//   Verify after any swap: shasum -a 256 public/downloads/MUEDsat-0.1.1-alpha-installer.pkg
+// Package: MUEDsat 0.1.2 — dsp's signed re-release (dsp #731). ★What changed functionally vs 0.1.1 is
+//   dsp's record, NOT re-measured here; the "crash fix / audio unchanged" note belonged to 0.1.1.
+//   Notarized + stapled (Developer ID Installer: glasswerks inc. F529L4WT3V).
+//   sha256: d41d5a30e71df80723a750b036027c3388c19be33eab0343e3385384fefdb610
+//   size:   3,405,970 B
+//   ★Verified 2026-09-13 before shipping (independent inspector + 2 refuters): binaries are MUEDsat,
+//   every bundle 0.1.2, no format dropped vs 0.1.1, notarized/stapled, AAX dsig names MUEDsat.
+//   Verify after any swap: shasum -a 256 public/downloads/MUEDsat-0.1.2-installer.pkg
 //   History: 2026-07-08 unlock (sha256 c2f931f…), 2026-07-09 signed UI rebuild (c1f11fa1…, audio
 //   byte-identical, same filename/URL at 0.1.0-alpha).
 //
 // ★2026-08-27 (A'): the 0.1.0 FILENAME was ALSO overwritten with this same 0.1.1 payload, on purpose —
 //   same reason as MUEDlim (already-sent emails carry the literal 0.1.0 URL and cannot be edited).
 //   The old name is a compatibility alias; this constant points at the honest new name.
-export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDsat-0.1.1-alpha-installer.pkg";
+export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDsat-0.1.2-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Bumped when a new build ships. NOT a secret.
 //
-// ★This constant is deliberately NOT kept in sync with the .pkg filename. It reads plain semver while
-// MUEDSAT_DOWNLOAD_URL still points at "MUEDsat-0.1.1-alpha-installer.pkg" — that is the intended state, not drift.
-// kimny 2026-09-03 (「版表記は alpha 外します」): a maker's "unfinished" label must not ride along with
-// a shipped product. Renaming the CURRENT file to match would strand every subscriber holding that
-// literal URL in already-sent mail (which cannot be edited) and force another byte-identical alias.
-// ★So: do NOT "fix" the mismatch by renaming the shipped file, and do NOT re-derive the on-screen
-// label from the URL (tests/unit/components/plugin-version-display.test.tsx pins both directions).
-//
-// ★The tag still retires at zero cost — on the NEXT build, not by renaming this one. Ship the next
-// one as "MUEDsat-0.1.2-installer.pkg" (no "-alpha", no alias needed: no sent mail points at that
-// version yet). What is expensive is renaming the current file; dropping the tag going forward is free.
-export const MUEDSAT_VERSION = "0.1.1";
+// ★2026-09-13: the mismatch this block used to defend is RESOLVED, exactly as it predicted. The block said:
+//   "Ship the next one as \"MUEDsat-0.1.2-installer.pkg\" (no \"-alpha\", no alias needed: no sent mail points at
+//   that version yet)." ★0.1.2 shipped under that name, so URL and VERSION now agree without renaming
+//   any file that sent mail points at.
+// ★The rule that still holds: the OLD filenames stay on the shelf. Mail already sent quotes them and
+//   cannot be edited (see the alias history above). ★Never "tidy" public/downloads/ by deleting them.
+// ★URL and VERSION now carry the same semver, and tests/unit/plugin-version-matches-download.test.ts
+//   fails if they part again. (The on-screen label is still pinned separately by
+//   tests/unit/components/plugin-version-display.test.tsx — plain semver, never the filename.)
+export const MUEDSAT_VERSION = "0.1.2";
 
 // MUEDsp product page URL for the footer "where it came from" link. Empty => the link is hidden
 // (the copy's "MUEDsp product page — link TBD, kimny gate"). Set once the MUEDsp page exists.

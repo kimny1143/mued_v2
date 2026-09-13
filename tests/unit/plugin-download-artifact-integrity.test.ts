@@ -63,20 +63,20 @@ const ARTIFACTS = [
   {
     name: "MUEDlim",
     url: MUEDLIM_DOWNLOAD_URL,
-    sha256: "dc51d7cbc23ab56f540ba43bbafbd362bbfa69f801b051c8c2602f110c437bc5",
-    bytes: 3_238_046,
+    sha256: "fe2d35d4e1762fb29591f9396c04dd4c3b1ef1dd736f5dce1f2459c311153226",
+    bytes: 3_254_821,
   },
   {
     name: "MUEDsat",
     url: MUEDSAT_DOWNLOAD_URL,
-    sha256: "b3ac87fc4a789660c398421fe64a2f5a34e78d8c2c263e28c4d3a439ad332d0c",
-    bytes: 3_405_698,
+    sha256: "d41d5a30e71df80723a750b036027c3388c19be33eab0343e3385384fefdb610",
+    bytes: 3_405_970,
   },
   {
     name: "MUEDrive",
     url: MUEDRIVE_DOWNLOAD_URL,
-    sha256: "77a13bd14bb3e00effe7156d4ffc0d06f98b7c98e174064931801d0c51d08cdc",
-    bytes: 3_584_446,
+    sha256: "cf5a9a7b1a6ea984091b1f7329ce54b4c0229ef3ec259bfdc16559362b51e5b3",
+    bytes: 3_584_930,
   },
   // ★Present only once BOTH the URL and the pin exist — so the same two tests below start covering
   //   the paid artifact the moment it is published, with no separate wiring to remember.
