@@ -108,7 +108,7 @@ export async function StudioShowroom({
               <span>{t("heroLine3")}</span>
             </h1>
             <p className={styles.heroLead}>{portal("hero.lead")}</p>
-            <a href="#hoo" className={styles.primaryLink}>
+            <a href="#instruments" className={styles.primaryLink}>
               {t("explore")} <ArrowDown size={18} aria-hidden="true" />
             </a>
             <p className={styles.heroCredit}>MUED / BY GLASSWERKS</p>
@@ -122,8 +122,8 @@ export async function StudioShowroom({
           <div className={styles.container}>
             {(
               [
-                ["01", "mix", "MUEDial", "hoo"],
-                ["02", "master", "MUEDsp", "instruments"],
+                ["01", "master", "MUEDsp", "instruments"],
+                ["02", "mix", "MUEDial", "hoo"],
                 ["03", "train", "MUEDear", "train"],
               ] as const
             ).map(([number, key, name, anchor]) => (
@@ -140,61 +140,13 @@ export async function StudioShowroom({
         </nav>
 
         <section
-          id="hoo"
-          className={styles.hooSection}
-          aria-labelledby="hoo-title"
-        >
-          <div className={`${styles.container} ${styles.hooGrid}`}>
-            <div className={styles.hooPortrait}>
-              <Image
-                src="/muedial-hoo-mixing-console.webp"
-                width={2752}
-                height={1536}
-                alt={t("hooAlt")}
-                sizes="(min-width: 900px) 600px, 100vw"
-              />
-              <span className={styles.portraitSignature}>
-                <Image src="/hoo-animated.svg" width={48} height={31} alt="" />{" "}
-                Hoo / MUEDial
-              </span>
-            </div>
-            <div className={styles.hooCopy}>
-              <p className={styles.eyebrow}>01 / MIX</p>
-              <h2 id="hoo-title">
-                {t("mixTitle1")}
-                <br />
-                <span>{t("mixTitle2")}</span>
-              </h2>
-              <p className={styles.productRole}>
-                MUEDial — {portal("mix.role")}
-              </p>
-              <p className={styles.description}>
-                {portal("mix.origin")}
-                <br />
-                {t("mixBody")}
-              </p>
-              <ProductLink
-                href={`/${locale}/muedial`}
-                product="muedial"
-                location="portal_mix"
-                preview={preview}
-                className={styles.primaryLink}
-              >
-                {portal("mix.cta")}{" "}
-                <ArrowUpRight size={18} aria-hidden="true" />
-              </ProductLink>
-            </div>
-          </div>
-        </section>
-
-        <section
           id="instruments"
           className={styles.instruments}
           aria-labelledby="instruments-title"
         >
           <div className={styles.container}>
             <div className={styles.sectionTop}>
-              <p className={styles.eyebrow}>02 / MASTER</p>
+              <p className={styles.eyebrow}>01 / MASTER</p>
               <span>{t("pluginCollection")}</span>
             </div>
             <div className={styles.featureIntro}>
@@ -269,6 +221,54 @@ export async function StudioShowroom({
                   </div>
                 </Link>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="hoo"
+          className={styles.hooSection}
+          aria-labelledby="hoo-title"
+        >
+          <div className={`${styles.container} ${styles.hooGrid}`}>
+            <div className={styles.hooPortrait}>
+              <Image
+                src="/muedial-hoo-mixing-console.webp"
+                width={2752}
+                height={1536}
+                alt={t("hooAlt")}
+                sizes="(min-width: 900px) 600px, 100vw"
+              />
+              <span className={styles.portraitSignature}>
+                <Image src="/hoo-animated.svg" width={48} height={31} alt="" />{" "}
+                Hoo / MUEDial
+              </span>
+            </div>
+            <div className={styles.hooCopy}>
+              <p className={styles.eyebrow}>02 / MIX</p>
+              <h2 id="hoo-title">
+                {t("mixTitle1")}
+                <br />
+                <span>{t("mixTitle2")}</span>
+              </h2>
+              <p className={styles.productRole}>
+                MUEDial — {portal("mix.role")}
+              </p>
+              <p className={styles.description}>
+                {portal("mix.origin")}
+                <br />
+                {t("mixBody")}
+              </p>
+              <ProductLink
+                href={`/${locale}/muedial`}
+                product="muedial"
+                location="portal_mix"
+                preview={preview}
+                className={styles.primaryLink}
+              >
+                {portal("mix.cta")}{" "}
+                <ArrowUpRight size={18} aria-hidden="true" />
+              </ProductLink>
             </div>
           </div>
         </section>
