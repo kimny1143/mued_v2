@@ -1129,7 +1129,7 @@ function DialSessionContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-bg-primary text-fg-primary flex items-center justify-center">
         <div className="animate-pulse text-zinc-400" role="status">{t.dial.session.loadingSession}</div>
       </div>
     );
@@ -1137,7 +1137,7 @@ function DialSessionContent() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-bg-primary text-fg-primary flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-bold mb-2">{t.dial.session.sessionNotFound}</h2>
           <p className="text-zinc-400">{error || t.dial.session.sessionExpiredFallback}</p>
@@ -1278,7 +1278,7 @@ function DialSessionContent() {
               onClick={handleUploadAll}
               disabled={uploading}
               data-testid="dial-upload-all"
-              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 rounded-lg text-sm font-medium transition-colors"
+              className="px-5 py-2 bg-accent text-[var(--ink-0)] hover:bg-[#ffc76b] disabled:bg-zinc-800 disabled:text-fg-secondary rounded-lg text-sm font-medium transition-colors"
             >
               {uploading && uploadProgress
                 ? `${t.dial.session.uploading} ${uploadProgress.current}/${uploadProgress.total} (${fileUploadPercent}%)`
@@ -1591,7 +1591,7 @@ function DialSessionContent() {
                 <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap ${
                     msg.role === 'user'
-                      ? 'bg-indigo-600/80 text-white rounded-br-sm'
+                      ? 'bg-accent/15 text-fg-primary rounded-br-sm'
                       : 'bg-zinc-800 text-zinc-100 rounded-bl-sm'
                   }`}>
                     {msg.content}
@@ -1631,7 +1631,7 @@ function DialSessionContent() {
             href="/dial"
             onClick={(e) => handleNavigation(e, '/dial')}
             data-testid="dial-start-new-session"
-            className="flex-1 py-3 text-center bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-medium transition-colors"
+            className="flex-1 py-3 text-center bg-accent text-[var(--ink-0)] hover:bg-[#ffc76b] rounded-xl text-sm font-medium transition-colors"
           >
             {t.dial.session.startNewSession}
           </Link>
@@ -1704,7 +1704,7 @@ function DialSessionContent() {
   // player scroll region (kimny Safari-landscape report). svh = the stable toolbar-shown height,
   // so the shell always fits the visible area. PWA standalone has no toolbar → effectively a no-op.
   return (
-    <div className={showChat ? 'h-[100dvh] landscape:h-[100svh] overflow-hidden flex flex-col bg-zinc-950 text-white' : 'min-h-screen bg-zinc-950 text-white'}>
+    <div className={showChat ? 'h-[100dvh] landscape:h-[100svh] overflow-hidden flex flex-col bg-bg-primary text-fg-primary' : 'min-h-screen bg-bg-primary text-fg-primary'}>
       <div className={showChat ? 'flex-1 min-h-0 flex flex-col px-3 pt-3' : hasFinal ? 'w-full px-3 py-3' : 'mx-auto max-w-3xl px-6 py-12'}>
         {/* Header */}
         <div className={showChat ? 'flex-shrink-0 mb-2' : 'mb-8'}>
@@ -1722,7 +1722,7 @@ function DialSessionContent() {
                 <span>{isSignedIn ? t.dial.lp.navHistory : t.dial.history.back}</span>
               </Link>
               <h1 className={`font-bold truncate ${showChat ? 'text-xl' : 'text-3xl'}`}>
-                MUED<span className="text-indigo-400">ial</span>
+                MUED<span className="text-accent">ial</span>
                 <span className={`font-normal text-zinc-400 ml-3 ${showChat ? 'text-sm' : 'text-lg'}`}>
                   {isMasteringPhase || isMasteringOnly
                     ? 'Mastering'

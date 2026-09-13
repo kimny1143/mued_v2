@@ -15,8 +15,8 @@ export function Btn({ active, className = '', children, ...rest }: BtnProps) {
       className={
         'h-7 px-2.5 rounded-[3px] border text-[11px] tracking-wide font-medium flex items-center gap-1.5 transition-colors ' +
         (active
-          ? 'bg-[#2a1f0a] border-[color:var(--amber-dim)] text-[color:var(--amber)] '
-          : 'bg-[#141417] border-[color:var(--line)] text-[color:var(--fg-1)] hover:text-[color:var(--fg-0)] hover:border-[#2f2f34] ') +
+          ? 'bg-accent/10 border-[color:var(--amber-dim)] text-[color:var(--amber)] '
+          : 'bg-bg-elev-1 border-[color:var(--line)] text-[color:var(--fg-1)] hover:text-[color:var(--fg-0)] hover:border-accent/40 ') +
         className
       }
       {...rest}
@@ -54,7 +54,7 @@ export function ToggleSquare({ on, onClick, label, tone = 'amber', title }: Togg
         'w-6 h-6 rounded-[2px] mono text-[10px] font-bold leading-none flex items-center justify-center bevel-out ' +
         (on
           ? `${t.bg} ${t.text}`
-          : `bg-[#17171a] border border-[color:var(--line)] ${t.dim} hover:text-[color:var(--fg-0)]`)
+          : `bg-bg-elev-2 border border-[color:var(--line)] ${t.dim} hover:text-[color:var(--fg-0)]`)
       }
     >
       {label}

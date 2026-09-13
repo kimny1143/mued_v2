@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandHeader } from "@/components/brand/brand-header";
+
 // MUEDsp — the plugin-line brand page: "the home of the suite" (GO①③ reconstruction). Dark, pro-audio
 // aesthetic (glasswerks: #0a0a0a / single amber #f5a524 / max-w 3xl–5xl / 削る方向優先).
 //
@@ -24,7 +26,6 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import {
   MuedsatSignupForm,
   MuedsatSignupFormFallback,
@@ -105,45 +106,28 @@ export function MuedspLandingContent() {
   const tdViz = useTranslations("muedrive.visuals");
 
   return (
-    <div className="dark min-h-screen bg-[#0a0a0a] text-white">
+    <div className="brand-product dark min-h-screen bg-[var(--bg-base)] text-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0a0a0a]/85 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href={`/${locale}`} className="flex items-baseline gap-2">
-            <span className="text-lg tracking-wide">
-              <span className="font-bold">MUED</span>
-              <span className="font-light text-[#f5a524]">sp</span>
-            </span>
-            <span className="hidden text-[11px] uppercase tracking-widest text-white/30 sm:inline">
-              {isJa ? "マスタリング用プラグイン" : "Plugins for mastering"}
-            </span>
-          </Link>
-          <LocaleSwitcher />
-        </div>
-      </header>
+      <BrandHeader locale={locale} product="MUEDsp" />
 
       <main>
         {/* ── Hero — the suite entrance (text-forward; the flagship render is §1). ───────── */}
         <section className="relative overflow-hidden px-6 pt-16 pb-12">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-[#ff5a1f]/[0.05] blur-[120px]"
-          />
-          <div className="relative mx-auto max-w-3xl text-center">
-            <span className="inline-block rounded-full border border-[#f5a524]/30 bg-[#f5a524]/10 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-[#f5a524]">
+          <div className="relative mx-auto max-w-5xl">
+            <span className="inline-block border-b border-[#f5a524]/50 pb-2 font-mono text-[11px] uppercase tracking-widest text-[#f5a524]">
               {th("eyebrow")}
             </span>
-            <h1 className="mt-5 text-5xl font-extrabold tracking-tight md:text-6xl">
+            <h1 className="mt-5 text-5xl font-semibold tracking-tight md:text-6xl">
               <span className="text-white">MUED</span>
               <span className="text-[#f5a524]">sp</span>
             </h1>
             <p className="mt-3 text-lg font-light text-white/80 md:text-xl">{th("tagline")}</p>
-            <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/55">
+            <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/55">
               {th("lead")}
             </p>
             <a
               href="#get"
-              className="mt-7 inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-[#f5a524] px-5 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
+              className="mt-7 inline-flex items-center gap-2 rounded-[var(--radius-sm)] bg-[#f5a524] px-5 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
             >
               {th("cta")}
             </a>
@@ -163,7 +147,7 @@ export function MuedspLandingContent() {
 
             {/* the flagship visual: an honest MOCK, captioned as such (not the shipping plugin) */}
             <figure className="mt-8">
-              <div className="overflow-hidden rounded-xl border border-white/10 bg-black/30 p-2 shadow-2xl shadow-black/50">
+              <div className="brand-display">
                 <Image
                   src={MASTERCHAIN_MOCK}
                   alt={
@@ -222,7 +206,7 @@ export function MuedspLandingContent() {
                 <button
                   type="button"
                   onClick={() => openCheckout()}
-                  className="shrink-0 rounded-[var(--radius-lg)] border border-[var(--accent)]/40 bg-[var(--accent)] px-5 py-3 font-semibold text-black transition hover:brightness-110"
+                  className="shrink-0 rounded-[var(--radius-sm)] border border-[var(--accent)]/40 bg-[var(--accent)] px-5 py-3 font-semibold text-black transition hover:brightness-110"
                 >
                   {tmc("buyLabel")}
                 </button>
@@ -231,7 +215,7 @@ export function MuedspLandingContent() {
                   type="button"
                   disabled
                   aria-disabled="true"
-                  className="shrink-0 cursor-not-allowed rounded-[var(--radius-lg)] border border-white/15 bg-white/[0.04] px-5 py-3 font-semibold text-white/40"
+                  className="shrink-0 cursor-not-allowed rounded-[var(--radius-sm)] border border-white/15 bg-white/[0.04] px-5 py-3 font-semibold text-white/40"
                 >
                   {tmc("buyLabel")}
                 </button>
@@ -407,7 +391,7 @@ export function MuedspLandingContent() {
                   </span>
                 </h3>
                 <p className="mt-4 text-lg font-light text-white/80">{tlHero("tagline")}</p>
-                <p className="mt-6 inline-flex items-center rounded-[var(--radius-lg)] border border-white/12 bg-white/[0.03] px-4 py-2 font-mono text-[12px] uppercase tracking-[0.18em] text-white/50">
+                <p className="mt-6 inline-flex items-center rounded-[var(--radius-sm)] border border-white/12 bg-white/[0.03] px-4 py-2 font-mono text-[12px] uppercase tracking-[0.18em] text-white/50">
                   {tf("limComingSoon")}
                 </p>
               </div>

@@ -29,7 +29,7 @@ export function AdvisoryPricingSection() {
   return (
     <section className="border-t border-neutral-100 px-6 py-20">
       <div className="mx-auto max-w-5xl">
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-teal-600">Pricing</p>
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#865109]">Pricing</p>
         <h2 className="mb-2 text-2xl font-medium tracking-tight text-neutral-900">{t("title")}</h2>
         <p className="mb-10 max-w-2xl text-[15px] leading-[1.9] text-neutral-600">{t("subtitle")}</p>
 
@@ -39,11 +39,11 @@ export function AdvisoryPricingSection() {
             <div
               key={key}
               className={`rounded-2xl border p-6 ${
-                key === "consult" ? "border-teal-500/40 bg-teal-50/50" : "border-neutral-200 bg-white"
+                key === "consult" ? "border-amber-500/40 bg-amber-50/50" : "border-neutral-200 bg-[var(--brand-paper)]"
               }`}
             >
               <h3 className="text-base font-semibold text-neutral-900">{t(`${key}.name`)}</h3>
-              <p className="mb-3 mt-2 text-xl font-light tabular-nums text-teal-700">{t(`${key}.price`)}</p>
+              <p className="mb-3 mt-2 text-xl font-light tabular-nums text-[#865109]">{t(`${key}.price`)}</p>
               <p className="text-sm leading-[1.9] text-neutral-600">{t(`${key}.what`)}</p>
             </div>
           ))}

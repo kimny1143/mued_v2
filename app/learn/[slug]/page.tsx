@@ -1,3 +1,4 @@
+import { BrandHeader } from "@/components/brand/brand-header";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -69,16 +70,7 @@ export default async function LearnArticlePage({ params }: { params: Promise<{ s
     <div className="dark min-h-screen bg-bg-primary">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-bg-primary/80 px-6 py-4 backdrop-blur-xl">
-        <div className="container mx-auto flex items-center justify-between">
-          <Link href="/" className="font-semibold text-white transition-colors hover:text-slate-300">
-            MUED
-          </Link>
-          <Link href="/learn" className="text-sm text-slate-400 transition-colors hover:text-slate-200">
-            Learn
-          </Link>
-        </div>
-      </header>
+      <BrandHeader locale="en" showLanguage={false} />
 
       <main className="px-6 pt-24 pb-16">
         <LearnArticleView article={article} />

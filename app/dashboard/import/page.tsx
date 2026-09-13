@@ -164,7 +164,7 @@ export default function ImportPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[#0F0F1A] text-white">
+    <div className="min-h-screen bg-[var(--bg-surface)] text-white">
       <div className="max-w-2xl mx-auto px-6 py-12">
         {/* Header */}
         <Link href="/dashboard" className="text-slate-500 hover:text-white text-sm mb-8 inline-block">
@@ -180,14 +180,14 @@ export default function ImportPage() {
           <div
             onDragOver={e => e.preventDefault()}
             onDrop={handleDrop}
-            className="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center hover:border-indigo-500/50 transition-colors cursor-pointer"
+            className="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center hover:border-accent/50 transition-colors cursor-pointer"
           >
             <div className="text-4xl mb-4">📁</div>
             <p className="text-lg text-slate-300 mb-2">{t('dropTitle')}</p>
             <p className="text-sm text-slate-500 mb-6">
               {t('dropFormats')}
             </p>
-            <label className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl cursor-pointer transition-colors">
+            <label className="inline-block px-6 py-3 bg-accent text-[var(--ink-0)] hover:bg-accent text-[var(--ink-0)] rounded-xl cursor-pointer transition-colors">
               {t('selectFile')}
               <input
                 type="file"
@@ -223,7 +223,7 @@ export default function ImportPage() {
                 <div className="text-xs text-slate-500 mt-1">{t('totalMessages')}</div>
               </div>
               <div className="bg-white/5 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-indigo-400">{stats.filteredConversations.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-accent">{stats.filteredConversations.toLocaleString()}</div>
                 <div className="text-xs text-slate-500 mt-1">{t('musicRelated')}</div>
               </div>
               <div className="bg-white/5 rounded-xl p-4 text-center">
@@ -243,7 +243,7 @@ export default function ImportPage() {
                 </div>
                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-300 ${state === 'done' ? 'bg-green-500' : 'bg-indigo-500'}`}
+                    className={`h-full rounded-full transition-all duration-300 ${state === 'done' ? 'bg-green-500' : 'bg-accent text-[var(--ink-0)]'}`}
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
@@ -253,7 +253,7 @@ export default function ImportPage() {
             {/* Parsing/Filtering indicator */}
             {(state === 'parsing' || state === 'filtering') && (
               <div className="flex items-center gap-3 text-slate-400">
-                <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                 {state === 'parsing' ? t('parsing') : t('filtering')}
               </div>
             )}
@@ -264,7 +264,7 @@ export default function ImportPage() {
                 <div className="text-sm text-slate-400 mb-2">{t('hooLearned')}</div>
                 <div className="flex flex-wrap gap-2">
                   {stats.updatedFields.map(field => (
-                    <span key={field} className="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-sm">
+                    <span key={field} className="px-3 py-1 bg-accent/20 text-accent rounded-full text-sm">
                       {field}
                     </span>
                   ))}
@@ -284,7 +284,7 @@ export default function ImportPage() {
               <div className="flex gap-4 pt-4">
                 <Link
                   href="/dashboard"
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors"
+                  className="px-6 py-3 bg-accent text-[var(--ink-0)] hover:bg-accent text-[var(--ink-0)] rounded-xl transition-colors"
                 >
                   {t('viewProfile')}
                 </Link>

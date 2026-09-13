@@ -1,22 +1,25 @@
 @import "tailwindcss";
+@import "../components/brand/brand.css";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
 
   /* MUEDial DAW Design System — dark surfaces */
-  --ink-0: #070707;
-  --ink-1: #0b0b0c;
-  --ink-2: #111113;
-  --ink-3: #17171a;
-  --ink-4: #1e1e22;
-  --line: #222226;
-  --line-soft: #18181b;
+  --brand-paper: #f0eee7;
+  --brand-paper-ink: #111210;
+  --ink-0: #111210;
+  --ink-1: #151613;
+  --ink-2: #1a1b18;
+  --ink-3: #21231e;
+  --ink-4: #292c25;
+  --line: #35382f;
+  --line-soft: #252820;
 
   /* MUEDial text hierarchy */
-  --fg-0: #e8e6df;
-  --fg-1: #b8b5ac;
-  --fg-2: #7a7770;
+  --fg-0: #f0eee7;
+  --fg-1: #c1c2b8;
+  --fg-2: #a6a89d;
   --fg-3: #4a4842;
 
   /* MUEDial accents */
@@ -32,18 +35,18 @@
   --accent: var(--amber);
   --accent-dim: var(--amber-dim);
   --accent-glow: var(--amber-glow);
-  --bg-base: #0a0a0a;
-  --bg-surface: #111113;
-  --bg-elevated: #17171a;
-  --border-default: rgba(250, 250, 250, 0.08);
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1a1;
-  --text-muted: #71717a;
+  --bg-base: var(--ink-0);
+  --bg-surface: var(--ink-2);
+  --bg-elevated: var(--ink-3);
+  --border-default: rgba(240, 238, 231, 0.16);
+  --text-primary: var(--fg-0);
+  --text-secondary: var(--fg-1);
+  --text-muted: var(--fg-2);
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ffffff;
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
 }
 
 @theme inline {
@@ -52,13 +55,26 @@
   --font-sans: var(--font-sora);
   --font-mono: var(--font-geist-mono);
 
+  /* Warm studio neutrals; success/error/analysis hues retain their meaning. */
+  --color-zinc-950: var(--ink-0);
+  --color-zinc-900: var(--ink-2);
+  --color-zinc-800: var(--ink-3);
+  --color-zinc-700: var(--line);
+  --color-zinc-400: var(--fg-1);
+  --color-zinc-500: var(--fg-2);
+  --color-slate-950: var(--ink-0);
+  --color-slate-900: var(--ink-2);
+  --color-slate-800: var(--ink-3);
+  --color-slate-400: var(--fg-1);
+  --color-slate-500: var(--fg-2);
+
   /* MUED Brand Colors (Dark Mode First) */
-  --color-mued-bg: #0a0a0a;
-  --color-mued-primary: #1a1a2e;
-  --color-mued-accent: #4f46e5;
-  --color-mued-accent-hover: #4338ca;
-  --color-mued-text: #ffffff;
-  --color-mued-text-muted: #94a3b8;
+  --color-mued-bg: var(--bg-base);
+  --color-mued-primary: var(--bg-surface);
+  --color-mued-accent: var(--amber);
+  --color-mued-accent-hover: #ffc76b;
+  --color-mued-text: var(--text-primary);
+  --color-mued-text-muted: var(--text-secondary);
 
   /* Glassmorphism */
   --color-glass-bg: rgba(255, 255, 255, 0.05);
@@ -81,16 +97,16 @@
   /* Figma Design System Colors (Legacy - migrate to semantic tokens) */
 
   /* Primary Brand */
-  --color-brand-green: #75bc11;
-  --color-brand-green-hover: #65a20f;
-  --color-brand-green-active: #559308;
-  --color-brand-text: #000a14;
+  --color-brand-green: var(--amber); /* Legacy API name, shared MUED action color. */
+  --color-brand-green-hover: #ffc76b;
+  --color-brand-green-active: #dc931e;
+  --color-brand-text: var(--ink-0);
 
   /* Neutral Text & Backgrounds */
-  --color-text-primary: #192129;
-  --color-text-secondary: #192129;
-  --color-card-bg: rgba(0, 0, 0, 0.04);
-  --color-card-border: rgba(0, 0, 0, 0.2);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-card-bg: var(--bg-surface);
+  --color-card-border: var(--border-default);
 
   /* Semantic Colors */
   --color-success: #08762c;
@@ -104,9 +120,9 @@
   --color-lobe-focus: #ADA06B;
 
   /* Border Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
   --radius-full: 999px;
 
   /* DS v1: Tailwind utility tokens */

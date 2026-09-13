@@ -1,6 +1,6 @@
+import { BrandMark } from "@/components/brand/brand-mark";
 import type { Metadata } from "next";
 import { SignUp } from "@clerk/nextjs";
-import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -17,19 +17,13 @@ export const metadata: Metadata = {
  */
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex" style={{ fontFamily: 'var(--font-sora), system-ui, sans-serif' }}>
+    <div className="min-h-screen bg-[var(--bg-base)] flex" style={{ fontFamily: 'var(--font-sora), system-ui, sans-serif' }}>
       {/* Left: MUED Branding */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-12 bg-gradient-to-br from-[#0a0a0a] to-[#111113]">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-12 brand-auth-art">
         <div className="max-w-md text-center">
           {/* Logo */}
           <Link href="/" className="inline-block mb-8">
-            <Image
-              src="/logo.webp"
-              alt="MUED"
-              width={120}
-              height={120}
-              className="drop-shadow-2xl"
-            />
+            <BrandMark />
           </Link>
 
           {/* Tagline */}
@@ -69,15 +63,8 @@ export default function SignUpPage() {
         {/* Mobile Logo */}
         <div className="lg:hidden mb-8 text-center">
           <Link href="/">
-            <Image
-              src="/logo.webp"
-              alt="MUED"
-              width={80}
-              height={80}
-              className="mx-auto mb-4 drop-shadow-lg"
-            />
+            <BrandMark />
           </Link>
-          <h1 className="text-2xl font-bold text-white">MUED</h1>
         </div>
 
         <SignUp
@@ -86,17 +73,17 @@ export default function SignUpPage() {
           appearance={{
             variables: {
               colorPrimary: "#f5a524",
-              colorBackground: "#111113",
-              colorText: "#ffffff",
+              colorBackground: "#1a1b18",
+              colorText: "#f0eee7",
               colorTextOnPrimaryBackground: "#000000",
-              colorTextSecondary: "#94a3b8",
-              colorInputBackground: "#0a0a0a",
+              colorTextSecondary: "#c1c2b8",
+              colorInputBackground: "#111210",
               colorInputText: "#ffffff",
               colorNeutral: "#ffffff",
             },
             elements: {
               rootBox: "mx-auto w-full max-w-md",
-              card: "bg-[#111113] border border-white/10 shadow-2xl !text-white",
+              card: "bg-[var(--bg-surface)] border border-white/10 shadow-2xl !text-white",
               headerTitle: "!text-white",
               headerSubtitle: "!text-slate-400",
               socialButtonsBlockButton: "!bg-white/5 !border-white/10 !text-white hover:!bg-white/10",
@@ -104,8 +91,8 @@ export default function SignUpPage() {
               dividerLine: "!bg-white/10",
               dividerText: "!text-slate-500",
               formFieldLabel: "!text-slate-300",
-              formFieldInput: "!bg-[#0a0a0a] !border-white/10 !text-white placeholder:!text-slate-500",
-              formButtonPrimary: "!bg-amber-500 hover:!bg-amber-400 !text-black",
+              formFieldInput: "!bg-[var(--bg-base)] !border-white/10 !text-white placeholder:!text-slate-500",
+              formButtonPrimary: "!bg-accent hover:!bg-[#ffc76b] !text-black",
               footerActionLink: "!text-amber-400 hover:!text-amber-300",
               footerActionText: "!text-slate-400",
               footer: "!text-slate-400",

@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
     "/learn/[slug]": ["./content/learn/**/*.md"],
   },
   experimental: {
+    // The design preview restored pre-rollout globals.css from the build cache despite
+    // deploying the current commit (9d6154ba). Recompute production CSS from source.
+    turbopackFileSystemCacheForBuild: false,
     // 開発エラーオーバーレイをテスト環境で無効化
     ...(process.env.NODE_ENV === 'test' && {
       nextScriptWorkers: false,

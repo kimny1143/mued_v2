@@ -1,4 +1,5 @@
 'use client';
+import { BrandMark } from '@/components/brand/brand-mark';
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -104,7 +105,7 @@ export function GamePageWrapper({ gameType, requiresLandscape = false, children 
   }, [gameType, router]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex flex-col" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
+    <div className="min-h-screen bg-bg-primary flex flex-col" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
       <header className="border-b border-white/5 px-4 sm:px-6 py-3 sm:py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-stretch gap-3">
@@ -114,6 +115,7 @@ export function GamePageWrapper({ gameType, requiresLandscape = false, children 
               <h1 className="text-base sm:text-lg font-semibold text-white">{tGame('name')}</h1>
             </div>
           </div>
+          <span className="hidden sm:inline-flex"><BrandMark compact product="MUEDlobe" /></span>
         </div>
       </header>
 
@@ -192,7 +194,7 @@ export function GamePageWrapper({ gameType, requiresLandscape = false, children 
 
       {/* Portrait orientation overlay */}
       {isPortrait && (
-        <div className="fixed inset-0 z-50 bg-[#0a0a0f] flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-50 bg-bg-primary flex items-center justify-center p-6">
           <div className="text-center space-y-4">
             <div className="text-4xl">📱↔️</div>
             <p className="text-lg font-semibold text-white">{t('rotateLandscape')}</p>

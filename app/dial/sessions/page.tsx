@@ -15,6 +15,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { BrandMark } from '@/components/brand/brand-mark';
 import { useAuth, SignInButton } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
 import type { UnifiedSession } from '@/components/dashboard/session-ledger';
@@ -100,7 +101,7 @@ export default function DialSessionsPage() {
             ← {s.back}
           </Link>
           <div className="flex-1 text-center">
-            <span className="text-sm font-semibold">{s.title}</span>
+            <span className="hidden sm:inline-flex mr-4"><BrandMark compact product="MUEDial" /></span><span className="text-sm font-semibold">{s.title}</span>
           </div>
           <span className="w-[64px] shrink-0" aria-hidden />
         </div>

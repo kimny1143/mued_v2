@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandHeader } from "@/components/brand/brand-header";
+
 // MUEDrive standalone free-download LP (/[locale]/muedrive) — third module in the MUEDsp free family.
 // Mirrors components/features/muedlim-landing (same dark pro-audio chrome, shared plugin signup form,
 // shipped-UI faceplate, muedrive.* i18n namespace). Fact-lock (MUEDrive canon): saturator with THREE
@@ -13,7 +15,6 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import {
   MuedsatSignupForm,
   MuedsatSignupFormFallback,
@@ -53,36 +54,19 @@ export function MuedriveLandingContent() {
   const tv = useTranslations("muedrive.visuals");
 
   return (
-    <div className="dark min-h-screen bg-[#0a0a0a] text-white">
+    <div className="brand-product dark min-h-screen bg-[var(--bg-base)] text-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0a0a0a]/85 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href={`/${locale}`} className="flex items-baseline gap-2">
-            <span className="text-lg tracking-wide">
-              <span className="font-bold">MUED</span>
-              <span className="font-light text-[#f5a524]">rive</span>
-            </span>
-            <span className="hidden text-[11px] uppercase tracking-widest text-white/30 sm:inline">
-              {th("badge")}
-            </span>
-          </Link>
-          <LocaleSwitcher />
-        </div>
-      </header>
+      <BrandHeader locale={locale} product="MUEDrive" />
 
       <main>
         {/* Hero — the real plugin, one image, and the only download form */}
         <section className="relative overflow-hidden px-6 pt-14 pb-16">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-1/4 h-[480px] w-[480px] translate-x-1/3 rounded-full bg-[#ff5a1f]/[0.06] blur-[110px]"
-          />
           <div className="relative mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-2 md:gap-14">
             <div>
-              <span className="inline-block rounded-full border border-[#f5a524]/30 bg-[#f5a524]/10 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-[#f5a524]">
+              <span className="inline-block border-b border-[#f5a524]/50 pb-2 font-mono text-[11px] uppercase tracking-widest text-[#f5a524]">
                 {th("badge")}
               </span>
-              <h1 className="mt-5 text-5xl font-extrabold tracking-tight md:text-6xl">
+              <h1 className="mt-5 text-5xl font-semibold tracking-tight md:text-6xl">
                 <span className="text-white">MUED</span>
                 <span className="text-[#f5a524]">rive</span>
               </h1>
@@ -96,7 +80,7 @@ export function MuedriveLandingContent() {
               <p className="mt-3 max-w-md text-sm italic text-white/45">{th("tryLine")}</p>
             </div>
             <div className="mx-auto w-full max-w-md md:max-w-none">
-              <div className="overflow-hidden rounded-xl border border-white/10 bg-black/30 p-2 shadow-2xl shadow-black/50">
+              <div className="brand-display">
                 <Image
                   src={FACEPLATE}
                   alt={tv("faceplateAlt")}

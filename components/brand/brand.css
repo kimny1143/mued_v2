@@ -1,0 +1,168 @@
+/* One identity, two environments: a dark studio and a warm paper display. */
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-primary);
+  font:
+    600 30px/1.1 var(--font-sora),
+    system-ui,
+    sans-serif;
+  letter-spacing: -0.06em;
+  white-space: nowrap;
+}
+.brand-mark img {
+  flex-shrink: 0;
+}
+.brand-mark-accent {
+  color: var(--accent);
+}
+.brand-mark-compact {
+  font-size: 23px;
+  gap: 9px;
+}
+.brand-mark-compact img {
+  width: 34px;
+  height: auto;
+}
+.brand-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-default);
+}
+.brand-header-inner {
+  width: min(100% - 80px, 1280px);
+  min-height: 80px;
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.brand-header-nav {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+  margin-left: auto;
+  font-size: 12px;
+}
+.brand-header-nav a {
+  padding-block: 15px;
+}
+.brand-header-nav a:hover {
+  color: var(--accent);
+}
+.brand-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+.brand-language-switcher {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.brand-language-switcher a {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  min-height: 44px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.brand-language-switcher a[aria-current="page"] {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 7px;
+}
+.brand-display {
+  background: var(--brand-paper);
+  padding: 24px;
+  border: 1px solid #d8d7cc;
+  border-radius: 4px;
+}
+.brand-display img {
+  display: block;
+  width: 100%;
+  height: auto;
+  box-shadow: 0 16px 32px #11121026;
+}
+.brand-workspace {
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+.brand-workspace-main {
+  width: min(100%, 1280px);
+  margin-inline: auto;
+}
+.brand-workspace-header {
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border-default);
+}
+.brand-workspace-footer {
+  background: var(--bg-base);
+  border-top: 1px solid var(--border-default);
+  color: var(--text-secondary);
+}
+/* Base layer: a default ring, but utilities (outline-none, focus-visible:*) still win. */
+@layer base {
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+}
+@media (max-width: 767px) {
+  .brand-header-inner {
+    width: calc(100% - 40px);
+    min-height: 70px;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 16px;
+  }
+  .brand-header .brand-mark {
+    font-size: 25px;
+  }
+  .brand-header .brand-mark img {
+    width: 35px;
+    height: auto;
+  }
+  .brand-header-nav {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+    border-top: 1px solid var(--border-default);
+    font-size: 11px;
+  }
+  .brand-header-actions {
+    gap: 8px;
+  }
+  .brand-display {
+    padding: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-header *,
+  .brand-workspace-header *,
+  .brand-mark {
+    transition: none;
+    animation: none;
+  }
+}
+.brand-auth-art {
+  background:
+    linear-gradient(0deg, #111210ed, #111210db),
+    url("/muedial-hoo-mixing-console.webp") center / cover;
+}
+
+@media (max-width: 359px) {
+  .brand-header .brand-mark {
+    font-size: 19px;
+    gap: 7px;
+  }
+  .brand-header .brand-mark img {
+    width: 28px;
+  }
+}

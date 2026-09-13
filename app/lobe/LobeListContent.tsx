@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { BrandMark } from '@/components/brand/brand-mark';
 import { useTranslations } from 'next-intl';
 import { GAME_META, GAME_ORDER, VARIABLE_DISPLAY, VARIABLE_COLORS } from '@/lib/muedlobe/constants';
 import { PWAInstallBanner } from '@/components/features/lobe/PWAInstallBanner';
@@ -20,11 +21,11 @@ export function LobeListContent({ completedGames, hasProfile, allComplete }: Lob
   const completedCount = GAME_ORDER.filter((g) => completedSet.has(g)).length;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] px-4 sm:px-6 py-8 sm:py-12">
+    <div className="min-h-screen bg-bg-primary px-4 sm:px-6 py-8 sm:py-12">
       <div className="max-w-2xl mx-auto space-y-8 sm:space-y-10">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">MUEDlobe</h1>
+          <h1><BrandMark product="MUEDlobe" /></h1>
           <p className="text-white/50">
             {t('subtitle')}
           </p>

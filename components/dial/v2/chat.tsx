@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocale } from '@/lib/i18n/locale-context';
+import Image from 'next/image';
 import { Micro, Btn } from './atoms';
 import { IconSend, IconSpinner, IconSparkle } from './icons';
 
@@ -90,14 +91,7 @@ function stripJsonBlock(content: string) {
 // ─── HooAvatar ───────────────────────────────────────────────────────────────
 
 function HooAvatar() {
-  return (
-    <span
-      className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[8px] mono font-bold text-[#1a1200] flex-shrink-0"
-      style={{ background: 'var(--amber)', boxShadow: '0 0 6px var(--amber-glow)' }}
-    >
-      H
-    </span>
-  );
+  return <Image src="/hoo-animated.svg" width={24} height={16} alt="Hoo" className="shrink-0" />;
 }
 
 // ─── ModeBadge ───────────────────────────────────────────────────────────────

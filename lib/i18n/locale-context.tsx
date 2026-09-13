@@ -22,12 +22,13 @@ interface LocaleContextType {
 
 const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
 
-export function LocaleProvider({ children }: { children: ReactNode }) {
+export function LocaleProvider({ children, initialLocale }: { children: ReactNode; initialLocale?: Locale }) {
   const router = useRouter();
-  const [locale, setLocaleState] = useState<Locale>('en');
+  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? 'en');
 
   // Load locale from localStorage or cookie on mount
   useEffect(() => {
+    if (initialLocale) return;
     const savedLocale = localStorage.getItem('locale') as Locale | null;
     if (savedLocale && (savedLocale === 'en' || savedLocale === 'ja')) {
       setLocaleState(savedLocale);
@@ -42,7 +43,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       setLocaleState(cookieLocale);
       localStorage.setItem('locale', cookieLocale);
     }
-  }, []);
+  }, [initialLocale]);
 
   // Save locale to localStorage + cookie when it changes
   const setLocale = useCallback((newLocale: Locale) => {

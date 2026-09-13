@@ -45,9 +45,9 @@ export function IntegratedLandingContentV2() {
   const t = useTranslations("landing.v2");
 
   return (
-    <div className="dark min-h-screen bg-[#0a0a0a] text-white">
+    <div className="dark min-h-screen bg-[var(--bg-base)] text-white">
       {/* Header — lean: wordmark + login + locale. No FloatingNav, no in-page anchor nav. */}
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0a0a0a]/85 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-white/5 bg-[var(--bg-base)]/85 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link href={`/${locale}`} className="text-lg font-bold tracking-wide text-white">
             MUED

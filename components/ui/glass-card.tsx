@@ -25,9 +25,9 @@ const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
         ref={ref}
         className={cn(
           // Base glassmorphism styles
-          "bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6",
+          "bg-bg-elev-1 border border-border-default rounded-[var(--radius-md)] p-6",
           // Hover effect
-          hover && "transition-colors hover:bg-white/8",
+          hover && "transition-colors hover:bg-bg-elev-2",
           className
         )}
         {...props}
