@@ -1,12 +1,12 @@
 "use client";
 
-// 案C (hscnet editorial) — light theme, teal single accent. Reuses all advisory.* i18n keys
+// Editorial layout — warm paper, shared amber accent. Reuses all advisory.* i18n keys
 // (no hardcoded copy) and the single booking CTA (AdvisoryPrimaryCta). Section order per the
 // content課 mapping: Hero → ABOUT → PROCESS → PRICING → APPROACH → FAQ → CONTACT. Staged behind
 // ADVISORY_LIVE (page.tsx robots). Light styling is scoped here — the app's dark tokens are untouched.
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { LocaleSwitcher } from "@/components/ui/locale-switcher";
+import { BrandHeader } from "@/components/brand/brand-header";
 import { AdvisoryPrimaryCta } from "./advisory-primary-cta";
 import { AdvisoryHeaderImage } from "./advisory-header-image";
 import { AdvisoryHeroSection } from "./advisory-hero-section";
@@ -25,29 +25,11 @@ export function AdvisoryLandingContent() {
   const tcta = useTranslations("advisory.cta");
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900">
-      {/* Header — logo mark (placeholder, mued/design owns the final SVG) + wordmark + CTA link */}
-      <header className="sticky top-0 z-50 border-b border-neutral-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href={`/${locale}`} className="flex items-center gap-2.5">
-            <svg width="18" height="22" viewBox="0 0 18 22" fill="none" aria-hidden="true">
-              <rect x="0" y="1" width="6" height="20" rx="1.5" fill="#0d9488" />
-              <rect x="10" y="1" width="6" height="20" rx="1.5" fill="#134e4a" />
-            </svg>
-            <span className="text-lg tracking-wide text-neutral-900">
-              <span className="font-bold">MUED</span> <span className="font-light text-teal-700">advisory</span>
-            </span>
-            <span className="hidden text-[11px] tracking-wider text-neutral-400 sm:inline">glasswerks inc.</span>
-          </Link>
-          <div className="flex items-center gap-5">
-            {/* header CTA hidden on mobile (cramped) — the Hero CTA sits right below; shown md+ alongside the vertical tab */}
-            <span className="hidden md:inline-block">
-              <AdvisoryPrimaryCta label={tcta("short")} variant="link" />
-            </span>
-            <LocaleSwitcher />
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[var(--brand-paper)] text-neutral-900">
+      {/* Shared Hoo mark, navigation and booking CTA */}
+      <BrandHeader locale={locale} product="MUED advisory">
+        <span className="hidden lg:inline-block"><AdvisoryPrimaryCta label={tcta("short")} variant="link" /></span>
+      </BrandHeader>
 
       {/* 案C signature: fixed right-edge vertical CTA tab */}
       <AdvisoryPrimaryCta label={tcta("short")} variant="tab" />
@@ -63,17 +45,17 @@ export function AdvisoryLandingContent() {
         <AdvisoryCtaSection />
       </main>
 
-      <footer className="border-t border-neutral-200 bg-white py-12">
+      <footer className="border-t border-neutral-200 bg-[var(--brand-paper)] py-12">
         <div className="mx-auto max-w-6xl px-6">
           <div className="space-y-4">
             <p className="text-sm text-neutral-500">
               {tf("operator")}／{tf("contact")}
             </p>
             <nav className="flex items-center gap-6">
-              <Link href={`/${locale}/tokushoho`} className="text-sm text-neutral-500 transition-colors hover:text-teal-700">
+              <Link href={`/${locale}/tokushoho`} className="text-sm text-neutral-500 transition-colors hover:text-[#865109]">
                 {tf("legalLink")}
               </Link>
-              <Link href={`/${locale}/privacy`} className="text-sm text-neutral-500 transition-colors hover:text-teal-700">
+              <Link href={`/${locale}/privacy`} className="text-sm text-neutral-500 transition-colors hover:text-[#865109]">
                 {tf("privacyLink")}
               </Link>
             </nav>

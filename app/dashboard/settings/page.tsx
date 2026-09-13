@@ -59,7 +59,7 @@ function SettingsSection({ title, description, icon, children, comingSoon }: Sec
   return (
     <div className={`bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 ${comingSoon ? 'opacity-60' : ''}`}>
       <div className="flex items-start gap-4 mb-4">
-        <div className="w-10 h-10 bg-indigo-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
           {icon}
         </div>
         <div className="flex-1">
@@ -264,7 +264,7 @@ export default function SettingsPage() {
             <SettingsSection
               title={t.settings.hoo.title}
               description={t.settings.hoo.description}
-              icon={<MessageSquare className="w-5 h-5 text-indigo-400" />}
+              icon={<MessageSquare className="w-5 h-5 text-accent" />}
             >
               <div className="space-y-4">
                 {/* Toggle */}
@@ -276,7 +276,7 @@ export default function SettingsPage() {
                     onClick={handleToggle}
                     disabled={isToggling}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      hooEnabled ? 'bg-indigo-600' : 'bg-slate-600'
+                      hooEnabled ? 'bg-accent text-[var(--ink-0)]' : 'bg-slate-600'
                     } ${isToggling ? 'opacity-50' : 'cursor-pointer'}`}
                   >
                     <span
@@ -294,7 +294,7 @@ export default function SettingsPage() {
                     onChange={(e) => setCustomInstructions(e.target.value)}
                     placeholder={t.settings.hoo.placeholder}
                     disabled={!hooEnabled}
-                    className={`w-full h-32 resize-none bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm ${
+                    className={`w-full h-32 resize-none bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-sm ${
                       !hooEnabled ? 'opacity-50 cursor-not-allowed' : ''
                     } ${isOverLimit ? 'border-red-500/50' : ''}`}
                   />
@@ -313,7 +313,7 @@ export default function SettingsPage() {
                   <Button
                     onClick={handleSave}
                     disabled={isSaving || !hasChanges || isOverLimit || !hooEnabled}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="bg-accent text-[var(--ink-0)] hover:bg-[#ffc76b] text-white disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {isSaving ? (
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -375,7 +375,7 @@ export default function SettingsPage() {
             <SettingsSection
               title={t.settings.account.title}
               description={t.settings.account.description}
-              icon={<User className="w-5 h-5 text-indigo-400" />}
+              icon={<User className="w-5 h-5 text-accent" />}
             >
               <div className="space-y-4">
                 {/* User Info */}
@@ -418,17 +418,17 @@ export default function SettingsPage() {
             <SettingsSection
               title={t.settings.hooMcp.title}
               description={t.settings.hooMcp.description}
-              icon={<Terminal className="w-5 h-5 text-indigo-400" />}
+              icon={<Terminal className="w-5 h-5 text-accent" />}
             >
               <div className="space-y-2">
                 <Link
                   href="/connect"
-                  className="flex items-center justify-between py-3 px-4 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 rounded-xl transition-colors group"
+                  className="flex items-center justify-between py-3 px-4 bg-accent/10 hover:bg-accent/20 border border-accent/20 rounded-xl transition-colors group"
                 >
-                  <span className="text-sm text-indigo-300 group-hover:text-indigo-200 transition-colors">
+                  <span className="text-sm text-accent group-hover:text-[#ffc76b] transition-colors">
                     🦉 {t.settings.hooMcp.connectGuide}
                   </span>
-                  <ChevronRight className="w-4 h-4 text-indigo-400/50 group-hover:text-indigo-300 transition-colors" />
+                  <ChevronRight className="w-4 h-4 text-accent/50 group-hover:text-accent transition-colors" />
                 </Link>
                 <Link
                   href="/dashboard/settings/mcp"
@@ -446,7 +446,7 @@ export default function SettingsPage() {
             <SettingsSection
               title={t.marketingConsent.sectionTitle}
               description={t.marketingConsent.sectionDescription}
-              icon={<Mail className="w-5 h-5 text-indigo-400" />}
+              icon={<Mail className="w-5 h-5 text-accent" />}
             >
               <div className="flex items-start justify-between gap-4 py-2">
                 <span className="text-sm text-slate-300 leading-snug flex-1">
@@ -458,7 +458,7 @@ export default function SettingsPage() {
                   data-testid="marketing-consent-toggle"
                   aria-pressed={marketingOptIn}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
-                    marketingOptIn ? 'bg-indigo-600' : 'bg-slate-600'
+                    marketingOptIn ? 'bg-accent text-[var(--ink-0)]' : 'bg-slate-600'
                   } ${isMarketingToggling ? 'opacity-50' : 'cursor-pointer'}`}
                 >
                   <span
@@ -474,7 +474,7 @@ export default function SettingsPage() {
             <SettingsSection
               title={t.settings.notifications.title}
               description={t.settings.notifications.description}
-              icon={<Bell className="w-5 h-5 text-indigo-400" />}
+              icon={<Bell className="w-5 h-5 text-accent" />}
               comingSoon
             >
               <div className="py-4 text-center text-slate-500 text-sm">

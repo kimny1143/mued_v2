@@ -145,8 +145,8 @@ export default function McpSetupPage() {
         </Link>
 
         <div className="flex items-start gap-4 mb-8">
-          <div className="w-10 h-10 bg-indigo-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Terminal className="w-5 h-5 text-indigo-400" />
+          <div className="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Terminal className="w-5 h-5 text-accent" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">
@@ -192,17 +192,17 @@ export default function McpSetupPage() {
             ) : existingKeyPrefix ? (
               <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Key className="w-4 h-4 text-indigo-400" />
+                  <Key className="w-4 h-4 text-accent" />
                   <span className="text-sm text-white/70">
                     {s.step1.activeKey}
-                    <code className="text-indigo-300">{existingKeyPrefix}...</code>
+                    <code className="text-accent">{existingKeyPrefix}...</code>
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleGenerateKey}
                     disabled={isGenerating}
-                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                    className="px-3 py-1.5 bg-accent text-[var(--ink-0)] hover:bg-accent text-[var(--ink-0)] text-xs rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {isGenerating ? s.step1.generating : s.step1.regenerate}
                   </button>
@@ -218,7 +218,7 @@ export default function McpSetupPage() {
               <button
                 onClick={handleGenerateKey}
                 disabled={isGenerating}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-accent text-[var(--ink-0)] hover:bg-accent text-[var(--ink-0)] text-sm font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50"
               >
                 {isGenerating ? (
                   <>
@@ -247,7 +247,7 @@ export default function McpSetupPage() {
                   onClick={() => setSelectedHost(host.id)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                     selectedHost === host.id
-                      ? 'bg-indigo-600 text-white'
+                      ? 'bg-accent text-[var(--ink-0)]'
                       : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
                   }`}
                 >

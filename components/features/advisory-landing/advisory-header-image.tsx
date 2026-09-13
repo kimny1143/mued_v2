@@ -16,7 +16,7 @@ export function AdvisoryHeaderImage() {
         fill
         priority
         sizes="100vw"
-        className="object-cover object-center"
+        className="object-cover object-center sepia-[0.8] saturate-50"
       />
     </div>
   );

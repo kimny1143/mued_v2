@@ -104,7 +104,7 @@ function StepIndicator({ step, currentStep, label }: { step: number; currentStep
           isComplete
             ? 'bg-green-500/20 text-green-400 border border-green-500/30'
             : isActive
-              ? 'bg-indigo-600 text-white'
+              ? 'bg-accent text-[var(--ink-0)]'
               : 'bg-white/5 text-white/30 border border-white/10'
         }`}
       >
@@ -264,15 +264,15 @@ export default function ConnectPage() {
                   </div>
 
                   {/* Hoo speech */}
-                  <div className="bg-indigo-500/5 border border-indigo-500/15 rounded-xl px-4 py-3">
-                    <p className="text-sm text-indigo-300/80 italic">
+                  <div className="bg-accent/5 border border-accent/15 rounded-xl px-4 py-3">
+                    <p className="text-sm text-accent/80 italic">
                       🦉 {c.step1.hooSays}
                     </p>
                   </div>
 
                   <button
                     onClick={() => setCurrentStep(2)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-[#ffc76b] text-[var(--ink-0)] text-sm font-medium rounded-lg transition-colors cursor-pointer"
                   >
                     {c.step2.label}
                     <ChevronRight className="w-4 h-4" />
@@ -283,7 +283,7 @@ export default function ConnectPage() {
                   <button
                     onClick={handleGenerateKey}
                     disabled={isGenerating}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-[#ffc76b] text-[var(--ink-0)] text-sm font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {isGenerating ? (
                       <>
@@ -329,7 +329,7 @@ export default function ConnectPage() {
                       }}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                         selectedHost === host.id
-                          ? 'bg-indigo-600 text-white'
+                          ? 'bg-accent text-[var(--ink-0)]'
                           : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
                       }`}
                     >
@@ -364,8 +364,8 @@ export default function ConnectPage() {
               </div>
 
               {/* Hoo speech */}
-              <div className="bg-indigo-500/5 border border-indigo-500/15 rounded-xl px-4 py-3">
-                <p className="text-sm text-indigo-300/80 italic">
+              <div className="bg-accent/5 border border-accent/15 rounded-xl px-4 py-3">
+                <p className="text-sm text-accent/80 italic">
                   🦉 {c.step2.hooSays}
                 </p>
               </div>
@@ -381,7 +381,7 @@ export default function ConnectPage() {
                 </button>
                 <button
                   onClick={() => setCurrentStep(3)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-[#ffc76b] text-[var(--ink-0)] text-sm font-medium rounded-lg transition-colors cursor-pointer"
                 >
                   {c.step3.label}
                   <ChevronRight className="w-4 h-4" />
@@ -405,7 +405,7 @@ export default function ConnectPage() {
                   <button
                     onClick={handleTestConnection}
                     disabled={testStatus === 'testing'}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-[#ffc76b] text-[var(--ink-0)] text-sm font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {testStatus === 'testing' ? (
                       <>
@@ -427,8 +427,8 @@ export default function ConnectPage() {
                         <Wifi className="w-5 h-5 text-green-400" />
                         <p className="text-sm text-green-300">{c.step3.success}</p>
                       </div>
-                      <div className="bg-indigo-500/5 border border-indigo-500/15 rounded-xl px-4 py-3">
-                        <p className="text-sm text-indigo-300/80 italic">
+                      <div className="bg-accent/5 border border-accent/15 rounded-xl px-4 py-3">
+                        <p className="text-sm text-accent/80 italic">
                           🦉 {c.step3.hooSuccess}
                         </p>
                       </div>
@@ -441,8 +441,8 @@ export default function ConnectPage() {
                         <WifiOff className="w-5 h-5 text-red-400" />
                         <p className="text-sm text-red-300">{c.step3.failure}</p>
                       </div>
-                      <div className="bg-indigo-500/5 border border-indigo-500/15 rounded-xl px-4 py-3">
-                        <p className="text-sm text-indigo-300/80 italic">
+                      <div className="bg-accent/5 border border-accent/15 rounded-xl px-4 py-3">
+                        <p className="text-sm text-accent/80 italic">
                           🦉 {c.step3.hooFailure}
                         </p>
                       </div>
@@ -458,7 +458,7 @@ export default function ConnectPage() {
                   <ul className="space-y-2">
                     {c.whatNext.items.map((item: string, i: number) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-white/60">
-                        <Check className="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0" />
+                        <Check className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
                         {item}
                       </li>
                     ))}
@@ -491,7 +491,7 @@ export default function ConnectPage() {
 
         {/* Pro Template CTA */}
         <div className="mt-12 border-t border-white/10 pt-8">
-          <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-xl p-5">
+          <div className="bg-accent/10 border border-accent/20 rounded-xl p-5">
             <h3 className="text-sm font-medium text-white mb-1">{c.proTemplate.title}</h3>
             <p className="text-xs text-white/50 mb-3">{c.proTemplate.description}</p>
             <div className="flex flex-wrap gap-3">
@@ -499,7 +499,7 @@ export default function ConnectPage() {
                 href="https://glasswerks.gumroad.com/l/claude-code-template-pro?utm_source=mued&utm_medium=web&utm_campaign=connect_page&utm_content=pro-template-cta"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent hover:bg-[#ffc76b] text-[var(--ink-0)] text-xs font-medium rounded-lg transition-colors"
               >
                 {c.proTemplate.proButton}
                 <ChevronRight className="w-3.5 h-3.5" />

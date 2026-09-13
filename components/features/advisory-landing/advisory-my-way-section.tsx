@@ -9,7 +9,7 @@ export function AdvisoryMyWaySection() {
   return (
     <section className="border-t border-neutral-100 bg-slate-50 px-6 py-20">
       <div className="mx-auto max-w-3xl">
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-teal-600">Approach</p>
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#865109]">Approach</p>
         <h2 className="mb-6 text-2xl font-medium tracking-tight text-neutral-900">{t("title")}</h2>
         <p className="text-[15px] leading-[1.9] text-neutral-600">{t("body")}</p>
       </div>

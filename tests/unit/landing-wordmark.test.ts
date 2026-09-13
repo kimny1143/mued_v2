@@ -72,6 +72,10 @@ describe("landing wordmarks", () => {
       const src = () =>
         readFileSync(join(FEATURES, `${plugin}-landing`, `${plugin}-landing-content.tsx`), "utf8");
 
+      it("passes its own product name to the shared header", () => {
+        expect(src()).toContain(`product="MUED${tail}"`);
+      });
+
       it(`shows its own tail >${tail}<`, () => {
         // ★Positive control for the negative assertion below: if the file stopped containing any
         //   wordmark at all, "no foreign tail" would pass while the page rendered a bare "MUED".

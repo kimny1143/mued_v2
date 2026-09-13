@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth, useUser, SignInButton, UserButton } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
 import Image from 'next/image';
+import { BrandMark } from '@/components/brand/brand-mark';
 import Link from 'next/link';
 import { trackCtaClick } from '@/lib/analytics/gtag';
 import { getStoredFirstTouch } from '@/lib/dial/first-touch-client';
@@ -31,7 +32,7 @@ function ChatMockup({ t }: { t: Record<string, unknown> }) {
         {/* Messages */}
         <div className="p-3 space-y-2.5">
           <div className="flex justify-end">
-            <div className="max-w-[85%] px-3 py-2 rounded-[var(--radius-md)] bg-indigo-600/30 text-white text-sm leading-relaxed">
+            <div className="max-w-[85%] px-3 py-2 rounded-[var(--radius-md)] bg-accent/30 text-white text-sm leading-relaxed">
               {lp.chatMockUser1}
             </div>
           </div>
@@ -51,7 +52,7 @@ function ChatMockup({ t }: { t: Record<string, unknown> }) {
             </div>
           </div>
           <div className="flex justify-end">
-            <div className="max-w-[85%] px-3 py-2 rounded-[var(--radius-md)] bg-indigo-600/30 text-white text-sm leading-relaxed">
+            <div className="max-w-[85%] px-3 py-2 rounded-[var(--radius-md)] bg-accent/30 text-white text-sm leading-relaxed">
               {lp.chatMockUser2}
             </div>
           </div>
@@ -145,7 +146,7 @@ function BeforeAfterDemo({ lp }: { lp: Record<string, string> }) {
               onClick={() => switchTrack(i)}
               className={`flex-1 py-3 text-sm font-medium transition-colors ${
                 activeTrack === i
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-accent text-[var(--ink-0)]'
                   : 'bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
@@ -175,14 +176,14 @@ function BeforeAfterDemo({ lp }: { lp: Record<string, string> }) {
             </button>
             <div className="flex-1">
               <div className="text-sm font-medium text-white mb-2">
-                Liberation — <span className="text-indigo-400">{labels[DEMO_TRACKS[activeTrack].key]}</span>
+                Liberation — <span className="text-accent">{labels[DEMO_TRACKS[activeTrack].key]}</span>
               </div>
               <div
                 className="h-1.5 bg-zinc-800 rounded-full cursor-pointer"
                 onClick={handleSeek}
               >
                 <div
-                  className="h-full bg-indigo-500 rounded-full transition-[width] duration-100"
+                  className="h-full bg-accent rounded-full transition-[width] duration-100"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -460,14 +461,9 @@ export default function DialPage() {
     <div className="min-h-screen bg-bg-primary text-white">
 
       {/* ─── Nav ──────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-bg-primary/60 backdrop-blur-md border-b border-white/5">
+      <nav className="fixed top-0 left-0 right-0 z-50 brand-workspace-header">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Image src="/hoo-animated.svg" alt="" width={28} height={28} />
-            <span className="text-lg font-bold tracking-tight">
-              MUED<span className="text-amber-400">ial</span>
-            </span>
-          </div>
+          <Link href="/dial" aria-label="MUEDial"><BrandMark product="MUEDial" compact /></Link>
           <div className="flex items-center gap-4">
             {isSignedIn && (
               <Link href="/dial/sessions" className="text-sm text-zinc-400 hover:text-white transition-colors">
@@ -631,13 +627,13 @@ export default function DialPage() {
               <Link
                 href="/dial/readiness"
                 onClick={() => trackCtaClick('muedial_readiness_check', 'dial_top_checkout', 'internal_page')}
-                className="mt-3 flex items-center gap-3 p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 transition-colors group"
+                className="mt-3 flex items-center gap-3 p-4 rounded-xl border border-accent/20 bg-accent/5 hover:bg-accent/10 transition-colors group"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-indigo-300">{lp.readinessBannerTitle}</p>
+                  <p className="text-sm font-medium text-accent">{lp.readinessBannerTitle}</p>
                   <p className="text-xs text-white/40 mt-0.5">{lp.readinessBannerDesc}</p>
                 </div>
-                <span className="text-xs font-medium text-indigo-400 group-hover:text-indigo-300 shrink-0">
+                <span className="text-xs font-medium text-accent group-hover:text-accent shrink-0">
                   {lp.readinessBannerCta} →
                 </span>
               </Link>

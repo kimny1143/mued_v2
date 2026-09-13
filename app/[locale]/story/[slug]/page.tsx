@@ -1,3 +1,4 @@
+import { BrandHeader } from "@/components/brand/brand-header";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
@@ -57,8 +58,9 @@ export default async function StoryPage({ params }: PageProps) {
   return (
     <div className="dark">
       <div className="fixed inset-0 -z-10 bg-bg-primary" />
+      <BrandHeader locale={locale} />
       <main className="min-h-screen py-20 px-6">
-        <StoryArticle slug={slug as StorySlug} sections={sections} />
+      <StoryArticle slug={slug as StorySlug} sections={sections} />
       </main>
     </div>
   );

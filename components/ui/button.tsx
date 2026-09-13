@@ -7,7 +7,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = 'default', size = 'md', className = '', children, disabled, ...props }, ref) => {
-    const baseStyles = 'rounded-[var(--radius-sm)] transition font-semibold inline-flex items-center justify-center gap-2';
+    const baseStyles = 'rounded-[var(--radius-sm)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent font-semibold inline-flex items-center justify-center gap-2';
 
     const variants = {
       default: 'bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-hover)] active:bg-[var(--color-brand-green-active)] text-[var(--color-brand-text)] disabled:bg-[var(--color-disabled-bg)] disabled:text-[var(--color-disabled-text)]',
@@ -28,7 +28,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       lg: 'h-12 px-6 py-3 text-[17px] leading-[22px]',
     };
 
-    const disabledStyles = disabled ? 'cursor-not-allowed' : '';
+    const disabledStyles = disabled ? 'cursor-not-allowed' : 'cursor-pointer';
 
     return (
       <button

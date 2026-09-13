@@ -14,15 +14,15 @@ interface MuednoteLayoutProps {
 export function MuednoteLayout({ children }: MuednoteLayoutProps) {
   return (
     <div
-      className="min-h-screen flex flex-col bg-[#0a0a0a]"
+      className="brand-workspace min-h-screen flex flex-col"
       style={{ fontFamily: 'var(--font-sora, var(--font-geist-sans)), system-ui, sans-serif' }}
     >
       <MuednoteHeader />
-      <main className="flex-1 container mx-auto px-6 py-8">
+      <main className="brand-workspace-main flex-1 px-5 sm:px-8 py-10">
         {children}
       </main>
-      <footer className="bg-[#0a0a0a] py-6 border-t border-white/10">
-        <div className="container mx-auto px-6 text-center text-slate-500 text-sm">
+      <footer className="brand-workspace-footer py-6">
+        <div className="container mx-auto px-6 text-center text-fg-secondary text-sm">
           <p>&copy; {new Date().getFullYear()} MUED by glasswerks. All rights reserved.</p>
         </div>
       </footer>

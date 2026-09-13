@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandHeader } from "@/components/brand/brand-header";
+
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import { MuedearHeroSection } from "./muedear-hero-section";
@@ -10,7 +12,6 @@ import { MuedearMascotSection } from "./muedear-mascot-section";
 import { MuedearFaqSection } from "./muedear-faq-section";
 import { MuedearCtaSection } from "./muedear-cta-section";
 import { MuedearParallaxBackground } from "./muedear-parallax-background";
-import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 
 /**
  * MUEDear Landing Page Content
@@ -26,17 +27,7 @@ export function MuedearLandingContent() {
       <MuedearParallaxBackground />
 
       {/* Header with locale switcher and back to brand */}
-      <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6">
-        <div className="container mx-auto flex justify-between items-center">
-          <Link
-            href={`/${locale}`}
-            className="text-white/60 hover:text-white text-sm transition-colors"
-          >
-            &larr; MUED
-          </Link>
-          <LocaleSwitcher />
-        </div>
-      </header>
+      <BrandHeader locale={locale} product="MUEDear" />
 
       <main className="min-h-screen">
         <MuedearHeroSection />
@@ -49,7 +40,7 @@ export function MuedearLandingContent() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#0a0a0a] py-8 border-t border-white/5">
+      <footer className="bg-[var(--bg-base)] py-8 border-t border-white/5">
         <div className="container mx-auto px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-subtle text-sm">

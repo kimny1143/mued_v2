@@ -27,7 +27,7 @@ export function AdvisoryFaqSection() {
   return (
     <section className="border-t border-neutral-100 px-6 py-20">
       <div className="mx-auto max-w-3xl">
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-teal-600">FAQ</p>
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#865109]">FAQ</p>
         <h2 className="mb-8 text-2xl font-medium tracking-tight text-neutral-900">{t("title")}</h2>
         <div className="border-t border-neutral-200">
           {FAQ_KEYS.map((key) => (
@@ -46,7 +46,7 @@ function FaqItem({ faqKey, isOpen, onToggle }: { faqKey: FaqKey; isOpen: boolean
     <div className="border-b border-neutral-200">
       <button
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-4 py-4 text-left transition-colors hover:text-teal-700"
+        className="flex w-full items-center justify-between gap-4 py-4 text-left transition-colors hover:text-[#865109]"
         aria-expanded={isOpen}
       >
         <span className="text-[15px] font-medium text-neutral-900">{t("question")}</span>

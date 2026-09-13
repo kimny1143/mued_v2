@@ -1,7 +1,7 @@
 .showroom {
-  --ink: #111210;
-  --paper: #f0eee7;
-  --amber: #f5a524;
+  --ink: var(--bg-base);
+  --paper: var(--brand-paper);
+  --amber: var(--accent);
   --muted: #acaea5;
   background: var(--ink);
   color: var(--paper);

@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandHeader } from "@/components/brand/brand-header";
+
 // /muedial LP (wave2 "使い始める" / 売る LP). Dark glasswerks (#0a0a0a / single amber #f5a524).
 // All copy from the muedialLp.* i18n namespace (content課 canonical, EN/JA byte-exact). Structure:
 // hero → 4 steps (Upload → Chat → Listen〔Before/After player〕 → Finalize) → FAQ(5) → 3宣言 +
@@ -12,8 +14,8 @@
 //
 // STAGED behind MUEDIAL_LP_LIVE (page.tsx robots). Pricing shows (kimny gate①).
 import Link from "next/link";
+import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
-import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { trackCtaClick } from "@/lib/analytics/gtag";
 import { BeforeAfterPlayer } from "./before-after-player";
 
@@ -35,34 +37,23 @@ export function MuedialLpContent() {
   };
 
   return (
-    <div className="dark min-h-screen bg-[#0a0a0a] text-white">
+    <div className="brand-product dark min-h-screen bg-[var(--bg-base)] text-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0a0a0a]/85 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href={`/${locale}`} className="text-lg tracking-wide">
-            <span className="font-bold">MUED</span>
-            <span className="font-light text-[#f5a524]">ial</span>
-          </Link>
-          <LocaleSwitcher />
-        </div>
-      </header>
+      <BrandHeader locale={locale} product="MUEDial" />
 
       <main>
         {/* ── Hero ─────────────────────────────────────────────────────────────────────── */}
         <section className="relative overflow-hidden px-6 pt-20 pb-16 md:pt-28">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 h-[440px] w-[440px] -translate-x-1/2 rounded-full bg-[#f5a524]/[0.07] blur-[120px]"
-          />
-          <div className="relative mx-auto max-w-2xl text-center">
+          <div className="relative mx-auto grid max-w-6xl items-center gap-10 md:grid-cols-2">
+            <div>
             <p className="font-mono text-[12px] uppercase tracking-[0.24em] text-[#f5a524]/80">
               {t("hero.role")}
             </p>
-            <h1 className="mt-5 text-5xl font-extrabold tracking-tight md:text-6xl">
+            <h1 className="mt-5 text-5xl font-semibold tracking-tight md:text-6xl">
               {t("hero.headline")}
             </h1>
             <p className="mt-4 text-[15px] italic text-white/45">{t("hero.origin")}</p>
-            <p className="mx-auto mt-5 max-w-md text-lg leading-relaxed text-white/80">
+            <p className="mt-5 max-w-md text-lg leading-relaxed text-white/80">
               {t("hero.lead")}
             </p>
             <a
@@ -70,10 +61,12 @@ export function MuedialLpContent() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackCtaClick("muedial", "muedial_lp_hero", "external_site")}
-              className="mt-8 inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-[#f5a524] px-6 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
+              className="mt-8 inline-flex items-center gap-2 rounded-[var(--radius-sm)] bg-[#f5a524] px-6 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
             >
               {t("hero.cta")}
             </a>
+            </div>
+            <Image src="/muedial-hoo-mixing-console.webp" width={2752} height={1536} alt="Hoo" priority sizes="(min-width: 768px) 560px, 100vw" className="h-auto w-full" />
           </div>
         </section>
 
@@ -130,7 +123,7 @@ export function MuedialLpContent() {
         {/* ── 価格（締め・成果課金前面） ─────────────────────────────────────────────────── */}
         <section className="border-t border-white/5 bg-white/[0.015] px-6 py-20">
           <div className="mx-auto max-w-xl text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight md:text-4xl">{t("pricing.headline")}</h2>
+            <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">{t("pricing.headline")}</h2>
             <ul className="mt-8 space-y-3 text-left">
               {(["tier1", "tier2", "tier3"] as const).map((k) => (
                 <li key={k} className="flex items-start gap-3 rounded-lg border border-white/8 bg-black/20 px-4 py-3 text-[15px] text-white/85">
@@ -155,7 +148,7 @@ export function MuedialLpContent() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackCtaClick("muedial", "muedial_lp_footer", "external_site")}
-              className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-[#f5a524] px-7 py-4 text-lg font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
+              className="inline-flex items-center gap-2 rounded-[var(--radius-sm)] bg-[#f5a524] px-7 py-4 text-lg font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
             >
               {t("cta.cta")}
             </a>

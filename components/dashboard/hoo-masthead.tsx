@@ -81,10 +81,10 @@ export function HooMasthead() {
       >
         <div className="relative w-8 h-8 flex-shrink-0">
           <Image
-            src="/images/hoo-icon.webp"
+            src="/hoo-animated.svg"
             alt="Hoo"
             fill
-            className="object-contain rounded-full"
+            className="object-contain"
             sizes="32px"
           />
         </div>

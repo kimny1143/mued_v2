@@ -1,5 +1,22 @@
 {
   "studioShowroom": {
+    "workspace": {
+      "title": "Your studio.",
+      "notice": "Design preview with fictional sample data. This is not your account.",
+      "views": "Preview view",
+      "dashboard": "Dashboard",
+      "console": "MUEDial controls",
+      "note": "Review the chorus arrangement",
+      "sessionNote": "Sample sessions only. No audio processing or downloads.",
+      "tools": "Your instruments",
+      "settings": "Account settings",
+      "channel": "Channel / sample",
+      "gain": "Gain",
+      "mute": "Toggle mute display",
+      "consoleNote": "Try the appearance of the controls. No audio is played.",
+      "hoo": "“A little warmer.” Work out the direction of your sound with Hoo, in the same familiar studio.",
+      "sendDisabled": "Sending is disabled in this sample"
+    },
     "metaTitle": "MUED — Studio Showroom design proposal",
     "metaDescription": "A new showroom for Hoo and the tools of music making. A design review preview.",
     "skip": "Skip to content",

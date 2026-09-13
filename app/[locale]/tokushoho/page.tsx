@@ -1,9 +1,9 @@
+import { BrandHeader } from "@/components/brand/brand-header";
 import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
-import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { ADVISORY_LIVE } from "@/lib/advisory/config";
 
 export function generateStaticParams() {
@@ -45,14 +45,7 @@ function TokushohoContent({ locale }: { locale: string }) {
   return (
     <div className="dark min-h-screen bg-bg-primary">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6 bg-bg-primary/80 backdrop-blur-xl border-b border-white/5">
-        <div className="container mx-auto flex justify-between items-center">
-          <Link href={`/${locale}`} className="text-white font-semibold hover:text-slate-300 transition-colors">
-            MUED
-          </Link>
-          <LocaleSwitcher />
-        </div>
-      </header>
+      <BrandHeader locale={locale} product="MUED" />
 
       {/* Content */}
       <main className="pt-24 pb-16 px-6">

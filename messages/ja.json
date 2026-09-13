@@ -1,5 +1,22 @@
 {
   "studioShowroom": {
+    "workspace": {
+      "title": "あなたのスタジオ。",
+      "notice": "デザイン確認用のサンプルです。表示内容は架空で、アカウントのデータではありません。",
+      "views": "表示する画面",
+      "dashboard": "ダッシュボード",
+      "console": "MUEDial 操作部品",
+      "note": "サビのアレンジを確認",
+      "sessionNote": "サンプルのセッションです。音声処理やダウンロードは行いません。",
+      "tools": "制作の道具",
+      "settings": "アカウント設定",
+      "channel": "チャンネル / サンプル",
+      "gain": "ゲイン",
+      "mute": "ミュートの表示を切り替える",
+      "consoleNote": "操作部品の見え方を試せます。音声は再生されません。",
+      "hoo": "「もう少し温かく」。いつものスタジオの中で、Hooと音の方向を考える。",
+      "sendDisabled": "サンプルのため送信できません"
+    },
     "metaTitle": "MUED — Studio Showroom デザイン提案",
     "metaDescription": "Hooと音楽制作の道具をつなぐ、MUEDの新しいショールーム。デザインレビュー用プレビュー。",
     "skip": "本文へスキップ",

@@ -192,7 +192,7 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
       onChange={(e) => setName(e.target.value)}
       placeholder={t("name")}
       maxLength={100}
-      className="min-h-[44px] w-full rounded-lg border border-white/10 bg-white/5 px-3 text-white placeholder-white/30"
+      className="min-h-[44px] w-full rounded-lg border border-white/10 bg-[var(--brand-paper)]/5 px-3 text-white placeholder-white/30"
     />
   );
   const emailInput = (
@@ -202,7 +202,7 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
       value={email}
       onChange={(e) => setEmail(e.target.value)}
       placeholder={t("email")}
-      className="min-h-[44px] w-full rounded-lg border border-white/10 bg-white/5 px-3 text-white placeholder-white/30"
+      className="min-h-[44px] w-full rounded-lg border border-white/10 bg-[var(--brand-paper)]/5 px-3 text-white placeholder-white/30"
     />
   );
   const painPointInput = (
@@ -218,7 +218,7 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
         placeholder={painPointHint}
         maxLength={1000}
         rows={2}
-        className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30"
+        className="w-full resize-none rounded-lg border border-white/10 bg-[var(--brand-paper)]/5 px-3 py-2 text-sm text-white placeholder-white/30"
       />
     </div>
   );
@@ -253,7 +253,7 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-[#111113] p-6 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md rounded-2xl border border-white/10 bg-[var(--bg-surface)] p-6 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between">

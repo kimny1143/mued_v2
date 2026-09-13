@@ -43,7 +43,10 @@ describe("legal pages — internal links carry the locale", () => {
     for (const sibling of siblings) {
       expect(src).toContain("`/${locale}/" + sibling + "`");
     }
-    expect(src).toContain("`/${locale}`"); // the header "MUED" home link
+    expect(src).toContain("<BrandHeader locale={locale}");
+    const header = readFileSync(join(process.cwd(), "components/brand/brand-header.tsx"), "utf8");
+    expect(header).toContain("href={`/${locale}`}"); // shared MUED home link
+    expect(header).toContain("href={`/${locale}/support`}");
   });
 });
 

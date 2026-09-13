@@ -151,7 +151,7 @@ export function ResultsContent({
 
   if (measurements.length === 0 && !hasProfile) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold text-white">{t('noResultsTitle')}</h1>
           <p className="text-white/50">{t('noResultsDesc')}</p>
@@ -167,7 +167,7 @@ export function ResultsContent({
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] px-4 sm:px-6 py-8 sm:py-12">
+    <div className="min-h-screen bg-bg-primary px-4 sm:px-6 py-8 sm:py-12">
       <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
         <div>

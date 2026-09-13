@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import { setRequestLocale, getTranslations } from "next-intl/server";
-import { IntegratedLandingContentV2 } from "@/components/features/landing/integrated-landing-content-v2";
+import { StudioShowroom } from "@/components/features/landing/studio-showroom";
 import { locales, type Locale } from "@/lib/i18n/config";
 
 interface PageProps {
@@ -52,9 +52,6 @@ export default async function LocaleLandingPage({ params }: PageProps) {
     redirect("/dashboard");
   }
 
-  // wave1 redesign cutover (kimny GO 2026-07-10): the home now renders the reworked portal
-  // (products-first · MIX→MASTER→TRAIN · hero C1). The old IntegratedLandingContent is retired from
-  // the home (dead code, follow-up cleanup). Home stays indexable (no robots override); the /muedial
-  // and /philosophy stubs remain noindex until their wave2 pages ship. go-live gated by kimny.
-  return <IntegratedLandingContentV2 />;
+  // Full-site design proposal: preserve home metadata and the signed-in dashboard redirect.
+  return <StudioShowroom locale={locale} preview={false} />;
 }

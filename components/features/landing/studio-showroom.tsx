@@ -1,3 +1,5 @@
+import { BrandMark } from "@/components/brand/brand-mark";
+import { ProductLink } from "@/components/brand/product-link";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
@@ -30,7 +32,14 @@ const modules = [
     key: "drive",
   },
 ] as const;
-export async function StudioShowroom({ locale }: { locale: string }) {
+export async function StudioShowroom({
+  locale,
+  preview = true,
+}: {
+  locale: string;
+  preview?: boolean;
+}) {
+  const homePath = `/${locale}${preview ? "/redesign/studio" : ""}`;
   const t = await getTranslations({ locale, namespace: "studioShowroom" });
   const portal = await getTranslations({ locale, namespace: "landing.v2" });
   return (
@@ -41,14 +50,11 @@ export async function StudioShowroom({ locale }: { locale: string }) {
       <header className={styles.header}>
         <div className={`${styles.container} ${styles.headerInner}`}>
           <Link
-            href={`/${locale}/redesign/studio`}
+            href={homePath}
             className={styles.brand}
-            aria-label={t("home")}
+            aria-label={preview ? t("home") : "MUED"}
           >
-            <Image src="/hoo-animated.svg" width={44} height={28} alt="" />
-            <span>
-              MUED<span className={styles.brandDot}>.</span>
-            </span>
+            <BrandMark />
           </Link>
           <nav className={styles.navigation} aria-label={t("navigation")}>
             <a href="#instruments">{t("navProducts")}</a>
@@ -60,7 +66,7 @@ export async function StudioShowroom({ locale }: { locale: string }) {
               {(["ja", "en"] as const).map((language) => (
                 <a
                   key={language}
-                  href={`/${language}/redesign/studio`}
+                  href={`/${language}${preview ? "/redesign/studio" : ""}`}
                   lang={language}
                   hrefLang={language}
                   aria-label={language === "ja" ? "日本語" : "English"}
@@ -151,10 +157,16 @@ export async function StudioShowroom({ locale }: { locale: string }) {
               </div>
               <div className={styles.featureCopy}>
                 <p>{portal("master.origin")}</p>
-                <Link href={`/${locale}/muedsp`} className={styles.textLink}>
+                <ProductLink
+                  href={`/${locale}/muedsp`}
+                  product="muedsp"
+                  location="portal_master"
+                  preview={preview}
+                  className={styles.textLink}
+                >
                   {portal("master.cta")}{" "}
                   <ArrowUpRight size={20} aria-hidden="true" />
-                </Link>
+                </ProductLink>
               </div>
             </div>
             <figure className={styles.masterFigure}>
@@ -247,10 +259,16 @@ export async function StudioShowroom({ locale }: { locale: string }) {
                 <br />
                 {t("mixBody")}
               </p>
-              <Link href={`/${locale}/muedial`} className={styles.primaryLink}>
+              <ProductLink
+                href={`/${locale}/muedial`}
+                product="muedial"
+                location="portal_mix"
+                preview={preview}
+                className={styles.primaryLink}
+              >
                 {portal("mix.cta")}{" "}
                 <ArrowUpRight size={18} aria-hidden="true" />
-              </Link>
+              </ProductLink>
             </div>
           </div>
         </section>
@@ -272,10 +290,17 @@ export async function StudioShowroom({ locale }: { locale: string }) {
                 MUEDear — {portal("train.role")}
               </p>
               <p className={styles.description}>{portal("train.origin")}</p>
-              <a href={MUEDEAR_APP_STORE_URL} className={styles.textLink}>
+              <ProductLink
+                href={MUEDEAR_APP_STORE_URL}
+                product="muedear"
+                location="portal_train"
+                external
+                preview={preview}
+                className={styles.textLink}
+              >
                 {portal("train.cta")}{" "}
                 <ArrowUpRight size={20} aria-hidden="true" />
-              </a>
+              </ProductLink>
             </div>
             <figure className={styles.earFigure}>
               <Image
@@ -303,9 +328,9 @@ export async function StudioShowroom({ locale }: { locale: string }) {
         <div className={styles.container}>
           <div className={styles.footerMain}>
             <Link
-              href={`/${locale}/redesign/studio`}
+              href={homePath}
               className={styles.footerWordmark}
-              aria-label={t("home")}
+              aria-label={preview ? t("home") : "MUED"}
             >
               MUED<span>.</span>
             </Link>

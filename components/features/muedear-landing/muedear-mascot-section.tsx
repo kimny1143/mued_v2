@@ -11,7 +11,7 @@ export function MuedearMascotSection() {
   const t = useTranslations("muedear.mascot");
 
   return (
-    <section className="py-28 bg-[#0a0a0a] relative">
+    <section className="py-28 bg-[var(--bg-base)] relative">
       {/* Section divider - subtle */}
       <div className="absolute top-0 left-0 right-0 h-px bg-white/5" />
 
