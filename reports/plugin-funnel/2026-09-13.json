@@ -1,0 +1,52 @@
+{
+  "date": "2026-09-13",
+  "generated_at": "2026-09-14T06:53:22.185Z",
+  "resend": {
+    "mued_sp_total_contacts": 876,
+    "mued_sp_net_new_day": 9,
+    "mued_sp_unsubscribed_total": 19,
+    "welcome_delivered_total": 9,
+    "welcome_ja_delivered": 0,
+    "welcome_ja_definition": "その日の welcome email（件名が /download|ダウンロード/i に一致）のうち、件名に日本語文字（/[ぁ-んァ-ヶ一-龠]/）を含み last_event=delivered のもの。★製品軸とは独立: 1通が製品別の集計とここの両方に入る。★shelf() が \"other\" と判定する件名も含む（問いは「日本語面が使われているか」であって「どの製品か」ではないため）。★検出器は毎回 自己検査する（既知の日本語件名が一致し、ASCII のみの件名が一致しないこと）。★自己検査が失敗した日は★この値が null になり anomalies に1行 出る。∴ ★0 は「使われていない」／★null は「測れていない」。0 が両方を意味することはない。★母集団の非対称は SHELF_DEFINITION と同じ（Resend 側の件名分類なので smoke を除外していない）。",
+    "broadcast": null
+  },
+  "shelf": {
+    "muedsat": {
+      "db_net_new": 1,
+      "email_delivered": 1,
+      "email_bounced": 0
+    },
+    "muedlim": {
+      "db_net_new": 6,
+      "email_delivered": 5,
+      "email_bounced": 1
+    },
+    "muedrive": {
+      "db_net_new": 3,
+      "email_delivered": 3,
+      "email_bounced": 0
+    }
+  },
+  "shelf_definition": "welcome email を件名で分類。件名が /download|ダウンロード/i に一致し、かつ registry の plugin key (大小無視) を含むものをその製品の棚へ。どちらも満たさなければ \"other\"。★2026-08-28 以前は /download/i のみだったため、日本語件名の welcome は全て \"other\" に落ちていた。★母集団の非対称: db_net_new は source=smoke-test の合成行を除外するが、email_delivered / email_bounced は Resend 側の件名分類なので除外していない（同じ行の2数は別母集団）。",
+  "db_owner_union_total": 816,
+  "marketing_contacts_total": 880,
+  "muedsp_reachable": {
+    "count": 857,
+    "definition": "MUEDsp segment only; unsubscribed=false; unique. ★North-star denominator (kimny ratified 2026-07-18: 北極星=MUEDsp セグメント10,000人). Single scope → no OR/AND question."
+  },
+  "marketing_contacts_reachable": {
+    "count": 861,
+    "definition": "union across all audiences (currently MUEDsp+General); reachable = NOT unsubscribed in ANY audience (AND/conservative, Chief ruling 2026-07-23). Org-wide reach — NOT the north-star. total (marketing_contacts_total) = billing exposure incl. unsubscribed."
+  },
+  "portal_registrations": {
+    "cumulative": 108,
+    "day_utc": 0,
+    "counting_since": "2026-07-23",
+    "dashboard_link_since": "2026-09-03",
+    "denominator": "muedsat+muedlim+muedrive",
+    "note": "forward-only; not backfillable (recording shipped 2026-07-23). Portal arrivals before that date are only observable in GA4, not here. ★Second discontinuity — see dashboard_link_since (#964; UTC, measured from git and the Vercel production deployment after it shipped): the dashboard did not link to the portal at all until then — before that deploy the only in-product door was the welcome/announcement email, so a rise after it is NOT by itself evidence that a mail landed. Column and query unchanged; only the inflow widened. ★Expect a one-time STEP, not a change in rate: the write is an UPDATE over existing entitlement rows WHERE portal_registered_at IS NULL, so what the dashboard link newly reaches is the standing backlog of owners who held an entitlement since July and never arrived — a cohort that drains once. Reading the step as campaign lift is the specific misread this note exists to prevent. ★Third discontinuity — see `denominator`: from 2026-09-05 this counts THREE modules (muedsat+muedlim+muedrive), on insight課's decision (#378). ★Expect a one-time STEP again, and again it is not rate: MUEDrive owners who had already reached the portal were being counted by nothing, and now they are counted. ★The value did not change because behaviour changed — the population did. Diff denominator between two ★SNAPSHOTS (the JSON this collector emits) to find the exact day. ★The snapshot is the durable place to diff: it carries every key this collector emits, whatever the downstream renderer happens to do with them. (When this field shipped, the renderer enumerated keys and so omitted it — insight課 #432 changed it to pass everything through. ★Stated as history on purpose: a claim about the renderer's CURRENT behaviour would go stale here, which is the defect this very note exists to warn about.) ★Unlike the first two discontinuities there is no date constant to trust, because the snapshot states what it counted rather than when it changed."
+  },
+  "anomalies": [
+    "muedlim: db_net_new(6) > email_delivered(5) — welcome email未達の疑い"
+  ]
+}
