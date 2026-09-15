@@ -168,6 +168,28 @@ done
 ★**∴ 規律**: ★**memory の内容を共通block / skill へ昇格させたら、★同じ回に ★`[[旧名]]` を grep して指し先を block 名へ差し替える。**
 ★**差し替え先は file でなく ★block 名で書く**（★block は配布物ゆえ path が課ごとに違う・★名前なら腐らない）。
 
+#### ★この検査には ★mention-allowlist が要る（★検査を書いた側が同じ回に踏んだ）
+
+★**検出は `[[…]]` の grep** ∴ ★**use（実リンク）と mention（書き方の説明・placeholder）を区別できない。**
+★**(0t) を閉じた直後、★当課は memory に ★`grep -rn '[[旧名]]'` という ★手順そのものを書き、★自分の検査に引っかけた。**
+
+★**allowlist（★2026-09-16 時点・★全件 mention であることを1件ずつ開いて確認済）**:
+
+| token | なぜ mention か |
+|---|---|
+| `...sign-in` | ★Next.js catch-all route path（`app/(auth)/sign-in/[[...sign-in]]/page.tsx`） |
+| `link` ／ `…` | ★wiki-link の書き方 ★そのものを説明している散文 |
+| `既存 state 優先` | ★CLAUDE.md 共通block の ★原則名（★file ではない） |
+| ★`旧名` | ★**昇格時に撃つ grep の placeholder**（★上の規律の本体・★消すと手順が消える） |
+
+★★**∴ allowlist は ★検査と同じ場所に置く。** ★置かないと、★次の回に ★**「dangling 1件」を "直す" ために
+★正しい例を消す**（★CLAUDE.md「件数で判定すると引用を消して実例そのものを失う」の実演）。
+
+★**未着手の候補**: ★この検査は毎回 手で組んでいる（★索引被覆・★index link 実在・★dangling link の3本）。
+★**script 化すれば allowlist も一緒に version 管理できる** が、★`scripts/` への追加は ★code ＝ Tier 2
+∴ ★**本 PR（Tier 1・docs のみ）には入れない。★次に memory 監査を回す回に、★script 化を先に判断する**
+（★[[feedback-automate-before-writing-a-runbook]] の「手順書を書く前に自動化を問う」に該当）。
+
 
 ### (0s) 進捗 — 2026-09-12（第2便）
 
