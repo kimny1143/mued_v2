@@ -148,9 +148,25 @@ done
 → ★**引用文そのものが規則を持っていた**（「audio correctness(出音)は kimny 判断領域」）・★**かつ live な正本は CLAUDE.md 共通block「キャラクター gate」**（dsp＝試聴／★最終判断は構造的に人間のもの）
 → ★**file を復活させず、正本を指す文へ差し替えた**（★4箇所・★差し替え後 0件を再測）
 
-★**残 6件**（★次の回に1件ずつ・★一括で消さない ——★inline の事実が生きているなら ★文を残して link だけ落とす）:
-`feedback_design_to_native_exact_pixel_transplant` ／ `feedback_mass_production_default` ／ `feedback_peer_session_continuity` ／ `feedback_zero_kimny_manual_work` ／ `reference_pricing_canonicals_v2` ／ `reference-muedlim-audience-resend`
-★**うち5件は旧 underscore 命名**＝★過去の整理で消えた側。★`~/.claude/memory/`（global）にも不在を実測（★5 file のみ）。
+★**残 6件も同日に閉じた ＝ ★(0t) は 0 件**（★genuine 7 / 7 解消・★noise 4 は対象外）。
+
+★★**閉じてみて分かった機序 ——★7件のうち ★5件は「消えた」のではなく ★CLAUDE.md 共通block へ昇格していた。**
+
+| 死んでいた link 先 | 実際の所在（★2026-09-16 実測） |
+|---|---|
+| `feedback_audio_output_kimny_judgment_required` | ★共通block「キャラクター gate」（dsp＝試聴／最終判断は人間） |
+| `feedback_design_to_native_exact_pixel_transplant` | ★共通block「UI モック忠実性 DoD」＋ `ui-mock-fidelity` skill |
+| `feedback_mass_production_default` | ★共通block「量産が default」 |
+| `feedback_peer_session_continuity` | ★共通block「稼働の前提」（dormant 自己宣言禁止／自己終了禁止） |
+| `feedback_zero_kimny_manual_work` | ★共通block「peer self-judgment 境界（kimny 手動作業ゼロ原則）」 |
+| `reference_pricing_canonicals_v2` | ★**当課に正本なし**（★値＝`lib/dial/pricing.ts`／形＝`reference-dial-pricing-shape`／★粗利率 policy は conductor・freee 側）→ ★link を落とし「この行が持つ写し」と明記 |
+| `reference-muedlim-audience-resend` | ★**当課に正本なし**（★audience ID の正本＝Vercel env と Resend 側）→ ★同様に明記 |
+
+★★**∴ 機序は「memory を消した」ではなく ★「memory の中身が block へ昇格した時、★inbound link が更新されない」。**
+★**昇格は前進なので、★誰も壊れたと思わない** ——★**そして link だけが静かに死ぬ**（★退役が fail-silent なのと同じ向き）。
+
+★**∴ 規律**: ★**memory の内容を共通block / skill へ昇格させたら、★同じ回に ★`[[旧名]]` を grep して指し先を block 名へ差し替える。**
+★**差し替え先は file でなく ★block 名で書く**（★block は配布物ゆえ path が課ごとに違う・★名前なら腐らない）。
 
 
 ### (0s) 進捗 — 2026-09-12（第2便）
