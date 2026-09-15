@@ -100,6 +100,59 @@ done
 
 ## 2026-09-10T11:37:37+09:00 に追記 — memory の file 参照 全数スイープ
 
+### (0s) 完了 — 2026-09-16（索引なし ★13 → ★0）
+
+★**母集団 120 file・索引なし ★0**（★陽性control 2件 indexed=True ／ ★陰性control＝存在しない名で False）。★**MEMORY.md の 122 link すべて実在。**
+
+★★**13件を1件ずつ判定した。★索引を生やしたのは ★2件だけ。**
+
+| 判定 | 件数 | 対象 |
+|---|---:|---|
+| ★**索引した** | 2 | `project-analytics-conventions`（★MUEDear 側イベントは別リポ＝★ここが唯一の記録）／ `project-muedsat-dl-launch`（★**indexed な2 memory が「詳細=」で指していた**＝★消すと dangling を作る） |
+| ★**削除**（完了記録・★repo と git が既に記録している） | 10 | muednote-v1.1.0 / v1.2.0 / dashboard-v120-cleanup / dialMessages-tooluse-fix / hoo-v2-tasks / clerk-duplicate-users / free15-muedjp-promo / dial-reference-track-poc / ★**dial-subscriptions** / ★**mued-strategy-confirmed-20260426** |
+| ★**畳んで型だけ残した** | 1 | dial-v2-player-decode-hang → ★新 `gotcha-dial-stem-download-serves-first-preview` |
+
+★★**削除10件のうち2件は「古い」のではなく ★★今日の事実と食い違っていた**（★索引なしの危険そのもの）:
+
+```
+★project-dial-subscriptions         … Basic $19.99 / Pro $34.99 / Studio $49.99 を ★live として記述
+★project-mued-strategy-confirmed-…  … 「既存MUEDial維持: Basic/Pro/Studio プラン変更なし」
+★★実測 lib/dial/pricing.ts … ★4 tier すべて deprecated:true（★code コメント「Retired as a purchasable tier (2026-07)」）
+★★∴ recall が拾えば ★退役した価格を現在形として出す。★しかも索引に無いので ★誰も見つけられない
+   ＝ pr-design-notes-20260416（★5ヶ月・価格誤り・索引ゼロ）と ★同型
+```
+
+★**削除の前に3つ測った**（★dangling を新規に作らないため）:
+①★inbound `[[wiki-link]]`（★11件すべて 0 ／ ★muedsat だけ ★2 ＝∴ 削除せず索引へ回した）
+②★repo 側からの参照（★2件 ＝ 下記 (0r) の行）
+③★scratchpad へ全文 archive（★repo には入れない ——★ずれた行番号を repo に持ち込まないため・11 file / 52KB）
+
+★**(0r) の行を2つ 訂正**: `components/features/landing-content.tsx` → `project-free15-muedjp-promo` ／ `docs/muedial/reference-track-poc.md` → `dial-reference-track-poc` は、★**9/10-11 に「註記」で閉じた**が ★**本日 memory ごと削除した**。
+★★**∴ 註記は延命であって解決ではなかった** ——★**引用先の artifact が全部 消えていて、★かつ memory 自体が完了記録なら、★答えは「註記」ではなく「捨てる」。**
+
+### (0t) — ★memory → memory の dangling `[[wiki-link]]` ＝ ★7件（2026-09-16 新規検出）
+
+★**(0r) が memory→file、★(0s) が MEMORY.md→memory、★(0t) は ★memory→memory。★同じ機構の3面目。**
+
+★★**11 hit のうち ★4件は grep のノイズだった**（★use と mention の区別が grep には付かない）:
+
+```
+★[[...sign-in]]      … Next.js の catch-all route path（`app/(auth)/sign-in/[[...sign-in]]/page.tsx`）
+★[[link]] / [[…]]    … ★wiki-link の書き方 ★そのものを説明している散文
+★[[既存 state 優先]] … CLAUDE.md 共通block の ★原則名（★file ではない）
+★★∴ ★件数で閉じると ★引用を消して実例そのものを失う
+   （CLAUDE.md「規則と例が矛盾したら例が勝つ」の ★但し書きと同型 ——★ヒットしたら1件ずつ開く）
+```
+
+★**genuine 7件のうち1件を解消**: `feedback_audio_output_kimny_judgment_required`（★inbound ★4）
+→ ★**引用文そのものが規則を持っていた**（「audio correctness(出音)は kimny 判断領域」）・★**かつ live な正本は CLAUDE.md 共通block「キャラクター gate」**（dsp＝試聴／★最終判断は構造的に人間のもの）
+→ ★**file を復活させず、正本を指す文へ差し替えた**（★4箇所・★差し替え後 0件を再測）
+
+★**残 6件**（★次の回に1件ずつ・★一括で消さない ——★inline の事実が生きているなら ★文を残して link だけ落とす）:
+`feedback_design_to_native_exact_pixel_transplant` ／ `feedback_mass_production_default` ／ `feedback_peer_session_continuity` ／ `feedback_zero_kimny_manual_work` ／ `reference_pricing_canonicals_v2` ／ `reference-muedlim-audience-resend`
+★**うち5件は旧 underscore 命名**＝★過去の整理で消えた側。★`~/.claude/memory/`（global）にも不在を実測（★5 file のみ）。
+
+
 ### (0s) 進捗 — 2026-09-12（第2便）
 
 ★**索引なし ★15 → ★13**。★**CLAUDE.md 共通block と重複する2件を畳んだ** —— `feedback-no-self-termination` / `feedback-continuous-operation-vocabulary`。
@@ -211,8 +264,8 @@ done
 | `components/dial/waveform-player.tsx` | ★同上 | ★新 memory |
 | `lib/utils/waveform.ts` | ★同上 | ★新 memory |
 | `db/migrations/0041_trial_events.sql` | ★同上 | ★新 memory |
-| `components/features/landing-content.tsx` | ★**削除済**（#655「remove dead v1 landing chain」）・★`isFree15PromoActive` も **0件**（陽性control `IntegratedLandingContent` 3件） | `project-free15-muedjp-promo` に註記 |
-| `docs/muedial/reference-track-poc.md` | ★**一度も commit されていない**（0件） | `dial-reference-track-poc` に註記 |
+| `components/features/landing-content.tsx` | ★**削除済**（#655「remove dead v1 landing chain」）・★`isFree15PromoActive` も **0件**（陽性control `IntegratedLandingContent` 3件） | ~~`project-free15-muedjp-promo` に註記~~ → ★**2026-09-16 に memory ごと削除**（完了記録） |
+| `docs/muedial/reference-track-poc.md` | ★**一度も commit されていない**（0件） | ~~`dial-reference-track-poc` に註記~~ → ★**2026-09-16 に memory ごと削除**（完了記録・★実装は main に在る） |
 | `scripts/_yuu-monitor.ts` | ★**一度も commit されていない**（0件・陽性control `scripts/*.ts` 60件） | `project-dial-stuck-processing-fix` の★自己矛盾を除去 |
 | `app/[locale]/ai-mixing/page.tsx` | ★**未 merge の branch `feat/seo-lp-ai-mixing` 限り**（`a10ac2de` は main の祖先でない） | ★既に正しく註記済＝変更不要 |
 
