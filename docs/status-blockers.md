@@ -110,7 +110,7 @@ done
 |---|---:|---|
 | ★**索引した** | 2 | `project-analytics-conventions`（★MUEDear 側イベントは別リポ＝★ここが唯一の記録）／ `project-muedsat-dl-launch`（★**indexed な2 memory が「詳細=」で指していた**＝★消すと dangling を作る） |
 | ★**削除**（完了記録・★repo と git が既に記録している） | 10 | muednote-v1.1.0 / v1.2.0 / dashboard-v120-cleanup / dialMessages-tooluse-fix / hoo-v2-tasks / clerk-duplicate-users / free15-muedjp-promo / dial-reference-track-poc / ★**dial-subscriptions** / ★**mued-strategy-confirmed-20260426** |
-| ★**畳んで型だけ残した** | 1 | dial-v2-player-decode-hang → ★新 `gotcha-dial-stem-download-serves-first-preview` |
+| ★**畳んで型だけ残した** | 1 | dial-v2-player-decode-hang → ★新 `gotcha-dial-stem-url-must-be-task-scoped`（★初版は誤りを含んでいた——下記 (0u)） |
 
 ★★**削除10件のうち2件は「古い」のではなく ★★今日の事実と食い違っていた**（★索引なしの危険そのもの）:
 
@@ -279,3 +279,27 @@ done
 ★**再スイープ（2026-09-11T16:23:57+09:00）**: 9 path すべて ★『名指す memory = 1件・かつ その1件が判定を持つ』。★陽性control（`package.json` を含む memory 7件）通過。
 
 ★**注意**: ★**この 32 という数は「そのフィルタで見えたもの」**（→ [[feedback-zero-hits-means-your-filter-not-absence]]）。★抽出の正規表現が拾う拡張子は `ts|tsx|md|sql|json|mjs` のみで、★**バッククォート無しで書かれた path や、拡張子の無い dir 参照は母集団に入っていない**。
+
+### (0u) — ★畳む時に、畳む元の stale な主張を新 memory へ継承した（2026-09-16・★当課の自己検出）
+
+★**(0s) で畳んだ `project-dial-v2-player-decode-hang` は「take 単位 URL はフルリファクタへ回した」と書いていた。**
+★**当課はそれを真として、★新 memory に「未修正の欠陥」として書き、★status.md (W7) と PR #1031 本文にも書いた。**
+
+★★**誤り。★PR-A（2026-06-12）で修正済**だった:
+
+```
+★lib/dial/session-takes.ts … ★各 MIXED take に `stemStreamUrlByTask`（taskId-scoped）を与える
+★route の sessionId+stemKey  … ★意図された fallback（★自 task に stems が無い take・poll desync）
+★tests/unit/dial/session-takes.test.ts … ★「Preview 2 ≠ Preview 1」を名指す case ／ ★11/11 green
+★★畳んだ記録は 6/11 産・★修正は 6/12 ＝ ★1日ずれたまま ★3ヶ月 残っていた
+```
+
+★★**機序（★(0s) の手順に足す分）**: ★**callee の形だけを見て「欠陥」と断じた。★caller を読まなかった。**
+★**route に「最初の preview」の形は ★今も実在する** ——★∴ ★**形の一致は挙動の証拠ではない。**
+
+★★**∴ 畳む時の追加手順**: ★**畳む元が「未実装 / 未修正 / 保留」と書いていたら、★それは ★記録された日の主張**
+＝ ★**新 memory へ写す前に ★今日 測る**（★grep なら ★helper 名で ★呼び出し元を引く・★test 名を読む・★実行する）。
+★**畳みは「要約」ではなく「★再検証」** ——★stale な主張は、★畳むと ★新しい日付を着て出てくる。
+
+★**検出に効いたもの**: ★修正 scope を測ろうとして撃った `grep` の隣に ★test 名と helper の docstring が出た。
+★**∴ scope measurement が結果的に検査になった**（★最初からそう設計したのではない）。
