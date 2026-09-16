@@ -18,11 +18,11 @@ _ops:
   searchIntent: "what integrated LUFS to master to for Spotify/Apple Music/YouTube"
   pillar: loudness-and-true-peak
   siblings: [what-is-lufs, true-peak-vs-sample-peak, set-true-peak-ceiling]
-  sources: ["platform loudness docs (Spotify/Apple/YouTube)", "AES streaming loudness recommendations"]
-  verifyBeforePublish: "streaming reference levels change — reconfirm each platform's current spec and update the 'as of' year"
+  sources: ["Spotify for Artists — Loudness normalization", "Apple Digital Masters white paper", "AES AESTD1008.1.21-9 (2021-09-24)", "EBU R128 v5.0 (2023-11)"]
+  verifyBeforePublish: "reconfirmed 2026-09-16 (see Sources); re-verify before each republish"
 ---
 
-*Reference levels below are current as of 2026 — platforms change them, so reconfirm before you rely on a number.*
+*Reference levels and their sources below were reviewed as of 2026-09 — platforms change them, so reconfirm before you rely on a number.*
 
 What integrated LUFS should you master to? The honest answer surprises people: the target isn't yours to win. It's set by where listeners play your track — and mastering louder than it just gets you turned back down.
 
@@ -32,18 +32,19 @@ Every major streaming service plays all tracks toward one reference loudness, me
 
 So two masters at the same LUFS sound equally loud on Spotify — regardless of how hard either was limited.
 
-## Reference levels (as of 2026)
+## Reference levels (as of 2026-09)
 
-| Platform | Integrated LUFS (reference) |
-|---|---|
-| Spotify | −14 LUFS |
-| Apple Music (Sound Check) | −16 LUFS |
-| YouTube | ≈ −14 LUFS |
-| Amazon Music | ≈ −14 LUFS |
-| Tidal | ≈ −14 LUFS |
-| *Broadcast, for context (EBU R128)* | −23 LUFS |
+| Platform / standard | Integrated LUFS (reference) | Source of the figure |
+|---|---|---|
+| Spotify | −14 LUFS | Published by Spotify |
+| Apple Music (Sound Check) | Widely reported ≈ −16 LUFS | Not published by the platform; Apple publishes no LUFS figure |
+| YouTube | Widely reported ≈ −14 LUFS | Not published by the platform; measured / reported value only |
+| Amazon Music | Widely reported ≈ −14 LUFS | Not published by the platform; measured / reported value only |
+| Tidal | Widely reported ≈ −14 LUFS | Not published by the platform; measured / reported value only |
+| AES TD1008 (track normalization) | −16 LUFS | Standards-body recommendation for streaming services |
+| *Broadcast, for context (EBU R128)* | −23 LUFS | Standards-body recommendation for programme loudness |
 
-Most music streaming clusters around **−14 LUFS**; Apple's Sound Check sits a little lower. These are *reference* levels, not hard limits — nothing rejects a master for being louder, it just gets attenuated.
+Most reported music-streaming levels cluster around **−14 LUFS**; Sound Check is widely reported a little lower, not specified numerically by Apple. These are *reference* levels, not hard limits — nothing rejects a master for being louder, it just gets attenuated. **AES TD1008 tells streaming services how to normalize playback, not artists what level to master to.** Its −16 LUFS track reference is not an Apple specification.
 
 ## The part that changes how you master
 
@@ -53,13 +54,21 @@ The practical move: **master for the music, then use integrated LUFS as a check,
 
 Two honest caveats:
 - **Genres differ.** A club-focused master and a jazz trio don't share a target; the platform reference is the same, but how close you sit to it is a musical choice.
-- **Loudness isn't the only spec.** Whatever your LUFS, keep your **true peak at or below −1 dBTP** so the master survives lossy encoding — that's a separate control (see [How to set a true-peak ceiling](/learn/set-true-peak-ceiling)).
+- **Loudness isn't the only spec.** AES TD1008 recommends **true peak at or below −1 dBTP** at the lossy codec input. Spotify asks for **below −1 dBTP**, or **below −2 dBTP if your master is louder than −14 LUFS integrated**, to reduce encoding distortion — that's a separate control (see [How to set a true-peak ceiling](/learn/set-true-peak-ceiling)).
 
 ## Takeaways
 
-- Streaming normalizes to integrated LUFS; most music platforms reference **≈ −14 LUFS**, Apple ≈ −16.
+- Spotify publishes **−14 LUFS**; Apple ≈ −16 and YouTube / Amazon Music / Tidal ≈ −14 are reported values, not published platform specifications.
 - Mastering louder than the reference gains you nothing — it's turned back down.
-- Use LUFS as a check; master for the song, and keep true peak ≤ −1 dBTP.
+- Use LUFS as a check; master for the song. Keep true peak ≤ −1 dBTP for lossy delivery; Spotify asks for below −2 dBTP when your master is louder than −14 LUFS.
 - Reference levels drift — verify each platform's current figure.
 
 *Part of the [Loudness and true peak guide](/learn/loudness-and-true-peak).*
+
+## Sources
+
+- **Spotify: −14 LUFS integrated; true peak below −1 dBTP, or below −2 dBTP for masters louder than −14 LUFS.** [Spotify for Artists — Loudness normalization](https://support.spotify.com/us/artists/article/loudness-normalization/). Checked 2026-09-16.
+- **Apple: no numerical LUFS reference or dBTP recommendation in the reviewed guidance.** The white paper recommends at least 1 dB of headroom and describes Sound Check qualitatively. The reported ≈ −16 LUFS is not an Apple specification. [Apple Digital Masters white paper](https://www.apple.com/itunes/docs/apple-digital-masters.pdf) / [Apple Digital Masters](https://www.apple.com/apple-music/apple-digital-masters/). Checked 2026-09-16.
+- **YouTube / Amazon Music / Tidal: no official public numerical reference found in the reviewed sources.** Their ≈ −14 LUFS entries above are measured / reported values only, not figures supplied by these pages. Official-source search: [YouTube / Google support](https://support.google.com/), [Amazon Music](https://amazonmusic.com/) / [Amazon Music for Artists](https://artists.amazonmusic.com/), [Tidal support](https://support.tidal.com/) / [Tidal for Artists](https://artists.tidal.com/). Checked 2026-09-16.
+- **−16 LUFS for track normalization comes from AES TD1008, not Apple.** AESTD1008.1.21-9 (2021-09-24, supersedes TD1004), Table 1; maximum true peak ≤ −1 dBTP at the lossy codec input. These are recommendations for streaming-service normalization, not artist mastering targets. [AES TD1008 PDF](https://aes2.org/wp-content/uploads/2024/01/20210924_TD1008_v3.13.pdf) / [AES document page](https://aes.org/technical-council/technical-document-aestd1008/). Checked 2026-09-16.
+- **EBU R128: −23 LUFS average programme loudness, for broadcast context.** Version 5.0 (2023-11). [EBU R128](https://tech.ebu.ch/publications/r128). Checked 2026-09-16.
