@@ -196,6 +196,13 @@ export function MuedspLandingContent() {
                   was correct but untypeable; the guard beside it said "the day a popup is wired … the
                   contract should move into code", and this is that day.
 
+                  ★NEXT_PUBLIC_* は ★build 時に inline される ∴ ★env を入れた「後」の build が要る。
+                  ★2026-09-16 実測: ★env 投入の 3 分後に作られた build でも ★ボタンは disabled のままで、
+                  ★同じ branch の 2 本目（6 分後）でも同じだった。★timing と scope は潰したので、
+                  ★残る疑いは ★Vercel の build cache が inline 済の出力を再利用していること。
+                  ★∴ ★env だけ入れて「反映された」と見なさない ——★必ず ★ボタンの描画で確かめる
+                  （★disabled 形 `shrink-0 cursor-not-allowed` か ★enabled 形 `bg-[var(--accent)] px-5 py-3` か）。
+
                   ★WHY THE BUTTON MAY STILL BE INERT: `MASTERCHAIN_CHECKOUT_ENABLED` needs BOTH
                   NEXT_PUBLIC_FASTSPRING_STOREFRONT and NEXT_PUBLIC_FASTSPRING_PRODUCT_PATH. Neither
                   is set yet — the storefront is a FastSpring account setting and the SKU / product
