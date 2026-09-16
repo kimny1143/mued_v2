@@ -15,3 +15,9 @@ VOID 率＝実測済（2026-09-11）**: ★母集団 直近 merged **60本**／�
 ★**2026-09-16 註**: ★本項は (W6) に統合した（★(0r)/(0s)/(0t) の3面とも 0 件）。
 
 memory の dangling ref ＝ ★0件で閉じた（2026-09-11）**: ★9件を1件ずつ判定。★**うち1件は「消えた」でなく ★未着地**（`app/[locale]/ai-mixing/page.tsx` ＝未 merge branch 限り）。★詳細＝`docs/status-blockers.md` (0r)。
+
+## (W2b) masterchain の DL 先 ― ★決着済（2026-09-11・#1011 merged）
+
+★**退避理由**: ★本項は自分で「この行はもう待ちではない」と書いている∴ ★`blocked_by`（★解消するまで残す欄）に置く理由が終わっている。★退避は 2026-09-16（★blocked_by が cap 6,000 B を 324 B 超えたため）。
+
+★★**(W2b) masterchain の DL 先 ＝ ★決着（2026-09-11・#1011 merged）**: ★`public/downloads/` に本体を置き、★URL と pin を設定し、★**deploy 後に 200 / sha 一致 / 陰性control 404 まで実測**。★**この行はもう待ちではない**。
