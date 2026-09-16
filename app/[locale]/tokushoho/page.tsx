@@ -5,6 +5,7 @@ import Link from "next/link";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
 import { ADVISORY_LIVE } from "@/lib/advisory/config";
+import { MUEDSP_LIVE } from "@/lib/muedsp/config";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -56,6 +57,10 @@ function TokushohoContent({ locale }: { locale: string }) {
           {/* ─── Common Info ─── */}
           <div className="space-y-6 mb-12">
             <InfoRow label={t("seller.title")} value={t("seller.value")} />
+            {/* ★有料プラグインは Merchant of Record が FastSpring ∴ 上の「販売業者」だけでは
+                誰が売ったのかが表示として不足する。2行の表記は /terms・/refund と byte 同一
+                （tests が3面の一致を測る）。 */}
+            <InfoRow label={t("mor.title")} value={t("mor.value")} />
             <InfoRow label={t("representative.title")} value={t("representative.value")} />
             <InfoRow label={t("address.title")} value={t("address.value")} />
             <InfoRow label={t("phone.title")} value={t("phone.value")} />
@@ -69,6 +74,17 @@ function TokushohoContent({ locale }: { locale: string }) {
             />
             <InfoRow label={t("additionalCost.title")} value={t("additionalCost.value")} />
             <InfoRow label={t("payment.title")} value={t("payment.value")} />
+            {/* ★FastSpring 分の成立時期は ★FastSpring 自身の規約に従わせている。★簡略化しないこと。
+                正本＝FastSpring® Terms & Conditions of Sale for Purchasers（Last Updated 2021-10-28）
+                https://fastspring.com/legal/terms-sale/
+                  §3.4 … "Any order confirmation email received by you prior to our Acceptance shall
+                          constitute an acknowledgement of our receipt of your offer only, and not an
+                          acceptance of your offer."
+                  §3.6 … Acceptance ＝ (a) product を dispatch／service へ access を提供 ★かつ
+                          (b) 代金の settlement を受領 —— ★その両方が揃った時点
+                ★当課は当初「注文確認メールの送信をもって成立」と書いており、★これは §3.4 と真逆だった
+                （conductor lint が一次を引いて指摘・当課も一次を照合して確認）。
+                ★当製品の (a) は ★ライセンスキーのメール送信が該当する。 */}
             <InfoRow label={t("contractEstablishment.title")} value={t("contractEstablishment.value")} />
           </div>
 
@@ -78,31 +94,6 @@ function TokushohoContent({ locale }: { locale: string }) {
           </h2>
 
           <div className="space-y-10">
-            <ServiceSection
-              name={t("muednote.name")}
-              description={t("muednote.description")}
-              urlTitle={t("muednote.url.title")}
-              urlValue={t("muednote.url.value")}
-              priceTitle={t("muednote.price.title")}
-              priceDescription={t("muednote.price.description")}
-              pricePlans={[
-                t("muednote.price.plans.free"),
-                t("muednote.price.plans.basic"),
-                t("muednote.price.plans.premium"),
-              ]}
-              paymentTimingTitle={t("muednote.paymentTiming.title")}
-              paymentTimingValue={t("muednote.paymentTiming.value")}
-              deliveryTitle={t("muednote.delivery.title")}
-              deliveryValue={t("muednote.delivery.value")}
-              cancellationTitle={t("muednote.cancellation.title")}
-              cancellationDescription={t("muednote.cancellation.description")}
-              environmentTitle={t("muednote.environment.title")}
-              environmentItems={[
-                t("muednote.environment.web"),
-                t("muednote.environment.ios"),
-              ]}
-            />
-
             <ServiceSection
               name={t("muedial.name")}
               description={t("muedial.description")}
@@ -127,6 +118,45 @@ function TokushohoContent({ locale }: { locale: string }) {
                 t("muedial.environment.web"),
               ]}
             />
+
+            {/* ★動作環境の値は ★実物の installer から採った（site copy から写していない）:
+                MUEDsp-masterchain-0.1.3-installer.pkg を 2026-09-16 に取得し、
+                  xar -tf   → VST3 / AU / AAX の3 sub-package（install-location もそれぞれ確認）
+                  lipo      → x86_64 + arm64（∴ Universal）
+                  otool -l  → LC_BUILD_VERSION minos 11.0（∴ macOS 11.0 以降）
+                ★minos は site copy のどこにも書かれていない ∴ ここが初出。
+                ★∴ installer を差し替えた日に この3行は ★黙って古くなる（法定表記なのに何も失敗しない）。
+                再測は status.md (W0) の「次に .pkg を差し替えた日」に束ねてある。 */}
+            {MUEDSP_LIVE && (
+              <ServiceSection
+                name={t("muedsp.name")}
+                description={t("muedsp.description")}
+                urlTitle={t("muedsp.url.title")}
+                urlValue={t("muedsp.url.value")}
+                priceTitle={t("muedsp.price.title")}
+                priceDescription={t("muedsp.price.description")}
+                pricePlans={[
+                  t("muedsp.price.plans.masterchain"),
+                  t("muedsp.price.plans.free"),
+                  t("muedsp.price.plans.note"),
+                ]}
+                paymentTimingTitle={t("muedsp.paymentTiming.title")}
+                paymentTimingValue={t("muedsp.paymentTiming.value")}
+                deliveryTitle={t("muedsp.delivery.title")}
+                deliveryValue={t("muedsp.delivery.value")}
+                cancellationTitle={t("muedsp.cancellation.title")}
+                cancellationDescription={t("muedsp.cancellation.description")}
+                environmentTitle={t("muedsp.environment.title")}
+                environmentItems={[
+                  t("muedsp.environment.os"),
+                  t("muedsp.environment.formats"),
+                  t("muedsp.environment.host"),
+                  t("muedsp.environment.windows"),
+                ]}
+                contactTitle={t("muedsp.contact.title")}
+                contactValue={t("muedsp.contact.value")}
+              />
+            )}
 
             {ADVISORY_LIVE && (
               <ServiceSection
@@ -174,6 +204,12 @@ function TokushohoContent({ locale }: { locale: string }) {
               <Link href={`/${locale}/privacy`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
                 Privacy
               </Link>
+              <Link href={`/${locale}/terms`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+                Terms
+              </Link>
+              <Link href={`/${locale}/refund`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+                Refund
+              </Link>
               <Link href={`/${locale}/support`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
                 Support
               </Link>
@@ -189,7 +225,12 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="bg-white/5 border border-white/10 rounded-lg p-4">
       <h2 className="font-semibold text-white mb-1">{label}</h2>
-      <p className="text-slate-300">{value}</p>
+      {/* whitespace-pre-line: グローバル欄のうち 支払方法 / 契約成立時期 / 商品代金以外の必要料金 /
+          有料プラグインの販売事業者 は ★サービスごとに行を分けてある。CSS 既定の white-space:normal
+          は改行を潰すので、無いと「Stripe 経由」と「FastSpring のチェックアウト」が1つの塊で描画され、
+          どのサービスにどの決済手段が適用されるのか読めなくなる（＝法定表記として成立しない）。
+          ★要否は tests/unit/tokushoho-newline-render.test.ts が messages 側から機械的に測る。 */}
+      <p className="text-slate-300 whitespace-pre-line">{value}</p>
     </div>
   );
 }

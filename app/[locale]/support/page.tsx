@@ -142,6 +142,12 @@ function SupportContent({ faqStructuredData, locale }: SupportContentProps) {
               <Link href={`/${locale}/privacy`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
                 Privacy
               </Link>
+              <Link href={`/${locale}/terms`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+                Terms
+              </Link>
+              <Link href={`/${locale}/refund`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+                Refund
+              </Link>
               <Link href={`/${locale}/tokushoho`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
                 Legal
               </Link>

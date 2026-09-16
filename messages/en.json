@@ -367,10 +367,14 @@
   },
   "tokushoho": {
     "title": "Specified Commercial Transactions Act",
-    "lastUpdated": "Last updated: March 11, 2026",
+    "lastUpdated": "Last updated: September 16, 2026",
     "seller": {
       "title": "Seller",
       "value": "glasswerks inc."
+    },
+    "mor": {
+      "title": "Seller of record for paid plugins",
+      "value": "Paid MUEDsp plugins are sold by FastSpring, Inc. as the Merchant of Record.\nSeller (Merchant of Record): FastSpring, Inc.\nProvider (development and support): glasswerks inc."
     },
     "representative": {
       "title": "Representative",
@@ -390,55 +394,21 @@
     },
     "additionalCost": {
       "title": "Additional Costs",
-      "value": "Internet connection fees are borne by the customer."
+      "value": "Internet connection fees are borne by the customer.\nOrders for paid MUEDsp plugins may have tax added based on your location. Tax is determined and collected by FastSpring, Inc. as the Merchant of Record."
     },
     "payment": {
       "title": "Payment Methods",
-      "value": "Credit card (via Stripe)"
+      "value": "Varies by service.\nMUEDial: credit card (via Stripe)\nMUEDsp paid plugins: FastSpring checkout (payment methods offered by FastSpring, Inc. as the Merchant of Record)\nMUED advisory: arranged individually"
     },
     "contractEstablishment": {
       "title": "Contract Establishment",
-      "value": "Contract is established upon completion of credit card payment."
+      "value": "Varies by service.\nMUEDial: upon completion of credit card payment.\nMUEDsp plugins (via FastSpring): the contract is formed when FastSpring has received payment and the email containing your license key has been sent. The order confirmation email is an acknowledgement of receipt, not an acceptance.\nMUED advisory: upon our sending an order confirmation email, or upon execution of a written agreement."
     },
     "contact": {
       "title": "Contact",
       "value": "For inquiries about our services, please contact us at the email address above."
     },
     "servicesSectionTitle": "Service-Specific Terms",
-    "muednote": {
-      "name": "MUEDnote",
-      "description": "Music education platform",
-      "url": {
-        "title": "Sales URL",
-        "value": "https://mued.jp"
-      },
-      "price": {
-        "title": "Pricing",
-        "description": "Prices for each plan are as follows (tax included):",
-        "plans": {
-          "free": "Free Plan: ¥0",
-          "basic": "Basic Plan: ¥1,980/month",
-          "premium": "Premium Plan: ¥2,980/month"
-        }
-      },
-      "paymentTiming": {
-        "title": "Payment Timing",
-        "value": "Initial payment at subscription start, then automatically billed monthly on the same date."
-      },
-      "delivery": {
-        "title": "Service Delivery",
-        "value": "Service is available immediately after payment completion."
-      },
-      "cancellation": {
-        "title": "Cancellation Policy",
-        "description": "Subscriptions can be cancelled at any time. After cancellation, you can continue using the service until the end of your paid period. Due to the nature of digital services, refunds are not available after service delivery begins."
-      },
-      "environment": {
-        "title": "System Requirements",
-        "web": "Web Dashboard: Latest Chrome, Safari, Firefox, Edge",
-        "ios": "iOS App: iPhone running iOS 17.0 or later"
-      }
-    },
     "muedial": {
       "name": "MUEDial",
       "description": "AI mixing & mastering service",
@@ -471,6 +441,46 @@
       "environment": {
         "title": "System Requirements",
         "web": "Web Browser: Latest Chrome, Safari, Firefox, Edge"
+      }
+    },
+    "muedsp": {
+      "name": "MUEDsp",
+      "description": "Plugin line (free modules and the paid masterchain)",
+      "url": {
+        "title": "Sales URL",
+        "value": "https://mued.jp/en/muedsp"
+      },
+      "price": {
+        "title": "Price",
+        "description": "Pricing is as follows:",
+        "plans": {
+          "masterchain": "MUEDsp masterchain: $69 (one-time purchase, no recurring charge)",
+          "free": "Free modules (MUEDsat, MUEDlim, MUEDrive): free of charge",
+          "note": "Prices are in US dollars. Amounts billed in other currencies vary with the exchange rate at the time of payment and your card issuer's conversion. Tax is determined and collected by FastSpring, Inc. as the Merchant of Record."
+        }
+      },
+      "paymentTiming": {
+        "title": "Payment Timing",
+        "value": "Charged immediately at FastSpring checkout when you purchase. This is a one-time purchase with no recurring charge."
+      },
+      "delivery": {
+        "title": "Delivery",
+        "value": "After payment completes, the download link and licence key are sent immediately to the email address you registered."
+      },
+      "cancellation": {
+        "title": "Cancellation and Refunds",
+        "description": "FastSpring, Inc. is the Merchant of Record for this product, so refunds are handled by FastSpring under its refund terms. See the Refund Policy for the procedure.\n\nIf the plugin does not run on a supported environment, please contact our support (support@mued.jp) first. Most such reports turn out to be configuration issues, and getting it running is usually the better outcome than a refund.\n\nFree modules involve no payment and are therefore not subject to refunds."
+      },
+      "environment": {
+        "title": "System Requirements",
+        "os": "macOS 11.0 or later (Universal binary supporting both Apple Silicon and Intel)",
+        "formats": "Plugin formats: VST3, AU (Audio Units), AAX (Pro Tools)",
+        "host": "A DAW that supports one of the formats above is required.",
+        "windows": "A Windows build is not currently offered."
+      },
+      "contact": {
+        "title": "Contact for this service",
+        "value": "support@mued.jp"
       }
     },
     "advisory": {

@@ -236,6 +236,12 @@ function PrivacyContent({ locale }: { locale: string }) {
               &copy; {new Date().getFullYear()} MUED. All rights reserved.
             </p>
             <nav className="flex items-center gap-6">
+              <Link href={`/${locale}/terms`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+                Terms
+              </Link>
+              <Link href={`/${locale}/refund`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+                Refund
+              </Link>
               <Link href={`/${locale}/tokushoho`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
                 Legal
               </Link>

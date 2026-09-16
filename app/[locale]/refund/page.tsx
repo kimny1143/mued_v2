@@ -88,6 +88,9 @@ function RefundContent({ locale }: { locale: string }) {
             <Link href={`/${locale}/tokushoho`} className="text-slate-400 hover:text-white">
               {isJa ? "特定商取引法に基づく表記" : "Legal Notice (Japan)"}
             </Link>
+            <Link href={`/${locale}/support`} className="text-slate-400 hover:text-white">
+              {isJa ? "サポート" : "Support"}
+            </Link>
           </div>
         </div>
       </main>

@@ -367,10 +367,14 @@
   },
   "tokushoho": {
     "title": "特定商取引法に基づく表記",
-    "lastUpdated": "最終更新日: 2026年3月11日",
+    "lastUpdated": "最終更新日: 2026年9月16日",
     "seller": {
       "title": "販売業者",
       "value": "株式会社グラスワークス"
+    },
+    "mor": {
+      "title": "有料プラグインの販売事業者",
+      "value": "MUEDsp の有料プラグインは、FastSpring, Inc. が販売事業者（Merchant of Record）として販売します。\n販売事業者（Merchant of Record）: FastSpring, Inc.\n提供者（開発・サポート）: 株式会社グラスワークス"
     },
     "representative": {
       "title": "代表者",
@@ -390,55 +394,21 @@
     },
     "additionalCost": {
       "title": "商品代金以外の必要料金",
-      "value": "インターネット接続に必要な通信費用はお客様のご負担となります。"
+      "value": "インターネット接続に必要な通信費用はお客様のご負担となります。\nMUEDsp の有料プラグインのご注文には、お客様の所在地に基づく税額が加算される場合があります（税の判定および徴収は、販売事業者である FastSpring, Inc. が行います）。"
     },
     "payment": {
       "title": "支払方法",
-      "value": "クレジットカード（Stripe経由）"
+      "value": "サービスにより異なります。\nMUEDial: クレジットカード（Stripe 経由）\nMUEDsp 有料プラグイン: FastSpring のチェックアウト（販売事業者である FastSpring, Inc. が提供する決済手段）\nMUED advisory: 個別にご案内します"
     },
     "contractEstablishment": {
       "title": "契約成立時期",
-      "value": "クレジットカード決済の完了をもって契約が成立します。"
+      "value": "サービスにより異なります。\nMUEDial: クレジットカード決済の完了をもって成立します。\nMUEDsp プラグイン（FastSpring 経由）: FastSpring が代金を受領し、ライセンスキーを記載したメールをお送りした時点で契約が成立します。ご注文確認メールは受領の通知であり、承諾ではありません。\nMUED advisory: 当社からの申込確認メールの送信又は契約書の締結をもって成立します。"
     },
     "contact": {
       "title": "お問い合わせ",
       "value": "サービスに関するお問い合わせは、上記メールアドレスまでご連絡ください。"
     },
     "servicesSectionTitle": "サービスごとの個別条件",
-    "muednote": {
-      "name": "MUEDnote",
-      "description": "音楽教育プラットフォーム",
-      "url": {
-        "title": "販売URL",
-        "value": "https://mued.jp"
-      },
-      "price": {
-        "title": "販売価格",
-        "description": "各プランの料金は以下の通りです（税込）：",
-        "plans": {
-          "free": "フリープラン: 無料",
-          "basic": "ベーシックプラン: 月額1,980円",
-          "premium": "プレミアムプラン: 月額2,980円"
-        }
-      },
-      "paymentTiming": {
-        "title": "支払時期",
-        "value": "サブスクリプション開始時に初回決済、以降は毎月同日に自動決済されます。"
-      },
-      "delivery": {
-        "title": "サービス提供時期",
-        "value": "決済完了後、直ちにサービスをご利用いただけます。"
-      },
-      "cancellation": {
-        "title": "キャンセル・解約について",
-        "description": "サブスクリプションはいつでも解約可能です。解約後も、お支払い済みの期間終了まではサービスをご利用いただけます。デジタルサービスの性質上、サービス提供開始後の返金はお受けしておりません。"
-      },
-      "environment": {
-        "title": "動作環境",
-        "web": "Webダッシュボード: 最新のChrome、Safari、Firefox、Edge",
-        "ios": "iOSアプリ: iOS 17.0以降を搭載したiPhone"
-      }
-    },
     "muedial": {
       "name": "MUEDial",
       "description": "AIミキシング・マスタリングサービス",
@@ -471,6 +441,46 @@
       "environment": {
         "title": "動作環境",
         "web": "Webブラウザ: 最新のChrome、Safari、Firefox、Edge"
+      }
+    },
+    "muedsp": {
+      "name": "MUEDsp",
+      "description": "プラグイン群（無料モジュール／有料 masterchain）",
+      "url": {
+        "title": "販売URL",
+        "value": "https://mued.jp/ja/muedsp"
+      },
+      "price": {
+        "title": "販売価格",
+        "description": "料金は以下の通りです：",
+        "plans": {
+          "masterchain": "MUEDsp masterchain: $69（米ドル建て・買い切り／継続課金なし）",
+          "free": "無料モジュール（MUEDsat・MUEDlim・MUEDrive）: 無料",
+          "note": "※ 米ドル建てのため、日本円でのご請求額は決済時の為替レートおよびカード発行会社の換算により変動します。税額は、販売事業者である FastSpring, Inc. が判定し徴収します。"
+        }
+      },
+      "paymentTiming": {
+        "title": "支払時期",
+        "value": "ご購入時に FastSpring のチェックアウトで即時決済されます。買い切りのため、継続課金はありません。"
+      },
+      "delivery": {
+        "title": "サービス提供時期",
+        "value": "決済の完了後、ご登録のメールアドレスへダウンロードリンクとライセンスキーを直ちに送信します。"
+      },
+      "cancellation": {
+        "title": "キャンセル・返金について",
+        "description": "本製品の販売事業者は FastSpring, Inc. であるため、返金は FastSpring の返金条件に従って同社が取り扱います。手続きは返金ポリシーをご参照ください。\n\n対応環境で動作しない場合は、まず当社サポート（support@mued.jp）へご連絡ください。設定に起因する事象が多く、返金よりも動作する状態にすることが望ましい解決だと考えています。\n\n無料モジュールは決済を伴わないため、返金の対象となりません。"
+      },
+      "environment": {
+        "title": "動作環境",
+        "os": "macOS 11.0 以降（Apple Silicon・Intel の両方に対応する Universal バイナリ）",
+        "formats": "プラグイン形式: VST3・AU（Audio Units）・AAX（Pro Tools）",
+        "host": "上記いずれかの形式に対応した DAW が必要です。",
+        "windows": "Windows 版は現在ご提供しておりません。"
+      },
+      "contact": {
+        "title": "本サービスのお問い合わせ",
+        "value": "support@mued.jp"
       }
     },
     "advisory": {
