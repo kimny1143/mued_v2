@@ -643,3 +643,53 @@ MUEDsat-0.1.2                              … 別 payload（d41d5a30…）
 
 ★**残差**: ★0.1.2 の機能差は `lib/muedsat/config.ts` が「dsp's record, NOT re-measured here」と
 明記している ∴ ★**版差が利用者にとって何を意味するかは当課では測っていない**（★dsp の領分）。
+
+### (1d) — ★互換 alias 5 本を canonical へ 302 する（dsp 判断・★着手は開店の後・owner=mued）
+
+★**2026-09-16・conductor relay の dsp 判断**（当課の (1c) 報告への回答）:
+
+```
+★bytes を上書きしない        … alias は pin 表に無い ∴ 上書きは ★検出器の無い変更になる
+★file は消さない             … config の "Never tidy public/downloads/ by deleting" を守る
+★alias URL → canonical へ 302 … 名前が中身より古い版を名乗る状態を ★深めない
+★pin 表は canonical 単一のまま
+★MUEDrive-0.1.0-alpha（77a13bd1…）は ★dsp の dist に無い唯一の実体 ∴ ★file は必ず残す
+```
+
+★**当課の (1c) の結論は「欠陥なし」**（alias も notarized・`spctl` accepted）∴ ★**これは不具合修正でなく整理**。
+∴ ★**開店の後**・急がない（conductor 明記）。★Tier 2・CCO レビュー。
+
+**対象 5 本**（canonical と hash 不一致・`public/downloads/`）:
+`MUEDsat-0.1.0-alpha` / `MUEDsat-0.1.1-alpha` / `MUEDlim-0.1.0-alpha` / `MUEDlim-0.1.1-alpha` / `MUEDrive-0.1.0-alpha`
+
+### ★着手する前に決着している実装上の点（当課が先に測った）
+
+★**「next.config の redirects か middleware」のどちらでも良い、ではない。**
+★`public/` の実体が在る path に ★`redirects()` が効くかは ★Next.js の routing 順序に依存する
+（`headers → redirects → rewrites(beforeFiles) → filesystem(public) → …`）。
+★**∴ 実体が在っても redirect が勝つ「はず」だが、★これは仕様の読みであって実測ではない。**
+
+★**measured 2026-09-16 — ★redirects は public/ の実体より勝つ**:
+```
+probe … next.config.ts に { source: '/downloads/MUEDsat-0.1.1-alpha-installer.pkg',
+                            destination: '/downloads/MUEDsat-0.1.2-installer.pkg' } を1本 入れて build
+結果 … ★HTTP/1.1 307 Temporary Redirect / location: /downloads/MUEDsat-0.1.2-installer.pkg
+陽性control … redirect を入れていない MUEDsat-0.1.0-alpha → ★200 / 3,405,698 B（素の実体が返る）
+陰性control … /downloads/zzz-nope.pkg → 404
+★実験は revert 済（commit していない）
+```
+★**∴ 実装は `next.config.ts` の `redirects()` で足りる。middleware は 302 を厳密に要する時だけ。**
+
+> ★**この節を書いた理由**: memory `feedback-workaround-must-itself-be-checked` ——
+> ★**回避策は、それ自身を1回 実行してから書く。** ★「redirects で行ける」を測らずに台帳へ書くと、
+> ★着手する回（開店後・おそらく別セッション）が ★仕様の読みを実装計画として受け取る。
+
+### ★実装時の注意（2点）
+
+1. ★**302 か 307/308 か**: dsp は「302」と言っているが、Next.js の `permanent: false` は ★**307**
+   （`permanent: true` は 308）。★**302 を厳密に要するなら `next.config` では出せない**
+   ——★middleware で `NextResponse.redirect(url, 302)` が要る。
+   ★**意味論は同じ（一時的・method 保持は 307 の方が厳格）** ∴ ★**307 で良いかを CCO に1問**。
+2. ★**redirect を入れると alias の実体は HTTP から到達不能になる**。
+   ★`MUEDrive-0.1.0-alpha` は ★唯一の実体 ∴ ★**「残す」は満たすが「取り出せる」は失う**。
+   ★取り出し経路を1つ書き残すこと（`git show <sha>:public/downloads/…` か dsp へ dist 依頼）。
