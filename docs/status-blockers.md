@@ -827,8 +827,61 @@ probe … next.config.ts に { source: '/downloads/MUEDsat-0.1.1-alpha-installer
 - ★**(W2) の文面を「機構は test 済・本番観測なし」に改める**（★「動くか不明」と読ませない）
 - ★**新しい呼び出し元が `onRetry` を渡さないと無言になる**点を ★③ として残す
   ——★これは (W2) より広い（★retry の観測可能性が ★呼び出し側の規律に乗っている）
+- ★★**(W2) の retry は ★FastSpring webhook の再送とは別機構**（★2026-09-17・★宛先訂正）。★FastSpring の再送 doc は ★(1h) に在る ——★**(1g) の一次根拠ではない**
+  （★(W2)＝当課の outbound `withRoExRetry`／★doc＝FastSpring の inbound 再送）
 - ★★**決着（2026-09-16・conductor）**: ★**本番発火の durable 記録（＝設計変更）は ★開店後の低優先**。★**今は起こさない。** ∴ ★(W2) は ★「機構は test 済・本番観測は開店後の低優先」で ★固定する
   ——★★問いを残さない（★宿題は担い手が消えるので、決着できる時に決着させる）
 
 ★**当課の手番は「文面の訂正」までで、★本番観測の取得は手番に含めない**
 （★運に依存する待ちを owner つきの宿題にしない ——★それは [[feedback-schedule-by-event-not-date]] の形）。
+
+### (1h) — ★FastSpring webhook 再送の一次情報（★(W2) ではない・★宛先を訂正した）
+
+★**conductor から「(W2) の retry 機構の一次根拠として (1g) に足して」と依頼を受けたが、★★別の機構だった。**
+★**一次を照合したうえで、★宛先を FastSpring webhook 側（本項）に変えて記録する。**
+
+```
+★(W2) の retry … ★当課の ★outbound retry（`lib/dial/retry-roex.ts` の `withRoExRetry`）
+                  ★対象＝RoEx API の transient 5xx（★docstring「Bounded retry for TRANSIENT
+                  RoEx upstream failures / Incident 2026-06-15 … preview *submit*」）
+★この doc の retry … ★FastSpring が ★unprocessed な webhook を ★当課へ ★再送する（★inbound）
+★∴ ★方向も vendor も別。★同じ「retry」の語で結ばれていただけ
+```
+
+★**弁別の根拠（当課の実測）**: ★`webhook_events` は ★**10 列で `attempts` 列を持たない**
+（id / event_id / type / source / status / processed_at / completed_at / error_message / payload / created_at）。
+★schema 内の `attempts` 列は ★ear-training と structure-training だけ。
+★∴ ★(W2) の「`attempts: 1` 多数観測」は ★`withRoExRetry` 由来しかありえない。
+
+### ★一次情報（2026-09-17 当課が実読・Kevin 返信のリンク）
+
+https://developer.fastspring.com/reference/processed-and-unprocessed-webhook-events
+
+```
+★processed   … ★HTTP 200（bulk）＝「Consider all received events in the payload as
+                successfully processed」★body は不問
+                ★HTTP 202（individual）＝★body に処理した event の ID を列挙（★こちらは必須）
+★unprocessed … ★**200/202 以外は すべて failure**（doc は 50X を推奨）
+★再送        … ★最大 ★12 回・★7 日間（1h → 2h → 4h → 6h ×3 → 以降 24h）
+★打ち切り    … ★7 日で ★permanently failed（★以後 再送されない）
+```
+
+### ★これで言えること（4 件）
+
+1. ★**当課の 200 応答は正しい**。★`{ received: true }` は ID 列挙が無いが、★**bulk の 200 は body 不問**
+   ∴ ★欠陥ではない（★当初「ID 列挙が必須では」と疑い、★一次で否定した）。
+2. ★**#1041 の設計（失敗時は success を報告しない）が ★機構として裏づけられた**。
+   ★parse 失敗で row を `failed` に確定 → ★tx の外で throw → ★500 → ★**FastSpring が再送する**。
+   ∴ ★あの throw は ★「正直」なだけでなく ★**回復経路を開く**（★再送が来る）。
+3. ★★**但し bulk 意味論ゆえ ★部分失敗は バッチ全体の再送になる**。★1 件の unparseable で 500 を返すと、
+   ★同じ payload の ★成功済 event も再送される ——★冪等性が効いているので害は無い
+   （★`webhook_events.event_id` UNIQUE ＋ `masterchain_purchases.order_id` UNIQUE）が、★**ログは重複する**。
+   ★**設計の選択肢**: ★202 ＋ 処理済 ID の列挙にすれば ★成功分を確定でき、★失敗分だけが再送される。
+   ★**今は変えない**（★開店前に webhook の応答契約を変えるのは blast radius が大きい）。
+4. ★★**7 日の地平線**は新しい運用事実。★**当課側が 7 日 壊れ続けると event は permanently failed になり、
+   ★以後 再送されない** ∴ ★その注文は ★webhook 経由では永久に取り戻せない（★手動 reconcile が要る）。
+
+### ★手番
+
+★**無し**（★記録のみ）。★3 の設計変更は ★開店後に判断する材料として置く。
+★4 は ★監視の論点なので ★conductor の台帳へ回す（★当課からは起こさない）。
