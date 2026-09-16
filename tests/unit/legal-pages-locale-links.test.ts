@@ -19,7 +19,14 @@ import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const LEGAL_PAGES = ["privacy", "support", "tokushoho"] as const;
+/**
+ * ★包含リストだが、母集団を広げた時に「広げ忘れ」が起きないよう下で assert する。
+ * 2026-09-16 に terms / refund を足した: この2面は #1048 で新設され、★当初この配列の外に
+ * 在った ∴ cross-link 検査に一度も掛かっていなかった。同じ file の header が /muedrive の
+ * 取りこぼしを「registry は filesystem の部分集合にしかなれない」と書いているのに、
+ * ★この配列自身が同じ形をしていた。
+ */
+const LEGAL_PAGES = ["privacy", "support", "tokushoho", "terms", "refund"] as const;
 
 function readPage(page: (typeof LEGAL_PAGES)[number]): string {
   return readFileSync(join(process.cwd(), "app", "[locale]", page, "page.tsx"), "utf8");
@@ -47,6 +54,37 @@ describe("legal pages — internal links carry the locale", () => {
     const header = readFileSync(join(process.cwd(), "components/brand/brand-header.tsx"), "utf8");
     expect(header).toContain("href={`/${locale}`}"); // shared MUED home link
     expect(header).toContain("href={`/${locale}/support`}");
+  });
+});
+
+describe("LEGAL_PAGES — 母集団そのものを測る", () => {
+  it("★MoR を宣言している locale page は全部 LEGAL_PAGES に入っている", () => {
+    // ★包含リストの弱点は「足し忘れ」。それを検出できる、リストに依存しない述語を1つ置く:
+    // MoR の2行（販売事業者 / 提供者）を描画している面は、法定表記の面である ∴ cross-link の
+    // 対象。messages 側から機械的に引くので、6つ目の legal page を足した日に ここが落ちる。
+    const ja = JSON.parse(readFileSync(join(process.cwd(), "messages", "ja.json"), "utf8"));
+    const declaresMor = Object.entries(ja as Record<string, unknown>)
+      .filter(([, v]) => {
+        const mor = (v as { mor?: { seller?: unknown } } | null)?.mor;
+        return typeof mor?.seller === "string";
+      })
+      .map(([k]) => k)
+      .sort();
+
+    // ★陽性control: 空なら下の比較が無意味（走っていないのと同じ）
+    expect(declaresMor.length).toBeGreaterThan(0);
+
+    const missing = declaresMor.filter((ns) => !(LEGAL_PAGES as readonly string[]).includes(ns));
+    expect(
+      missing,
+      `MoR を宣言しているのに LEGAL_PAGES に無い: ${missing.join(", ")} — cross-link 検査の母集団外`,
+    ).toEqual([]);
+  });
+
+  it("★LEGAL_PAGES の全要素が実在する locale page である", () => {
+    for (const page of LEGAL_PAGES) {
+      expect(existsSync(join(process.cwd(), "app", "[locale]", page, "page.tsx")), `${page} が無い`).toBe(true);
+    }
   });
 });
 
