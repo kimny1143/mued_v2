@@ -686,10 +686,10 @@ probe … next.config.ts に { source: '/downloads/MUEDsat-0.1.1-alpha-installer
 
 ### ★実装時の注意（2点）
 
-1. ★**302 か 307/308 か**: dsp は「302」と言っているが、Next.js の `permanent: false` は ★**307**
-   （`permanent: true` は 308）。★**302 を厳密に要するなら `next.config` では出せない**
-   ——★middleware で `NextResponse.redirect(url, 302)` が要る。
-   ★**意味論は同じ（一時的・method 保持は 307 の方が厳格）** ∴ ★**307 で良いかを CCO に1問**。
+1. ★**302 か 307 か ＝ ★決着した（2026-09-16・conductor）**: ★**307 で可・`next.config.ts` の
+   `redirects()` でよい・middleware 不要**。★dsp の「302」は ★「一時 redirect」の意味で書かれたもので、
+   ★**特定の status code を要求していなかった**（conductor が確認）。
+   ∴ ★**着手の回に CCO へ問う必要はない**（★問いを残さず閉じる）。
 2. ★**redirect を入れると alias の実体は HTTP から到達不能になる**。
    ★`MUEDrive-0.1.0-alpha` は ★唯一の実体 ∴ ★**「残す」は満たすが「取り出せる」は失う**。
    ★取り出し経路を1つ書き残すこと（`git show <sha>:public/downloads/…` か dsp へ dist 依頼）。
