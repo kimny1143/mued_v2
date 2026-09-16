@@ -102,6 +102,15 @@ const nextConfig: NextConfig = {
       // (JA is the primary audience for a 特定商取引法 disclosure), so a permanently-cached EN target
       // would be a liability if this is ever made locale-aware.
       { source: '/tokushoho', destination: '/en/tokushoho', permanent: false },
+      // Terms and Refund, added 2026-09-16 for the FastSpring store-activation requirement. Same 307
+      // treatment as /tokushoho above and for the same reason: the legal set is locale-symmetric, so a
+      // permanently-cached EN target would be a liability for a JA-primary audience.
+      // These two are additionally cited FROM the FastSpring dashboard, where the URL is typed once and
+      // then served to every buyer — a bare path that 404s there blocks checkout rather than merely
+      // losing the locale. tests/unit/locale-page-bare-paths.test.ts caught their absence (the population
+      // there is the filesystem, so a new locale page enters it without anyone remembering to add it).
+      { source: '/terms', destination: '/en/terms', permanent: false },
+      { source: '/refund', destination: '/en/refund', permanent: false },
       // Convenience redirects for short paths → canonical /dial/* paths
       {
         source: '/waitlist',

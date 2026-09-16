@@ -16,7 +16,7 @@
  * prod fetch (or this test) can tell it is wrong.
  */
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const LEGAL_PAGES = ["privacy", "support", "tokushoho"] as const;
@@ -67,5 +67,38 @@ describe("next.config — bare /tokushoho safety net", () => {
     const { default: config } = await import("@/next.config");
     const sources = (await config.redirects!()).map((r) => r.source);
     expect(sources).toEqual(expect.arrayContaining(["/privacy", "/support", "/tokushoho"]));
+  });
+});
+
+/**
+ * The two pages added for FastSpring store activation. Pinned separately from LEGAL_PAGES above because
+ * that list still holds the original trio: these two are NOT yet in it, so the cross-link assertions do
+ * not cover them. That is tracked, not forgotten — see docs/status-blockers.md (0x). Expanding the list
+ * means every legal page must link every other one, which is a copy change to privacy/support/tokushoho
+ * and belongs with the /tokushoho revision that kimny eyeballs, not here.
+ *
+ * What IS enforced here is the part that blocks checkout: FastSpring's dashboard cites these URLs once
+ * and then serves them to every buyer, so a bare path that 404s is a store failure. Their absence was
+ * caught by locale-page-bare-paths.test.ts, whose population is the filesystem rather than a list.
+ */
+describe("next.config — bare /terms + /refund (FastSpring activation)", () => {
+  it.each(["terms", "refund"])("redirects /%s to its /en page, temporarily (307)", async (page) => {
+    const { default: config } = await import("@/next.config");
+    const hit = (await config.redirects!()).find((r) => r.source === `/${page}`);
+
+    expect(hit, `bare /${page} has no redirect — FastSpring buyers would hit a 404`).toBeDefined();
+    expect(hit!.destination).toBe(`/en/${page}`);
+    // Temporary for the same reason as /tokushoho: the legal set is locale-symmetric, so a permanently
+    // cached EN target would be a liability once these are made locale-aware.
+    expect(hit!.permanent).toBe(false);
+  });
+
+  it("the pages the redirects point at actually exist", () => {
+    // Otherwise the assertions above are satisfied by a redirect into a 404.
+    for (const page of ["terms", "refund"]) {
+      expect(existsSync(join(process.cwd(), "app", "[locale]", page, "page.tsx")), `${page} page missing`).toBe(true);
+    }
+    // Negative control: the same check must fail for a page that was never created.
+    expect(existsSync(join(process.cwd(), "app", "[locale]", "zzz-nonexistent", "page.tsx"))).toBe(false);
   });
 });
