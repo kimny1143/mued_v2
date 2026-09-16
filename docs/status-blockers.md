@@ -700,10 +700,12 @@ probe … next.config.ts に { source: '/downloads/MUEDsat-0.1.1-alpha-installer
 
 ```
 ★当課の実測（2026-09-16・app/[locale] 配下の page.tsx 全数 16 本）:
+  depth=0 … ★★1 本 ＝ ★`app/[locale]/page.tsx`（★locale root・★dir でないので この軸の対象外）
   depth=1 … ★12 本 ＝ ★当課の test が見る母集団
   depth=2 … ★story/[slug]/page.tsx        ← ★★`story` 自身に page.tsx が ★無い
             redesign/studio/page.tsx       ← 親が分類済 ∴ 実害なし
   depth=3 … redesign/studio/workspace/page.tsx  ← 同上
+★★**1 + 12 + 2 + 1 ＝ 16**（★CCO 指摘で内訳に depth=0 を補った ——★「全数 16」と書いて内訳が 15 だと、★読む人は「1 本 見落としたのか／数え方が違うのか」を弁別できない。★★配る値は ★再構成できる形で配る）。
 ★∴ ★`/[locale]/story/<slug>` は ★生きた公開面だが ★分類の外
    （★`existsSync(story/page.tsx)` が false ∴ ★母集団に すら 入らない）
 ```
@@ -740,3 +742,48 @@ probe … next.config.ts に { source: '/downloads/MUEDsat-0.1.1-alpha-installer
 
 ★CCO 所見＝`10` は magic number（★実測 12）。★面を 3 つ消すと意図せず落ちるが、
 ★**落ちる向きは正しい**（母集団が痩せたら止まる）∴ ★直さず ★出所を1行 添えた。
+### (1f) — ★(W2d) image optimization の露出：★評価した（★「安全」と書かない・残差2件）
+
+★**2026-09-10 から「未評価」で残っていた項目。★測れる述語まで進めた。**
+★**結論を「安全」と書かない**のは元の指示どおり ——★以下は ★測れたことと ★測れていないことの区別。
+
+**対象の advisory**（status.md 9/10 の記録）: `next` の Image Optimization API・AVIF・未認証 RCE ほか・修正域 ≥16.3.3。
+
+### ★測れたこと（5 件）
+
+```
+① 依存は修正済 … next ★16.3.4 / sharp ★0.35.4（lock が正本・#986 で 9/10 に着地）
+② 設定に images が無い … next.config.ts に ★`images` / `remotePatterns` / `domains` いずれも無し
+③ ★履歴でも無い … 2026-08-01 以降 next.config.ts を触った ★4 commit すべて images 系 0
+                   （★9/8–9/10 の窓を含む・★陽性control＝同じ叩き方で `redirects` は 3 件）
+④ 本番の挙動 … `/_next/image?url=<外部URL>` → ★**400**（拒否）
+                `/_next/image?url=/og-image.jpg` → ★200
+⑤ 本番の挙動 … `Accept: image/avif,...` を送っても ★**返るのは `image/webp`**
+                （★jpeg→webp の変換が起きている ∴ ★optimizer は素通しでなく ★動いている）
+```
+
+★**陽性control**: 素の `/og-image.jpg` が 200 / `image/jpeg`。★これが取れるまで ④⑤ の 4xx は解釈しない形にした
+（★初回は ★存在しない `/icon-192.png` を推測で使い、★計器が成立していないと script 自身が報告した）。
+
+### ★測れていないこと（★残差・ここが「安全」と書けない理由）
+
+1. ★**advisory の正確な発火機構を当課は特定していない**（★AVIF を ★source として decode するのか、
+   ★出力として encode するのか、★別経路か）。∴ ★**上の ④⑤ が機構を過不足なく覆うかは言えない。**
+2. ★**Vercel の hosted image optimization が ★self-hosted Next.js と同じ code path かを当課は知らない**
+   ——★元の項目が「Vercel 実装依存」と書いていたのはこの点。★当課が測ったのは ★**挙動**であって
+   ★実装ではない（★挙動は実装の証拠にならない・→ [[gotcha-data-at-destination-is-not-proof-of-path]] と同型）。
+
+### ★∴ 書ける形
+
+★**「当課が名指しできた 2 つの前提（★外部 fetch の許可・★AVIF の出力）は、★設定・履歴・本番挙動の
+3 面で満たされていない。★かつ依存は 9/10 から修正版。★残差は advisory の機構と Vercel の実装。」**
+
+★**「露出なし」とは書かない** —— ★1 と 2 が開いている限り、それは ★測っていないことの主張になる。
+★**開示義務の判断が必要になった場合は、★この 5 件と 2 件を そのまま渡す**（★解釈は当課の領分でない）。
+
+### ★手順として残すもの
+
+- ★**`next.config.ts` に `images.remotePatterns` / `domains` を足す PR が出たら、★この項を再評価する**
+  （★前提②③ が変わる ＝ ★当課が「満たされていない」と言った根拠が消える）
+- ★**`formats` に `image/avif` を足す変更も同じ引き金**（★前提⑤ が変わる）
+- ★どちらも `next.config.ts` の変更なので、★grep 1 回で気づける: `grep -nE "images|remotePatterns|formats" next.config.ts`
