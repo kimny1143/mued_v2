@@ -193,7 +193,32 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     }
 
     if (type === "order.completed") {
-      await handleFastspringOrderCompleted(tx, event);
+      // ── live / test の分岐 ────────────────────────────────────────────────────────────────────
+      // FastSpring は live と test の通知を ★同一 endpoint へ送り、各 event の `live` boolean で
+      // 出自を示す（公式 doc `reference/webhooks-overview.md`: webhook は live / test / both を
+      // 選べ、event は `id` `type` `live` `processed` `created` `data` を持つ）。
+      //
+      // ★ここが無かった時、`.test.` storefront のテスト注文は ★本番の1件として処理された:
+      // 本番の署名鍵で有効なライセンスを発行し、`masterchain_purchases` に実購入行を INSERT し、
+      // 実キー入りの配達メールを送る。テストのたびに本物の資格情報が外へ出る。
+      //
+      // ★`=== true` で見るのは、★`live` の欠損を test 側に倒すため（`!== false` ではない）。
+      // 理由は route 冒頭の TODO(C1) と同じで、★envelope の shape がまだ実物と突き合わせて
+      // いないこと。★欠損は「我々の読みが違う」可能性であり、その時に ★本番ライセンスを発行して
+      // しまう方が、★テスト扱いで取り逃すより高くつく（発行済みキーは撤回できない — 
+      // オフライン検証なので、出てしまえば現行 binary に対して失効が効かない）。
+      // ★∴ 迷ったら発行しない側に倒す。
+      //
+      // 記録は残す: `webhook_events` の行は上で既に insert 済で、`payload` に event 全体
+      // （`live` を含む）が入る。★スキップするのは fulfillment だけで、観測性は落とさない。
+      if (e.live === true) {
+        await handleFastspringOrderCompleted(tx, event);
+      } else {
+        logger.info("[fastspring] test event recorded, fulfillment skipped", {
+          eventId,
+          live: e.live ?? null,
+        });
+      }
     }
 
     await tx

@@ -58,9 +58,13 @@ export const MASTERCHAIN_INTEREST_LIVE = false;
 // ★WHILE IT IS EMPTY the email degrades honestly instead of silently: it tells the buyer the link
 // is coming and to reply to that email. ★That is a fallback, not a delivery — a paid purchase must
 // not reach a customer through it, so this has to be non-empty before the paid line can transact.
-// ★Nothing can transact today regardless: the FastSpring webhook is fail-CLOSED on
-// FASTSPRING_WEBHOOK_SECRET (401) and licence issuance throws without MASTERCHAIN_LICENSE_PRIVATE_KEY
-// (both kimny-gated and unset), which is why this is a launch blocker and not a live incident.
+// ★2026-09-16 訂正 — この段の旧記述「both kimny-gated and unset」は ★もう真ではない。
+// `vercel env ls` の name/environments 列で実測（値は見ていない）: FASTSPRING_WEBHOOK_SECRET は
+// Preview,Production に 49 日前から／MASTERCHAIN_LICENSE_PRIVATE_KEY は Production に 51 日前から
+// 在る。webhook route も deploy 済（GET /api/webhooks/fastspring → 200）で、この URL も set。
+// ★∴ fail-CLOSED の根拠は「secret の不在」ではなくなった。今 live 決済を止めているのは
+// ★FastSpring store が activation 前であることと、上の live/test 分岐だけである。
+// ★repo のコメントを読んで「unset だから安全」と読まないこと（それがこの訂正の理由）。
 //
 export const MASTERCHAIN_DOWNLOAD_URL =
   "https://mued.jp/downloads/MUEDsp-masterchain-0.1.3-installer.pkg";
