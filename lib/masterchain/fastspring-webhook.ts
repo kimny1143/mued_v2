@@ -184,16 +184,28 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
  *
  * FAIL-OPEN (never blocks fulfillment): GA4 purchase, buyers-audience add.
  */
-export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Promise<void> {
+/** ★戻り値: `"ok"` ＝ 履行した ／ `"unparseable"` ＝ ★parse できなかった（★route が行を `failed` で
+ *  確定させてから ★tx の外で throw する）。★license / email の失敗は ★従来どおり throw して
+ *  ★tx 全体を rollback する（★売上行を作らずに retry させるのが正しいので、そこは変えない）。 */
+export async function handleFastspringOrderCompleted(
+  tx: Tx,
+  event: unknown,
+): Promise<"ok" | "unparseable"> {
   const parsed = parseFastspringOrderCompleted(event);
   if (!parsed) {
-    // ★throw する（以前は return だった）—— ★CCO レビュー #1038 が live/test 分岐で見つけたのと
-    // ★同じ class。★`return` すると route が続けて `status: "processed"` を書き、★冒頭の冪等 guard
-    // が再配達を弾く ∴ ★**課金済なのに ライセンス無し・retry 無し・行は緑**。
-    // ★`type` が読めない時に route が 500 を返すのと同じ扱いにする（★我々の読みが違うのだから、
-    // ★5xx で retry 窓を開ける方が正しい）。
-    logger.error("[fastspring] order.completed missing orderId/email — refusing to report success");
-    throw new Error("[fastspring] order.completed missing orderId/email — refusing to report success");
+    // ★ここで throw しない（#1039 ではしていた）—— ★CCO レビュー #1039 の指摘。
+    //
+    // ★この関数は route の `db.transaction(...)` の ★**中**で呼ばれる ∴ ★throw すると
+    // ★直前に insert した行（★payload を含む）も ★rollback で消える。★retry 窓は開くが、
+    // ★**実 payload という唯一の手掛かりを失う** ——★route の `envelopeShape` docstring が
+    // まさにこの損失を嘆いている（"leave nothing to correct it with"）。
+    // ★id / type の拒否では避けられない（★id は key そのもの・★type の拒否は行より前）が、
+    // ★**parse 失敗では避けられる** ——★行はもう tx の中に在るから。
+    //
+    // ★∴ 判別可能な戻り値にして、★route が行を `failed` で確定させ、★tx の外で throw する。
+    // ★`failed` は `processed` ではないので ★冪等 guard は弾かない ＝ 再配達で履行に到達できる。
+    // ★ここでの `failed` は意味も正しい（★skip と違って ★実際に失敗している）。
+    return "unparseable";
   }
 
   // ── issue the license, ONCE per order ───────────────────────────────────────────────────────────
@@ -337,4 +349,6 @@ export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Pr
       );
     }
   }
+
+  return "ok";
 }

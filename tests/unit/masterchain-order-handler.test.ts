@@ -157,15 +157,19 @@ describe("handleFastspringOrderCompleted — fail-closed", () => {
     ).rejects.toThrow(/license delivery email failed/);
   });
 
-  it("★parse できない order.completed も throw する —— ★return すると route が processed で封をする", async () => {
+  it("★parse できない order.completed は throw せず unparseable を返す（★tx の中で throw すると行が消える）", async () => {
     // ★2026-09-16（CCO レビュー #1038 で見つかった class の2件目）。
     // ★以前は `logger.error` して ★`return` していた。★route は続けて `status: "processed"` を書き、
     // ★冒頭の冪等 guard が再配達を弾く ∴ ★課金済なのに ★ライセンス無し・retry 無し・行は緑。
     // ★`type` が読めない時に route が 500 を返すのと ★同じ扱いに揃える。
     const { tx, inserted } = makeTx([]);
-    await expect(
-      handleFastspringOrderCompleted(tx as never, { id: "e1", type: "order.completed", live: true, data: {} }),
-    ).rejects.toThrow(/missing orderId\/email/);
+    // ★#1039 では throw していた。★CCO レビューで「tx の中の throw は payload を持つ行まで
+    // rollback する」と指摘され、★route 側で `failed` に確定してから tx の外で throw する形へ変えた。
+    // ∴ ★handler は ★判別可能な戻り値を返すだけ。
+    const r = await handleFastspringOrderCompleted(tx as never, {
+      id: "e1", type: "order.completed", live: true, data: {},
+    });
+    expect(r).toBe("unparseable");
     expect(inserted).toHaveLength(0); // ★売上行を作らない
     expect(sendMasterchainLicenseDelivery).not.toHaveBeenCalled(); // ★メールも出さない
   });

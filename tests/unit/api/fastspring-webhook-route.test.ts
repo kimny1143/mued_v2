@@ -83,7 +83,7 @@ const {
   return {
     mockHeaderGet: vi.fn(() => "sig"),
     mockVerify: vi.fn(() => true),
-    mockHandleOrder: vi.fn(() => Promise.resolve()),
+    mockHandleOrder: vi.fn(() => Promise.resolve("ok")),
     mockSelectLimit: vi.fn(() => Promise.resolve([])),
     mockLogError: vi.fn(),
     mockLogInfo: vi.fn(),
@@ -144,6 +144,7 @@ beforeEach(() => {
   mockHeaderGet.mockReturnValue("sig");
   mockVerify.mockReturnValue(true);
   mockSelectLimit.mockResolvedValue([]);
+  mockHandleOrder.mockResolvedValue("ok");
 });
 
 describe("GET — liveness", () => {
@@ -483,5 +484,48 @@ describe("POST — ★live / test の分岐（テスト注文で本番ライセ�
   it("★test event はスキップされても shape log を出さない（refusal path ではない）", async () => {
     await POST(req({ events: [orderWithLive("test2", false)] }));
     expect(mockLogError).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST — ★parse できない order.completed は ★行を残して 500（封じない・payload を失わない）", () => {
+  // ★CCO レビュー #1039 の指摘。★handler は tx の中で呼ばれるので、★そこで throw すると
+  // ★payload を持つ行まで rollback で消える。★route が `failed` で確定させ、★tx の外で throw する。
+
+  it("★status を `failed` にして行を残し、★500 を返す", async () => {
+    mockHandleOrder.mockResolvedValue("unparseable");
+    const res = await POST(req({ events: [orderWithLive("bad1", true)] }));
+    expect(res.status).toBe(500); // ★retry 窓は開く
+    // ★行は insert 済で、★最終 update は `failed`（★`processed` ではない ＝ 冪等 guard が弾かない）
+    expect(txInserts).toHaveLength(1);
+    const last = txUpdates.at(-1) as Record<string, unknown>;
+    expect(last.status).toBe("failed");
+    expect(last.status).not.toBe("processed");
+    expect(last.completedAt).toBeInstanceOf(Date);
+    expect(String(last.errorMessage)).toMatch(/missing orderId\/email/);
+  });
+
+  it("★payload が行に残る（★これを失わないための変更）", async () => {
+    mockHandleOrder.mockResolvedValue("unparseable");
+    await POST(req({ events: [orderWithLive("bad2", true)] }));
+    expect((txInserts[0] as { payload: Record<string, unknown> }).payload).toMatchObject({
+      id: "bad2",
+      type: "order.completed",
+    });
+  });
+
+  it("★shape も log に出す（★id/type の拒否は出していて、★ここだけ欠けていた）", async () => {
+    mockHandleOrder.mockResolvedValue("unparseable");
+    await POST(req({ events: [orderWithLive("bad3", true)] }));
+    expect(mockLogError).toHaveBeenCalledWith(
+      expect.stringContaining("recording as failed"),
+      expect.objectContaining({ eventId: "bad3", shape: expect.any(Object) }),
+    );
+  });
+
+  it("★license / email の失敗は従来どおり throw で rollback（★行を残す対象ではない）", async () => {
+    // ★売上行を作らずに retry させるのが正しいので、★そこは変えていない
+    mockHandleOrder.mockRejectedValueOnce(new Error("cannot issue license"));
+    const res = await POST(req({ events: [orderWithLive("boom", true)] }));
+    expect(res.status).toBe(500);
   });
 });
