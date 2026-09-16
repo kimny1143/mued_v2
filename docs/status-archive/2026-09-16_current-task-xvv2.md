@@ -1,0 +1,9 @@
+# status.md current_task 退避 — 2026-09-16 の (X)(V)(V2)
+
+> status.md の `current_task` が注入 cap（6,000 B）を超えたため退避した。
+> ★どれも**作業は完了しており手番は無い**。型は memory 側に在る（本文中のリンク参照）。
+> 退避元: `status.md` `current_task` / 退避日: 2026-09-16
+
+---
+
+★★**(X) conductor 依頼受領（2026-09-16）＝learn 記事の数値再確認。★一次情報の確認は当課が完了し、★実装は Codex へ発注済（queued `01a0a858-016f-7dd3-bde5-7b101bba981d` / thread `01a09864-4dd9-71c3-a162-fc8421f947e6`）。** ★**最大の発見：Apple は LUFS も dBTP も ★一つも公開していない**（★Apple Digital Masters 白書を全文抽出して `LUFS` 0 / `dBTP` 0 / `true peak` 0・★陽性control `master` 75）。★∴ ★記事の「Apple Music (Sound Check) −16 LUFS」は ★Apple の spec としては書けない（★−16 の出所は AES TD1008・★−14 を公式に書いているのは Spotify だけ）。★**Spotify の −2 dBTP 条件**（−14 より大きい master）も ★現記事に無い。★**scope を 1 file 分 広げた（★conductor に同時報告）**：`set-true-peak-ceiling.md` が ★「Apple Music recommends … −1 dBTP」と帰属しているが ★Apple の言明でない（★Apple は「leave at least 1 dB of headroom」）。★同じ公開 gate の file ゆえ同時に正す。★**型の正本＝memory `reference-platform-loudness-published-vs-reported`**。★**`LEARN_LIVE` は当課が押すものでない**（★conductor が合図）。  ★★**(V) memory 索引監査を閉じた（(0s) 13 → ★0）＋(0t) を新規に開けた。** ★**索引を生やしたのは2件だけ**（★MUEDear 側イベントは別リポ＝当該 memory が唯一の記録／★muedsat は **indexed な2 memory が「詳細=」で指していた** ∴ 消さず索引へ）。★**10件削除・1件は型だけ残して畳んだ**。★**削除の前に inbound link ／ repo 参照 ／ archive の3つを測った**。★**自分の誤読を1件 訂正**: ★prompt の capability 境界を「未実装」と読みかけたが、★`grep cannot` が **大文字 `Cannot` を拾わなかった**だけで ★実物は `lib/ai/prompts/dial.ts` に在った（★陰性control は通っていた——★liveness でなく **aim** が外れていた）。 ★★**(V2) ★2件目の訂正＝こちらは自分で status と PR に書いた後に検出した**。★dial stem DL を「未修正の欠陷」と書いたが ★**PR-A 2026-06-12 で修正済**（test 11/11 green）。★route を読んで ★**caller を読まなかった**のが機序。★畳んだ古い memory が「フルリファクタへ回した」と書いており（★6/11 産・修正は 6/12）、★**畳む際に ★その stale な主張を ★新 memory に継承してしまった**（★畳みの固有の危険）。★修正済＝memory 名を `gotcha-dial-stem-url-must-be-task-scoped` に改め、★索引・status・PR 本文の4箇所を直した。  

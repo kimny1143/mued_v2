@@ -464,3 +464,65 @@ RECOMMENDATION: ★(a)。★理由＝★死因は「昇格の手順に1行 足�
 ★**同じ `(W7)` で ★片方は引用・★片方は参照。★grep では弁別できない** ——★(0t) の use/mention と ★同型。
 ★**∴ 畳んだ回は ★必ず内部参照を grep して ★1件ずつ開く。**
 
+### (0x) — ★自作 gate の poll が「赤い PR を merge させる」向きに壊れていた（2026-09-16・当課）
+
+★**判定語が、別の判定語の部分文字列だった。**
+
+```
+gate の出力 … "#1046 …: 総数=6 未完=2 非success=0 → NOTREADY"
+poll の判定 … grep で "READY" を探していた
+★→ ★NOTREADY の中の READY に当たり、★両方 NOTREADY の回に "BOTH_READY" を印字
+```
+
+★**危険の向きが悪い**: この poll は「両方 ready になったら merge せよ」と自分に告げるための計器で、
+★**誤りの向きが「進め」だった**。★実際、その時 **#1048 は `Test` が failure** だった
+（`locale-page-bare-paths.test.ts` — 新設2ページの bare redirect 欠け）。
+★**poll を信じて押していたら、赤い PR を merge していた。**
+
+★**同日3件目の同型**（すべて「文字列で合否を決めた」）:
+| | 何が起きたか |
+|---|---|
+| ① | `"Vercel"` が `"Vercel Preview Comments"` に当たり「欠けなし」を誤報 |
+| ② | `grep cannot` が `Cannot do` を拾わず、能力境界を「未実装」と読みかけた |
+| ③ | ★本件（`READY` ⊂ `NOTREADY`） |
+
+★**併せて `$?` を pipe 越しに ★2回 読み違えた**（`tsc | tail` / `verify.py | tail` ＝ `tail` の rc）。
+★**2回目は「RED が rc=1 を返すか」を測っている最中** ——★検査を検査する所で同じ誤りをした。
+
+**直した形**（★`/tmp/cc-501-g4.sh` → 恒久化は未実施＝下記が残タスク）:
+- ★**合否は rc で返す**（`exit 0|1|3`）。★文字列は **人が読むためだけ**に印字する
+- ★**3値にする** … `0=ready / 1=まだ / 3=計器の死`（★「不足」と「計器が成立していない」を分ける）
+- ★**`$?` は pipe の前に測る**（出力が見たければ file に落としてから読む）
+- ★**self-RED を通す** … 「常に rc=1 を返す gate」を差し替えて、loop が合格を出さないことを見る
+  （★入れ替えるのは **gate の側**。★loop 側の定数を変えても両方 直るので検出できない）
+- ★**待つ loop は、非合格を見たら待たずに抜ける**（CI の failure は待っても直らない）
+
+★**残タスク**: ★上の gate は `/tmp` に在るだけで ★repo に無い ∴ ★次のセッションには存在しない。
+★**`scripts/` に置くか、置かずに済ませるかを決める**（★置くなら self-RED も一緒に置く
+——★手で1回 通した RED は、検査が変わった日に誰も再実行しない）。
+★型の正本＝memory `feedback-read-the-verdict-by-rc-not-by-string`。
+
+### (0y) — ★`masterchain-order-handler.test.ts` に unused な eslint-disable が 6 件（2026-09-16・低優先）
+
+★`// eslint-disable-next-line @typescript-eslint/no-explicit-any` が **6 件** 効いていない。
+★機序＝**test は `no-explicit-any` が off**（MEMORY.md に既記）∴ ★**最初から不要だった**。
+★当課の #1039 / #1041 / #1045 がこの行を触っているが、★**当課が持ち込んだのではなく既存の型**。
+
+★**lint rc=0**（warning 止まり）ゆえ CI は緑。★**#1049 に混ぜない**
+（特商法は kimny 目視に出す面なので、diff を読む負荷を上げない）。
+★次に `lib/masterchain/fastspring-webhook.ts` 系を触る回に一緒に消す。
+
+### (0z) — ★`/terms`・`/refund` は「作ったのに繋がっていない」状態で出荷しかけた（2026-09-16・#1048 → #1049 で解消）
+
+★#1048 で新設した2面は、**サイト内から辿れる導線が 0** だった（sitemap と FastSpring 側だけ）。
+★**tsc も lint も 2,313 本の test も緑** ——★到達性は型エラーにならない。
+
+★**そして検査の側も同じ形をしていた**:
+`legal-pages-locale-links.test.ts` の `LEGAL_PAGES` は ★**包含リスト**で、新設2面を覆っていなかった
+∴ ★**cross-link 検査の母集団の外**。★**同じ file の header が `/muedrive` の取りこぼしを
+「registry は filesystem の部分集合にしかなれない」と書いているのに、★この配列自身が同じ形だった。**
+
+★**#1049 で閉じた**: 5面が互いに4面を張るようにし、リストを 5 件へ拡張。
+★加えて ★**リストに依存しない述語**を足した ——「MoR を宣言している namespace は全部リストに入っている」
+（messages 側から機械的に引くので、★6つ目の legal page を足した日に落ちる）。
+★meta-RED＝`LEGAL_PAGES` から `terms` を外して、新しい述語が検出することを確認済。
