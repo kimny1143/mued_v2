@@ -56,6 +56,7 @@ const {
   mockHandleOrder,
   mockSelectLimit,
   mockLogError,
+  mockLogInfo,
   txInserts,
   txUpdates,
   mockTransaction,
@@ -84,6 +85,7 @@ const {
     mockHandleOrder: vi.fn(() => Promise.resolve()),
     mockSelectLimit: vi.fn(() => Promise.resolve([])),
     mockLogError: vi.fn(),
+    mockLogInfo: vi.fn(),
     txInserts,
     txUpdates,
     mockTransaction: vi.fn((cb: (t: typeof tx) => Promise<void>) => cb(tx)),
@@ -97,7 +99,7 @@ vi.mock("next/server", () => ({
 }));
 vi.mock("next/headers", () => ({ headers: async () => ({ get: mockHeaderGet }) }));
 vi.mock("@/lib/utils/logger", () => ({
-  logger: { error: mockLogError, warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
+  logger: { error: mockLogError, warn: vi.fn(), info: mockLogInfo, debug: vi.fn() },
 }));
 vi.mock("@/db", () => ({
   db: {
@@ -121,7 +123,17 @@ import { GET, POST } from "@/app/api/webhooks/fastspring/route";
 const req = (body: unknown) =>
   ({ text: async () => (typeof body === "string" ? body : JSON.stringify(body)) }) as never;
 
-const order = (id: string) => ({ id, type: "order.completed", data: { order: id } });
+// ★`live: true` は 2026-09-16 に追加。以前の helper には `live` が無く、★それでも fulfillment が
+// 走っていた（route が `live` を見ていなかったため）。★live/test 分岐を入れた時、この helper を
+// 使う既存テスト4本が落ちた ——★落ちた場所がそのまま「fulfillment を要求しているテスト」の一覧で、
+// ★それらの意図は「★本物の注文は履行される」だった。∴ ★helper 側で live を明示する。
+const order = (id: string) => ({ id, type: "order.completed", live: true, data: { order: id } });
+/** live/test 分岐用 —— `live` を差し替えられる形（欠損を作るため `undefined` も渡せる）。 */
+const orderWithLive = (id: string, live: unknown) => {
+  const e: Record<string, unknown> = { id, type: "order.completed", data: { order: id } };
+  if (live !== undefined) e.live = live;
+  return e;
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -372,3 +384,77 @@ describe("POST — idempotency and routing", () => {
   });
 });
 
+
+describe("POST — ★live / test の分岐（テスト注文で本番ライセンスを出さない）", () => {
+  // ★FastSpring は live と test を同一 endpoint へ送り、event の `live` boolean で出自を示す
+  // （公式 doc reference/webhooks-overview.md: webhook は live / test / both を選べ、event は
+  // `id` `type` `live` `processed` `created` `data` を持つ）。
+  //
+  // ★この分岐が無かった間、`.test.` storefront のテスト注文は ★本番の1件として処理された:
+  // 本番の署名鍵で有効なライセンスを発行し、`masterchain_purchases` に INSERT し、実キー入りの
+  // 配達メールを送る。★発行済みキーはオフライン検証ゆえ撤回できない（現行 binary には失効が効かない）。
+
+  it("★live: true は履行する（陽性control — これが緑でないと以下の陰性は無意味）", async () => {
+    const res = await POST(req({ events: [orderWithLive("live1", true)] }));
+    expect(res.status).toBe(200);
+    expect(mockHandleOrder).toHaveBeenCalledTimes(1);
+  });
+
+  it("★live: false は記録するが履行しない（200・license/INSERT/メールに到達しない）", async () => {
+    const res = await POST(req({ events: [orderWithLive("test1", false)] }));
+    expect(res.status).toBe(200);
+    expect(mockHandleOrder).not.toHaveBeenCalled();
+    // ★記録は残る — スキップするのは fulfillment だけで、観測性は落とさない
+    expect(txInserts).toHaveLength(1);
+    expect(txInserts[0]).toMatchObject({
+      eventId: "test1",
+      type: "order.completed",
+      source: "fastspring",
+    });
+    // ★`live` は payload の中に在る（webhook_events に live 列は無いため）
+    expect((txInserts[0] as { payload: Record<string, unknown> }).payload).toMatchObject({
+      live: false,
+    });
+    expect(mockLogInfo).toHaveBeenCalledWith(
+      "[fastspring] test event recorded, fulfillment skipped",
+      expect.objectContaining({ eventId: "test1", live: false }),
+    );
+  });
+
+  it("★`live` の欠損は test 側に倒す —— ★shape が未確認だから、発行しない側が安い", async () => {
+    const res = await POST(req({ events: [orderWithLive("nolive", undefined)] }));
+    expect(res.status).toBe(200);
+    expect(mockHandleOrder).not.toHaveBeenCalled();
+    expect(txInserts).toHaveLength(1); // ★記録は残る
+    expect(mockLogInfo).toHaveBeenCalledWith(
+      "[fastspring] test event recorded, fulfillment skipped",
+      expect.objectContaining({ eventId: "nolive", live: null }),
+    );
+  });
+
+  it("★文字列の 'true' も履行しない（`=== true` で見る理由 — truthy では倒れない）", async () => {
+    const res = await POST(req({ events: [orderWithLive("strlive", "true")] }));
+    expect(res.status).toBe(200);
+    expect(mockHandleOrder).not.toHaveBeenCalled();
+  });
+
+  it("★batch に live と test が混ざっても、履行されるのは live だけ", async () => {
+    const res = await POST(
+      req({
+        events: [
+          orderWithLive("t", false),
+          orderWithLive("l", true),
+          orderWithLive("n", undefined),
+        ],
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(mockTransaction).toHaveBeenCalledTimes(3); // ★3件すべて記録される
+    expect(mockHandleOrder).toHaveBeenCalledTimes(1); // ★履行は live の1件だけ
+  });
+
+  it("★test event はスキップされても shape log を出さない（refusal path ではない）", async () => {
+    await POST(req({ events: [orderWithLive("test2", false)] }));
+    expect(mockLogError).not.toHaveBeenCalled();
+  });
+});
