@@ -57,28 +57,65 @@ describe("legal pages — internal links carry the locale", () => {
   });
 });
 
+/**
+ * MoR の逐語。★terms / refund は `mor.seller` に、★tokushoho は `mor.value` の中に持つ
+ * （key の形が違う）。∴ ★key の形で探すと tokushoho を取りこぼす —— ★実際に取りこぼしていた。
+ */
+const MOR_SELLER = { ja: "販売事業者（Merchant of Record）: FastSpring, Inc.", en: "Seller (Merchant of Record): FastSpring, Inc." } as const;
+
+/** ★内容で検出する: namespace 内のどこかに MoR の逐語を持つ top-level namespace 名。 */
+function namespacesDeclaringMor(locale: keyof typeof MOR_SELLER): string[] {
+  const msgs = JSON.parse(readFileSync(join(process.cwd(), "messages", `${locale}.json`), "utf8")) as Record<string, unknown>;
+  const needle = MOR_SELLER[locale];
+  const out: string[] = [];
+  for (const [ns, value] of Object.entries(msgs)) {
+    let found = false;
+    const walk = (node: unknown): void => {
+      if (found) return;
+      if (typeof node === "string") {
+        if (node.includes(needle)) found = true;
+      } else if (node && typeof node === "object") {
+        for (const v of Object.values(node)) walk(v);
+      }
+    };
+    walk(value);
+    if (found) out.push(ns);
+  }
+  return out.sort();
+}
+
 describe("LEGAL_PAGES — 母集団そのものを測る", () => {
-  it("★MoR を宣言している locale page は全部 LEGAL_PAGES に入っている", () => {
-    // ★包含リストの弱点は「足し忘れ」。それを検出できる、リストに依存しない述語を1つ置く:
-    // MoR の2行（販売事業者 / 提供者）を描画している面は、法定表記の面である ∴ cross-link の
-    // 対象。messages 側から機械的に引くので、6つ目の legal page を足した日に ここが落ちる。
-    const ja = JSON.parse(readFileSync(join(process.cwd(), "messages", "ja.json"), "utf8"));
-    const declaresMor = Object.entries(ja as Record<string, unknown>)
-      .filter(([, v]) => {
-        const mor = (v as { mor?: { seller?: unknown } } | null)?.mor;
-        return typeof mor?.seller === "string";
-      })
-      .map(([k]) => k)
-      .sort();
+  it.each(["ja", "en"] as const)("★%s: MoR を宣言している namespace は全部 LEGAL_PAGES に入っている", (locale) => {
+    // ★包含リストの弱点は「足し忘れ」。それを検出する、リストに依存しない述語を1つ置く。
+    // ★ただし述語の aim を間違えると意味がない: 初版は `mor.seller` の有無で判定しており、
+    // ★tokushoho は `mor.value` に逐語を埋めているため ★永久に母集団の外だった（CCO 指摘）。
+    // ∴ ★key の形ではなく ★内容で探す。
+    const declaring = namespacesDeclaringMor(locale);
 
-    // ★陽性control: 空なら下の比較が無意味（走っていないのと同じ）
-    expect(declaresMor.length).toBeGreaterThan(0);
+    // ★陽性control: 初版は `length > 0` で、★2 件でも通った ＝ under-coverage を検出できない（CCO 指摘）。
+    // ★期待する成員を名指しする。3 面のどれかが拾えなくなった日にここが落ちる。
+    expect(declaring, `MoR 宣言面の検出が痩せた: ${declaring.join(", ")}`).toEqual(
+      expect.arrayContaining(["terms", "refund", "tokushoho"]),
+    );
 
-    const missing = declaresMor.filter((ns) => !(LEGAL_PAGES as readonly string[]).includes(ns));
+    // ★陰性control: MoR を宣言していない namespace は入っていない（walk が全 string を true にしていない）。
+    expect(declaring).not.toContain("muedsp");
+
+    const missing = declaring.filter((ns) => !(LEGAL_PAGES as readonly string[]).includes(ns));
     expect(
       missing,
       `MoR を宣言しているのに LEGAL_PAGES に無い: ${missing.join(", ")} — cross-link 検査の母集団外`,
     ).toEqual([]);
+  });
+
+  it("★MoR の逐語は3面で byte 同一（ずれると上の検出が痩せ、表示としても問題になる）", () => {
+    for (const locale of ["ja", "en"] as const) {
+      const msgs = JSON.parse(readFileSync(join(process.cwd(), "messages", `${locale}.json`), "utf8"));
+      const needle = MOR_SELLER[locale];
+      expect(msgs.terms.mor.seller, `${locale}: terms`).toBe(needle);
+      expect(msgs.refund.mor.seller, `${locale}: refund`).toBe(needle);
+      expect(msgs.tokushoho.mor.value, `${locale}: tokushoho`).toContain(needle);
+    }
   });
 
   it("★LEGAL_PAGES の全要素が実在する locale page である", () => {
