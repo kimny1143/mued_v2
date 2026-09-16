@@ -599,3 +599,47 @@ harness 警告 … "MEMORY.md is 24.9KB (limit: 24.4KB) … 6 of 185 lines were 
 ★**残差**: ★上限を超えたのは本日の当課の編集が原因で、★harness が警告するまで気づいていない。
 ∴ ★**それまで何セッション「末尾の無い context」で判断していたかは ★事後に測れない**
 （→ memory `feedback-counts-built-from-records-have-a-biased-denominator`）。
+
+### (1c) — ★(W0) の .pkg gate は母集団を焼いていて、現行の無料3本を一度も測っていなかった（2026-09-16・解消済）
+
+★**gate 自体は 9/11 に「3行とも期待どおり」で緑だった。★その緑が覆っていた範囲が違った。**
+
+```
+★焼いていた名前 … MUEDsat-0.1.1-alpha-installer.pkg  ← ★既送メール向けの ★互換 alias
+                    MUEDsp-masterchain-0.1.3-installer.pkg
+★canonical（lib/*/config.ts の *_DOWNLOAD_URL）… ★4 本
+                    MUEDsat-0.1.2 / MUEDlim-0.1.2 / MUEDrive-0.1.2 / MUEDsp-masterchain-0.1.3
+★∴ ★無料3本のうち ★測っていたのは 0 本（★alias 1 本を「MUEDsat を測った」と読んでいた）
+```
+
+★**機序は「値を焼いた」こと**。★当課の status.md は別の項で「★値でなく引き方を置く」と書いており、
+★**同じ file の別の項が それを破っていた**（→ 共通block「規則と例が矛盾したら例が勝つ」）。
+★**しかも alias は 200 を返すので、★gate は緑のままだった** ——★[[feedback-zero-hits-means-your-filter-not-absence]] の裏側で、
+★**「1 件 当たった」が「対象に当たった」を意味しない**形。
+
+**直した検査**（母集団を `lib/*/config.ts` から実時解決）:
+- ★canonical 4 本 ＋ ★alias 1 本 ＋ ★陰性control 1 本
+- ★status だけでなく ★content-type・★先頭 byte（`xar!`）・★size を見る（★200 の HTML を通さない）
+- ★母集団が 4 本 未満なら ★rc 3 で「計器の死」として落ちる（★正規表現か path が壊れた時に緑にしない）
+
+**2026-09-16 実測**: ★5/5 が 200・`xar!`・3.2〜4.1MB／★canonical 0.1.2 の sha256 は
+★`lib/muedsat/config.ts` の記録値と ★完全一致（`d41d5a30…fefdb610`）／★陰性control 404。
+
+### ★alias が 0.1.2 でなく 0.1.1 payload を配っている — ★これは欠陥ではない
+
+★**当課は最初「Gatekeeper 警告が出るのでは」と疑った。★測って否定した。**
+
+```
+MUEDsat-0.1.0-alpha ＝ MUEDsat-0.1.1-alpha … ★byte 同一（b3ac87fc…）＝ 2026-08-27 の alias 上書き
+MUEDsat-0.1.2                              … 別 payload（d41d5a30…）
+★3製品すべて同じ形（alias 5 本・どれも canonical と hash 不一致）
+★★しかし ★両方とも notarized + stapled で `spctl -a -t install` が ★accepted
+   0.1.1-alpha … timestamp 2026-08-27 / Developer ID Installer: glasswerks inc. (F529L4WT3V)
+   0.1.2       … timestamp 2026-09-10 / 同じ証明書
+```
+
+★**∴ 古いリンクを持つ利用者は ★notarized で Gatekeeper を通る ★動く build を得る。差は版だけ。**
+★alias を 0.1.2 へ更新するかは ★dsp の判断（★当課は触らない）。★**当課の側の結論は「欠陥なし」。**
+
+★**残差**: ★0.1.2 の機能差は `lib/muedsat/config.ts` が「dsp's record, NOT re-measured here」と
+明記している ∴ ★**版差が利用者にとって何を意味するかは当課では測っていない**（★dsp の領分）。
