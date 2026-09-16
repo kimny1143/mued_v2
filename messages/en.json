@@ -398,11 +398,11 @@
     },
     "payment": {
       "title": "Payment Methods",
-      "value": "Varies by service.\nMUEDnote / MUEDial: credit card (via Stripe)\nMUEDsp paid plugins: FastSpring checkout (payment methods offered by FastSpring, Inc. as the Merchant of Record)\nMUED advisory: invoice or payment link (arranged individually)"
+      "value": "Varies by service.\nMUEDnote / MUEDial: credit card (via Stripe)\nMUEDsp paid plugins: FastSpring checkout (payment methods offered by FastSpring, Inc. as the Merchant of Record)\nMUED advisory: arranged individually"
     },
     "contractEstablishment": {
       "title": "Contract Establishment",
-      "value": "Varies by service.\nMUEDnote / MUEDial: upon completion of credit card payment.\nMUEDsp paid plugins: upon confirmation of the order at FastSpring (when FastSpring sends its order confirmation email).\nMUED advisory: upon our sending an order confirmation email, or upon execution of a written agreement."
+      "value": "Varies by service.\nMUEDnote / MUEDial: upon completion of credit card payment.\nMUEDsp plugins (via FastSpring): the contract is formed when FastSpring has received payment and the email containing your license key has been sent. The order confirmation email is an acknowledgement of receipt, not an acceptance.\nMUED advisory: upon our sending an order confirmation email, or upon execution of a written agreement."
     },
     "contact": {
       "title": "Contact",

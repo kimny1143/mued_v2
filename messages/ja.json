@@ -398,11 +398,11 @@
     },
     "payment": {
       "title": "支払方法",
-      "value": "サービスにより異なります。\nMUEDnote・MUEDial: クレジットカード（Stripe 経由）\nMUEDsp 有料プラグイン: FastSpring のチェックアウト（販売事業者である FastSpring, Inc. が提供する決済手段）\nMUED advisory: 請求書又は決済リンク（個別にご案内します）"
+      "value": "サービスにより異なります。\nMUEDnote・MUEDial: クレジットカード（Stripe 経由）\nMUEDsp 有料プラグイン: FastSpring のチェックアウト（販売事業者である FastSpring, Inc. が提供する決済手段）\nMUED advisory: 個別にご案内します"
     },
     "contractEstablishment": {
       "title": "契約成立時期",
-      "value": "サービスにより異なります。\nMUEDnote・MUEDial: クレジットカード決済の完了をもって成立します。\nMUEDsp 有料プラグイン: FastSpring における注文の確定（同社からのご注文確認メールの送信）をもって成立します。\nMUED advisory: 当社からの申込確認メールの送信又は契約書の締結をもって成立します。"
+      "value": "サービスにより異なります。\nMUEDnote・MUEDial: クレジットカード決済の完了をもって成立します。\nMUEDsp プラグイン（FastSpring 経由）: FastSpring が代金を受領し、ライセンスキーを記載したメールをお送りした時点で契約が成立します。ご注文確認メールは受領の通知であり、承諾ではありません。\nMUED advisory: 当社からの申込確認メールの送信又は契約書の締結をもって成立します。"
     },
     "contact": {
       "title": "お問い合わせ",

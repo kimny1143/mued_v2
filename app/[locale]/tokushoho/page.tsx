@@ -74,6 +74,17 @@ function TokushohoContent({ locale }: { locale: string }) {
             />
             <InfoRow label={t("additionalCost.title")} value={t("additionalCost.value")} />
             <InfoRow label={t("payment.title")} value={t("payment.value")} />
+            {/* ★FastSpring 分の成立時期は ★FastSpring 自身の規約に従わせている。★簡略化しないこと。
+                正本＝FastSpring® Terms & Conditions of Sale for Purchasers（Last Updated 2021-10-28）
+                https://fastspring.com/legal/terms-sale/
+                  §3.4 … "Any order confirmation email received by you prior to our Acceptance shall
+                          constitute an acknowledgement of our receipt of your offer only, and not an
+                          acceptance of your offer."
+                  §3.6 … Acceptance ＝ (a) product を dispatch／service へ access を提供 ★かつ
+                          (b) 代金の settlement を受領 —— ★その両方が揃った時点
+                ★当課は当初「注文確認メールの送信をもって成立」と書いており、★これは §3.4 と真逆だった
+                （conductor lint が一次を引いて指摘・当課も一次を照合して確認）。
+                ★当製品の (a) は ★ライセンスキーのメール送信が該当する。 */}
             <InfoRow label={t("contractEstablishment.title")} value={t("contractEstablishment.value")} />
           </div>
 
