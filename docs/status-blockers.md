@@ -702,9 +702,9 @@ probe … next.config.ts に { source: '/downloads/MUEDsat-0.1.1-alpha-installer
 ★当課の実測（2026-09-16・app/[locale] 配下の page.tsx 全数 16 本）:
   depth=0 … ★★1 本 ＝ ★`app/[locale]/page.tsx`（★locale root・★dir でないので この軸の対象外）
   depth=1 … ★12 本 ＝ ★当課の test が見る母集団
-  depth=2 … ★story/[slug]/page.tsx        ← ★★`story` 自身に page.tsx が ★無い
-            redesign/studio/page.tsx       ← 親が分類済 ∴ 実害なし
-  depth=3 … redesign/studio/workspace/page.tsx  ← 同上
+  depth=2 … ★★2 本 ＝ ★story/[slug]/page.tsx（★★`story` 自身に page.tsx が ★無い）
+                     redesign/studio/page.tsx（親が分類済 ∴ 実害なし）
+  depth=3 … ★★1 本 ＝ redesign/studio/workspace/page.tsx（同上）
 ★★**1 + 12 + 2 + 1 ＝ 16**（★CCO 指摘で内訳に depth=0 を補った ——★「全数 16」と書いて内訳が 15 だと、★読む人は「1 本 見落としたのか／数え方が違うのか」を弁別できない。★★配る値は ★再構成できる形で配る）。
 ★∴ ★`/[locale]/story/<slug>` は ★生きた公開面だが ★分類の外
    （★`existsSync(story/page.tsx)` が false ∴ ★母集団に すら 入らない）
@@ -739,6 +739,8 @@ probe … next.config.ts に { source: '/downloads/MUEDsat-0.1.1-alpha-installer
 ★∴ ★**残差3 は まだ silent 側に在る** —— ★それを承知で depth 1 に留める、という判断。
 
 ### ★併せて: `toBeGreaterThanOrEqual(10)` の出所を書いた
+
+★★**未処理（★次に この test file を触る回に直す・CCO 合意）**: `LEGAL_PAGES` の docstring に `legale` → `legal` の typo（★#1055 由来・実害ゼロ・★CCO も前回 見落とした）。★**test file は Tier 2 になるため docs 単独 PR には混ぜない。**
 
 ★CCO 所見＝`10` は magic number（★実測 12）。★面を 3 つ消すと意図せず落ちるが、
 ★**落ちる向きは正しい**（母集団が痩せたら止まる）∴ ★直さず ★出所を1行 添えた。
