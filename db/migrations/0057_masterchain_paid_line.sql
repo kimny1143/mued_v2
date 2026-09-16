@@ -8,13 +8,17 @@
 --
 -- PURE ADDITIVE (Tier 2): two new tables + their indexes, no change to any existing table, no backfill.
 --
--- WARNING — DEPLOY ORDER: apply this to PRODUCTION Neon BEFORE the code that writes these tables goes
--- live. In practice both writers ship inert (C2 route is gated by MASTERCHAIN_INTEREST_LIVE=off; the
--- C+ FastSpring webhook receives nothing until FastSpring is configured), so a code-first merge is
--- still safe — but apply this migration before flipping the flag / going live on FastSpring. Pure-
--- additive CREATE TABLE is forward-compatible: old code ignores the new tables. Hand-written like
--- 0050–0056 (drizzle-kit journal is stale at 0008). prod apply = kimny (manual psql).
-
+-- ★APPLIED TO PRODUCTION 2026-09-16（kimny 逐語「適用可能です」・conductor relay・mued 実行）。
+-- ★rc=0 / 11 文すべて成功 / 適用後 masterchain_interest 7 列・masterchain_purchases 16 列
+-- （db/schema/masterchain.ts と一致）・★両テーブル 0 行。
+-- ★戻し方: DROP TABLE masterchain_purchases, masterchain_interest;（★0 行のうちは無害）
+--
+-- ★以前ここには「apply this to PRODUCTION BEFORE the code goes live / prod apply = kimny (manual
+-- psql)」と書いてあった。★適用が済んだのでその現在形は誤りになる ∴ 事実に差し替えた。
+-- ★DEPLOY ORDER の原則自体は変わらない: ★これらのテーブルへ書くコードが live になる前に適用する。
+-- ★PURE ADDITIVE ゆえ forward-compatible（古いコードは新しい列を無視する）。
+-- ★Hand-written like 0050–0056（drizzle-kit journal is stale at 0008）。
+--
 -- ── C2: masterchain interest ──────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS masterchain_interest (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
