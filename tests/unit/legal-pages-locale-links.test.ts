@@ -41,6 +41,17 @@ const LEGAL_PAGES = ["privacy", "support", "tokushoho", "terms", "refund"] as co
  * ★∴ ★**次に legale 面を足す人は、分類するまで CI が通らない**（★黙って母集団の外に出られない）。
  * ★同じ形の前例＝`locale-page-bare-paths.test.ts` の EXEMPT（★あちらも filesystem 由来）。
  *
+ * ★★**この軸の射程 ＝ `app/[locale]` の ★直下だけ。★入れ子は見ない**（CCO 実測 2026-09-16・残差3）。
+ *   ★`app/[locale]/eula/page.tsx`        … ★落ちる（分類を強制する）
+ *   ★★`app/[locale]/legal/eula/page.tsx` … ★★落ちない ——★`legal` 自身に page.tsx が無ければ
+ *                                          ★母集団に すら 入らない
+ *   ★現に `app/[locale]/story/[slug]/page.tsx` は生きた公開面だが、★`story` に page.tsx が無いので
+ *   ★分類の外に在る（★story は legal 面でないので ★今日の実害はゼロ）。
+ * ★∴ ★**この軸は「legal 面が depth 1 に在る」ことを仮定する。** ★`/eula` は depth 1 の予定ゆえ足りる。
+ * ★**再帰にしない理由**: route segment の意味（`[slug]` / route group / `@slot`）を test が
+ *   解釈し始め、★別種の誤りが入る（CCO 推奨）。★入れ子の legal 面を置く日に再帰を入れる
+ *   ——★その判断が必要になったことが分かるよう、ここに書いておく。
+ *
  * ★/eula は近く足る見込み（EULA 本文が弁護士から届いた時点）。★その時 ここか LEGAL_PAGES の
  * ★どちらかに入れることになる ——★それが この表の主目的。
  */
@@ -202,6 +213,8 @@ describe("★母集団の軸を filesystem へ ——「分類し忘れ」を落
 
   it("★母集団が痩せていない（★これが無いと下の分類 test が空で通る）", () => {
     // ★陽性control: 確実に在る 2 面。readdir か filter が壊れた日にここが落ちる。
+    // ★`10` の出所: 2026-09-16 の実測が ★12 面。★その下に余裕を取った値で、★面を 3 つ消すと
+    // 意図せず落ちる —— ★ただし落ちる向きは正しい（★母集団が痩せたら止まる）。
     expect(localePages().length).toBeGreaterThanOrEqual(10);
     expect(localePages()).toContain("tokushoho");
     expect(localePages()).toContain("muedsp");

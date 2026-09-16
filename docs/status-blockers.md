@@ -693,3 +693,50 @@ probe … next.config.ts に { source: '/downloads/MUEDsat-0.1.1-alpha-installer
 2. ★**redirect を入れると alias の実体は HTTP から到達不能になる**。
    ★`MUEDrive-0.1.0-alpha` は ★唯一の実体 ∴ ★**「残す」は満たすが「取り出せる」は失う**。
    ★取り出し経路を1つ書き残すこと（`git show <sha>:public/downloads/…` か dsp へ dist 依頼）。
+
+### (1e) — ★legal guard の filesystem 軸は ★depth 1 だけ（★CCO 検出・残差3・実害は今ゼロ）
+
+★**(1b)〜#1055 で「母集団の軸を filesystem へ移して class を閉じた」と書いたが、★閉じ切っていない。**
+
+```
+★当課の実測（2026-09-16・app/[locale] 配下の page.tsx 全数 16 本）:
+  depth=1 … ★12 本 ＝ ★当課の test が見る母集団
+  depth=2 … ★story/[slug]/page.tsx        ← ★★`story` 自身に page.tsx が ★無い
+            redesign/studio/page.tsx       ← 親が分類済 ∴ 実害なし
+  depth=3 … redesign/studio/workspace/page.tsx  ← 同上
+★∴ ★`/[locale]/story/<slug>` は ★生きた公開面だが ★分類の外
+   （★`existsSync(story/page.tsx)` が false ∴ ★母集団に すら 入らない）
+```
+
+★**今日の実害はゼロ**（story は legal 面でない）。★**効くのは次に legal 面を入れ子で置いた時**:
+
+```
+★app/[locale]/eula/page.tsx        … ★落ちる（★#1055 の meta-RED で実証済）
+★★app/[locale]/legal/eula/page.tsx … ★★落ちない ——★`legal` に page.tsx が無ければ母集団の外
+```
+
+★**∴ 軸を移して閉じたはずの class（★黙って母集団の外に出る経路）の ★残り。**
+
+### ★対処＝「今は書く・再帰はしない」（CCO 推奨・当課も同意）
+
+- ★**docstring に射程を1行**（「★この軸は legal 面が depth 1 に在ることを仮定する」）＝ ★#1056 で実施
+- ★**再帰にしない理由**: route segment の意味（`[slug]` / route group / `@slot`）を ★test が
+  解釈し始め、★**別種の誤りが入る**。★`/eula` は depth 1 の予定ゆえ ★今の形で足りる
+- ★**入れ子の legal 面を置く日に再帰を入れる** ——★その判断が必要になったことが分かるよう
+  docstring に書いた（★「書いておく」を ★担い手の要る宿題にしない形）
+
+### ★残差の一覧（★「閉じた」と書かないため・3 件）
+
+| # | 残っているもの | silent か |
+|---|---|---|
+| 1 | ★legal 面を誤って `NON_LEGAL` に分類する | ★**silent でない**（理由を書く必要のある意識的判断） |
+| 2 | ★MoR の文面と key 名を ★同時に変えた新面 | ★filesystem 軸が拾う（★#1055 で閉じた） |
+| 3 | ★**入れ子（depth ≥ 2）に置かれた legal 面** | ★★**silent**（★母集団に入らない・★本項） |
+
+★**guard が変えるのは「起きるか」ではなく「★黙って起きるか」**（CCO 逐語・当課の残差1の整理を受けたもの）。
+★∴ ★**残差3 は まだ silent 側に在る** —— ★それを承知で depth 1 に留める、という判断。
+
+### ★併せて: `toBeGreaterThanOrEqual(10)` の出所を書いた
+
+★CCO 所見＝`10` は magic number（★実測 12）。★面を 3 つ消すと意図せず落ちるが、
+★**落ちる向きは正しい**（母集団が痩せたら止まる）∴ ★直さず ★出所を1行 添えた。
