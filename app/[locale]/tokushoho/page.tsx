@@ -95,31 +95,6 @@ function TokushohoContent({ locale }: { locale: string }) {
 
           <div className="space-y-10">
             <ServiceSection
-              name={t("muednote.name")}
-              description={t("muednote.description")}
-              urlTitle={t("muednote.url.title")}
-              urlValue={t("muednote.url.value")}
-              priceTitle={t("muednote.price.title")}
-              priceDescription={t("muednote.price.description")}
-              pricePlans={[
-                t("muednote.price.plans.free"),
-                t("muednote.price.plans.basic"),
-                t("muednote.price.plans.premium"),
-              ]}
-              paymentTimingTitle={t("muednote.paymentTiming.title")}
-              paymentTimingValue={t("muednote.paymentTiming.value")}
-              deliveryTitle={t("muednote.delivery.title")}
-              deliveryValue={t("muednote.delivery.value")}
-              cancellationTitle={t("muednote.cancellation.title")}
-              cancellationDescription={t("muednote.cancellation.description")}
-              environmentTitle={t("muednote.environment.title")}
-              environmentItems={[
-                t("muednote.environment.web"),
-                t("muednote.environment.ios"),
-              ]}
-            />
-
-            <ServiceSection
               name={t("muedial.name")}
               description={t("muedial.description")}
               urlTitle={t("muedial.url.title")}

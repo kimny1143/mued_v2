@@ -398,51 +398,17 @@
     },
     "payment": {
       "title": "支払方法",
-      "value": "サービスにより異なります。\nMUEDnote・MUEDial: クレジットカード（Stripe 経由）\nMUEDsp 有料プラグイン: FastSpring のチェックアウト（販売事業者である FastSpring, Inc. が提供する決済手段）\nMUED advisory: 個別にご案内します"
+      "value": "サービスにより異なります。\nMUEDial: クレジットカード（Stripe 経由）\nMUEDsp 有料プラグイン: FastSpring のチェックアウト（販売事業者である FastSpring, Inc. が提供する決済手段）\nMUED advisory: 個別にご案内します"
     },
     "contractEstablishment": {
       "title": "契約成立時期",
-      "value": "サービスにより異なります。\nMUEDnote・MUEDial: クレジットカード決済の完了をもって成立します。\nMUEDsp プラグイン（FastSpring 経由）: FastSpring が代金を受領し、ライセンスキーを記載したメールをお送りした時点で契約が成立します。ご注文確認メールは受領の通知であり、承諾ではありません。\nMUED advisory: 当社からの申込確認メールの送信又は契約書の締結をもって成立します。"
+      "value": "サービスにより異なります。\nMUEDial: クレジットカード決済の完了をもって成立します。\nMUEDsp プラグイン（FastSpring 経由）: FastSpring が代金を受領し、ライセンスキーを記載したメールをお送りした時点で契約が成立します。ご注文確認メールは受領の通知であり、承諾ではありません。\nMUED advisory: 当社からの申込確認メールの送信又は契約書の締結をもって成立します。"
     },
     "contact": {
       "title": "お問い合わせ",
       "value": "サービスに関するお問い合わせは、上記メールアドレスまでご連絡ください。"
     },
     "servicesSectionTitle": "サービスごとの個別条件",
-    "muednote": {
-      "name": "MUEDnote",
-      "description": "音楽教育プラットフォーム",
-      "url": {
-        "title": "販売URL",
-        "value": "https://mued.jp"
-      },
-      "price": {
-        "title": "販売価格",
-        "description": "各プランの料金は以下の通りです（税込）：",
-        "plans": {
-          "free": "フリープラン: 無料",
-          "basic": "ベーシックプラン: 月額1,980円",
-          "premium": "プレミアムプラン: 月額2,980円"
-        }
-      },
-      "paymentTiming": {
-        "title": "支払時期",
-        "value": "サブスクリプション開始時に初回決済、以降は毎月同日に自動決済されます。"
-      },
-      "delivery": {
-        "title": "サービス提供時期",
-        "value": "決済完了後、直ちにサービスをご利用いただけます。"
-      },
-      "cancellation": {
-        "title": "キャンセル・解約について",
-        "description": "サブスクリプションはいつでも解約可能です。解約後も、お支払い済みの期間終了まではサービスをご利用いただけます。デジタルサービスの性質上、サービス提供開始後の返金はお受けしておりません。"
-      },
-      "environment": {
-        "title": "動作環境",
-        "web": "Webダッシュボード: 最新のChrome、Safari、Firefox、Edge",
-        "ios": "iOSアプリ: iOS 17.0以降を搭載したiPhone"
-      }
-    },
     "muedial": {
       "name": "MUEDial",
       "description": "AIミキシング・マスタリングサービス",
