@@ -72,19 +72,36 @@ export interface FastspringOrderParsed {
  *       ∴ ★**popup が付ける tags が届かない証拠にはならない** —— ★popup 発の注文で再確認が必要。
  *   ★確認できた分: `data.order` / `data.id` / `data.total` / `data.currency` /
  *       `data.items[0].fulfillments` は ★すべて実在（型も一致）。
- * ★TODO(C1-b): ★上の2点（account path の是正・tags の popup 経由での確認）は ★別 PR。
- *   ★store activation より前に閉じる（★first-touch/UTM が空のまま出荷しないため）。
+ * ★**account path は本 PR で是正済**（recipient → customer の順・★name の silent-empty も同時に直した）。
+ * ★**残る TODO(C1-b) は `tags` のみ**: ★`data.tags` は MISSING だったが、★その注文は popup 非経由
+ *   ∴ ★popup 発の注文で再確認するまで ★結論を出さない（★first-touch/UTM が空のまま出荷しないため）。
+ * ★参考: ★`data.address.country` は ★実在しており buyerCountry は壊れていない（★触らない）。
+ *   ★`data.items[0].sku` は ★null（★parser は sku を読まず productId を固定しているので影響なし）。
  */
+/** ★配列として読む（★違う型なら空配列）。★`data.recipients` が array であることは実測済。 */
+function asArr(v: unknown): unknown[] {
+  return Array.isArray(v) ? v : [];
+}
+
 export function parseFastspringOrderCompleted(event: unknown): FastspringOrderParsed | null {
   const e = asObj(event);
   const data = asObj(e.data);
-  const account = asObj(data.account);
-  const contact = asObj(account.contact);
   const address = asObj(data.address);
   const tags = asObj(data.tags); // custom tags set on the popup session (gaClientId + utm*)
 
+  // ★buyer の在り処 —— ★2026-09-16 の実受信で確定（★型のみ確認・値は見ていない）:
+  //   ★`data.account` は ★**string** ∴ ★`data.account.contact` は ★MISSING
+  //      → ★旧実装の `contact.email` / `contact.first` / `contact.last` は ★すべて dead。
+  //      → ★email は `data.customer.email` の fallback が救っていたが、★`name` は ★**常に空**だった。
+  //   ★canonical は ★`data.recipients[0].recipient`（★`email` `first` `last` `address` が在る）。
+  //   ★`data.customer` も object で ★`email` `first` `last` `phone` `company` を持つ（★二番手）。
+  const recipient = asObj(asObj(asArr(data.recipients)[0]).recipient);
+  const customer = asObj(data.customer);
+
   const orderId = asStr(data.order) ?? asStr(data.id) ?? asStr(e.id);
-  const email = asStr(contact.email) ?? asStr(asObj(data.customer).email);
+  // ★recipient → customer の順（★どちらも実在を確認済）。★`contact` は残さない ——★dead path を
+  // ★残すと「fallback が在る」ように読めるが、★実際には一度も値を返さない。
+  const email = asStr(recipient.email) ?? asStr(customer.email);
   if (!orderId || !email) return null;
 
   // ★fallback を外した (freee課 検出 2026-08-04)。`data.total` は購入者通貨、
@@ -95,8 +112,10 @@ export function parseFastspringOrderCompleted(event: unknown): FastspringOrderPa
   // 後で補う (fee/tax/net と同じ経路・freee課 7/27)。
   const total = asNum(data.total);
 
-  const first = asStr(contact.first) ?? "";
-  const last = asStr(contact.last) ?? "";
+  // ★ここが ★silent-empty だった箇所 ——★`contact` が常に {} なので ★name は常に ""。
+  // ★配達メールや freee 記帳で使う側からは「★名前が無い注文」と見え、★欠陥に見えない。
+  const first = asStr(recipient.first) ?? asStr(customer.first) ?? "";
+  const last = asStr(recipient.last) ?? asStr(customer.last) ?? "";
 
   return {
     orderId,
