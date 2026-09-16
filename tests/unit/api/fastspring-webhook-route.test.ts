@@ -90,7 +90,21 @@ const {
     mockLogWarn: vi.fn(),
     txInserts,
     txUpdates,
-    mockTransaction: vi.fn((cb: (t: typeof tx) => Promise<void>) => cb(tx)),
+    // ★rollback を模擬する（CCO 提案・#1041 レビュー）。
+    // ★射程を先に書いておく: ★**これは Postgres が rollback することの証明ではない。**
+    // ★捕まえるのは「★throw の位置が変わった」ことだけ。★それで十分で、
+    // ★当課が #1041 で「レビューでしか見られない」と書いた対象が ★これで守れる。
+    mockTransaction: vi.fn(async (cb: (t: typeof tx) => Promise<void>) => {
+      const i = txInserts.length;
+      const u = txUpdates.length;
+      try {
+        return await cb(tx);
+      } catch (err) {
+        txInserts.length = i; // ★tx 内で throw したら insert を巻き戻す
+        txUpdates.length = u;
+        throw err;
+      }
+    }),
   };
 });
 
@@ -504,13 +518,28 @@ describe("POST — ★parse できない order.completed は ★行を残して 
     expect(String(last.errorMessage)).toMatch(/missing orderId\/email/);
   });
 
-  it("★payload が行に残る（★これを失わないための変更）", async () => {
+  it("★payload が行に残る ——★tx stub が rollback を模擬しても残る（★throw が tx の外に在ることの計器）", async () => {
+    // ★CCO 提案（#1041 レビュー）。★stub が rollback を模擬するので、★誰かが throw を tx の
+    // ★**中**へ戻したら ★txInserts が巻き戻り ★この assert が落ちる。
+    // ★射程: ★Postgres の rollback の証明ではなく、★**throw の位置が変わったことを捕まえる計器**。
     mockHandleOrder.mockResolvedValue("unparseable");
     await POST(req({ events: [orderWithLive("bad2", true)] }));
+    expect(txInserts).toHaveLength(1); // ★巻き戻っていない ＝ tx は commit された
     expect((txInserts[0] as { payload: Record<string, unknown> }).payload).toMatchObject({
       id: "bad2",
       type: "order.completed",
     });
+    // ★終端も残っている（★`failed` の update が巻き戻っていない）
+    expect((txUpdates.at(-1) as Record<string, unknown>).status).toBe("failed");
+  });
+
+  it("★対照: license/email 失敗は ★巻き戻る（★rollback 模擬が効いていることの陽性control）", async () => {
+    // ★この計器が「常に残る」だけの張り子でないことを示す —— ★tx の中で throw する経路では
+    // ★実際に巻き戻る。★これが緑でないと、上の assert は何も測っていない。
+    mockHandleOrder.mockRejectedValueOnce(new Error("cannot issue license"));
+    const res = await POST(req({ events: [orderWithLive("boom2", true)] }));
+    expect(res.status).toBe(500);
+    expect(txInserts).toHaveLength(0); // ★巻き戻った
   });
 
   it("★shape も log に出す（★id/type の拒否は出していて、★ここだけ欠けていた）", async () => {
