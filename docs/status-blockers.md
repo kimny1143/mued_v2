@@ -789,3 +789,45 @@ probe … next.config.ts に { source: '/downloads/MUEDsat-0.1.1-alpha-installer
   （★前提②③ が変わる ＝ ★当課が「満たされていない」と言った根拠が消える）
 - ★**`formats` に `image/avif` を足す変更も同じ引き金**（★前提⑤ が変わる）
 - ★どちらも `next.config.ts` の変更なので、★grep 1 回で気づける: `grep -nE "images|remotePatterns|formats" next.config.ts`
+
+### (1g) — ★(W2) の書き方が誤解を招いていた：★機構は test で覆われている。★欠けているのは本番の観測だけ
+
+★**(W2) は「retry fix はまだ『効いた』証拠がない」と書かれており、★読むと「retry が動くか不明」に見える。**
+★**実測すると、★機構は覆われていて、★欠けているのは ★本番で発火を見たことだけ。**
+
+### ★測ったこと
+
+```
+① ★retry は本番で観測可能 … 呼び出し元2本（dial preview / dial mastering preview）が
+   ★`onRetry` を渡し ★**`console.warn`** を出す。★`logger.info` ではない
+   ∴ ★本番 no-op の罠（memory `gotcha-logger-info-is-noop-in-production`）に当たらない
+② ★機構は test で覆われている … `tests/unit/lib/dial/retry-roex.test.ts` ＝ ★14 test
+   分類側 … 5xx / 429 / 4xx / comm-timeout / raw network / app-side / 非 Error
+   挙動側 … ★**初回成功で retry しない ／ transient 5xx を retry して成功（attempts=2）**
+            ／ ★持続 transient で attempts を使い切って最後の error を throw
+            ／ ★非 transient 4xx は即 throw ／ app-side error は retry しない ／ 任意 attempts 数
+③ ★`withRoExRetry` 自身は ★一切 log を出さない（★`onRetry` hook 経由のみ）
+   ∴ ★観測可能性は ★呼び出し元の渡し方に依存する（★新しい呼び出し元が hook を渡さなければ無言）
+```
+
+### ★∴ (W2) の正確な形
+
+★**「機構は test で検証済（attempts=2 の発火を含む）。★本番で発火を観測した記録は無い。」**
+
+★**そして本番観測は ★構造的に取りにくい**:
+- ★transient な RoEx 失敗は ★稀
+- ★`vercel logs` は ★**遡及しない・5 分で切れる**（★当課の 2026-09-16 実測・memory `reference-vercel-env-set-verify-gotchas`）
+- ∴ ★**発火の瞬間に tail が既に立っていなければ見えない** ＝ ★運に依存する
+
+★**取りに行くなら**: ★log でなく ★**durable な記録**（DB の counter か `dial_tasks` の列）が要る。
+★**それは設計変更**なので、★「証拠が無い」を理由に勝手に入れない ——★**費用と価値の判断が先**。
+
+### ★残す形（★閉じない・但し誤読を直す）
+
+- ★**(W2) の文面を「機構は test 済・本番観測なし」に改める**（★「動くか不明」と読ませない）
+- ★**新しい呼び出し元が `onRetry` を渡さないと無言になる**点を ★③ として残す
+  ——★これは (W2) より広い（★retry の観測可能性が ★呼び出し側の規律に乗っている）
+- ★**本番観測を要件として残すかは ★conductor 判断**（★durable な記録＝設計変更の是非）
+
+★**当課の手番は「文面の訂正」までで、★本番観測の取得は手番に含めない**
+（★運に依存する待ちを owner つきの宿題にしない ——★それは [[feedback-schedule-by-event-not-date]] の形）。
