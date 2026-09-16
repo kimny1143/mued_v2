@@ -464,3 +464,90 @@ RECOMMENDATION: ★(a)。★理由＝★死因は「昇格の手順に1行 足�
 ★**同じ `(W7)` で ★片方は引用・★片方は参照。★grep では弁別できない** ——★(0t) の use/mention と ★同型。
 ★**∴ 畳んだ回は ★必ず内部参照を grep して ★1件ずつ開く。**
 
+### (0x) — ★自作 gate の poll が「赤い PR を merge させる」向きに壊れていた（2026-09-16・当課）
+
+★**判定語が、別の判定語の部分文字列だった。**
+
+```
+gate の出力 … "#1046 …: 総数=6 未完=2 非success=0 → NOTREADY"
+poll の判定 … grep で "READY" を探していた
+★→ ★NOTREADY の中の READY に当たり、★両方 NOTREADY の回に "BOTH_READY" を印字
+```
+
+★**危険の向きが悪い**: この poll は「両方 ready になったら merge せよ」と自分に告げるための計器で、
+★**誤りの向きが「進め」だった**。★実際、その時 **#1048 は `Test` が failure** だった
+（`locale-page-bare-paths.test.ts` — 新設2ページの bare redirect 欠け）。
+★**poll を信じて押していたら、赤い PR を merge していた。**
+
+★**同日3件目の同型**（すべて「文字列で合否を決めた」）:
+| | 何が起きたか |
+|---|---|
+| ① | `"Vercel"` が `"Vercel Preview Comments"` に当たり「欠けなし」を誤報 |
+| ② | `grep cannot` が `Cannot do` を拾わず、能力境界を「未実装」と読みかけた |
+| ③ | ★本件（`READY` ⊂ `NOTREADY`） |
+
+★**併せて `$?` を pipe 越しに ★2回 読み違えた**（`tsc | tail` / `verify.py | tail` ＝ `tail` の rc）。
+★**2回目は「RED が rc=1 を返すか」を測っている最中** ——★検査を検査する所で同じ誤りをした。
+
+**直した形**（★`/tmp/cc-501-g4.sh` → 恒久化は未実施＝下記が残タスク）:
+- ★**合否は rc で返す**（`exit 0|1|3`）。★文字列は **人が読むためだけ**に印字する
+- ★**3値にする** … `0=ready / 1=まだ / 3=計器の死`（★「不足」と「計器が成立していない」を分ける）
+- ★**`$?` は pipe の前に測る**（出力が見たければ file に落としてから読む）
+- ★**self-RED を通す** … 「常に rc=1 を返す gate」を差し替えて、loop が合格を出さないことを見る
+  （★入れ替えるのは **gate の側**。★loop 側の定数を変えても両方 直るので検出できない）
+- ★**待つ loop は、非合格を見たら待たずに抜ける**（CI の failure は待っても直らない）
+
+★**決めた＝repo に置かない**（2026-09-16・その日に決めて持ち越さない）。
+★**理由**: 守りたいのは「★合否を rc で返す」という ★**性質**であり、script はそれを ★**1つの値（file）で買う**形になる
+——★self-RED を別に維持する義務が付き、★腐っても誰も気づかない
+（★型＝memory `feedback-do-not-buy-a-property-with-a-value`）。
+★∴ ★**性質は memory が持ち**（`feedback-read-the-verdict-by-rc-not-by-string`）、★gate は要る回に 5 行 書く。
+★**次に書く人が踏まないための判別軸も memory 側に在る**（★語彙を prefix-free にする／★`$?` は pipe の前で測る）。
+★型の正本＝memory `feedback-read-the-verdict-by-rc-not-by-string`。
+
+### (0y) — ★`masterchain-order-handler.test.ts` に unused な eslint-disable が 6 件（2026-09-16・低優先）
+
+★`// eslint-disable-next-line @typescript-eslint/no-explicit-any` が **6 件** 効いていない。
+★機序＝**test は `no-explicit-any` が off**（MEMORY.md に既記）∴ ★**最初から不要だった**。
+★当課の #1039 / #1041 / #1045 がこの行を触っているが、★**当課が持ち込んだのではなく既存の型**。
+
+★**lint rc=0**（warning 止まり）ゆえ CI は緑。★**#1049 に混ぜない**
+（特商法は kimny 目視に出す面なので、diff を読む負荷を上げない）。
+★次に `lib/masterchain/fastspring-webhook.ts` 系を触る回に一緒に消す。
+
+### (0z) — ★`/terms`・`/refund` は「作ったのに繋がっていない」状態で出荷しかけた（2026-09-16・#1048 → #1049 で解消）
+
+★#1048 で新設した2面は、**サイト内から辿れる導線が 0** だった（sitemap と FastSpring 側だけ）。
+★**tsc も lint も 2,313 本の test も緑** ——★到達性は型エラーにならない。
+
+★**そして検査の側も同じ形をしていた**:
+`legal-pages-locale-links.test.ts` の `LEGAL_PAGES` は ★**包含リスト**で、新設2面を覆っていなかった
+∴ ★**cross-link 検査の母集団の外**。★**同じ file の header が `/muedrive` の取りこぼしを
+「registry は filesystem の部分集合にしかなれない」と書いているのに、★この配列自身が同じ形だった。**
+
+★**#1049 で閉じた**: 5面が互いに4面を張るようにし、リストを 5 件へ拡張。
+★加えて ★**リストに依存しない述語**を足した ——「MoR を宣言している namespace は全部リストに入っている」
+（messages 側から機械的に引くので、★6つ目の legal page を足した日に落ちる）。
+★meta-RED＝`LEGAL_PAGES` から `terms` を外して、新しい述語が検出することを確認済。
+
+### (1a) — ★特商法に書いた価格の正本は FastSpring 側であって repo ではない（2026-09-16・owner=conductor / kimny）
+
+★#1049 は特商法の販売価格に **`$69`** と書いた。★**出所は kimny 決定と `lib/masterchain/*.ts` のコメント**
+（`audience.ts` / `config.ts` / `license.ts` / `fastspring-webhook.ts` に散在）で、
+★**typed な定数は存在しない**（`grep` で値としての 69 は `messages/ja.json` の `priceNote` のみ）。
+
+★**しかし FastSpring が MoR なので、★実際に買い手へ表示される価格は FastSpring の商品設定**。
+★**∴ repo 側をいくら揃えても、一致は保証されない。**
+
+★**そして activation 要件そのものが「表示価格の一致」を含む**
+（#1048 の `app/[locale]/terms/page.tsx` の header コメントに逐語で書いた条件）。
+∴ ★**ずれた状態で開店すると、★特商法の表示としても、★FastSpring の審査としても問題になる。**
+
+★**当課には測れない**（dashboard を見られない）。★**開店直前に画面で1回 突き合わせる**のが唯一の手段で、
+★これは `NEXT_PUBLIC_FASTSPRING_STOREFRONT` を Production へ投入する回と ★**同じ画面・同じ手番**。
+∴ ★status.md (W0c) に置き、★env 投入の手順に束ねた（★別の宿題にすると担い手が消える）。
+
+★**なぜ「後で気づける」と思わない方がよいか**: ★価格は ★**両方が「正しく」表示される**。
+★片方が 404 になるわけでも、型が合わないわけでもない ——★**2つの数字が並ぶことが無い**ので、
+★誰かが意識して並べるまで一致も不一致も観測されない（→ memory `feedback-shipped-but-unreachable-is-silent`
+の「2つの母集団のうち片方だけが機能した」と同じ形）。
