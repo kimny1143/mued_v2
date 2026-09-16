@@ -287,6 +287,84 @@
       }
     }
   },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: September 16, 2026",
+    "intro": "These terms govern your use of the MUED website and services provided by glasswerks inc., including the MUEDsp plugin line. Paid plugin orders are processed by FastSpring, Inc. as the Merchant of Record.",
+    "mor": {
+      "seller": "Seller (Merchant of Record): FastSpring, Inc.",
+      "provider": "Provider (development and support): glasswerks inc."
+    },
+    "scope": {
+      "title": "1. Scope",
+      "body": "These terms apply to mued.jp and its subdomains, to the free MUEDsp plugins, and to paid MUEDsp products. Where a product is accompanied by its own licence agreement, that agreement governs the use of the software itself and these terms govern the surrounding service."
+    },
+    "accounts": {
+      "title": "2. Accounts",
+      "body": "Some features require an account. You are responsible for the accuracy of the email address you provide, because product downloads and licence keys are delivered to it. Accounts may be closed on request."
+    },
+    "purchase": {
+      "title": "3. Purchases and pricing",
+      "body": "Prices are shown on the product page and charged in US dollars. Paid plugin orders are completed on FastSpring's checkout; FastSpring is the seller of record for those transactions and its terms apply to the payment itself. Taxes are determined and collected by FastSpring based on your location."
+    },
+    "license": {
+      "title": "4. Licence and delivery",
+      "body": "Paid plugins are licensed, not sold. The licence terms are supplied with the product. After a successful purchase, the download link and licence key are sent to the email address given at checkout, normally immediately. Licence keys are verified offline by the plugin and must not be shared or published."
+    },
+    "refund": {
+      "title": "5. Refunds",
+      "body": "Because FastSpring is the Merchant of Record for paid plugin orders, refunds are handled under FastSpring's refund conditions. See our Refund Policy for how to request one."
+    },
+    "prohibited": {
+      "title": "6. Prohibited use",
+      "body": "Do not redistribute, resell, or publish licence keys or plugin binaries; do not attempt to defeat licence verification; do not use the services to infringe others' rights or to break applicable law."
+    },
+    "disclaimer": {
+      "title": "7. Disclaimer and liability",
+      "body": "The services are provided as they are. To the extent permitted by law, glasswerks inc. is not liable for indirect or consequential loss. Nothing here limits rights you have as a consumer under applicable law."
+    },
+    "changes": {
+      "title": "8. Changes",
+      "body": "These terms may be updated. Material changes will be reflected in the date shown above."
+    },
+    "contact": {
+      "title": "Contact",
+      "body": "Questions about these terms, a product, or an order:"
+    }
+  },
+  "refund": {
+    "title": "Refund Policy",
+    "lastUpdated": "Last updated: September 16, 2026",
+    "intro": "This policy explains how refunds work for MUED products, and who decides them.",
+    "mor": {
+      "seller": "Seller (Merchant of Record): FastSpring, Inc.",
+      "provider": "Provider (development and support): glasswerks inc."
+    },
+    "who": {
+      "title": "1. Who handles refunds",
+      "body": "Paid plugin orders are sold by FastSpring, Inc. as the Merchant of Record. Payments and refunds for those orders are therefore handled by FastSpring under its refund conditions. glasswerks inc. develops and supports the software and will help you with a request, but does not process the payment itself."
+    },
+    "digital": {
+      "title": "2. Digital products",
+      "body": "Our paid products are digital and are delivered immediately by email after purchase. Where a refund is available, it is issued to the original payment method."
+    },
+    "howTo": {
+      "title": "3. How to request a refund",
+      "body": "Use the order confirmation email from FastSpring, which contains a link to manage the order, or contact us and we will point you to the right place. Please include the order reference."
+    },
+    "plugins": {
+      "title": "4. Plugins",
+      "body": "Free plugins involve no payment and so no refund. For paid plugins, if the product does not run on a supported system, contact us first: many cases are configuration issues we can resolve, and a working plugin is a better outcome than a refund."
+    },
+    "subscriptions": {
+      "title": "5. Other services",
+      "body": "Subscription and credit purchases for other MUED services are processed separately; the terms shown at the point of purchase apply to them."
+    },
+    "contact": {
+      "title": "Contact",
+      "body": "For help with an order or a refund:"
+    }
+  },
   "tokushoho": {
     "title": "Specified Commercial Transactions Act",
     "lastUpdated": "Last updated: March 11, 2026",

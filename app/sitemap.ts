@@ -47,6 +47,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${MUED}/ja/support`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${MUED}/en/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${MUED}/ja/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    // ★FastSpring activation の要件（サイト側に Terms / Privacy / Refund が在ること）。
+    { url: `${MUED}/en/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${MUED}/ja/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${MUED}/en/refund`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${MUED}/ja/refund`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${MUED}/en/tokushoho`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${MUED}/ja/tokushoho`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     ...storyPages,
