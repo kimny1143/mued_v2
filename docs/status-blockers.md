@@ -497,9 +497,12 @@ poll の判定 … grep で "READY" を探していた
   （★入れ替えるのは **gate の側**。★loop 側の定数を変えても両方 直るので検出できない）
 - ★**待つ loop は、非合格を見たら待たずに抜ける**（CI の failure は待っても直らない）
 
-★**残タスク**: ★上の gate は `/tmp` に在るだけで ★repo に無い ∴ ★次のセッションには存在しない。
-★**`scripts/` に置くか、置かずに済ませるかを決める**（★置くなら self-RED も一緒に置く
-——★手で1回 通した RED は、検査が変わった日に誰も再実行しない）。
+★**決めた＝repo に置かない**（2026-09-16・その日に決めて持ち越さない）。
+★**理由**: 守りたいのは「★合否を rc で返す」という ★**性質**であり、script はそれを ★**1つの値（file）で買う**形になる
+——★self-RED を別に維持する義務が付き、★腐っても誰も気づかない
+（★型＝memory `feedback-do-not-buy-a-property-with-a-value`）。
+★∴ ★**性質は memory が持ち**（`feedback-read-the-verdict-by-rc-not-by-string`）、★gate は要る回に 5 行 書く。
+★**次に書く人が踏まないための判別軸も memory 側に在る**（★語彙を prefix-free にする／★`$?` は pipe の前で測る）。
 ★型の正本＝memory `feedback-read-the-verdict-by-rc-not-by-string`。
 
 ### (0y) — ★`masterchain-order-handler.test.ts` に unused な eslint-disable が 6 件（2026-09-16・低優先）
