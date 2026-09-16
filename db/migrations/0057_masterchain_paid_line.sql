@@ -35,6 +35,10 @@ CREATE TABLE IF NOT EXISTS masterchain_purchases (
   order_id                   text NOT NULL UNIQUE, -- FastSpring order id (idempotent join key)
   email                      text NOT NULL,        -- buyer
   license_key                text,                 -- key FastSpring issued (ownership + future acct layer)
+  license_version            integer,              -- ★keyfile format version (LICENSE_VERSION) — code writes this
+  issued_at                  timestamp,            -- ★when we signed it (≠ created_at on re-issue) — code writes this
+  eula_version               text,                 -- ★EULA の版（同意の事実を購入行に残す・kimny 2026-09-16）
+  eula_accepted_at           timestamptz,          -- ★同意時刻（null 許容＝同意前の行や移行期を壊さない）
   product_id                 text NOT NULL,        -- 'muedsp_masterchain'
   amount_cents               integer,              -- order total (smallest unit)
   currency                   text,                 -- e.g. 'USD'
@@ -46,3 +50,17 @@ CREATE TABLE IF NOT EXISTS masterchain_purchases (
 );
 CREATE INDEX IF NOT EXISTS idx_masterchain_purchases_email      ON masterchain_purchases (email);
 CREATE INDEX IF NOT EXISTS idx_masterchain_purchases_created_at ON masterchain_purchases (created_at);
+
+-- ── ★2026-09-16 追補 — 両方向に idempotent にする ────────────────────────────────────────────────
+-- ★CREATE TABLE IF NOT EXISTS は ★テーブルが既に在る環境には ★列を足さない。★この migration は
+-- ★本番へ未適用だが、★別環境で先に適用されている可能性がある ∴ ★ALTER も併記して
+-- ★「無ければ作る／在れば列を足す」の両方を満たす。★再実行しても安全（すべて IF NOT EXISTS）。
+--
+-- ★license_version / issued_at は ★コードが insert しているのに ★元の CREATE TABLE に無かった
+--   （★2026-09-16 に db/schema/masterchain.ts と列単位で突き合わせて検出）。
+--   ★このまま適用すると ★最初の本物の注文が INSERT で落ちる。
+-- ★eula_* は kimny 逐語（2026-09-16）「適用可能です」＋「EULA 同意の事実を購入行に残す列を同梱」。
+ALTER TABLE masterchain_purchases ADD COLUMN IF NOT EXISTS license_version  integer;
+ALTER TABLE masterchain_purchases ADD COLUMN IF NOT EXISTS issued_at        timestamp;
+ALTER TABLE masterchain_purchases ADD COLUMN IF NOT EXISTS eula_version     text;
+ALTER TABLE masterchain_purchases ADD COLUMN IF NOT EXISTS eula_accepted_at timestamptz;

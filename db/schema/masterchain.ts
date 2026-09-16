@@ -47,6 +47,10 @@ export const masterchainPurchases = pgTable('masterchain_purchases', {
   licenseKey: text('license_key'),
   licenseVersion: integer('license_version'),         // keyfile format version (LICENSE_VERSION)
   issuedAt: timestamp('issued_at'),                   // when we signed it (≠ createdAt on re-issue)
+  // ★EULA 同意の事実を購入行に残す（kimny 2026-09-16）。★null 許容 ——★同意 gate を入れる前の行と
+  // ★移行期を壊さないため。★版を持つのは、EULA が改訂された時に「どの版に同意したか」が要るから。
+  eulaVersion: text('eula_version'),
+  eulaAcceptedAt: timestamp('eula_accepted_at', { withTimezone: true }),
   productId: text('product_id').notNull(),            // 'muedsp_masterchain'
   // ★これは「当社の売上」でも「入金額」でもない —— 購入者が払った総額 (税込) である。
   // FastSpring が Merchant of Record なので、当社が受け取るのは手数料を引いた純額:
