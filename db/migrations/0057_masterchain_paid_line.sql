@@ -56,8 +56,9 @@ CREATE INDEX IF NOT EXISTS idx_masterchain_purchases_email      ON masterchain_p
 CREATE INDEX IF NOT EXISTS idx_masterchain_purchases_created_at ON masterchain_purchases (created_at);
 
 -- ── ★2026-09-16 追補 — 両方向に idempotent にする ────────────────────────────────────────────────
--- ★CREATE TABLE IF NOT EXISTS は ★テーブルが既に在る環境には ★列を足さない。★この migration は
--- ★本番へ未適用だが、★別環境で先に適用されている可能性がある ∴ ★ALTER も併記して
+-- ★CREATE TABLE IF NOT EXISTS は ★テーブルが既に在る環境には ★列を足さない。★本番は ★適用済
+-- （2026-09-16・上記）だが、★他の環境（preview / ローカル / 別 clone）は ★未適用・部分適用の
+-- どちらもありうる ∴ ★ALTER も併記して
 -- ★「無ければ作る／在れば列を足す」の両方を満たす。★再実行しても安全（すべて IF NOT EXISTS）。
 --
 -- ★license_version / issued_at は ★コードが insert しているのに ★元の CREATE TABLE に無かった
