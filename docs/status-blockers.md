@@ -341,3 +341,44 @@ done
 
 ★**検出に効いたもの**: ★修正 scope を測ろうとして撃った `grep` の隣に ★test 名と helper の docstring が出た。
 ★**∴ scope measurement が結果的に検査になった**（★最初からそう設計したのではない）。
+
+### (0v) — ★昇格 link の死は ★当課だけの話ではなかった（2026-09-16 実測・★owner=conductor / CCO）
+
+★**(0t) で分かった機序**（memory の中身が共通block へ昇格すると `[[旧名]]` が残って死ぬ）は、
+★**block が ★全課へ配布される物ゆえ ★構造的に cross-peer** ∴ ★他課でも同じ5名が死んでいるはず —— ★測った。
+
+```
+★測り方 … ~/.claude/projects/*/memory を ★inode で dedup（★Dropbox と /Volumes の二重計上を畳む）
+          ★各 dir 内で [[X]] を集め、★X.md が同 dir に無いものを dangling とする
+          ★NOISE（mention）5 token は除外 ＝ (0t) の allowlist と同一
+★測った時 … 2026-09-16 ／ ★この machine のみ ／ ★読み取り専用（他課の中身は見ていない・★件数のみ）
+★★可変性 … ★各課が自分の memory を触れば動く ＝ ★時点データ。★CI 予測等に使えない
+```
+
+| | |
+|---|---:|
+| ★raw で見えた dir | 41 |
+| ★**distinct inode** | ★**25**（★差 16 ＝ Dropbox／Volumes 二重計上・★CLAUDE.md の既知 gotcha を踏みかけた） |
+| ★2 file 以上を持つ peer dir | 22 |
+| ★**同じ昇格5名が死んでいる課** | ★**15 / 22** |
+| ★昇格名の hit 合計 | 38 |
+| ★distinct dangling 合計（全課・昇格名以外も含む） | 233 |
+| ★当課 mued_v2 | ★**0**（★本日 閉じた ＝ ★この 0 が対照） |
+
+★**実害は小さいが広い**: ★peer の memory が「★この file を見ろ」と指しており、★その file が無い
+∴ ★**無視される（ポインタの喪失）か ★探しに行く（turn の浪費）**。★規律自体は block に在って生きている
+∴ ★**動作では検出できない**（★= (0t) の機序そのもの）。
+
+```
+QUESTION: 昇格 link の死を、★全課へ配る規律 ＋ 検査として conductor / CCO が受けるか?
+OPTIONS:
+  - (a) ★CCO の配布 checklist に1行 追加（「memory→block へ昇格させたら `[[旧名]]` を grep して block 名へ差し替える」）＋ ★各課は自分の回に自分で直す
+  - (b) (a) ＋ ★3本の検査（索引被覆／索引 link 実在／dangling link＋mention allowlist）を ★template 課が script 化して配る
+  - (c) 当課の中だけに留める（★他課へは配らない）
+RECOMMENDATION: ★(a)。★理由＝★死因は「昇格の手順に1行 足りない」ことであって ★検査不足ではない
+  （★15/22 という広さは ★手順の欠落を示す）。★script 化 (b) は ★配布物が増え ★allowlist の版管理も要る
+  ∴ ★まず手順を直し、★再発が続くなら (b)。★(c) は ★機序が cross-peer と測れている以上 不適。
+```
+
+★**当課の手番はここまで**（★測って ★形にした）。★**配るかどうかは conductor / CCO の判断** ——
+★**当課から他課の memory を書き換えない**（★read-only で測った・★件数のみ・★中身は見ていない）。
