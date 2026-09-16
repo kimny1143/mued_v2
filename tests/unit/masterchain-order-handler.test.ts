@@ -51,7 +51,9 @@ const event = {
   type: "order.completed",
   data: {
     order: "ORDER-777",
-    account: { contact: { email: "Buyer@Example.com", first: "Ada", last: "Lovelace" } },
+    // ★実 shape（2026-09-16 実受信で確定）。★旧 `account: { contact: … }` は
+    // ★**実在しない shape**（`data.account` は string）∴ ★fixture を実物に合わせる。
+    recipients: [{ recipient: { email: "Buyer@Example.com", first: "Ada", last: "Lovelace" } }],
     total: 69,
     currency: "USD",
     address: { country: "US" },

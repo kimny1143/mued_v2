@@ -24,7 +24,9 @@ const sampleEvent = {
   type: "order.completed",
   data: {
     order: "ORDER-123",
-    account: { contact: { email: "Buyer@Example.com" } },
+    // ★実 shape（2026-09-16 実受信で確定）。★旧 fixture の `account: { contact: … }` は
+    // ★**実在しない shape** だった（`data.account` は string）∴ ★残さない。
+    recipients: [{ recipient: { email: "Buyer@Example.com" } }],
     total: 69,
     currency: "USD",
     address: { country: "US" },
@@ -106,7 +108,10 @@ describe("parseFastspringOrderCompleted", () => {
   it("derives the buyer name for the license payload, and tolerates its absence", () => {
     const named = parseFastspringOrderCompleted({
       ...sampleEvent,
-      data: { ...sampleEvent.data, account: { contact: { email: "a@b.com", first: "Ada", last: "Lovelace" } } },
+      data: {
+        ...sampleEvent.data,
+        recipients: [{ recipient: { email: "a@b.com", first: "Ada", last: "Lovelace" } }],
+      },
     });
     expect(named?.name).toBe("Ada Lovelace");
     // No name in the payload → empty string, never undefined (the license payload field is required).
@@ -114,7 +119,9 @@ describe("parseFastspringOrderCompleted", () => {
   });
 
   it("returns null when orderId is missing", () => {
-    expect(parseFastspringOrderCompleted({ data: { account: { contact: { email: "a@b.com" } } } })).toBeNull();
+    expect(
+      parseFastspringOrderCompleted({ data: { recipients: [{ recipient: { email: "a@b.com" } }] } }),
+    ).toBeNull();
   });
 
   it("returns null when email is missing", () => {
@@ -124,7 +131,7 @@ describe("parseFastspringOrderCompleted", () => {
   it("marketingConsent defaults false when the tag is absent", () => {
     const p = parseFastspringOrderCompleted({
       id: "e2",
-      data: { order: "O-2", account: { contact: { email: "a@b.com" } } },
+      data: { order: "O-2", recipients: [{ recipient: { email: "a@b.com" } }] },
     });
     expect(p?.marketingConsent).toBe(false);
   });
@@ -148,7 +155,7 @@ describe("buildMasterchainPurchaseEvent", () => {
   it("returns null when there is no GA client_id (GA4 MP requires one)", () => {
     const p = parseFastspringOrderCompleted({
       id: "e3",
-      data: { order: "O-3", account: { contact: { email: "a@b.com" } }, total: 69, currency: "usd" },
+      data: { order: "O-3", recipients: [{ recipient: { email: "a@b.com" } }], total: 69, currency: "usd" },
     })!;
     expect(p.gaClientId).toBeUndefined();
     expect(buildMasterchainPurchaseEvent(p)).toBeNull();
@@ -169,5 +176,54 @@ describe("buildMasterchainPurchaseEvent", () => {
       gaClientId: "c1",
     });
     expect(ev).toBeNull();
+  });
+});
+
+describe("★buyer の在り処 — 2026-09-16 実受信で確定した shape", () => {
+  // ★`data.account` は string ∴ `data.account.contact` は MISSING。★旧実装はここを読んでいたので
+  // ★email は `data.customer.email` の fallback が救い、★name は ★常に空だった（silent-empty）。
+  const base = { order: "O-9", total: 69, currency: "usd", address: { country: "JP" } };
+
+  it("★recipients[0].recipient から email と name を取る（canonical）", () => {
+    const p = parseFastspringOrderCompleted({
+      id: "e", type: "order.completed",
+      data: { ...base, recipients: [{ recipient: { email: "A@B.com", first: "Ada", last: "Lovelace" } }] },
+    });
+    expect(p?.email).toBe("a@b.com");
+    expect(p?.name).toBe("Ada Lovelace");
+  });
+
+  it("★recipients が無ければ customer を使う（二番手・実在を確認済）", () => {
+    const p = parseFastspringOrderCompleted({
+      id: "e", type: "order.completed",
+      data: { ...base, customer: { email: "c@d.com", first: "Grace", last: "Hopper" } },
+    });
+    expect(p?.email).toBe("c@d.com");
+    expect(p?.name).toBe("Grace Hopper");
+  });
+
+  it("★旧 account.contact は ★もう読まない（★実在しない shape を fallback として残さない）", () => {
+    const p = parseFastspringOrderCompleted({
+      id: "e", type: "order.completed",
+      data: { ...base, account: { contact: { email: "old@x.com", first: "Old", last: "Path" } } },
+    });
+    expect(p).toBeNull(); // ★email が取れない ＝ 旧 path は効いていない
+  });
+
+  it("★account が string でも落ちない（★実受信はこの形）", () => {
+    const p = parseFastspringOrderCompleted({
+      id: "e", type: "order.completed",
+      data: { ...base, account: "acct_123", recipients: [{ recipient: { email: "e@f.com" } }] },
+    });
+    expect(p?.email).toBe("e@f.com");
+  });
+
+  it("★name は取れなければ空文字のまま（★落とさない）", () => {
+    const p = parseFastspringOrderCompleted({
+      id: "e", type: "order.completed",
+      data: { ...base, recipients: [{ recipient: { email: "g@h.com" } }] },
+    });
+    expect(p?.email).toBe("g@h.com");
+    expect(p?.name).toBe("");
   });
 });
