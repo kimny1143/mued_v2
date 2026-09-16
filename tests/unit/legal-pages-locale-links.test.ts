@@ -16,7 +16,7 @@
  * prod fetch (or this test) can tell it is wrong.
  */
 import { describe, it, expect } from "vitest";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 /**
@@ -27,6 +27,32 @@ import { join } from "node:path";
  * ★この配列自身が同じ形をしていた。
  */
 const LEGAL_PAGES = ["privacy", "support", "tokushoho", "terms", "refund"] as const;
+
+/**
+ * ★locale page のうち「法定表記の面ではない」もの。★理由つきで名指しする。
+ *
+ * ★なぜ必要か（CCO 指摘・2026-09-16）: 下の MoR 述語は ★(a) `mor` key の形 と ★(b) 逐語 の ★和 だが、
+ * ★**両方 同時に 外れるケースが残る** —— ★新しい legal 面が ★別の key 名で ★別の文面で MoR を
+ * 宣言したら、★(a) は key 名で落とし ★(b) は文面で落とすので ★どちらも拾わない。
+ * ★∴ ★**和は class を閉じていない。狭めただけ。**
+ *
+ * ★閉じるには母集団の軸を ★filesystem へ移す必要がある ——★それが この表。
+ * ★`app/[locale]/*​/page.tsx` の実在から引き、★LEGAL_PAGES と ここ の ★どちらにも無い面は落とす。
+ * ★∴ ★**次に legale 面を足す人は、分類するまで CI が通らない**（★黙って母集団の外に出られない）。
+ * ★同じ形の前例＝`locale-page-bare-paths.test.ts` の EXEMPT（★あちらも filesystem 由来）。
+ *
+ * ★/eula は近く足る見込み（EULA 本文が弁護士から届いた時点）。★その時 ここか LEGAL_PAGES の
+ * ★どちらかに入れることになる ——★それが この表の主目的。
+ */
+const NON_LEGAL_LOCALE_PAGES: Record<string, string> = {
+  advisory: "サービス紹介（storefront）。法定表記は /tokushoho が担う",
+  muedial: "製品 LP。法定表記は /tokushoho が担う",
+  muedlim: "製品 LP（無料プラグイン）",
+  muedrive: "製品 LP（無料プラグイン）",
+  muedsat: "製品 LP（無料プラグイン）",
+  muedsp: "製品 LP（プラグイン群のハブ）",
+  redesign: "noindex の preview route。公開面ではない（bare-paths 側でも EXEMPT）",
+};
 
 function readPage(page: (typeof LEGAL_PAGES)[number]): string {
   return readFileSync(join(process.cwd(), "app", "[locale]", page, "page.tsx"), "utf8");
@@ -58,18 +84,36 @@ describe("legal pages — internal links carry the locale", () => {
 });
 
 /**
- * MoR の逐語。★terms / refund は `mor.seller` に、★tokushoho は `mor.value` の中に持つ
- * （key の形が違う）。∴ ★key の形で探すと tokushoho を取りこぼす —— ★実際に取りこぼしていた。
+ * MoR の逐語と、3 面の「関係」。★CCO 指摘で言語化した（設計がどこにも書かれていなかった）。
+ *
+ *   terms.mor.seller / refund.mor.seller … ★この 2 行 ★そのもの（=== で一致）
+ *   tokushoho.mor.value                  … ★同じ 2 行を ★長い文の中に埋め込む（contains で一致）
+ *
+ * ★∴「3 面で byte 同一」は正確には ★**2 面が逐語 ＋ 1 面が逐語を内包**。
+ * ★tokushoho が法定表記の正本で、terms / refund は同じ 2 行を短く掲げる、という設計。
+ * ★CCO は `===` で測って「2 面だけ一致」と報告した —— ★どちらの測り方も正しく、
+ * ★**差は「内包」を設計として書いていなかったこと**。∴ ここに書く。
  */
 const MOR_SELLER = { ja: "販売事業者（Merchant of Record）: FastSpring, Inc.", en: "Seller (Merchant of Record): FastSpring, Inc." } as const;
 
-/** ★内容で検出する: namespace 内のどこかに MoR の逐語を持つ top-level namespace 名。 */
+/**
+ * MoR を宣言している top-level namespace 名。★2 つの述語の ★和 で拾う:
+ *   (a) ★`mor` オブジェクトを持つ（★CCO 提案。★文面が変わっても拾える）
+ *   (b) ★namespace 内のどこかに MoR の逐語が在る（★key 名が `mor` でなくても拾える）
+ * ★片方だけだと、それぞれ逆向きの穴が残る:
+ *   (a) のみ → ★`mor` 以外の key 名で MoR を出す面を落とす
+ *   (b) のみ → ★文面をわずかに変えた面を落とす
+ * ★∴ 和にする（★どちらの穴も「検査の外」ではなく「もう一方が拾う」になる）。
+ */
 function namespacesDeclaringMor(locale: keyof typeof MOR_SELLER): string[] {
   const msgs = JSON.parse(readFileSync(join(process.cwd(), "messages", `${locale}.json`), "utf8")) as Record<string, unknown>;
   const needle = MOR_SELLER[locale];
   const out: string[] = [];
   for (const [ns, value] of Object.entries(msgs)) {
-    let found = false;
+    // (a) mor オブジェクトの有無
+    const mor = (value as { mor?: unknown } | null)?.mor;
+    let found = typeof mor === "object" && mor !== null;
+    // (b) 逐語の有無（再帰）
     const walk = (node: unknown): void => {
       if (found) return;
       if (typeof node === "string") {
@@ -78,7 +122,7 @@ function namespacesDeclaringMor(locale: keyof typeof MOR_SELLER): string[] {
         for (const v of Object.values(node)) walk(v);
       }
     };
-    walk(value);
+    if (!found) walk(value);
     if (found) out.push(ns);
   }
   return out.sort();
@@ -108,6 +152,30 @@ describe("LEGAL_PAGES — 母集団そのものを測る", () => {
     ).toEqual([]);
   });
 
+  it("★述語は逐語に依存している（★CCO 提供の control・aim を値の側から確かめる）", () => {
+    // ★当課の control は「3 面 返る」を測っていたが、★その 3 面が ★逐語に依存して返っているかは
+    // 測っていなかった。★逐語を1文字 崩して検出が空になれば、「何かに当たって 3 面 返している」
+    // のではないことが言える（CCO が独立に実施し、ja/en とも空を確認した軸）。
+    const broken = { ja: MOR_SELLER.ja.replace("（", "("), en: MOR_SELLER.en.replace("(", "（") } as const;
+    for (const locale of ["ja", "en"] as const) {
+      const msgs = JSON.parse(readFileSync(join(process.cwd(), "messages", `${locale}.json`), "utf8")) as Record<string, unknown>;
+      const hits: string[] = [];
+      for (const [ns, value] of Object.entries(msgs)) {
+        let found = false;
+        const walk = (n: unknown): void => {
+          if (found) return;
+          if (typeof n === "string") { if (n.includes(broken[locale])) found = true; }
+          else if (n && typeof n === "object") { for (const v of Object.values(n)) walk(v); }
+        };
+        walk(value);
+        if (found) hits.push(ns);
+      }
+      expect(hits, `${locale}: 崩した逐語が当たった＝述語は逐語に依存していない`).toEqual([]);
+    }
+    // ★陽性control: 崩していない逐語なら 3 面 当たる（★上の空が「walk が死んでいる」ではない証明）
+    expect(namespacesDeclaringMor("ja")).toEqual(expect.arrayContaining(["terms", "refund", "tokushoho"]));
+  });
+
   it("★MoR の逐語は3面で byte 同一（ずれると上の検出が痩せ、表示としても問題になる）", () => {
     for (const locale of ["ja", "en"] as const) {
       const msgs = JSON.parse(readFileSync(join(process.cwd(), "messages", `${locale}.json`), "utf8"));
@@ -121,6 +189,40 @@ describe("LEGAL_PAGES — 母集団そのものを測る", () => {
   it("★LEGAL_PAGES の全要素が実在する locale page である", () => {
     for (const page of LEGAL_PAGES) {
       expect(existsSync(join(process.cwd(), "app", "[locale]", page, "page.tsx")), `${page} が無い`).toBe(true);
+    }
+  });
+});
+
+describe("★母集団の軸を filesystem へ ——「分類し忘れ」を落とす", () => {
+  const localePages = () =>
+    readdirSync(join(process.cwd(), "app", "[locale]"), { withFileTypes: true })
+      .filter((d) => d.isDirectory() && existsSync(join(process.cwd(), "app", "[locale]", d.name, "page.tsx")))
+      .map((d) => d.name)
+      .sort();
+
+  it("★母集団が痩せていない（★これが無いと下の分類 test が空で通る）", () => {
+    // ★陽性control: 確実に在る 2 面。readdir か filter が壊れた日にここが落ちる。
+    expect(localePages().length).toBeGreaterThanOrEqual(10);
+    expect(localePages()).toContain("tokushoho");
+    expect(localePages()).toContain("muedsp");
+  });
+
+  it("★locale page は全部 LEGAL_PAGES か NON_LEGAL のどちらかに分類されている", () => {
+    const unclassified = localePages().filter(
+      (p) => !(LEGAL_PAGES as readonly string[]).includes(p) && !(p in NON_LEGAL_LOCALE_PAGES),
+    );
+    expect(
+      unclassified,
+      `未分類の locale page: ${unclassified.join(", ")} — legal なら LEGAL_PAGES へ、` +
+        `そうでなければ NON_LEGAL_LOCALE_PAGES へ理由つきで足すこと（★黙って母集団の外に出さない）`,
+    ).toEqual([]);
+  });
+
+  it("★NON_LEGAL の要素は実在し、LEGAL_PAGES と重ならない", () => {
+    for (const [name, reason] of Object.entries(NON_LEGAL_LOCALE_PAGES)) {
+      expect(localePages(), `${name} は NON_LEGAL だが page が無い（stale）`).toContain(name);
+      expect(reason.length, `${name} の理由が空`).toBeGreaterThan(0);
+      expect(LEGAL_PAGES as readonly string[], `${name} が両方に在る`).not.toContain(name);
     }
   });
 });
