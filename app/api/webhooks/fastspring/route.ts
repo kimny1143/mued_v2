@@ -190,6 +190,9 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     return;
   }
 
+  // ★tx の外で throw するためのフラグ（★中で throw すると行が消える）。
+  let unparseable = false;
+
   await db.transaction(async (tx) => {
     if (existing) {
       await tx
@@ -235,11 +238,34 @@ async function processFastspringEvent(event: unknown): Promise<void> {
           live: e.live ?? null,
         });
       } else {
-        await handleFastspringOrderCompleted(tx, event);
+        // ★`"unparseable"` は ★throw させない（★CCO レビュー #1039）——★tx の中で throw すると
+        // ★payload を持つ行まで rollback で消える。★行を `failed` で確定させ、★tx の外で throw する。
+        // ★license / email の失敗は ★handler が throw し、★従来どおり tx 全体が rollback される
+        // （★売上行を作らずに retry させるのが正しい）。
+        if ((await handleFastspringOrderCompleted(tx, event)) === "unparseable") {
+          unparseable = true;
+          logger.error("[fastspring] order.completed missing orderId/email — recording as failed", {
+            eventId,
+            // ★行が残っても ★payload を人が読むのは手間 ∴ ★shape も log に出す（★値は出さない）。
+            // ★id / type の拒否は既に出しているので、★ここだけ欠けていた（CCO 指摘）。
+            shape: envelopeShape(e),
+          });
+        }
       }
     }
 
-    if (skippedTest) {
+    if (unparseable) {
+      // ★`failed` で確定 —— ★`processed` ではないので ★冪等 guard は弾かない ＝ 再配達で履行に
+      // 到達できる。★かつ ★行（payload 付き）が残るので ★実 shape を後から読める。
+      await tx
+        .update(webhookEvents)
+        .set({
+          status: "failed",
+          errorMessage: "order.completed missing orderId/email — envelope not the shape we assumed",
+          completedAt: new Date(),
+        })
+        .where(eq(webhookEvents.eventId, eventId));
+    } else if (skippedTest) {
       // ★`processed` にしない —— ★ここが CCO レビュー（#1038）で塞いだ穴。
       //
       // ★旧実装は skip した後も無条件で `processed` を書いていた。★冒頭の冪等 guard は
@@ -270,4 +296,12 @@ async function processFastspringEvent(event: unknown): Promise<void> {
         .where(eq(webhookEvents.eventId, eventId));
     }
   });
+
+  if (unparseable) {
+    // ★tx は commit 済（行は `failed` で残っている）∴ ★ここで throw しても行は消えない。
+    // ★throw は POST handler の catch に落ちて 500 になり、★FastSpring が再配達する。
+    throw new Error(
+      `[fastspring] event ${eventId}: order.completed missing orderId/email — refusing to report success`,
+    );
+  }
 }
