@@ -529,3 +529,25 @@ poll の判定 … grep で "READY" を探していた
 ★加えて ★**リストに依存しない述語**を足した ——「MoR を宣言している namespace は全部リストに入っている」
 （messages 側から機械的に引くので、★6つ目の legal page を足した日に落ちる）。
 ★meta-RED＝`LEGAL_PAGES` から `terms` を外して、新しい述語が検出することを確認済。
+
+### (1a) — ★特商法に書いた価格の正本は FastSpring 側であって repo ではない（2026-09-16・owner=conductor / kimny）
+
+★#1049 は特商法の販売価格に **`$69`** と書いた。★**出所は kimny 決定と `lib/masterchain/*.ts` のコメント**
+（`audience.ts` / `config.ts` / `license.ts` / `fastspring-webhook.ts` に散在）で、
+★**typed な定数は存在しない**（`grep` で値としての 69 は `messages/ja.json` の `priceNote` のみ）。
+
+★**しかし FastSpring が MoR なので、★実際に買い手へ表示される価格は FastSpring の商品設定**。
+★**∴ repo 側をいくら揃えても、一致は保証されない。**
+
+★**そして activation 要件そのものが「表示価格の一致」を含む**
+（#1048 の `app/[locale]/terms/page.tsx` の header コメントに逐語で書いた条件）。
+∴ ★**ずれた状態で開店すると、★特商法の表示としても、★FastSpring の審査としても問題になる。**
+
+★**当課には測れない**（dashboard を見られない）。★**開店直前に画面で1回 突き合わせる**のが唯一の手段で、
+★これは `NEXT_PUBLIC_FASTSPRING_STOREFRONT` を Production へ投入する回と ★**同じ画面・同じ手番**。
+∴ ★status.md (W0c) に置き、★env 投入の手順に束ねた（★別の宿題にすると担い手が消える）。
+
+★**なぜ「後で気づける」と思わない方がよいか**: ★価格は ★**両方が「正しく」表示される**。
+★片方が 404 になるわけでも、型が合わないわけでもない ——★**2つの数字が並ぶことが無い**ので、
+★誰かが意識して並べるまで一致も不一致も観測されない（→ memory `feedback-shipped-but-unreachable-is-silent`
+の「2つの母集団のうち片方だけが機能した」と同じ形）。
