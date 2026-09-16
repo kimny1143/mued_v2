@@ -63,8 +63,17 @@ export interface FastspringOrderParsed {
  * Parse a FastSpring `order.completed` event into the fields we record + attribute.
  * Returns null when the minimum (orderId + email) is absent.
  *
- * TODO(C1): the field paths below are the documented shape; confirm each against a real `.test.`
- * storefront order.completed payload (license-key fulfillment path + our custom tags) and adjust.
+ * ★C1 の実測（2026-09-16・order GLASSWERKSJP260916-5300-60118・`.test.` storefront）で
+ * ★**下の path のうち2つが実態と違うことが分かった**。★値は見ず field 名と型のみで確認:
+ *   ★`data.account` は ★**string**（object ではない）∴ ★`account.contact.email` は ★常に MISSING。
+ *       → ★email が取れているのは ★`data.customer.email` の fallback のおかげ（★実在を確認）。
+ *       → ★buyer email の canonical は ★`data.recipients[0].recipient.email`（★実在を確認）。
+ *   ★`data.tags` は ★**MISSING**。★ただし ★この test 注文は ★popup を経由していない（管理画面から手動）
+ *       ∴ ★**popup が付ける tags が届かない証拠にはならない** —— ★popup 発の注文で再確認が必要。
+ *   ★確認できた分: `data.order` / `data.id` / `data.total` / `data.currency` /
+ *       `data.items[0].fulfillments` は ★すべて実在（型も一致）。
+ * ★TODO(C1-b): ★上の2点（account path の是正・tags の popup 経由での確認）は ★別 PR。
+ *   ★store activation より前に閉じる（★first-touch/UTM が空のまま出荷しないため）。
  */
 export function parseFastspringOrderCompleted(event: unknown): FastspringOrderParsed | null {
   const e = asObj(event);
@@ -178,8 +187,13 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Promise<void> {
   const parsed = parseFastspringOrderCompleted(event);
   if (!parsed) {
-    logger.error("[fastspring] order.completed missing orderId/email — skipped");
-    return;
+    // ★throw する（以前は return だった）—— ★CCO レビュー #1038 が live/test 分岐で見つけたのと
+    // ★同じ class。★`return` すると route が続けて `status: "processed"` を書き、★冒頭の冪等 guard
+    // が再配達を弾く ∴ ★**課金済なのに ライセンス無し・retry 無し・行は緑**。
+    // ★`type` が読めない時に route が 500 を返すのと同じ扱いにする（★我々の読みが違うのだから、
+    // ★5xx で retry 窓を開ける方が正しい）。
+    logger.error("[fastspring] order.completed missing orderId/email — refusing to report success");
+    throw new Error("[fastspring] order.completed missing orderId/email — refusing to report success");
   }
 
   // ── issue the license, ONCE per order ───────────────────────────────────────────────────────────

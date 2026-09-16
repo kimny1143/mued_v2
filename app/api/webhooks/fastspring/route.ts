@@ -3,8 +3,12 @@
 // the raw body is preserved for HMAC. Verify HMAC-SHA256 (fail-closed → 401) → parse the (batched)
 // events → process each idempotently via the shared webhook_events table (source='fastspring').
 //
-// TODO(C1): the batch envelope + event id/type paths are the documented shape; confirm against a
-// `.test.` storefront webhook (Kevin 審査後) and adjust extractEvents / the id/type reads.
+// ★C1 確定（2026-09-16）— `.test.` storefront の実注文で envelope を突き合わせ、★想定と一致した:
+//   payload = { events: [ { id, type, live, created, processed, data } ] }
+//   `live` は ★top-level と `data.live` の両方に在り（どちらも boolean）、★我々は top-level を読む。
+//   header `X-FS-Signature`（大小区別なし）/ HmacSHA256 / Base64 / raw body 全体 = 公式 doc どおり。
+// ★出所: FastSpring 公式 `reference/webhooks-overview.md` + `reference/message-security.md`、
+//   および order GLASSWERKSJP260916-5300-60118 の実受信（webhook_events の行で確認）。
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { db } from "@/db";
@@ -52,9 +56,9 @@ export async function POST(request: Request) {
   // and aborts again at the same place. The first cut of this fix had exactly that bug, and the
   // tests missed it because they only covered the `[readable, unreadable]` order.
   //
-  // ★The batch itself is an unconfirmed assumption (TODO(C1)), which is the same reason we refuse to
-  // report success below. Assuming a batch holds one event would be trusting the shape we are, in
-  // the very next branch, declining to trust.
+  // ★The batch is now CONFIRMED (C1, 2026-09-16): the real payload arrived as `events: [...]`.
+  // ★We still process every event rather than assuming one, because that is the correct shape —
+  // not merely a hedge against an unconfirmed one.
   const failures: string[] = [];
   for (const event of extractEvents(payload)) {
     try {
@@ -74,7 +78,9 @@ export async function POST(request: Request) {
   return NextResponse.json({ received: true });
 }
 
-/** FastSpring batches events under `events`; fall back to a single-event body. TODO(C1): confirm. */
+/** FastSpring batches events under `events`; fall back to a single-event body.
+ *  ★C1 で確定（2026-09-16）: 公式 doc "Each POST … may contain multiple events in a single payload"
+ *  ＋実注文の payload が `events: [...]` だった。★単一 body の fallback は保険として残す。 */
 function extractEvents(payload: unknown): unknown[] {
   const p = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
   return Array.isArray(p.events) ? p.events : [p];
@@ -95,6 +101,10 @@ function extractEvents(payload: unknown): unknown[] {
  * names are sufficient and the values contribute nothing. (product課, review of #958.)
  */
 const MAX_KEYS = 40;
+
+/** ★意図的な skip の marker。★`status` は pgEnum ゆえ専用値が置けないので `errorMessage` に入れる。
+ *  ★test からも参照して、★文字列の取り違えで assert が空振りしないようにする。 */
+export const SKIPPED_TEST_MARKER = "skipped: order.completed with live !== true";
 
 function envelopeShape(v: unknown, depth = 2): unknown {
   if (v === null) return "null";
@@ -128,9 +138,9 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     // to `{ received: true }` — FastSpring reads a 2xx as delivered and never redelivers, so a paid
     // order would vanish with nothing red anywhere: charge taken, no license, no row, one log line.
     //
-    // ★The envelope shape above is still unconfirmed against a real `.test.` storefront (TODO(C1)),
-    // and that is precisely why this has to be loud. If our read of `id` is wrong, the FIRST live
-    // order is the one that discovers it — a throw makes that discovery a 500 and a retry window
+    // ★The envelope is now confirmed (C1, 2026-09-16) — `id` / `type` / `live` all arrived where we
+    // read them. ★This refusal stays: a confirmed shape is not a permanent one (FastSpring can change
+    // it), and the cost asymmetry is unchanged — a throw makes the discovery a 500 and a retry window
     // instead of a silent success.
     //
     // ★5xx rather than 4xx on purpose: the unconfirmed assumption is OURS, so this is our failure,
@@ -155,7 +165,7 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     // ★This does NOT catch unknown event types: a new FastSpring event arrives as a readable string
     // and simply fails `type === "order.completed"` below, which is the routine skip. Reaching here
     // means `type` is not a string at all — the envelope is not the shape we assumed, the same
-    // unconfirmed-shape class as the id above (TODO(C1)).
+    // same class as the id above (★confirmed 2026-09-16, but kept for the same asymmetry).
     logger.error("[fastspring] no readable type — the envelope is not the shape we assumed", {
       eventId,
       shape: envelopeShape(e),
@@ -165,6 +175,10 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     );
   }
   const type = e.type;
+
+  // ★live/test の判定は ★fulfillment と ★終端の書き方の両方に効くので、ここで1度だけ決める。
+  // ★`=== true` に倒す（`!== false` ではない）理由は下の分岐のコメントに書いた。
+  const skippedTest = type === "order.completed" && e.live !== true;
 
   const [existing] = await db
     .select()
@@ -203,27 +217,57 @@ async function processFastspringEvent(event: unknown): Promise<void> {
       // 実キー入りの配達メールを送る。テストのたびに本物の資格情報が外へ出る。
       //
       // ★`=== true` で見るのは、★`live` の欠損を test 側に倒すため（`!== false` ではない）。
-      // 理由は route 冒頭の TODO(C1) と同じで、★envelope の shape がまだ実物と突き合わせて
-      // いないこと。★欠損は「我々の読みが違う」可能性であり、その時に ★本番ライセンスを発行して
+      // ★C1 で `live` の在り処は確定した（top-level・boolean）が、★欠損時に test 側へ倒す判断は
+      // ★変えない。★欠損は「我々の読みが違う」可能性であり、その時に ★本番ライセンスを発行して
       // しまう方が、★テスト扱いで取り逃すより高くつく（発行済みキーは撤回できない — 
       // オフライン検証なので、出てしまえば現行 binary に対して失効が効かない）。
       // ★∴ 迷ったら発行しない側に倒す。
       //
       // 記録は残す: `webhook_events` の行は上で既に insert 済で、`payload` に event 全体
       // （`live` を含む）が入る。★スキップするのは fulfillment だけで、観測性は落とさない。
-      if (e.live === true) {
-        await handleFastspringOrderCompleted(tx, event);
-      } else {
-        logger.info("[fastspring] test event recorded, fulfillment skipped", {
+      if (skippedTest) {
+        // ★`warn` であること —— ★`logger.info` は `NODE_ENV === 'development'` でしか出ない
+        // （`lib/utils/logger.ts`）∴ ★本番では 1 行も残らなかった（2026-09-16 の test 注文で実測:
+        // DB に行は在るのに runtime log は空）。★テスト注文が本番 webhook に届いたことは
+        // ★運用側が見えるべき情報なので、★常時出る `warn` にする。
+        logger.warn("[fastspring] test event recorded, fulfillment skipped", {
           eventId,
           live: e.live ?? null,
         });
+      } else {
+        await handleFastspringOrderCompleted(tx, event);
       }
     }
 
-    await tx
-      .update(webhookEvents)
-      .set({ status: "processed", completedAt: new Date() })
-      .where(eq(webhookEvents.eventId, eventId));
+    if (skippedTest) {
+      // ★`processed` にしない —— ★ここが CCO レビュー（#1038）で塞いだ穴。
+      //
+      // ★旧実装は skip した後も無条件で `processed` を書いていた。★冒頭の冪等 guard は
+      // `processed` を弾くので、★`live` を読み違えた本物の注文は ★封をされる: ライセンス無し・
+      // 再配達も拒否・★行は緑。★これは this file が `type` の読めない場合について既に名指しして
+      // 拒否している形そのもの（"A record exists" and "a repair path is open" are different things）。
+      // ★自分で「shape が未確認」と認めている分岐で、★同じ誤りを繰り返していた。
+      //
+      // ★`status` は pgEnum（processing / processed / failed の3値）ゆえ専用値には migration が
+      // 必要。★代わりに ★`completedAt` を「終端した」marker に使う: 両 route を実測したところ
+      // `webhook_events` の `completedAt` は ★`processed` か `failed` と一緒にしか書かれていない
+      // ∴ ★`status='processing' AND completed_at IS NOT NULL` は ★意図的な skip だけを指す
+      // （★将来 stuck 監視を入れる時、★`completed_at IS NULL` で自然に除外できる）。
+      //
+      // ★`failed` は使わない —— ★意図どおりの skip を失敗として数えると、★stripe の本物の失敗と
+      // 同じ棚に恒常的なベースラインが乗り、★本物の赤が埋もれる。
+      await tx
+        .update(webhookEvents)
+        .set({
+          completedAt: new Date(),
+          errorMessage: SKIPPED_TEST_MARKER,
+        })
+        .where(eq(webhookEvents.eventId, eventId));
+    } else {
+      await tx
+        .update(webhookEvents)
+        .set({ status: "processed", completedAt: new Date() })
+        .where(eq(webhookEvents.eventId, eventId));
+    }
   });
 }

@@ -6,12 +6,15 @@
 // (createHmac + timingSafeEqual + a dedicated env secret), fail-CLOSED: an unset secret or a bad
 // signature returns false (→ 401), so nothing is processed until FASTSPRING_WEBHOOK_SECRET is set.
 //
-// TODO(C1): confirm the exact header NAME + encoding (base64 vs hex, whole-body vs per-event) against
-// a `.test.` storefront order — FastSpring dashboard exposes both. Header/encoding below are the
-// documented defaults; adjust once verified with a real test webhook (Kevin 審査後).
+// ★C1 確定（2026-09-16）— 公式 doc `reference/message-security.md` の逐語と一致:
+//   header `X-FS-Signature`（★"not case-sensitive and might be sent with varying case" ——
+//   Next.js の `headers()` は小文字に正規化するので下の定数でよい）/ `HmacSHA256` / `Base64` /
+//   "the Raw Body of the request" 全体（★per-event ではない）/ secret は FastSpring App の
+//   webhooks 配下「HMAC SHA256 Secret」1本（★live/test で別 secret という記述は無い）。
+// ★実注文（GLASSWERKSJP260916-5300-60118・test mode）が 401 にならず処理された ＝ ★実測でも一致。
 import { createHmac, timingSafeEqual } from "crypto";
 
-/** Header carrying the FastSpring HMAC signature. TODO(C1): confirm against a test webhook. */
+/** Header carrying the FastSpring HMAC signature（★C1 で確定・公式 doc は `X-FS-Signature`）。 */
 export const FASTSPRING_SIGNATURE_HEADER = "x-fs-signature";
 
 function secret(): string {

@@ -57,6 +57,7 @@ const {
   mockSelectLimit,
   mockLogError,
   mockLogInfo,
+  mockLogWarn,
   txInserts,
   txUpdates,
   mockTransaction,
@@ -86,6 +87,7 @@ const {
     mockSelectLimit: vi.fn(() => Promise.resolve([])),
     mockLogError: vi.fn(),
     mockLogInfo: vi.fn(),
+    mockLogWarn: vi.fn(),
     txInserts,
     txUpdates,
     mockTransaction: vi.fn((cb: (t: typeof tx) => Promise<void>) => cb(tx)),
@@ -99,7 +101,7 @@ vi.mock("next/server", () => ({
 }));
 vi.mock("next/headers", () => ({ headers: async () => ({ get: mockHeaderGet }) }));
 vi.mock("@/lib/utils/logger", () => ({
-  logger: { error: mockLogError, warn: vi.fn(), info: mockLogInfo, debug: vi.fn() },
+  logger: { error: mockLogError, warn: mockLogWarn, info: mockLogInfo, debug: vi.fn() },
 }));
 vi.mock("@/db", () => ({
   db: {
@@ -117,7 +119,7 @@ vi.mock("@/lib/masterchain/fastspring-webhook", () => ({
   handleFastspringOrderCompleted: mockHandleOrder,
 }));
 
-import { GET, POST } from "@/app/api/webhooks/fastspring/route";
+import { GET, POST, SKIPPED_TEST_MARKER } from "@/app/api/webhooks/fastspring/route";
 
 /** Minimal Request stand-in — the route only calls `request.text()`. */
 const req = (body: unknown) =>
@@ -398,6 +400,8 @@ describe("POST — ★live / test の分岐（テスト注文で本番ライセ�
     const res = await POST(req({ events: [orderWithLive("live1", true)] }));
     expect(res.status).toBe(200);
     expect(mockHandleOrder).toHaveBeenCalledTimes(1);
+    // ★live は従来どおり processed で終端する（★skip 側との対照）
+    expect(txUpdates.at(-1)).toMatchObject({ status: "processed" });
   });
 
   it("★live: false は記録するが履行しない（200・license/INSERT/メールに到達しない）", async () => {
@@ -415,10 +419,19 @@ describe("POST — ★live / test の分岐（テスト注文で本番ライセ�
     expect((txInserts[0] as { payload: Record<string, unknown> }).payload).toMatchObject({
       live: false,
     });
-    expect(mockLogInfo).toHaveBeenCalledWith(
+    // ★`warn` であること —— ★`logger.info` は本番で no-op（`NODE_ENV === 'development'` 限定）。
+    // ★2026-09-16 の実 test 注文で、★DB に行は在るのに runtime log が空だったことで判明した。
+    expect(mockLogWarn).toHaveBeenCalledWith(
       "[fastspring] test event recorded, fulfillment skipped",
       expect.objectContaining({ eventId: "test1", live: false }),
     );
+    expect(mockLogInfo).not.toHaveBeenCalled(); // ★info では出さない（本番で消えるから）
+    // ★★終端の書き方を撃つ（CCO レビュー #1038 の指摘）。★これを撃たない限り「封をする/しない」は
+    // test に固定されない —— ★旧実装（無条件 processed）でも緑になってしまう。
+    const last = txUpdates.at(-1) as Record<string, unknown>;
+    expect(last.status).not.toBe("processed"); // ★行が成功を主張しない
+    expect(last.completedAt).toBeInstanceOf(Date); // ★但し「終端した」印は付く
+    expect(last.errorMessage).toBe(SKIPPED_TEST_MARKER);
   });
 
   it("★`live` の欠損は test 側に倒す —— ★shape が未確認だから、発行しない側が安い", async () => {
@@ -426,10 +439,24 @@ describe("POST — ★live / test の分岐（テスト注文で本番ライセ�
     expect(res.status).toBe(200);
     expect(mockHandleOrder).not.toHaveBeenCalled();
     expect(txInserts).toHaveLength(1); // ★記録は残る
-    expect(mockLogInfo).toHaveBeenCalledWith(
+    expect(mockLogWarn).toHaveBeenCalledWith(
       "[fastspring] test event recorded, fulfillment skipped",
       expect.objectContaining({ eventId: "nolive", live: null }),
     );
+    // ★★ここが賭けの成立条件: ★読み違えた本物の注文は ★再配達で履行に到達できなければならない
+    // ∴ ★`processed` で封をしない（冒頭の冪等 guard が弾くのは `processed` だけ）。
+    expect((txUpdates.at(-1) as Record<string, unknown>).status).not.toBe("processed");
+  });
+
+  it("★意図的な skip は `status='processing' AND completed_at IS NOT NULL` で引ける（将来の stuck 監視が誤検知しない形）", async () => {
+    await POST(req({ events: [orderWithLive("marker", false)] }));
+    // ★insert は processing、★最終 update は status を触らず completedAt だけ付ける
+    expect(txInserts[0]).toMatchObject({ status: "processing" });
+    const last = txUpdates.at(-1) as Record<string, unknown>;
+    expect("status" in last).toBe(false); // ★status を書き換えない ＝ processing のまま
+    expect(last.completedAt).toBeInstanceOf(Date);
+    // ★`failed` は使わない（本物の失敗と同じ棚に恒常ベースラインを乗せない）
+    expect(last.status).not.toBe("failed");
   });
 
   it("★文字列の 'true' も履行しない（`=== true` で見る理由 — truthy では倒れない）", async () => {
