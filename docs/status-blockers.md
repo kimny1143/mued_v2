@@ -973,6 +973,46 @@ source にしない）まで塞いでいた ——★**基準は下限であっ�
 
 ### (1j) — ★Codex 3 件（①EULA ②parser fixture ③reconcile）の受け入れ基準を先に置く（2026-09-17）
 
+> ★★**この節は ★2 つの役を持つ**（2026-09-17・conductor 方針）:
+> ★① 当課の受け入れ判定 checklist ／ ★② ★**不一致時に conductor が Codex へ ★そのまま渡す指示文**。
+> ★∴ ★下の「決定事項」は ★**推奨ではなく要件**として書く（★「推奨」と書くと修正ラウンドで任意に読まれる）。
+
+## ★★決定事項（★conductor 批准済 2026-09-17・★Codex への指示文としてそのまま渡せる形）
+
+★**①同意 gate の機構**
+- ★同意チェックと Buy ボタンは ★client component ∴ ★**`process.env.EULA_LIVE` を client から読まないこと**
+- ★client 側の gate は ★**`NEXT_PUBLIC_*`（build 時 inline）か ★code 定数**のいずれか
+- ★EULA ページ自身の gate（sitemap / robots・★server 側）は ★env で可（LEARN_LIVE と同じ）
+- ★**どちらを使ったかを ★コメントで明記すること**
+
+★**②`/[locale]/eula` の分類**
+- ★**`NON_LEGAL_LOCALE_PAGES` に ★理由つきで入れる**（★`LEGAL_PAGES` には ★入れない）
+- ★理由文は「★EULA_LIVE=false ゆえ未公開。★live 化の回に `LEGAL_PAGES` へ移す」の趣旨
+- ★**`tokushoho` は触らないこと**（★`LEGAL_PAGES` に入れると cross-link が全 5 面に link を要求するため）
+- ★未分類のまま出すと ★`tests/unit/legal-pages-locale-links.test.ts` が落ちる
+
+★**③page の置き場所**
+- ★**`app/[locale]/eula/page.tsx`（★depth 1）に置くこと**
+- ★`app/[locale]/legal/eula/...` の ★入れ子にする場合は ★**同じ PR で分類 guard を再帰化すること**
+  （★理由: guard は depth 1 だけを数える ∴ ★入れ子は ★CI 緑のまま分類の外に出る）
+
+★**④reconcile script**
+- ★**`--fixture` だけで全 test が通ること**（★credentials なしで検証できる形）
+- ★**credentials 不在時は ★fail-closed で exit**（★勝手に発行しない・★発行は kimny 承認案件）
+- ★**exit code は 3 値**: ★`0`=drift なし ／ ★`1`=drift あり ／ ★`3`=計器が成立していない
+  （★「drift 0」と「読めなかった」を ★同じ 0 にしないこと）
+- ★**`scripts/**` が tsconfig の exclude ＝ typecheck されない旨を ★PR 本文に明記すること**
+- ★**`webhook_events` の ★本番読み取りは行わないこと**（★prod DB 読みは kimny 承認＋identity-strip）
+
+★**⑤messages の `eula` namespace**（★「本文到着後は貼るだけ」の成否がここに掛かる）
+- ★本文は ★`messages/{ja,en}.json` の ★`eula` namespace に置く（★page.tsx に直書きしない）
+- ★**節ごとに key を分ける**（`{title, lastUpdated, <section>.{title,body}}`）
+- ★★**1 本の巨大 string は禁止**（★差し替え時に diff が読めず ★kimny 目視のコストが上がる）
+- ★**ja / en の key 集合が完全一致**（★片側だけ空文字は空デコレーションになる）
+- ★**placeholder であることを ★本文自身に書く**（★preview を見た人が確定文と誤認しないため）
+- ★**`messages/*.json` に formatter を当てない**（★手書き整形が正・CLAUDE.md）
+
+
 ★**(1i) と同じ形**。★**PR が立つ前に書く**（後から作ると実装に合わせて基準が動く）。
 ★**当課の実測で、★依頼文の前提と衝突する点が 4 つ在る** ——★先に出す（★差し戻しの理由になりうるため）。
 
