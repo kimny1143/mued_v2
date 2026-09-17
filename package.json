@@ -15,6 +15,7 @@
     "verify:pr-gate": "tsx scripts/verify/pr-merge-gate.ts",
 "verify:gate-mutations": "tsx scripts/verify/gate-mutation-check.ts",
     "verify:unlanded": "tsx scripts/verify/unlanded-work.ts",
+    "ops:reconcile-fastspring-orders": "tsx scripts/ops/reconcile-fastspring-orders.ts",
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
