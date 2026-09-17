@@ -947,3 +947,213 @@ MUEDsat-0.1.1-alpha-installer.pkg   → MUEDsat-0.1.2-installer.pkg
 - ★数値（LUFS / dBTP）を書いているなら ★**一次情報の URL と確認日**が併記されていること
   （★(X) で確立した規律＝★Apple は LUFS も dBTP も公開していない・★−14 は Spotify だけ）
 - ★**merge は kimny の「Go」後**
+
+### (1j-0) — ★#1062（alias redirect）受け入れ ＝ ★A〜F 合致（2026-09-17・★G のみ残）
+
+★**基準を先に書いた効果が出た回**。★PR head `65a61b43` に対して当課が実行:
+```
+A 射程   … next.config.ts ＋ tests/unit/downloads-alias-redirects.test.ts のみ／★範囲外 0
+B mapping… ★alias source 5 行・★当課の実測と完全一致
+C status … ★permanent: false が 5 件（＝307）
+D 削除なし… public/downloads の .pkg ＝ ★PR 9 / main 9（★MUEDrive-0.1.0-alpha 健在）
+E test   … ★★実行した ＝ 6 passed。★`existsSync(public/<destination>)` で ★destination の実在を測る
+           ★★基準より 1 つ多い: 「canonical path 自身を redirect source にしない」も撃っている
+           ★meta-RED（★alias 1 本を next.config から削除）→ ★1 test 落ちる ＝ ★咬んでいる
+F drift  … images / remotePatterns / formats の追加 ★0
+★G       … ★merge は ★開店後（時期の gate ∴ コードの問題ではない）
+```
+★**当課の検証は ★読み取り専用で行った**（★`refs/pull/1062/head` を fetch し、★test は当課の tree に
+★一時 copy して実行 → ★削除して復元・未 commit 0）。★**Codex の branch は checkout していない**
+（conductor 依頼どおり・★同じ branch を 2 つの worktree で持つと commit が衝突する）。
+
+★**E が効いた点を記録する**: ★当課が E を基準に入れたのは ★#1048 で「redirect 先が 404」を
+★緑のまま通した実体験から。★Codex はそこを覆った上に ★**redirect chain の芽**（canonical を
+source にしない）まで塞いでいた ——★**基準は下限であって上限ではない**。
+
+
+### (1j) — ★Codex 3 件（①EULA ②parser fixture ③reconcile）の受け入れ基準を先に置く（2026-09-17）
+
+> ★★**この節は ★2 つの役を持つ**（2026-09-17・conductor 方針）:
+> ★① 当課の受け入れ判定 checklist ／ ★② ★**不一致時に conductor が Codex へ ★そのまま渡す指示文**。
+> ★∴ ★下の「決定事項」は ★**推奨ではなく要件**として書く（★「推奨」と書くと修正ラウンドで任意に読まれる）。
+
+## ★★判定の前提 ——★「申告」の出所（★2026-09-17・conductor 合意）
+
+★**A（射程）は ★「申告 ⇔ 実 diff」の突合で ★scope creep を捕まえる検査。**
+★∴ ★**申告が ★commit 由来だと ★両者が同じ出所を持ち、★原理的に食い違えない**（＝検査が恒真になる）。
+
+```
+✗ ★commit から file 一覧を作って申告にする → ★diff と diff を比べる（★常に一致・creep 不可視）
+✓ ★★prompt 側の射程（触ってよい path ／ 不触）を申告にする → ★実 diff と比べる（★食い違えば creep）
+```
+
+★**∴ 受け入れ判定では ★prompt 射程 ⇔ 実 diff で見る。**
+★commit 由来の file 一覧は ★**別欄として併記**される（★当課の手間は省けるが ★申告として扱わない）。
+★型＝[[feedback-the-check-must-not-share-an-origin-with-the-checked]]。
+
+★**#1062 で「申告どおり」と言えたのは、★conductor が ★prompt 側の射程を ★先に書いていたから**。
+★**commit 由来だったら、あの「一致」は何も言っていなかった。**
+
+## ★★決定事項（★conductor 批准済 2026-09-17・★Codex への指示文としてそのまま渡せる形）
+
+★**①同意 gate の機構**
+- ★同意チェックと Buy ボタンは ★client component ∴ ★**`process.env.EULA_LIVE` を client から読まないこと**
+- ★client 側の gate は ★**`NEXT_PUBLIC_*`（build 時 inline）か ★code 定数**のいずれか
+- ★EULA ページ自身の gate（sitemap / robots・★server 側）は ★env で可（LEARN_LIVE と同じ）
+- ★**どちらを使ったかを ★コメントで明記すること**
+
+★**②`/[locale]/eula` の分類**
+- ★**`NON_LEGAL_LOCALE_PAGES` に ★理由つきで入れる**（★`LEGAL_PAGES` には ★入れない）
+- ★理由文は「★EULA_LIVE=false ゆえ未公開。★live 化の回に `LEGAL_PAGES` へ移す」の趣旨
+- ★**`tokushoho` は触らないこと**（★`LEGAL_PAGES` に入れると cross-link が全 5 面に link を要求するため）
+- ★未分類のまま出すと ★`tests/unit/legal-pages-locale-links.test.ts` が落ちる
+
+★**③page の置き場所**
+- ★**`app/[locale]/eula/page.tsx`（★depth 1）に置くこと**
+- ★`app/[locale]/legal/eula/...` の ★入れ子にする場合は ★**同じ PR で分類 guard を再帰化すること**
+  （★理由: guard は depth 1 だけを数える ∴ ★入れ子は ★CI 緑のまま分類の外に出る）
+
+★**④reconcile script**
+- ★**`--fixture` だけで全 test が通ること**（★credentials なしで検証できる形）
+- ★**credentials 不在時は ★fail-closed で exit**（★勝手に発行しない・★発行は kimny 承認案件）
+- ★**exit code は 3 値**: ★`0`=drift なし ／ ★`1`=drift あり ／ ★`3`=計器が成立していない
+  （★「drift 0」と「読めなかった」を ★同じ 0 にしないこと）
+- ★**`scripts/**` が tsconfig の exclude ＝ typecheck されない旨を ★PR 本文に明記すること**
+- ★**`webhook_events` の ★本番読み取りは行わないこと**（★prod DB 読みは kimny 承認＋identity-strip）
+
+★**⑤messages の `eula` namespace**（★「本文到着後は貼るだけ」の成否がここに掛かる）
+- ★本文は ★`messages/{ja,en}.json` の ★`eula` namespace に置く（★page.tsx に直書きしない）
+- ★**節ごとに key を分ける**（`{title, lastUpdated, <section>.{title,body}}`）
+- ★★**1 本の巨大 string は禁止**（★差し替え時に diff が読めず ★kimny 目視のコストが上がる）
+- ★**ja / en の key 集合が完全一致**（★片側だけ空文字は空デコレーションになる）
+- ★**placeholder であることを ★本文自身に書く**（★preview を見た人が確定文と誤認しないため）
+- ★**`messages/*.json` に formatter を当てない**（★手書き整形が正・CLAUDE.md）
+
+
+★**(1i) と同じ形**。★**PR が立つ前に書く**（後から作ると実装に合わせて基準が動く）。
+★**当課の実測で、★依頼文の前提と衝突する点が 4 つ在る** ——★先に出す（★差し戻しの理由になりうるため）。
+
+---
+
+## ★★衝突①: 「EULA_LIVE は LEARN_LIVE と同じ機構」は ★client 側では成立しない
+
+```
+★実測 … lib/learn/config.ts:8  export const LEARN_LIVE = process.env.LEARN_LIVE === "true"
+         ＝ ★env var（★8 つの *_LIVE のうち ★env はこれだけ・残り 7 は code 定数）
+★★問題 … ★同意チェックと Buy ボタンは ★client component（interactivity が要る）
+         ★`use client` から import されるフラグは ★literal でなければ inline されない
+         （★memory `reference-live-flag-gates-different-surfaces-per-product`）
+```
+★**∴ 面ごとに機構が分かれる**:
+- ★**EULA ページの gate（sitemap/robots・server 側）** … ★env で可（LEARN_LIVE と同じ）
+- ★★**同意チェックの gate（client 側）** … ★**env 不可**。★`NEXT_PUBLIC_*`（build 時 inline）か ★code 定数
+- ★**受け入れ基準**: ★どちらを使ったかが ★コメントで説明されていること。
+  ★**「LEARN_LIVE と同じ」だけで client 側に env を使っていたら ★差し戻し**
+
+## ★★衝突②: `/[locale]/eula` を `LEGAL_PAGES` に足すと ★tokushoho を触らざるを得ない
+
+```
+★実測 … tests/unit/legal-pages-locale-links.test.ts:86-89
+         siblings = LEGAL_PAGES.filter(p => p !== page) → ★各 page が ★他の全兄弟を link すること
+★∴ eula を LEGAL_PAGES に足すと ★既存 5 面すべてに eula への link が要る
+★★但し 依頼文の「不触」に ★tokushoho が入っている ＝ ★矛盾
+```
+★**受け入れ基準（どちらかを選び、理由を書くこと）**:
+- ★(a) ★`NON_LEGAL_LOCALE_PAGES` に ★理由つきで入れる（★「EULA_LIVE=false ゆえ未公開・live 化の回に LEGAL_PAGES へ移す」）
+  → ★tokushoho 不触のまま通る。★**当課の推奨はこちら**
+- ★(b) ★`LEGAL_PAGES` に足し、★5 面に link を追加（★tokushoho も触る）→ ★依頼文の射程を超える ∴ ★conductor 合意が要る
+- ★**どちらでもなく未分類のまま出したら ★CI が落ちる**（★#1056 の分類 test）∴ ★実装者は必ずどちらかを選ぶ
+
+## ★★衝突③: `app/[locale]/legal/eula/page.tsx` に置くと ★分類 guard を素通りする
+
+```
+★実測 … app/[locale]/legal は ★存在しない（★依頼文の触る範囲には在る）
+★★(1e) の残差3 … 分類 guard は ★depth 1 だけ。★`legal` 自身に page.tsx が無ければ ★母集団に入らない
+★∴ ★app/[locale]/legal/eula/page.tsx は ★黙って分類の外に出る（★CI は緑）
+```
+★**受け入れ基準**: ★**`/[locale]/eula`（depth 1）に置くこと**。
+★入れ子（`legal/eula`）にするなら ★**同じ PR で分類 guard を再帰化する**か、★**やらない**。
+★★**「CI が緑だから分類されている」と読まないこと** ——★ここは緑になる穴だと ★当課が (1e) に書いてある。
+
+## ★★衝突④: ③ の script は ★typecheck されない ＋ ★credentials と prod DB 読みが要る
+
+```
+★実測 … tsconfig.json exclude に ★"scripts/**/*" が在る
+★∴ ★scripts/ops/reconcile-fastspring-orders.ts は ★`npm run typecheck` の対象外
+★（★型＝memory `feedback-green-covers-only-what-it-executes`＝当課が同じ穴で 1 日 3 件 壊した）
+```
+★**加えて 2 つ、当課の権限外**:
+- ★**Orders API を叩くには ★API credentials の新規発行が要る ＝ ★新しい秘密情報 ＝ kimny 承認案件**
+  （★conductor は同じ理由で Sessions API の credentials 作成を見送っている）
+- ★**`webhook_events` を読むのは ★prod DB 読み ＝ kimny 承認 ＋ identity-strip**
+  （★memory `reference-dial-prod-db-direct-query`）
+
+★**受け入れ基準**:
+- ★**`--fixture` だけで全 test が通ること**（★credentials なしで検証できる形）
+- ★**live 経路は ★inert**（★credentials 不在なら ★fail-closed で ★exit・★勝手に作らない）
+- ★**exit code は 3 値**（★0=drift なし / 1=drift あり / ★3=計器が成立していない）
+  ——★「drift 0」と「読めなかった」を ★同じ 0 にしないこと（★当課が本日 3 度 踏んだ形）
+- ★**typecheck されないことを PR 本文に書く**か、★`tsconfig` の exclude を外す提案を ★別 PR に分ける
+
+---
+
+## ★① eula-page-and-consent の受け入れ基準（Tier 2）
+
+**A 射程** … 依頼文の通り（app/[locale]/eula, components, lib/legal, messages, tests/unit/legal）。
+★`next.config.ts` / `public/` / `content/` / `migrations` / `tokushoho` / live guard に ★1 行でも入れば差し戻し
+（★但し ★衝突② で (b) を選ぶ場合のみ tokushoho が要る ∴ ★その時は先に conductor 合意）
+
+**B messages のキー設計**（★conductor が明示的に見てほしいと言った点・★「貼るだけ」の成否）
+- ★**本文は ★`messages/{ja,en}.json` の `eula` namespace に置くこと**（★page.tsx に直書きしない）
+  ——★理由: ★terms / refund / tokushoho がすべてこの形で、★弁護士本文が来た時に ★**JSON の値を差し替えるだけ**になる
+- ★**節ごとに key を分けること**（`{title, lastUpdated, <section>.{title,body}}`）。★1 本の巨大 string にしない
+  ——★1 本だと ★差し替え時に ★diff が読めず、★kimny 目視のコストが上がる
+- ★**placeholder であることが ★本文自身に書かれていること**（★「弁護士本文の到着待ち」等）
+  ——★`EULA_LIVE=false` で非公開でも、★preview を見た人が ★確定文と誤認しないため
+- ★**ja / en の key 集合が完全一致**（★片側だけ空文字は ★空デコレーションになる・memory `feedback-i18n-empty-key-unconditional-render`）
+- ★**formatter を当てていないこと**（★`messages/*.json` は手書き整形が正・CLAUDE.md）
+
+**C 同意の記録**
+- ★`tags.eula_version` → 0057 の `eula_version` / `eula_accepted_at` へ保存
+- ★**eula_version の値の出所が ★1 箇所**（★`lib/legal` の定数）であること。★複数箇所に焼いたら差し戻し
+- ★**tags 不在でも 500 にならないこと**（★実測で `data.tags` は ★不在だった ＝ ★popup 非経由なら来ない）
+  ——★★**「同意が取れていない注文」を ★どう扱うかが設計判断**。★null 許容で通すなら ★その旨をコメントに
+
+**D test**
+- ★同意なしでは Buy が ★disabled であること（★DOM でなく ★props/state の性質で）
+- ★`EULA_LIVE=false` で ★sitemap / robots に出ないこと（★面ごとに見る）
+- ★分類 test が緑（★衝突②③ を満たしている証拠）
+
+## ★② fastspring-parser-fixture-tests の受け入れ基準（Tier 2・tests のみ）
+
+**A 射程** … ★`tests/` のみ。★**本番コード不変更**（★conductor 明示）。1 行でも入れば差し戻し
+
+**B ★fixture の出所が ★doc だけでは不足**（★これが最重要）
+```
+★当課の実測（memory `reference-fastspring-webhook-payload-shape`・★実注文 1 本）:
+   ★data.account は ★**string**（∴ `account.contact.email` は ★常に MISSING）
+   ★canonical な email は ★`data.recipients[0].recipient.email`
+   ★`data.tags` は ★不在だった（★popup 非経由の注文）
+★★∴ ★doc の sample と ★実測が食い違う可能性が在る。
+★★doc だけを写した fixture は ★doc の形を固定し、★本番で落ちても緑になりうる
+```
+- ★**fixture は ★実測形と突き合わせること**。★食い違いは ★FINDINGS.md に（conductor 指示どおり）
+- ★**`tags` 無し fixture が ★`account` を string で持つこと**（★実測の形）
+
+**C live guard の test**
+- ★`live=false` … ★`SKIPPED_TEST_MARKER` が入り、★**row を `processed` で封じないこと**
+  ——★CCO が指摘した形（★封じると ★修復経路が閉じる）
+- ★`live=true` … 通常処理
+
+## ★③ fastspring-reconcile-script の受け入れ基準（Tier 2・開店後）
+
+**A 射程** … ★`scripts/ops/` ＋ `tests/unit/ops` ＋ `docs/ops`。★`app/` `lib/` 不触
+
+**B** … ★衝突④ の 4 点（`--fixture` で全 test／live は inert／exit 3 値／typecheck 外を明記）
+
+**C** … ★**credentials を新規発行していないこと**（★秘密情報の新規作成は ★kimny 承認案件）。
+★script が「credentials を作れ」と指示する文書を含むのは可・★作るのは不可
+
+---
+
+★**当課は ①〜③ の実装に着手しない**（★kimny 裁定＝実装は Codex）。★手番は ★受け入れレビューのみ。
