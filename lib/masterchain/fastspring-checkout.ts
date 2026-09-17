@@ -29,6 +29,7 @@
  */
 
 import { readGaClientId } from "@/lib/dial/first-touch-client";
+import { EULA_VERSION } from "@/lib/legal/eula";
 
 const STOREFRONT = process.env.NEXT_PUBLIC_FASTSPRING_STOREFRONT ?? "";
 const PRODUCT_PATH = process.env.NEXT_PUBLIC_FASTSPRING_PRODUCT_PATH ?? "";
@@ -54,6 +55,7 @@ export const MASTERCHAIN_CHECKOUT_ENABLED = STOREFRONT !== "" && PRODUCT_PATH !=
  */
 export const CHECKOUT_TAG_NAMES = [
   "gaClientId",
+  "eula_version",
   "marketingConsent",
   "utmCampaign",
   "utmContent",
@@ -101,6 +103,9 @@ export function buildCheckoutTags(input: CheckoutAttribution): CheckoutTags {
   // ★Always sent, including `false`. A purchase is NOT an opt-in: the audience add is gated on this
   //   tag, so an absent tag and an explicit "false" must not be the same thing to whoever reads it.
   tags.marketingConsent = input.marketingConsent === true ? "true" : "false";
+  // The popup can only be opened after the EULA checkbox is checked. Pin the exact version accepted
+  // into the order so webhook retries and later EULA revisions cannot rewrite that fact.
+  tags.eula_version = EULA_VERSION;
   return tags;
 }
 
@@ -129,6 +134,7 @@ const BUILDER_SRC = "https://d1f8f9xcsvx3ha.cloudfront.net/sbl/1.0.1/fastspring-
 
 type FastSpringBuilder = {
   push: (payload: Record<string, unknown>) => void;
+  tag: (tags: Record<string, string>) => void;
   checkout: () => void;
 };
 
@@ -190,15 +196,24 @@ export function loadCheckoutScript(): Promise<boolean> {
  * ★UNVERIFIED against a live storefront (there isn't one). The `push`/`checkout` shape is the
  * documented one; the first `.test.` order confirms or corrects it.
  */
-export function openCheckout(marketingConsent?: boolean): boolean {
+export function openCheckout({
+  eulaAccepted,
+  marketingConsent,
+}: {
+  eulaAccepted: boolean;
+  marketingConsent?: boolean;
+}): boolean {
+  if (!eulaAccepted) return false;
   if (!MASTERCHAIN_CHECKOUT_ENABLED) return false;
   const b = builder();
   if (!b) return false;
   try {
     b.push({
       products: [{ path: PRODUCT_PATH, quantity: 1 }],
-      tags: buildCheckoutTags(readAttribution(marketingConsent)),
     });
+    // FastSpring's documented order-level metadata API. Calling tag() before checkout makes the
+    // accepted EULA version part of the order and therefore available to order.completed webhooks.
+    b.tag(buildCheckoutTags(readAttribution(marketingConsent)));
     b.checkout();
     return true;
   } catch {

@@ -27,6 +27,9 @@ const LOCALE_DIR = join(process.cwd(), "app", "[locale]");
  * name: the next person has to be able to tell a deliberate exemption from a forgotten one.
  */
 const EXEMPT: Record<string, string> = {
+  eula:
+    "EULA_LIVE=false so not published; move to LEGAL_PAGES when going live. The staged consent " +
+    "route is locale-only, and its bare redirect remains intentionally omitted.",
   redesign:
     "noindex preview route for the kimny 現物 gate — its own header says 'never a public surface', " +
     "so a bare entry would advertise something not meant to be found",

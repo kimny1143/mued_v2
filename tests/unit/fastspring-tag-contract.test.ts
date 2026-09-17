@@ -90,8 +90,8 @@ describe("FastSpring custom-tag contract", () => {
 
     // ★Both populations non-empty first. Without this the comparison would pass with [] === [] the
     //   day a rename stops the regex matching, and guard nothing.
-    expect(parser.length).toBeGreaterThanOrEqual(7);
-    expect(CHECKOUT_TAG_NAMES.length).toBeGreaterThanOrEqual(7);
+    expect(parser.length).toBeGreaterThanOrEqual(8);
+    expect(CHECKOUT_TAG_NAMES.length).toBeGreaterThanOrEqual(8);
 
     // ★Set equality, not subset: a tag SENT but never read is wasted payload, and a tag READ but
     //   never sent makes every order unattributable on that dimension, forever.

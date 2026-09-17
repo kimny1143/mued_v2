@@ -57,6 +57,10 @@ export interface FastspringOrderParsed {
   utmTerm?: string;
   /** buyer opted into product-update marketing (from a popup consent tag). Gates the audience add. */
   marketingConsent?: boolean;
+  /** Exact EULA version accepted immediately before the popup opened. */
+  eulaVersion?: string;
+  /** FastSpring order completion time; persisted only when eulaVersion is present. */
+  eulaAcceptedAt?: Date;
 }
 
 /**
@@ -116,6 +120,18 @@ export function parseFastspringOrderCompleted(event: unknown): FastspringOrderPa
   // ★配達メールや freee 記帳で使う側からは「★名前が無い注文」と見え、★欠陥に見えない。
   const first = asStr(recipient.first) ?? asStr(customer.first) ?? "";
   const last = asStr(recipient.last) ?? asStr(customer.last) ?? "";
+  const eulaVersion = asStr(tags.eula_version);
+  // `data.changed` is FastSpring's documented order timestamp in milliseconds. Keep event.created as
+  // a fallback for non-expanded payload variants; unlike webhook receipt time, both remain stable on
+  // retries. `changedInSeconds` is the documented seconds representation of the same order time.
+  const changedInSeconds = asNum(data.changedInSeconds);
+  const changedMillis =
+    asNum(data.changed) ??
+    asNum(data.changedValue) ??
+    (changedInSeconds !== undefined ? changedInSeconds * 1000 : undefined) ??
+    asNum(e.created);
+  const acceptedAt = changedMillis === undefined ? undefined : new Date(changedMillis);
+  const validAcceptedAt = acceptedAt && !Number.isNaN(acceptedAt.getTime()) ? acceptedAt : undefined;
 
   return {
     orderId,
@@ -132,6 +148,8 @@ export function parseFastspringOrderCompleted(event: unknown): FastspringOrderPa
     utmContent: asStr(tags.utmContent),
     utmTerm: asStr(tags.utmTerm),
     marketingConsent: tags.marketingConsent === true || tags.marketingConsent === "true",
+    eulaVersion,
+    eulaAcceptedAt: eulaVersion ? validAcceptedAt : undefined,
   };
 }
 
@@ -264,6 +282,8 @@ export async function handleFastspringOrderCompleted(
       licenseKey,
       licenseVersion: LICENSE_VERSION,
       issuedAt: new Date(),
+      eulaVersion: parsed.eulaVersion,
+      eulaAcceptedAt: parsed.eulaVersion ? parsed.eulaAcceptedAt : undefined,
       productId: parsed.productId,
       amountCents: parsed.amountCents,
       currency: parsed.currency,

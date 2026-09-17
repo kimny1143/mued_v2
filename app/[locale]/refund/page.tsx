@@ -12,6 +12,7 @@ import { setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
+import { EULA_LIVE } from "@/lib/legal/config";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -85,6 +86,11 @@ function RefundContent({ locale }: { locale: string }) {
             <Link href={`/${locale}/privacy`} className="text-slate-400 hover:text-white">
               {isJa ? "プライバシーポリシー" : "Privacy Policy"}
             </Link>
+            {EULA_LIVE && (
+              <Link href={`/${locale}/eula`} className="text-slate-400 hover:text-white">
+                {isJa ? "使用許諾契約" : "EULA"}
+              </Link>
+            )}
             <Link href={`/${locale}/tokushoho`} className="text-slate-400 hover:text-white">
               {isJa ? "特定商取引法に基づく表記" : "Legal Notice (Japan)"}
             </Link>

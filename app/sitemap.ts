@@ -9,6 +9,7 @@ import { MUEDSP_LIVE } from '@/lib/muedsp/config';
 import { MUEDIAL_LP_LIVE } from '@/lib/muedial/config';
 import { LEARN_LIVE } from '@/lib/learn/config';
 import { LEARN_SLUGS } from '@/lib/learn/articles';
+import { EULA_LIVE } from '@/lib/legal/config';
 
 // Force dynamic rendering so headers() can be read per-request
 export const dynamic = 'force-dynamic';
@@ -54,6 +55,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${MUED}/ja/refund`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${MUED}/en/tokushoho`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${MUED}/ja/tokushoho`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    ...(EULA_LIVE
+      ? [
+          { url: `${MUED}/en/eula`, lastModified: now, changeFrequency: 'yearly' as const, priority: 0.3 },
+          { url: `${MUED}/ja/eula`, lastModified: now, changeFrequency: 'yearly' as const, priority: 0.3 },
+        ]
+      : []),
     ...storyPages,
     ...(ADVISORY_LIVE
       ? [

@@ -28,11 +28,18 @@ const sampleEvent = {
     // ★**実在しない shape** だった（`data.account` は string）∴ ★残さない。
     recipients: [{ recipient: { email: "Buyer@Example.com" } }],
     total: 69,
+    changed: Date.parse("2026-09-17T01:02:03.000Z"),
     currency: "USD",
     address: { country: "US" },
     // ★A FastSpring-generated key may still sit here; we deliberately do NOT read it (see below).
     items: [{ fulfillments: { license: [{ license: "LICENSE-KEY-XYZ" }] } }],
-    tags: { gaClientId: "GA1.1.1.2", utmSource: "threads", utmCampaign: "launch_jul", marketingConsent: "true" },
+    tags: {
+      gaClientId: "GA1.1.1.2",
+      utmSource: "threads",
+      utmCampaign: "launch_jul",
+      marketingConsent: "true",
+      eula_version: "2026-09-17-v1",
+    },
   },
 };
 
@@ -50,6 +57,8 @@ describe("parseFastspringOrderCompleted", () => {
       utmSource: "threads",
       utmCampaign: "launch_jul",
       marketingConsent: true,
+      eulaVersion: "2026-09-17-v1",
+      eulaAcceptedAt: new Date("2026-09-17T01:02:03.000Z"),
     });
   });
 
@@ -134,6 +143,27 @@ describe("parseFastspringOrderCompleted", () => {
       data: { order: "O-2", recipients: [{ recipient: { email: "a@b.com" } }] },
     });
     expect(p?.marketingConsent).toBe(false);
+  });
+
+  it("★reads the accepted EULA version and pins acceptance to the order time", () => {
+    const p = parseFastspringOrderCompleted(sampleEvent);
+    expect(p?.eulaVersion).toBe("2026-09-17-v1");
+    expect(p?.eulaAcceptedAt?.toISOString()).toBe("2026-09-17T01:02:03.000Z");
+  });
+
+  it("★ignores EULA acceptance fields when the tag is absent", () => {
+    const p = parseFastspringOrderCompleted({
+      id: "e-no-eula",
+      created: Date.parse("2026-09-17T01:02:03.000Z"),
+      data: {
+        order: "O-NO-EULA",
+        changed: Date.parse("2026-09-17T01:02:03.000Z"),
+        recipients: [{ recipient: { email: "a@b.com" } }],
+        tags: {},
+      },
+    });
+    expect(p?.eulaVersion).toBeUndefined();
+    expect(p?.eulaAcceptedAt).toBeUndefined();
   });
 });
 

@@ -16,12 +16,6 @@ import { BrandHeader } from "@/components/brand/brand-header";
 //
 // STAGED behind MUEDSP_LIVE (page.tsx robots). Saturation-block copy reuses the LIVE muedsat.*
 // namespace; suite + masterchain copy is muedsp.* (content課 canonical).
-import { useEffect, useState } from "react";
-import {
-  MASTERCHAIN_CHECKOUT_ENABLED,
-  loadCheckoutScript,
-  openCheckout,
-} from "@/lib/masterchain/fastspring-checkout";
 import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,6 +27,7 @@ import {
 import { type PluginKey } from "@/lib/plugins/registry";
 import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
+import { MasterchainPurchaseControl } from "@/components/features/muedsp-landing/masterchain-purchase-control";
 
 const FACEPLATE_HOT = "/muedsat/faceplate-hot.webp";
 const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
@@ -64,22 +59,6 @@ function SignupForm({ plugin = "muedsat" as PluginKey } = {}) {
 }
 
 export function MuedspLandingContent() {
-  // ★The button goes live only after the builder script is actually usable — not merely because the
-  //   env is set. `loadCheckoutScript()` resolves false when unconfigured, when the script 404s, and
-  //   when it loads but exposes no builder. ★With the env unset this effect returns immediately and
-  //   appends nothing to the document.
-  const [checkoutEnabled, setCheckoutEnabled] = useState(false);
-  useEffect(() => {
-    if (!MASTERCHAIN_CHECKOUT_ENABLED) return;
-    let alive = true;
-    void loadCheckoutScript().then((ok) => {
-      if (alive) setCheckoutEnabled(ok);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
   const locale = useLocale();
   const isJa = locale === "ja";
 
@@ -209,24 +188,12 @@ export function MuedspLandingContent() {
                   path is ★still a kimny decision (docs/paid-line/c1-…spec.md:25, :101). ★With either
                   missing the button renders exactly as before: disabled, same label, no script
                   loaded. ★Nothing about this change is visible to a customer until those are set. */}
-              {checkoutEnabled ? (
-                <button
-                  type="button"
-                  onClick={() => openCheckout()}
-                  className="shrink-0 rounded-[var(--radius-sm)] border border-[var(--accent)]/40 bg-[var(--accent)] px-5 py-3 font-semibold text-black transition hover:brightness-110"
-                >
-                  {tmc("buyLabel")}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  className="shrink-0 cursor-not-allowed rounded-[var(--radius-sm)] border border-white/15 bg-white/[0.04] px-5 py-3 font-semibold text-white/40"
-                >
-                  {tmc("buyLabel")}
-                </button>
-              )}
+              <MasterchainPurchaseControl
+                locale={locale}
+                buyLabel={tmc("buyLabel")}
+                consentPrefix={tmc("eulaConsentPrefix")}
+                eulaLabel={tmc("eulaLabel")}
+              />
             </div>
             <a
               href="#get"
