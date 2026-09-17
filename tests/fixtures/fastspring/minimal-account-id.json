@@ -1,0 +1,29 @@
+{
+  "_source": {
+    "orderCompleted": "https://developer.fastspring.com/reference/ordercompleted",
+    "envelope": "https://developer.fastspring.com/reference/webhooks-overview",
+    "deliverySemantics": "https://developer.fastspring.com/reference/processed-and-unprocessed-webhook-events",
+    "fetchDate": "2026-09-17",
+    "note": "Minimal non-expanded variant: FastSpring documents that account and product objects are IDs when webhook expansion is disabled."
+  },
+  "events": [
+    {
+      "id": "VOe5PQx-T4S6t8yS_ziYeA",
+      "type": "order.completed",
+      "live": true,
+      "processed": false,
+      "created": 1426560444900,
+      "data": {
+        "order": "mINImal1OrdER2iD3ValuE",
+        "account": "abCdE1FGH2Hij3KLMnOpqR",
+        "recipients": [
+          {
+            "recipient": {
+              "email": "minimal.recipient@company.com"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

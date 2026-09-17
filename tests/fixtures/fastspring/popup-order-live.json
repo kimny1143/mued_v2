@@ -1,0 +1,211 @@
+{
+  "_source": {
+    "orderCompleted": "https://developer.fastspring.com/reference/ordercompleted",
+    "envelope": "https://developer.fastspring.com/reference/webhooks-overview",
+    "deliverySemantics": "https://developer.fastspring.com/reference/processed-and-unprocessed-webhook-events",
+    "fetchDate": "2026-09-17",
+    "note": "The requested /reference/order-completed URL returned 404; FastSpring's official webhook index links /reference/ordercompleted."
+  },
+  "events": [
+    {
+      "id": "jazYJQw5RSWVR474tU2Obw",
+      "type": "order.completed",
+      "live": true,
+      "processed": false,
+      "created": 1426560444800,
+      "data": {
+        "order": "aBCDE12fGH3iJkL4mNOpq",
+        "id": "aBCDE12fGH3iJkL4mNOpq",
+        "reference": "ABC123456-7891-01112",
+        "buyerReference": null,
+        "ipAddress": "47.198.89.33",
+        "completed": true,
+        "changed": 1751898991060,
+        "changedValue": 1751898991060,
+        "changedInSeconds": 1751898991,
+        "changedDisplay": "7/7/25",
+        "changedDisplayISO8601": "2025-07-07",
+        "changedDisplayEmailEnhancements": "Jul 07, 2025",
+        "changedDisplayEmailEnhancementsWithTime": "Jul 07, 2025 02:36:31 PM",
+        "language": "en",
+        "live": true,
+        "currency": "USD",
+        "payoutCurrency": "USD",
+        "quote": "QUW6Z4TYTPOJDRTF5DJ7E2CVYAWA",
+        "tags": {
+          "eula_version": "v1",
+          "campaign": "x"
+        },
+        "invoiceUrl": "https://company.onfastspring.com/account/order/null/invoice",
+        "siteId": "LDN5SX4KBZCI2",
+        "acquisitionTransactionType": "INVOICE_PAYMENT_ORDER",
+        "account": {
+          "id": "abCdE1FGH2Hij3KLMnOpqR",
+          "account": "abCdE1FGH2Hij3KLMnOpqR",
+          "contact": {
+            "first": "Jane",
+            "last": "Doe",
+            "email": "jane.doe@company.com",
+            "company": "ABC Company",
+            "phone": "5555555555",
+            "subscribed": true
+          },
+          "address": {
+            "address line 1": "801 Garden St",
+            "address line 2": "Suite 201",
+            "city": "Santa Barbara",
+            "country": "US",
+            "postal code": "93101",
+            "region": "US-CA",
+            "region custom": null,
+            "company": "ABC Company"
+          },
+          "language": "en",
+          "country": "US",
+          "lookup": {
+            "global": "8x3FKfUESieeIgGoxHBRLg"
+          },
+          "url": "https://company.onfastspring.com/account"
+        },
+        "total": 60.0,
+        "totalDisplay": "$60.00",
+        "totalInPayoutCurrency": 60.0,
+        "totalInPayoutCurrencyDisplay": "$60.00",
+        "tax": 0.0,
+        "taxDisplay": "$0.00",
+        "taxInPayoutCurrency": 0.0,
+        "taxInPayoutCurrencyDisplay": "$0.00",
+        "subtotal": 60.0,
+        "subtotalDisplay": "$60.00",
+        "subtotalInPayoutCurrency": 60.0,
+        "subtotalInPayoutCurrencyDisplay": "$60.00",
+        "discount": 0.0,
+        "discountDisplay": "$0.00",
+        "discountInPayoutCurrency": 0.0,
+        "discountInPayoutCurrencyDisplay": "$0.00",
+        "discountWithTax": 0.0,
+        "discountWithTaxDisplay": "$0.00",
+        "discountWithTaxInPayoutCurrency": 0.0,
+        "discountWithTaxInPayoutCurrencyDisplay": "$0.00",
+        "billDescriptor": "FS* fsprg.com",
+        "payment": {
+          "type": "test",
+          "cardEnding": "4242"
+        },
+        "customer": {
+          "first": "Jane",
+          "last": "Doe",
+          "email": "jane.doe@company.com",
+          "company": "ABC Company",
+          "phone": "5555555555",
+          "subscribed": true
+        },
+        "address": {
+          "addressLine1": "801 Garden St",
+          "addressLine2": "Suite 201",
+          "city": "Santa Barbara",
+          "regionCode": "CA",
+          "regionDisplay": "California",
+          "region": "California",
+          "postalCode": "93101",
+          "country": "US",
+          "display": "801 Garden St, Suite 201, Santa Barbara, California, 93101, US"
+        },
+        "recipients": [
+          {
+            "recipient": {
+              "first": "John",
+              "last": "Doe",
+              "email": "john.doe@company.com",
+              "company": "ABC Company",
+              "phone": "5555555555",
+              "subscribed": true,
+              "account": {
+                "id": "abCdE1FGH2Hij3KLMnOpqR",
+                "account": "abCdE1FGH2Hij3KLMnOpqR",
+                "contact": {
+                  "first": "John",
+                  "last": "Doe",
+                  "email": "john.doe@company.com",
+                  "company": "ABC Company",
+                  "phone": "5555555555",
+                  "subscribed": true
+                },
+                "address": {
+                  "address line 1": "801 Garden St",
+                  "address line 2": "Suite 201",
+                  "city": "Santa Barbara",
+                  "country": "US",
+                  "postal code": "93101",
+                  "region": "US-CA",
+                  "region custom": null,
+                  "company": "ABC Company"
+                },
+                "language": "en",
+                "country": "US",
+                "lookup": {
+                  "global": "8x3FKfUESieeIgGoxHBRLg"
+                },
+                "url": "https://company.onfastspring.com/account"
+              },
+              "address": {
+                "addressLine1": "801 Garden St",
+                "addressLine2": "Suite 201",
+                "city": "Santa Barbara",
+                "regionCode": "CA",
+                "regionDisplay": "California",
+                "region": "California",
+                "postalCode": "93101",
+                "country": "US",
+                "display": "801 Garden St, Suite 201, Santa Barbara, California, 93101, US"
+              }
+            }
+          }
+        ],
+        "notes": [],
+        "items": [
+          {
+            "product": "cloud-storage",
+            "quantity": 1,
+            "display": "Cloud Storage Service",
+            "sku": "SKU-CS-101",
+            "imageUrl": null,
+            "shortDisplay": "Cloud Storage Service",
+            "subtotal": 60.0,
+            "subtotalDisplay": "$60.00",
+            "subtotalInPayoutCurrency": 60.0,
+            "subtotalInPayoutCurrencyDisplay": "$60.00",
+            "discount": 0.0,
+            "discountDisplay": "$0.00",
+            "discountInPayoutCurrency": 0.0,
+            "discountInPayoutCurrencyDisplay": "$0.00",
+            "fulfillments": {},
+            "withholdings": {
+              "taxWithholdings": false
+            },
+            "proratedItemChangeAmount": 0.0,
+            "proratedItemChangeAmountDisplay": "$0.00",
+            "proratedItemChangeAmountInPayoutCurrency": 0.0,
+            "proratedItemChangeAmountInPayoutCurrencyDisplay": "$0.00",
+            "proratedItemProratedCharge": 0.0,
+            "proratedItemProratedChargeDisplay": "$0.00",
+            "proratedItemProratedChargeInPayoutCurrency": 0.0,
+            "proratedItemProratedChargeInPayoutCurrencyDisplay": "$0.00",
+            "proratedItemCreditAmount": 0.0,
+            "proratedItemCreditAmountDisplay": "$0.00",
+            "proratedItemCreditAmountInPayoutCurrency": 0.0,
+            "proratedItemCreditAmountInPayoutCurrencyDisplay": "$0.00",
+            "proratedItemTaxAmount": 0.0,
+            "proratedItemTaxAmountDisplay": "$0.00",
+            "proratedItemTaxAmountInPayoutCurrency": 0.0,
+            "proratedItemTaxAmountInPayoutCurrencyDisplay": "$0.00",
+            "proratedItemTotal": 0.0,
+            "proratedItemTotalDisplay": "$0.00",
+            "proratedItemTotalInPayoutCurrency": 0.0,
+            "proratedItemTotalInPayoutCurrencyDisplay": "$0.00"
+          }
+        ]
+      }
+    }
+  ]
+}
