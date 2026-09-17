@@ -83,9 +83,22 @@ The output has three sections:
 - `present-in-db-but-not-in-fastspring`: a recent, product-scoped local order was not returned by the
   filtered FastSpring query. Investigate test/live scope, timestamps, refunds, and product metadata.
 
-The process exits with status `1` when `missing-in-db` contains any orders, `0` when none are missing,
-and `2` for configuration, fixture, API, or database failures. Database-only rows are reported but do
-not by themselves make the exit status non-zero.
+The process uses exactly three exit statuses:
+
+- `0`: no drift; every FastSpring order has both local fulfillment facts.
+- `1`: drift; `missing-in-db` contains one or more orders.
+- `3`: instrument failure; configuration, credentials, fixture parsing, FastSpring API/network, or
+  database access failed.
+
+Missing credentials in live mode are an instrument failure. The script exits `3` with the missing
+variable names and does not attempt the FastSpring API or database connection. Database-only rows are
+reported but do not by themselves make the exit status non-zero.
+
+## Type checking scope
+
+The repository root `tsconfig.json` excludes `"scripts/**/*"` (as well as `"tests/**/*"`) from the
+main `npm run typecheck` command. Operational scripts are therefore outside that TypeScript project;
+the repository provides the separate `npm run typecheck:scripts` verification command for scripts.
 
 ## When an order is missing
 

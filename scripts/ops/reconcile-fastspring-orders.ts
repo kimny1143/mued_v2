@@ -36,6 +36,8 @@ export interface ReconciliationReport {
   presentInDbButNotInFastspring: string[];
 }
 
+export type ReconciliationExitCode = 0 | 1 | 3;
+
 export interface QueryOrdersInput {
   days: number;
   fastspringOrderIds: readonly string[];
@@ -80,6 +82,15 @@ interface CliOptions {
   dryRun: boolean;
   fixturePath?: string;
   help: boolean;
+}
+
+export interface MainDependencies {
+  env?: NodeJS.ProcessEnv;
+  fetchImpl?: typeof fetch;
+  createQuery?: (databaseUrl: string) => QueryOrders;
+  loadEnvironment?: () => Promise<void> | void;
+  log?: (message: string) => void;
+  logError?: (message: string) => void;
 }
 
 interface WebhookRow {
@@ -428,52 +439,71 @@ function usage(): string {
   ].join("\n");
 }
 
-export async function main(args = process.argv.slice(2)): Promise<number> {
-  const options = parseCliArgs(args);
-  if (options.help) {
-    console.log(usage());
-    return 0;
-  }
+async function loadDotenv(): Promise<void> {
+  const { config } = await import("dotenv");
+  config({ path: ".env.local" });
+}
 
-  let result: Awaited<ReturnType<typeof runReconciliation>>;
-  let mode: "live" | "fixture";
-  if (options.fixturePath) {
-    const fixture = await readFixture(options.fixturePath);
-    mode = "fixture";
-    result = await runReconciliation({
-      days: options.days,
-      fetchOrders: async () => fixture.fastspringOrderIds,
-      queryOrders: async () => fixture.databaseOrders,
-    });
-  } else {
-    const { config } = await import("dotenv");
-    config({ path: ".env.local" });
-    const required = [
-      "FASTSPRING_API_USERNAME",
-      "FASTSPRING_API_PASSWORD",
-      "DATABASE_URL",
-    ] as const;
-    const missing = required.filter((name) => !process.env[name]);
-    if (missing.length > 0) {
-      throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+export async function main(
+  args = process.argv.slice(2),
+  dependencies: MainDependencies = {},
+): Promise<ReconciliationExitCode> {
+  const log = dependencies.log ?? console.log;
+  const logError = dependencies.logError ?? console.error;
+
+  try {
+    const options = parseCliArgs(args);
+    if (options.help) {
+      log(usage());
+      return 0;
     }
 
-    const username = process.env.FASTSPRING_API_USERNAME as string;
-    const password = process.env.FASTSPRING_API_PASSWORD as string;
-    const databaseUrl = process.env.DATABASE_URL as string;
-    mode = "live";
-    result = await runReconciliation({
-      days: options.days,
-      fetchOrders: (days) => fetchFastspringOrderIds({
-        days,
-        credentials: { username, password },
-      }),
-      queryOrders: createDatabaseQuery(databaseUrl),
-    });
-  }
+    let result: Awaited<ReturnType<typeof runReconciliation>>;
+    let mode: "live" | "fixture";
+    if (options.fixturePath) {
+      const fixture = await readFixture(options.fixturePath);
+      mode = "fixture";
+      result = await runReconciliation({
+        days: options.days,
+        fetchOrders: async () => fixture.fastspringOrderIds,
+        queryOrders: async () => fixture.databaseOrders,
+      });
+    } else {
+      const env = dependencies.env ?? process.env;
+      await (dependencies.loadEnvironment ?? loadDotenv)();
+      const required = [
+        "FASTSPRING_API_USERNAME",
+        "FASTSPRING_API_PASSWORD",
+        "DATABASE_URL",
+      ] as const;
+      const missing = required.filter((name) => !env[name]);
+      if (missing.length > 0) {
+        throw new Error(
+          `Refusing live reconciliation: missing required environment variables: ${missing.join(", ")}`,
+        );
+      }
 
-  console.log(formatReport(result.report, options.days, mode));
-  return result.exitCode;
+      const username = env.FASTSPRING_API_USERNAME as string;
+      const password = env.FASTSPRING_API_PASSWORD as string;
+      const databaseUrl = env.DATABASE_URL as string;
+      mode = "live";
+      result = await runReconciliation({
+        days: options.days,
+        fetchOrders: (days) => fetchFastspringOrderIds({
+          days,
+          credentials: { username, password },
+          fetchImpl: dependencies.fetchImpl,
+        }),
+        queryOrders: (dependencies.createQuery ?? createDatabaseQuery)(databaseUrl),
+      });
+    }
+
+    log(formatReport(result.report, options.days, mode));
+    return result.exitCode;
+  } catch (error: unknown) {
+    logError(`[reconcile-fastspring-orders] ${error instanceof Error ? error.message : String(error)}`);
+    return 3;
+  }
 }
 
 const entry = process.argv[1] ? pathToFileURL(process.argv[1]).href : "";
@@ -482,6 +512,6 @@ if (entry === import.meta.url) {
     .then((exitCode) => { process.exitCode = exitCode; })
     .catch((error: unknown) => {
       console.error(`[reconcile-fastspring-orders] ${error instanceof Error ? error.message : String(error)}`);
-      process.exitCode = 2;
+      process.exitCode = 3;
     });
 }

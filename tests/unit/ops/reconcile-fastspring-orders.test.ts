@@ -1,13 +1,16 @@
+import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
   fetchFastspringOrderIds,
+  main,
   reconcileOrderIds,
   runReconciliation,
   type DatabaseOrderState,
 } from "@/scripts/ops/reconcile-fastspring-orders";
 
 const credentials = { username: "api-user", password: "api-password" };
+const fixturePath = (name: string) => resolve("tests/unit/ops/fixtures", name);
 
 describe("fetchFastspringOrderIds", () => {
   it("requests completed live product orders and follows FastSpring pagination", async () => {
@@ -121,5 +124,85 @@ describe("runReconciliation", () => {
       ],
     });
     expect(result.exitCode).toBe(0);
+  });
+});
+
+describe("main exit codes", () => {
+  it("returns 0 for a fixture with no drift without initializing live dependencies", async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    const createQuery = vi.fn();
+    const loadEnvironment = vi.fn();
+
+    await expect(main(
+      ["--dry-run", "--fixture", fixturePath("no-drift.json")],
+      { fetchImpl, createQuery, loadEnvironment, log: vi.fn(), logError: vi.fn() },
+    )).resolves.toBe(0);
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(createQuery).not.toHaveBeenCalled();
+    expect(loadEnvironment).not.toHaveBeenCalled();
+  });
+
+  it("returns 1 for a fixture with missing orders without initializing live dependencies", async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    const createQuery = vi.fn();
+    const loadEnvironment = vi.fn();
+
+    await expect(main(
+      ["--dry-run", "--fixture", fixturePath("drift.json")],
+      { fetchImpl, createQuery, loadEnvironment, log: vi.fn(), logError: vi.fn() },
+    )).resolves.toBe(1);
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(createQuery).not.toHaveBeenCalled();
+    expect(loadEnvironment).not.toHaveBeenCalled();
+  });
+
+  it("returns 3 when the injected FastSpring fetch fails and never queries the database", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockRejectedValue(new Error("network unavailable"));
+    const queryOrders = vi.fn();
+    const createQuery = vi.fn(() => queryOrders);
+    const logError = vi.fn();
+
+    await expect(main([], {
+      env: {
+        FASTSPRING_API_USERNAME: "api-user",
+        FASTSPRING_API_PASSWORD: "api-password",
+        DATABASE_URL: "postgresql://unused",
+      },
+      loadEnvironment: vi.fn(),
+      fetchImpl,
+      createQuery,
+      log: vi.fn(),
+      logError,
+    })).resolves.toBe(3);
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(queryOrders).not.toHaveBeenCalled();
+    expect(logError).toHaveBeenCalledWith(
+      "[reconcile-fastspring-orders] network unavailable",
+    );
+  });
+
+  it("returns 3 and fails closed before live access when credentials are missing", async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    const createQuery = vi.fn();
+    const logError = vi.fn();
+
+    await expect(main([], {
+      env: {},
+      loadEnvironment: vi.fn(),
+      fetchImpl,
+      createQuery,
+      log: vi.fn(),
+      logError,
+    })).resolves.toBe(3);
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(createQuery).not.toHaveBeenCalled();
+    expect(logError).toHaveBeenCalledWith(
+      "[reconcile-fastspring-orders] Refusing live reconciliation: missing required environment variables: " +
+      "FASTSPRING_API_USERNAME, FASTSPRING_API_PASSWORD, DATABASE_URL",
+    );
   });
 });

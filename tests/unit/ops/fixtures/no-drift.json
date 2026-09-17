@@ -1,0 +1,11 @@
+{
+  "fastspringOrderIds": ["MATCHED"],
+  "databaseOrders": [
+    {
+      "orderId": "MATCHED",
+      "webhookEventId": "evt-1",
+      "webhookStatus": "processed",
+      "hasLicense": true
+    }
+  ]
+}
