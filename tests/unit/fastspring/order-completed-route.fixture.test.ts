@@ -98,6 +98,7 @@ describe("FastSpring route — official envelope fixtures", () => {
       errorMessage: SKIPPED_TEST_MARKER,
       completedAt: expect.any(Date),
     });
+    expect(txUpdates.at(-1)).not.toHaveProperty("status");
   });
 
   it("iterates every event in a multi-event FastSpring envelope", async () => {
