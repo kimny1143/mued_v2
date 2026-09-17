@@ -7,13 +7,18 @@ import { describe, it, expect } from "vitest";
 import { LEARN_SLUGS, getLearnArticle, getAllLearnArticles } from "@/lib/learn/articles";
 
 describe("learn articles loader", () => {
-  it("exposes the pillar + 4 cluster slugs (pillar first)", () => {
+  it("LEARN_SLUGS = pillar + 4 loudness cluster slugs + 5 mastering-practice cluster slugs (batch 2)", () => {
     expect([...LEARN_SLUGS]).toEqual([
       "loudness-and-true-peak",
       "what-is-lufs",
       "lufs-targets-streaming",
       "true-peak-vs-sample-peak",
       "set-true-peak-ceiling",
+      "headroom-before-mastering",
+      "limiter-release-and-lookahead",
+      "mono-compatibility-phase-check",
+      "dither-when-it-matters",
+      "streaming-loudness-normalization",
     ]);
   });
 
@@ -57,7 +62,7 @@ describe("learn articles loader", () => {
     expect(getLearnArticle("")).toBeNull();
   });
 
-  it("getAllLearnArticles returns all 5 in slug order (pillar first)", () => {
+  it("getAllLearnArticles returns all 10 in slug order (pillar first)", () => {
     expect(getAllLearnArticles().map((a) => a.slug)).toEqual([...LEARN_SLUGS]);
   });
 });

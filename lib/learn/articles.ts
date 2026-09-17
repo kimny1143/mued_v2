@@ -21,6 +21,11 @@ export const LEARN_SLUGS = [
   "lufs-targets-streaming",
   "true-peak-vs-sample-peak",
   "set-true-peak-ceiling",
+  "headroom-before-mastering",
+  "limiter-release-and-lookahead",
+  "mono-compatibility-phase-check",
+  "dither-when-it-matters",
+  "streaming-loudness-normalization",
 ] as const;
 export type LearnSlug = (typeof LEARN_SLUGS)[number];
 
