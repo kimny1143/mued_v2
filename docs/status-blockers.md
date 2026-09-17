@@ -1160,6 +1160,29 @@ source にしない）まで塞いでいた ——★**基準は下限であっ�
 
 ### (1k) — ★Codex 5 件の受け入れレビュー実績と、そこで出た型（2026-09-17）
 
+> ★★**着地（2026-09-17）**: ★5 件すべて決着。★#1064 #1066 #1067 #1065 merged ／ ★#1062 は受け入れ済で ★merge は開店後。
+> ★**#1065 は kimny 逐語「Go」で merge → ★本番に公開された**（★下記「公開の検収」）。
+
+### ★公開の検収 — ★merge は公開ではない（Learn 第2弾）
+
+★**merge 直後に測ると ★5 本すべて 404 だった**（★deploy 未着）。★∴ ★**「merged」を「公開」と報告しない。**
+```
+★merge 直後 … 新 5 本 ★404 ／ index ★0 本 ／ sitemap ★0 本 ／ ★陽性control（既存 pillar）200
+              ★検収 script の rc=1 ＝ ★**「公開」とも「非公開」とも報告しない**（3 値）
+★deploy 着後 … 新 5 本 ★200 ／ index ★5/5 ／ sitemap ★5/5 ／ 陽性control 200 ＝ ★rc=0
+```
+★**3 面（記事本体・index・sitemap）で測った理由**: ★記事が 200 でも ★index に出なければ読者は辿れず、
+★sitemap に無ければ検索から入れない ——★**「公開」は 1 つの述語では決まらない**（→ [[feedback-shipped-but-unreachable-is-silent]]）。
+
+### ★Tier の判定（★conductor の script が正しく、★label が誤っていた）
+
+★#1065 は ★conductor が Tier 1 と申告したが、★実 diff に `.ts` が ★2 本
+（★`lib/learn/articles.ts` ＝ ★**本番コード**／`tests/unit/learn-articles.test.ts`）。
+★∴ ★**Tier 1（docs・データ・コピー・テスト追加のみ）には当たらない。**
+★conductor の merge script が ★Tier 1 self-merge を拒んだのは ★正しい挙動で、★label の方が誤っていた。
+★**「content の PR だから Tier 1」ではなく ★registry の 1 行が本番コードか**で決まる
+（→ [[feedback-tier-is-decided-by-parse-not-by-counting]]）。
+
 ★**kimny 裁定（9/17）＝実装は Codex／Claude は計画・管理・レビュー**の初日の記録。
 ★**基準を PR が立つ前に書く**（(1i)(1j)）を実践した結果を、★数で残す。
 
