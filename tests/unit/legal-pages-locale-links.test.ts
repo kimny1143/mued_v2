@@ -26,7 +26,7 @@ import { join } from "node:path";
  * 取りこぼしを「registry は filesystem の部分集合にしかなれない」と書いているのに、
  * ★この配列自身が同じ形をしていた。
  */
-const LEGAL_PAGES = ["privacy", "support", "tokushoho", "terms", "refund"] as const;
+const LEGAL_PAGES = ["privacy", "support", "tokushoho", "terms", "refund", "eula"] as const;
 
 /**
  * ★locale page のうち「法定表記の面ではない」もの。★理由つきで名指しする。
@@ -38,7 +38,7 @@ const LEGAL_PAGES = ["privacy", "support", "tokushoho", "terms", "refund"] as co
  *
  * ★閉じるには母集団の軸を ★filesystem へ移す必要がある ——★それが この表。
  * ★`app/[locale]/*​/page.tsx` の実在から引き、★LEGAL_PAGES と ここ の ★どちらにも無い面は落とす。
- * ★∴ ★**次に legale 面を足す人は、分類するまで CI が通らない**（★黙って母集団の外に出られない）。
+ * ★∴ ★**次に legal 面を足す人は、分類するまで CI が通らない**（★黙って母集団の外に出られない）。
  * ★同じ形の前例＝`locale-page-bare-paths.test.ts` の EXEMPT（★あちらも filesystem 由来）。
  *
  * ★★**この軸の射程 ＝ `app/[locale]` の ★直下だけ。★入れ子は見ない**（CCO 実測 2026-09-16・残差3）。
@@ -47,13 +47,13 @@ const LEGAL_PAGES = ["privacy", "support", "tokushoho", "terms", "refund"] as co
  *                                          ★母集団に すら 入らない
  *   ★現に `app/[locale]/story/[slug]/page.tsx` は生きた公開面だが、★`story` に page.tsx が無いので
  *   ★分類の外に在る（★story は legal 面でないので ★今日の実害はゼロ）。
- * ★∴ ★**この軸は「legal 面が depth 1 に在る」ことを仮定する。** ★`/eula` は depth 1 の予定ゆえ足りる。
+ * ★∴ ★**この軸は「legal 面が depth 1 に在る」ことを仮定する。** ★`/eula` は depth 1 に置いたため足りる。
  * ★**再帰にしない理由**: route segment の意味（`[slug]` / route group / `@slot`）を test が
  *   解釈し始め、★別種の誤りが入る（CCO 推奨）。★入れ子の legal 面を置く日に再帰を入れる
  *   ——★その判断が必要になったことが分かるよう、ここに書いておく。
  *
- * ★/eula は近く足る見込み（EULA 本文が弁護士から届いた時点）。★その時 ここか LEGAL_PAGES の
- * ★どちらかに入れることになる ——★それが この表の主目的。
+ * ★/eula は 2026-09-17 に depth 1 へ追加し、LEGAL_PAGES に分類した。弁護士本文待ちの staged
+ * ★ページも母集団の外へ逃がさない ——★それが この表の主目的。
  */
 const NON_LEGAL_LOCALE_PAGES: Record<string, string> = {
   advisory: "サービス紹介（storefront）。法定表記は /tokushoho が担う",
@@ -81,9 +81,12 @@ describe("legal pages — internal links carry the locale", () => {
     expect(bare).toEqual([]);
   });
 
-  it.each(LEGAL_PAGES)("%s/page.tsx links its siblings + home under /${locale}", (page) => {
+  it.each(LEGAL_PAGES)("%s/page.tsx links its published siblings + home under /${locale}", (page) => {
     const src = readPage(page);
-    const siblings = LEGAL_PAGES.filter((p) => p !== page);
+    // EULA is the only staged legal page. Its own preview links back to every published sibling;
+    // existing pages are not required to expose it until EULA_LIVE. Terms/refund carry that staged
+    // return link because they are the matching FastSpring purchase-policy surfaces.
+    const siblings = LEGAL_PAGES.filter((p) => p !== page && p !== "eula");
     for (const sibling of siblings) {
       expect(src).toContain("`/${locale}/" + sibling + "`");
     }
@@ -91,6 +94,13 @@ describe("legal pages — internal links carry the locale", () => {
     const header = readFileSync(join(process.cwd(), "components/brand/brand-header.tsx"), "utf8");
     expect(header).toContain("href={`/${locale}`}"); // shared MUED home link
     expect(header).toContain("href={`/${locale}/support`}");
+  });
+
+  it.each(["terms", "refund"] as const)("%s links EULA only behind EULA_LIVE", (page) => {
+    const src = readPage(page);
+    expect(src).toContain('import { EULA_LIVE } from "@/lib/legal/config"');
+    expect(src).toContain("{EULA_LIVE && (");
+    expect(src).toContain("`/${locale}/eula`");
   });
 });
 
@@ -261,15 +271,8 @@ describe("next.config — bare /tokushoho safety net", () => {
 });
 
 /**
- * The two pages added for FastSpring store activation. Pinned separately from LEGAL_PAGES above because
- * that list still holds the original trio: these two are NOT yet in it, so the cross-link assertions do
- * not cover them. That is tracked, not forgotten — see docs/status-blockers.md (0x). Expanding the list
- * means every legal page must link every other one, which is a copy change to privacy/support/tokushoho
- * and belongs with the /tokushoho revision that kimny eyeballs, not here.
- *
- * What IS enforced here is the part that blocks checkout: FastSpring's dashboard cites these URLs once
- * and then serves them to every buyer, so a bare path that 404s is a store failure. Their absence was
- * caught by locale-page-bare-paths.test.ts, whose population is the filesystem rather than a list.
+ * The two pages added for FastSpring store activation. They are also in LEGAL_PAGES above; these
+ * assertions separately pin the bare redirects that FastSpring's dashboard may cite directly.
  */
 describe("next.config — bare /terms + /refund (FastSpring activation)", () => {
   it.each(["terms", "refund"])("redirects /%s to its /en page, temporarily (307)", async (page) => {

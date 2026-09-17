@@ -27,6 +27,9 @@ const LOCALE_DIR = join(process.cwd(), "app", "[locale]");
  * name: the next person has to be able to tell a deliberate exemption from a forgotten one.
  */
 const EXEMPT: Record<string, string> = {
+  eula:
+    "staged locale-only legal route — purchase consent and legal sibling links always carry /{locale}; " +
+    "a bare redirect is intentionally omitted because next.config.ts is out of scope for this scaffold",
   redesign:
     "noindex preview route for the kimny 現物 gate — its own header says 'never a public surface', " +
     "so a bare entry would advertise something not meant to be found",

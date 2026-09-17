@@ -287,6 +287,15 @@
       }
     }
   },
+  "eula": {
+    "title": "End User License Agreement",
+    "lastUpdated": "Pending lawyer-approved text",
+    "body": "EULA text pending - [EULA URL]",
+    "contact": {
+      "title": "Contact",
+      "body": "Questions about this agreement:"
+    }
+  },
   "terms": {
     "title": "Terms of Service",
     "lastUpdated": "Last updated: September 16, 2026",
@@ -2334,6 +2343,8 @@
       "body": "I'm bundling the chain I always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details. Still building it.",
       "priceNote": "One-time $69. Available at launch.",
       "buyLabel": "Coming soon",
+      "eulaConsentPrefix": "I have read and agree to the",
+      "eulaLabel": "EULA",
       "mockLabel": "A work-in-progress screen — not the real thing yet.",
       "controlsLead": "Here's roughly how it'll work.",
       "controls": {

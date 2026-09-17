@@ -55,9 +55,10 @@ const event = {
     // ★**実在しない shape**（`data.account` は string）∴ ★fixture を実物に合わせる。
     recipients: [{ recipient: { email: "Buyer@Example.com", first: "Ada", last: "Lovelace" } }],
     total: 69,
+    changed: Date.parse("2026-09-17T01:02:03.000Z"),
     currency: "USD",
     address: { country: "US" },
-    tags: {},
+    tags: { eula_version: "2026-09-17-v1" },
   },
 };
 
@@ -92,13 +93,14 @@ afterEach(() => {
 describe("handleFastspringOrderCompleted — issuance", () => {
   it("issues a verifiable license, records it, and emails it once", async () => {
     const { tx, inserted } = makeTx([]);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handleFastspringOrderCompleted(tx as any, event);
 
     expect(inserted).toHaveLength(1);
     const row = inserted[0];
     expect(row.orderId).toBe("ORDER-777");
     expect(row.email).toBe("buyer@example.com");
+    expect(row.eulaVersion).toBe("2026-09-17-v1");
+    expect(row.eulaAcceptedAt).toEqual(new Date("2026-09-17T01:02:03.000Z"));
 
     // ★The stored value must be a license OUR public key verifies — not an opaque string — and it
     // must be format v2 (the shape dsp's verifier reads), not something this side invented.
@@ -118,13 +120,21 @@ describe("handleFastspringOrderCompleted — issuance", () => {
   it("★on a FastSpring retry, reuses the stored key and does NOT email again", async () => {
     const alreadyIssued = "-----BEGIN MUEDSP LICENSE-----\nalready.issued\n-----END MUEDSP LICENSE-----";
     const { tx, inserted } = makeTx([{ licenseKey: alreadyIssued }]);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handleFastspringOrderCompleted(tx as any, event);
 
     // The insert still runs (onConflictDoNothing makes it a no-op) but must carry the SAME key —
     // never a freshly signed one, which would disagree with what the buyer already holds.
     expect(inserted[0].licenseKey).toBe(alreadyIssued);
     expect(sendMasterchainLicenseDelivery).not.toHaveBeenCalled();
+  });
+
+  it("★leaves EULA columns unset when the checkout tag is absent", async () => {
+    const { tx, inserted } = makeTx([]);
+    const withoutEula = { ...event, data: { ...event.data, tags: {} } };
+    await handleFastspringOrderCompleted(tx as any, withoutEula);
+
+    expect(inserted[0].eulaVersion).toBeUndefined();
+    expect(inserted[0].eulaAcceptedAt).toBeUndefined();
   });
 });
 
@@ -133,7 +143,6 @@ describe("handleFastspringOrderCompleted — fail-closed", () => {
     delete process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY;
     const { tx, inserted } = makeTx([]);
     await expect(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       handleFastspringOrderCompleted(tx as any, event),
     ).rejects.toThrow(/cannot issue license/);
 
@@ -145,7 +154,6 @@ describe("handleFastspringOrderCompleted — fail-closed", () => {
     sendMasterchainLicenseDelivery.mockResolvedValue({ success: false, error: "resend down" });
     const { tx } = makeTx([]);
     await expect(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       handleFastspringOrderCompleted(tx as any, event),
     ).rejects.toThrow(/license delivery email failed/);
   });
@@ -154,7 +162,6 @@ describe("handleFastspringOrderCompleted — fail-closed", () => {
     sendMasterchainLicenseDelivery.mockRejectedValue(new Error("boom"));
     const { tx } = makeTx([]);
     await expect(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       handleFastspringOrderCompleted(tx as any, event),
     ).rejects.toThrow(/license delivery email failed/);
   });
@@ -179,7 +186,6 @@ describe("handleFastspringOrderCompleted — fail-closed", () => {
   it("does not leak key material in the thrown message", async () => {
     delete process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY;
     const { tx } = makeTx([]);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const err = await handleFastspringOrderCompleted(tx as any, event).catch((e: Error) => e);
     expect((err as Error).message).not.toContain("PRIVATE KEY");
     expect((err as Error).message).not.toContain("BEGIN");

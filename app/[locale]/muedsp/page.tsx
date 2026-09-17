@@ -9,6 +9,7 @@ import { locales, type Locale } from "@/lib/i18n/config";
 import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
 import { MUEDSP_LIVE } from "@/lib/muedsp/config";
 import { MuedspLandingContent } from "@/components/features/muedsp-landing";
+import { EULA_LIVE } from "@/lib/legal/config";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -80,7 +81,7 @@ export default async function MuedspPage({ params }: PageProps) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       )}
-      <MuedspLandingContent />
+      <MuedspLandingContent eulaLive={EULA_LIVE} />
     </>
   );
 }

@@ -26,6 +26,20 @@ async function load(env: Partial<Record<string, string>>) {
 
 const CONFIGURED = { [STOREFRONT]: "mued.test.onfastspring.com", [PRODUCT]: "muedsp-masterchain" };
 
+function checkoutBuilder() {
+  const pushed: Record<string, unknown>[] = [];
+  const tagged: Record<string, string>[] = [];
+  const checkout = vi.fn();
+  (window as unknown as { fastspring: unknown }).fastspring = {
+    builder: {
+      push: (p: Record<string, unknown>) => pushed.push(p),
+      tag: (tags: Record<string, string>) => tagged.push(tags),
+      checkout,
+    },
+  };
+  return { pushed, tagged, checkout };
+}
+
 beforeEach(() => {
   document.head.innerHTML = "";
   document.cookie = "";
@@ -44,7 +58,7 @@ describe("★env unset — the page must behave exactly as it did before this fe
     //   storefront configured must not even fetch a third-party script.
     expect(document.getElementById("fsc-api")).toBeNull();
     expect(document.head.querySelectorAll("script").length).toBe(0);
-    expect(m.openCheckout()).toBe(false);
+    expect(m.openCheckout({ eulaAccepted: true })).toBe(false);
   });
 
   it("★★one identifier is not enough — half-configured stays disabled", async () => {
@@ -91,16 +105,30 @@ describe("★tags — a purchase is not an opt-in", () => {
     // ★The note at the Buy slot says "without it the purchase event is skipped" — we lose the
     //   measurement, never the sale. ★This is the assertion that keeps that true.
     const m = await load(CONFIGURED);
-    const pushed: Record<string, unknown>[] = [];
-    (window as unknown as { fastspring: unknown }).fastspring = {
-      builder: { push: (p: Record<string, unknown>) => pushed.push(p), checkout: () => {} },
-    };
+    const { pushed, tagged } = checkoutBuilder();
     expect(document.cookie).not.toContain("_ga"); // no GA cookie in this test
-    expect(m.openCheckout(true)).toBe(true);
+    expect(m.openCheckout({ eulaAccepted: true, marketingConsent: true })).toBe(true);
     expect(pushed).toHaveLength(1);
-    const tags = pushed[0].tags as Record<string, string>;
+    expect(tagged).toHaveLength(1);
+    const tags = tagged[0];
     expect("gaClientId" in tags).toBe(false);
     expect(tags.marketingConsent).toBe("true");
+  });
+
+  it("★★fails closed before consent and writes the accepted EULA version with builder.tag()", async () => {
+    const m = await load(CONFIGURED);
+    const { EULA_VERSION } = await import("@/lib/legal/eula");
+    const { pushed, tagged, checkout } = checkoutBuilder();
+
+    expect(m.openCheckout({ eulaAccepted: false })).toBe(false);
+    expect(pushed).toHaveLength(0);
+    expect(tagged).toHaveLength(0);
+    expect(checkout).not.toHaveBeenCalled();
+
+    expect(m.openCheckout({ eulaAccepted: true })).toBe(true);
+    expect(pushed).toHaveLength(1);
+    expect(tagged).toEqual([expect.objectContaining({ eula_version: EULA_VERSION })]);
+    expect(checkout).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -128,7 +156,7 @@ describe("★loadCheckoutScript always settles", () => {
 describe("★openCheckout never throws its way out", () => {
   it("★returns false when the builder is absent rather than blowing up the click handler", async () => {
     const m = await load(CONFIGURED);
-    expect(m.openCheckout()).toBe(false);
+    expect(m.openCheckout({ eulaAccepted: true })).toBe(false);
   });
 
   it("★returns false when the builder throws", async () => {
@@ -138,9 +166,10 @@ describe("★openCheckout never throws its way out", () => {
         push: () => {
           throw new Error("storefront rejected the session");
         },
+        tag: () => {},
         checkout: () => {},
       },
     };
-    expect(m.openCheckout()).toBe(false);
+    expect(m.openCheckout({ eulaAccepted: true })).toBe(false);
   });
 });
