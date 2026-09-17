@@ -58,7 +58,7 @@ function SignupForm({ plugin = "muedsat" as PluginKey } = {}) {
   );
 }
 
-export function MuedspLandingContent({ eulaLive }: { eulaLive: boolean }) {
+export function MuedspLandingContent() {
   const locale = useLocale();
   const isJa = locale === "ja";
 
@@ -193,7 +193,6 @@ export function MuedspLandingContent({ eulaLive }: { eulaLive: boolean }) {
                 buyLabel={tmc("buyLabel")}
                 consentPrefix={tmc("eulaConsentPrefix")}
                 eulaLabel={tmc("eulaLabel")}
-                eulaLive={eulaLive}
               />
             </div>
             <a

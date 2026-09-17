@@ -26,7 +26,7 @@ import { join } from "node:path";
  * 取りこぼしを「registry は filesystem の部分集合にしかなれない」と書いているのに、
  * ★この配列自身が同じ形をしていた。
  */
-const LEGAL_PAGES = ["privacy", "support", "tokushoho", "terms", "refund", "eula"] as const;
+const LEGAL_PAGES = ["privacy", "support", "tokushoho", "terms", "refund"] as const;
 
 /**
  * ★locale page のうち「法定表記の面ではない」もの。★理由つきで名指しする。
@@ -52,11 +52,12 @@ const LEGAL_PAGES = ["privacy", "support", "tokushoho", "terms", "refund", "eula
  *   解釈し始め、★別種の誤りが入る（CCO 推奨）。★入れ子の legal 面を置く日に再帰を入れる
  *   ——★その判断が必要になったことが分かるよう、ここに書いておく。
  *
- * ★/eula は 2026-09-17 に depth 1 へ追加し、LEGAL_PAGES に分類した。弁護士本文待ちの staged
- * ★ページも母集団の外へ逃がさない ——★それが この表の主目的。
+ * ★/eula は 2026-09-17 に depth 1 へ追加した。EULA_LIVE=false の staged page なので、公開回に
+ * ★LEGAL_PAGES へ移すまでは理由つきで NON_LEGAL に分類し、母集団の外へ逃がさない。
  */
 const NON_LEGAL_LOCALE_PAGES: Record<string, string> = {
   advisory: "サービス紹介（storefront）。法定表記は /tokushoho が担う",
+  eula: "EULA_LIVE=false so not published; move to LEGAL_PAGES when going live",
   muedial: "製品 LP。法定表記は /tokushoho が担う",
   muedlim: "製品 LP（無料プラグイン）",
   muedrive: "製品 LP（無料プラグイン）",
@@ -83,10 +84,7 @@ describe("legal pages — internal links carry the locale", () => {
 
   it.each(LEGAL_PAGES)("%s/page.tsx links its published siblings + home under /${locale}", (page) => {
     const src = readPage(page);
-    // EULA is the only staged legal page. Its own preview links back to every published sibling;
-    // existing pages are not required to expose it until EULA_LIVE. Terms/refund carry that staged
-    // return link because they are the matching FastSpring purchase-policy surfaces.
-    const siblings = LEGAL_PAGES.filter((p) => p !== page && p !== "eula");
+    const siblings = LEGAL_PAGES.filter((p) => p !== page);
     for (const sibling of siblings) {
       expect(src).toContain("`/${locale}/" + sibling + "`");
     }
@@ -247,6 +245,9 @@ describe("★母集団の軸を filesystem へ ——「分類し忘れ」を落
       expect(reason.length, `${name} の理由が空`).toBeGreaterThan(0);
       expect(LEGAL_PAGES as readonly string[], `${name} が両方に在る`).not.toContain(name);
     }
+    expect(NON_LEGAL_LOCALE_PAGES.eula).toBe(
+      "EULA_LIVE=false so not published; move to LEGAL_PAGES when going live",
+    );
   });
 });
 

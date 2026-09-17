@@ -53,13 +53,19 @@ function EulaContent({ locale }: { locale: string }) {
           <p className="text-sm text-slate-500 mb-8">{t("lastUpdated")}</p>
 
           <section className="mb-8">
-            <p className="text-slate-400 whitespace-pre-line">{t("body")}</p>
+            <h2 className="text-xl font-semibold text-white mb-4">{t("sections.status.heading")}</h2>
+            <p className="text-slate-400">{t("sections.status.body")}</p>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">{t("contact.title")}</h2>
+            <h2 className="text-xl font-semibold text-white mb-4">{t("sections.agreement.heading")}</h2>
+            <p className="text-slate-400">{t("sections.agreement.body")}</p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">{t("sections.contact.heading")}</h2>
             <p className="text-slate-400">
-              {t("contact.body")}{" "}
+              {t("sections.contact.body")}{" "}
               <a href="mailto:support@mued.jp" className="text-blue-400 hover:underline">
                 support@mued.jp
               </a>

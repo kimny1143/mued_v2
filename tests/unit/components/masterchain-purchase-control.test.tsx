@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { AnchorHTMLAttributes } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { loadCheckoutScript, openCheckout } = vi.hoisted(() => ({
   loadCheckoutScript: vi.fn(() => Promise.resolve(true)),
@@ -19,19 +19,33 @@ vi.mock("@/lib/masterchain/fastspring-checkout", () => ({
   openCheckout,
 }));
 
-import { MasterchainPurchaseControl } from "@/components/features/muedsp-landing/masterchain-purchase-control";
-
 const props = {
   locale: "en",
   buyLabel: "Buy",
   consentPrefix: "I have read and agree to the",
   eulaLabel: "EULA",
-  eulaLive: true,
 };
 
 describe("masterchain EULA consent gate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  async function renderControl(live: boolean) {
+    vi.stubEnv("NEXT_PUBLIC_EULA_LIVE", live ? "1" : "");
+    const { MasterchainPurchaseControl } = await import(
+      "@/components/features/muedsp-landing/masterchain-purchase-control"
+    );
+    return render(<MasterchainPurchaseControl {...props} />);
+  }
+
   it("keeps Buy disabled until consent, then opens checkout with explicit acceptance", async () => {
-    render(<MasterchainPurchaseControl {...props} />);
+    await renderControl(true);
 
     const checkbox = screen.getByRole("checkbox", { name: /I have read and agree to the EULA/i });
     const button = screen.getByRole("button", { name: "Buy" });
@@ -46,10 +60,11 @@ describe("masterchain EULA consent gate", () => {
     expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true });
   });
 
-  it("stays fail-closed while the EULA is staged", () => {
-    render(<MasterchainPurchaseControl {...props} eulaLive={false} />);
+  it("stays fail-closed and renders no EULA link while the client gate is staged", async () => {
+    await renderControl(false);
 
-    expect(screen.getByRole("checkbox")).toBeDisabled();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "EULA" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Buy" })).toBeDisabled();
     expect(loadCheckoutScript).not.toHaveBeenCalled();
     expect(openCheckout).not.toHaveBeenCalled();

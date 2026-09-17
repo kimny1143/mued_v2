@@ -8,12 +8,15 @@ import {
   openCheckout,
 } from "@/lib/masterchain/fastspring-checkout";
 
+// Client gate: NEXT_PUBLIC_EULA_LIVE is read directly so Next.js inlines it at build time. Do not
+// replace this with the server-only EULA_LIVE flag; both flags must be enabled for publication.
+const EULA_CONSENT_LIVE = process.env.NEXT_PUBLIC_EULA_LIVE === "1";
+
 interface MasterchainPurchaseControlProps {
   locale: string;
   buyLabel: string;
   consentPrefix: string;
   eulaLabel: string;
-  eulaLive: boolean;
 }
 
 export function MasterchainPurchaseControl({
@@ -21,13 +24,12 @@ export function MasterchainPurchaseControl({
   buyLabel,
   consentPrefix,
   eulaLabel,
-  eulaLive,
 }: MasterchainPurchaseControlProps) {
   const [checkoutReady, setCheckoutReady] = useState(false);
   const [eulaAccepted, setEulaAccepted] = useState(false);
 
   useEffect(() => {
-    if (!MASTERCHAIN_CHECKOUT_ENABLED || !eulaLive) return;
+    if (!MASTERCHAIN_CHECKOUT_ENABLED || !EULA_CONSENT_LIVE) return;
     let alive = true;
     void loadCheckoutScript().then((ok) => {
       if (alive) setCheckoutReady(ok);
@@ -35,31 +37,32 @@ export function MasterchainPurchaseControl({
     return () => {
       alive = false;
     };
-  }, [eulaLive]);
+  }, []);
 
-  const canPurchase = checkoutReady && eulaLive && eulaAccepted;
+  const canPurchase = checkoutReady && EULA_CONSENT_LIVE && eulaAccepted;
 
   return (
     <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
-      <label className="flex max-w-sm items-start gap-2 text-sm leading-relaxed text-white/65 sm:max-w-xs">
-        <input
-          type="checkbox"
-          checked={eulaAccepted}
-          disabled={!eulaLive}
-          onChange={(event) => setEulaAccepted(event.target.checked)}
-          className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]"
-        />
-        <span>
-          {consentPrefix}{" "}
-          <Link
-            href={`/${locale}/eula`}
-            className="text-[#f5a524] underline decoration-[#f5a524]/40 underline-offset-2 hover:text-[#ffc35a]"
-          >
-            {eulaLabel}
-          </Link>
-          .
-        </span>
-      </label>
+      {EULA_CONSENT_LIVE && (
+        <label className="flex max-w-sm items-start gap-2 text-sm leading-relaxed text-white/65 sm:max-w-xs">
+          <input
+            type="checkbox"
+            checked={eulaAccepted}
+            onChange={(event) => setEulaAccepted(event.target.checked)}
+            className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]"
+          />
+          <span>
+            {consentPrefix}{" "}
+            <Link
+              href={`/${locale}/eula`}
+              className="text-[#f5a524] underline decoration-[#f5a524]/40 underline-offset-2 hover:text-[#ffc35a]"
+            >
+              {eulaLabel}
+            </Link>
+            .
+          </span>
+        </label>
+      )}
 
       <button
         type="button"

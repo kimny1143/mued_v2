@@ -28,8 +28,8 @@ const LOCALE_DIR = join(process.cwd(), "app", "[locale]");
  */
 const EXEMPT: Record<string, string> = {
   eula:
-    "staged locale-only legal route — purchase consent and legal sibling links always carry /{locale}; " +
-    "a bare redirect is intentionally omitted because next.config.ts is out of scope for this scaffold",
+    "EULA_LIVE=false so not published; move to LEGAL_PAGES when going live. The staged consent " +
+    "route is locale-only, and its bare redirect remains intentionally omitted.",
   redesign:
     "noindex preview route for the kimny 現物 gate — its own header says 'never a public surface', " +
     "so a bare entry would advertise something not meant to be found",

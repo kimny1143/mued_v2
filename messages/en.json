@@ -289,11 +289,20 @@
   },
   "eula": {
     "title": "End User License Agreement",
-    "lastUpdated": "Pending lawyer-approved text",
-    "body": "EULA text pending - [EULA URL]",
-    "contact": {
-      "title": "Contact",
-      "body": "Questions about this agreement:"
+    "lastUpdated": "Status: placeholder pending lawyer-approved text",
+    "sections": {
+      "status": {
+        "heading": "Publication status",
+        "body": "Placeholder only: the lawyer-approved EULA text and effective date have not yet been supplied. This preview is not the final agreement."
+      },
+      "agreement": {
+        "heading": "License terms",
+        "body": "The final license terms will replace this placeholder before the EULA and purchase consent are published."
+      },
+      "contact": {
+        "heading": "Contact",
+        "body": "Questions about this placeholder:"
+      }
     }
   },
   "terms": {
