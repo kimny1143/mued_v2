@@ -885,3 +885,65 @@ https://developer.fastspring.com/reference/processed-and-unprocessed-webhook-eve
 
 ★**無し**（★記録のみ）。★3 の設計変更は ★開店後に判断する材料として置く。
 ★4 は ★監視の論点なので ★conductor の台帳へ回す（★当課からは起こさない）。
+
+### (1i) — ★実装は Codex・当課は受け入れレビュー（kimny 裁定 2026-09-17）／★(W14) の受け入れ基準を先に置く
+
+★**kimny 裁定（2026-09-17・conductor relay）**: ★**実装は Codex へ寄せ、Claude 側は計画・管理・レビューに徹する。**
+★conductor が mued_v2 の ★隔離 worktree（`/tmp/codex-spawn/<task>`・branch `fix/<task>`）で 2 件 起動:
+
+```
+★① downloads-alias-redirect-20260917 … ★(W14) alias→canonical の 307 redirect
+     ★射程＝`next.config.ts` の redirects() ＋ `tests/unit` のみ・★public/ app/ lib/ は不触
+     ★merge は ★開店後
+★② learn-batch2-20260917 … ★Learn 記事 第2弾 5 本の下書き（`content/learn`）
+     ★公開しない・★kimny 目視前 ∴ ★merge は kimny の「Go」後
+```
+
+★★**当課は (W14) に着手しない**（★二重編集回避・conductor 明示）。★当課の手番は ★**受け入れレビュー**に変わった。
+
+### ★① の受け入れ基準（★当課の実測から先に書く・2026-09-17）
+
+★**PR が立つ前に書く理由**: ★基準を後から作ると ★実装に合わせて基準が動く
+（→ [[feedback-the-check-must-not-share-an-origin-with-the-checked]]）。
+
+**A. 射程**（`gh pr view <n> --json files` で見る・★申告と実 diff を突き合わせる）
+- ★`next.config.ts` と `tests/unit/**` ★のみ。★`public/` `app/` `lib/` に 1 行でも入っていたら ★差し戻し
+
+**B. mapping（★5 本すべて・★当課が実測した対応）**
+```
+MUEDlim-0.1.0-alpha-installer.pkg   → MUEDlim-0.1.2-installer.pkg
+MUEDlim-0.1.1-alpha-installer.pkg   → MUEDlim-0.1.2-installer.pkg
+MUEDrive-0.1.0-alpha-installer.pkg  → MUEDrive-0.1.2-installer.pkg
+MUEDsat-0.1.0-alpha-installer.pkg   → MUEDsat-0.1.2-installer.pkg
+MUEDsat-0.1.1-alpha-installer.pkg   → MUEDsat-0.1.2-installer.pkg
+```
+★**5 本とも在ること**と ★**canonical 側の綴りが `lib/*/config.ts` と一致すること**を見る
+（★値を焼いた mapping は ★config が動いた日に黙って古くなる ——★(1c) で踏んだ形）。
+
+**C. status code** … ★`permanent: false`（★= 307）。★conductor が「307 で可・middleware 不要」を確認済（(1d)）
+∴ ★`permanent: true`（308）になっていたら差し戻し。
+
+**D. ★file を消していないこと**（★最重要）
+- ★`public/downloads/*.pkg` は ★**9 本のまま**（canonical 4 ＋ alias 5）
+- ★特に ★**`MUEDrive-0.1.0-alpha`（sha `77a13bd14bb3`）は dsp の dist に無い唯一の実体**
+  ∴ ★削除は ★不可逆。★1 本でも減っていたら ★差し戻し
+
+**E. test が測っている性質**
+- ★mapping 5 本の ★source と destination の対応
+- ★★**destination が実在すること**（★でないと ★「redirect 先が 404」を緑にする ——★(1c) の #1048 で踏んだ形）
+- ★`permanent: false` の pin
+
+**F. drift の無いこと**
+- ★`next.config.ts` に ★`images` / `remotePatterns` / `formats` が ★入っていないこと
+  ——★入ると ★**(W2d) の前提②③⑤ が変わる**（★(1f) の再評価の引き金）∴ ★同じ PR に混ぜさせない
+
+**G. 開店後**
+- ★CI 緑 ＋ 上記 A〜F でも ★**merge は開店後**（conductor 明示）。★当課は ★早く押さない
+
+### ★② の受け入れ基準（★Tier 1・kimny 目視前）
+
+- ★`content/learn` の ★下書きのみ。★`LEARN_LIVE` や sitemap / robots に触っていないこと
+  （★触ると ★「下書き」でなく ★公開になる ——★公開の機構は製品ごとに違う・memory 参照）
+- ★数値（LUFS / dBTP）を書いているなら ★**一次情報の URL と確認日**が併記されていること
+  （★(X) で確立した規律＝★Apple は LUFS も dBTP も公開していない・★−14 は Spotify だけ）
+- ★**merge は kimny の「Go」後**
