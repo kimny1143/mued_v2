@@ -1157,3 +1157,75 @@ source にしない）まで塞いでいた ——★**基準は下限であっ�
 ---
 
 ★**当課は ①〜③ の実装に着手しない**（★kimny 裁定＝実装は Codex）。★手番は ★受け入れレビューのみ。
+
+### (1k) — ★Codex 5 件の受け入れレビュー実績と、そこで出た型（2026-09-17）
+
+★**kimny 裁定（9/17）＝実装は Codex／Claude は計画・管理・レビュー**の初日の記録。
+★**基準を PR が立つ前に書く**（(1i)(1j)）を実践した結果を、★数で残す。
+
+```
+#1062 alias redirect  … ★受け入れ（A〜F）・merge は開店後      ／ 修正ラウンド 0
+#1064 parser fixtures … ★条件付き受け入れ → 1 行追加で merged ／ 修正ラウンド 1
+#1066 reconcile       … ★受け入れ → merged                    ／ 修正ラウンド 1（exit 0/1/2→0/1/3）
+#1067 EULA scaffold   … ★受け入れ → merged                    ／ 修正ラウンド 1（②⑤ 違反）
+#1065 learn batch2    … ★★差し戻し 1 回 → 修正後 受け入れ・merge は kimny Go 待ち
+★★基準が閉じた defect ＝ ★5 件（①client env／②LEGAL_PAGES 誤分類／⑤単一 string／
+   exit code 意味論／★新 blocking＝placeholder への無 gate リンク）
+★そのうち ★2 件（②⑤）は ★**PR になる前**に閉じた（conductor が決定事項をそのまま渡した）
+```
+
+### ★型1 — 「申告射程が狭すぎて CI を通せない」という差し戻し（★#1065・新しい形）
+
+★**Codex の失敗ではなかった。★brief の射程が ★自己矛盾していた。**
+```
+★`learn-articles.test.ts` は ★LEARN_SLUGS を ★完全一致で 5 要素に pin（設計どおり）
+★∴ slug を足せば ★必ず落ちる
+★★しかし 申告射程に ★tests/ が無い ∴ ★test を直すと `Verify declared paths` が落ちる
+★★どちらを選んでも赤 ＝ ★**射程内では通せない PR**
+```
+★**∴ 差し戻しの理由を「test が落ちた」で止めない。★「射程では直せない」まで書く。**
+★**そして ★content architecture の判断（第 2 cluster か 1 cluster の拡張か）は ★Codex に決めさせない**
+——★conductor へ「意図を渡してください」と返し、★conductor が明示の判断を与えた（★これが正しい順序）。
+
+### ★型2 — ★基準は下限であって上限ではない
+
+★**Codex が当課の基準を上回った例が 3 件**:
+```
+#1062 … ★E（destination の実在）を覆った上に ★「canonical を redirect source にしない」
+        ＝ ★redirect chain の芽まで塞いでいた（★当課は要求していない）
+#1064 … ★fixture の email を ★recipient=john / customer=jane と ★意図的に違う値にし、
+        ★canonical path の取り違えが ★原理的に検出できる形にしていた
+#1067 … ★①で「どちらの flag か明記」しか要求していないのに、
+        ★「取り違え禁止」と ★「両方の有効化が公開条件」まで書いていた（★2 鍵）
+```
+★∴ ★**受け入れ判定は「基準を満たしたか」で止めず、★上回った点も記録する**（★次の基準の材料になる）。
+
+### ★型3 — ★gate の欠陥 2 つを自分で踏んだ
+
+```
+★① 同名 check の ★重複 run … PR 本文を直して re-run すると ★古い failure が残る
+   ★実測（#1064）… failure 02:28:18 / success 02:31:33 が ★同居
+   ★件数で数えると ★永久に赤 ∴ ★**name ごとに started_at 最新の 1 本だけを見る**形へ直した
+★② `mkdir -p` は ★dir が新規かを教えない
+   ★`rm -rf docs/ops` で ★既存 5 file を削除（★git checkout で復旧・push はしていない）
+   ★∴ ★**持ち込んだ file だけを名指しで消す**
+```
+
+### ★型4 — ★レビューは detached worktree で行う
+
+★**当課の tree に 21 file を copy する形は ★事故る**（★型3② がまさにそれ）。
+```
+git worktree add --detach <tmp> refs/pull/<n>/head
+★→ ★branch を checkout しない ∴ ★Codex の worktree と衝突しない
+★→ ★当課の tree は無変更 ∴ ★片付けの取り違えが起きない
+★→ ★node_modules を symlink すれば ★全 suite も typecheck も回る
+```
+★**#1067（21 file）と #1065 でこの形を使い、★どちらも当課の tree は未 commit 0 のまま済んだ。**
+
+### ★型5 — ★「申告」の出所は ★prompt 側（★repo が既に機械化していた）
+
+★**当課は「申告を本文に」と依頼したが、★repo には既に `scripts/ci/check-codex-scope.ts` が在った**
+（★`- 編集を許した path: ['…']` を ★本文に ★ちょうど 1 回・★`fix/codex-` branch 限定・
+★**base branch 側から実行**＝PR が checker を弱められない設計）。
+★∴ ★当課の依頼は ★半分 既存機構の再発明。★**但し出所の規律は残る**
+——★commit から作った一覧を宣言にすると ★checker も恒真になる（→ [[feedback-the-check-must-not-share-an-origin-with-the-checked]]）。
