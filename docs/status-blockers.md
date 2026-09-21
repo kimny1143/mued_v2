@@ -1835,3 +1835,74 @@ git worktree add --detach <tmp> refs/pull/<n>/head
 ★**残件 (b) の税**: ★owner＝conductor（★kimny に Stripe ダッシュボードの自動税計算を 1 画面 見てもらう依頼済）。★当課の手番ではない。
 ★**残件 (c) plan の key 名**: ★別 PR・★今日は触らない（conductor 明示）。
 ★**`.locations` の CSS 除去**: ★conductor が ★「指示より良い判断」として ★そのまま採用。
+
+### (1o) — ★#1069 merged・★本番反映 確認・★通知は ★出せていない（2026-09-21）
+
+★**kimny 逐語: ★「Go」**（★目視対象＝web 4 面 ＋ 配信 PDF の 5 本・head `81a0ef46`）。
+
+## ★merge 前の確認（★conductor 依頼）
+
+```
+★origin/main は ★動いていた（★当課の docs/status を 8 本 merge したため）
+★★但し ★#1069 との ★file の重なりは ★0 件（★`comm -12` で実測）
+   ★main 側 … docs/ops ／ docs/status-archive ×2 ／ docs/status-blockers.md ／ status.md
+   ★#1069 側 … app ／ components ／ messages ／ print ／ public ／ scripts ／ tests ／ docs/advisory ／ package*
+★∴ ★目視が当たった本文は ★main の更新で変わらない ∴ ★rebase せず 押した
+★mergeable=MERGEABLE state=CLEAN ／ CI 全 7 本 緑 ／ ★PDF blob sha が 目視対象と同一
+★main = `0a6f9f07`
+```
+★**型**: ★**「main が動いた」を ★branch 名や 件数で判断せず ★file 集合の重なりで判断した。**
+★★**重なり 0 なら ★rebase は不要**（★重なりが在れば ★内容が変わりうるので 止める）。
+
+## ★★merge ≠ 公開 ——★押した直後は 未反映だった（★実測）
+
+```
+★押した直後 … ★/ja /en の tokushoho・advisory に ★旧価格が ★まだ live ／ ★PDF は ★★404
+★反映後    … ★4 面とも ★旧価格 0 ／ 新価格 6/6 ／ マーカー 0 ／ 中途解約不可 在り ／ 請求書のみ 在り
+★★本番 PDF … ★591,324 B ／ sha256 `5502fe64…` ＝ ★commit blob と一致
+   ★★preview → main → 本番 の ★3 点で 同一
+   ★落として pdftotext … ★陽性control ★12/12 ／ ★旧語・旧価格 ★13 種すべて 0 ／ ★電話 0
+```
+★**∴ ★「merge した」を ★完了と書かなかった。** ★conductor へ ★「台帳を done にしないでください」と先に送った。
+★**来週 kimny が商工会議所へ持っていく実物なので、★本番ドメインで sha 一致を見るまで「在る」と書かない。**
+
+## ★★main は ★CI で守られていない（★今日 8 本 merge した）
+
+```
+★`test.yml` は ★push trigger を ★意図的に持たない（★重複課金の削減・★日次 schedule が代替）
+★∴ ★squash-merge 後の main は ★次の schedule まで ★未 test
+★★今日は ★8 本を 順に merge ＝ ★各 PR の CI は ★動く前の base に対して回っている
+★∴ ★当課が main を 自分で測った … ★2,348 → ★2,375 test 緑 ／ ★tsc rc 0
+   ★差 27 = ★advisory-pricing-locales の test 数 ＝ ★差分が全部 説明できる
+```
+
+## ★★content課 通知が ★出せていない（★手番は 残っている）
+
+```
+★`ListAgents` 実測 … ★DSP / CCO / MCP / conductor / chief / MUEDoccur ＋ offline 2
+★★content課（母体 _contents-writing）は ★居ない ∴ ★宛先が解決できない
+★★dormant な相手へ送っても ★黙って消える（★送信側にも受信側にもエラーが出ない）
+   ∴ ★「送った」と書けない
+```
+★**「merge するその手で送る」を守れなかった** ∴ ★**同じターンで ★conductor へ relay を依頼した**
+（★後ろへずらすと落ちる形なので・→ [[feedback-notify-at-merge-not-after]]）。
+★**`blocked_by` (W15) は ★開いたまま維持する。** ★**当課が送るのは ★content課 が起動した時。**
+
+★**本文の状態**（★当課が確認済・★main に在る）:
+```
+★逐語 6 句が ★正本（messages）と ★byte 一致
+★影響範囲 ★2 軸 … ★公開済記事 0 ／ ★drafts ★7 file（★価格 6 ＋ ★文言のみ 1）
+★「記事で書いてはいけないこと」4 点 … いつでも解約 ／ 3ヶ月にカード ／ 日数 ／ 電話番号
+★リーフレットは ★含めない（★content課 の射程外・conductor 承認）
+★Hoo Pass / MUEDial の「いつでも解約」ヒットは ★無関係と明記（★混ぜて直されないため）
+```
+
+## ★申し送り
+
+```
+★`fix/codex-advisory-price-hachioji-20260921` の ★local branch が ★消えていない
+   ★理由 … ★Codex の worktree が ★checked out のまま
+   ★★当課は Codex の worktree を ★勝手に消さない ∴ ★片付けは conductor 側
+★残件 … ★(a) 分割の支払期日＝運用判断（★Stripe 待ちではない）／
+        ★(b) カード 2 メニューの税＝owner conductor ／ ★(c) plan key 名＝別 PR
+```
