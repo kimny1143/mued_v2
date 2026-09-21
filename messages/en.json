@@ -503,19 +503,19 @@
     },
     "advisory": {
       "name": "MUED advisory",
-      "description": "Consultation, design, build, and ongoing support for AI systems",
+      "description": "AI workflow improvement and handover support for small businesses",
       "url": {
         "title": "Sales URL",
         "value": "https://mued.jp/en/advisory"
       },
       "price": {
         "title": "Pricing",
-        "description": "Prices below are shown as pre-tax (tax-included in parentheses):",
+        "description": "Prices below are shown before tax, with amounts including 10% consumption tax in parentheses:",
         "plans": {
-          "consult": "First consultation: First 60 min free / then ¥30,000 (¥33,000 incl. tax) per session",
-          "diagnosis": "Assessment + blueprint (one-off): ¥250,000 (¥275,000 incl. tax, lump sum prepaid)",
-          "build": "Monthly build: ¥200,000 (¥220,000 incl. tax)/month~ (scoped per engagement)",
-          "companion": "Monthly companion: ¥400,000 (¥440,000 incl. tax)/month~ (scoped per engagement)"
+          "consult": "First consultation: First 60 minutes free",
+          "diagnosis": "3-month workflow improvement & handover program: ¥100,000/month (¥110,000 incl. tax), ¥300,000 total (¥330,000 incl. tax; installments available)",
+          "build": "In-house support plan: ¥30,000/month (¥33,000 incl. tax)",
+          "companion": "One-off consultation: ¥30,000 (¥33,000 incl. tax) / 90 minutes"
         }
       },
       "paymentTiming": {
@@ -524,7 +524,7 @@
       },
       "delivery": {
         "title": "Service Delivery",
-        "value": "Free consultations and advisory sessions are held online at the reserved date and time. The one-off assessment is delivered by a due date agreed individually at the initial meeting after the contract is concluded (the delivery due date is stated in the quotation, the booking confirmation email, or the contract). Monthly services are provided on a rolling monthly basis from the start date stated in the contract or the booking confirmation email."
+        "value": "The first consultation (60 minutes) and one-off consultations (90 minutes) are held online at the reserved date and time. The 3-month program runs for three months from the start date stated in the contract or booking confirmation email. Deliverable due dates are agreed individually at the initial meeting and stated in the quotation, booking confirmation email, or contract. The in-house support plan is provided on a rolling monthly basis from the start date stated in the contract or booking confirmation email."
       },
       "cancellation": {
         "title": "Cancellation & Refund Policy",
