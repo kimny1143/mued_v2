@@ -1419,3 +1419,77 @@ git worktree add --detach <tmp> refs/pull/<n>/head
 ★★どちらも ★tell は「★ja だけ発火して en が沈黙する非対称」
 ★★∴ ★数値は圧縮して可・★語は raw に当てる・★ja/en の発火数一致を見る
 ```
+
+### (1m) — ★#1069 新 head `519ecd8e` の判定：★内容 PASS・★merge 不可が 2 件（2026-09-21）
+
+★**基準は head が立つ前に置いた**（(1l) の A〜G）。★以下は ★その基準で測った結果。
+
+## ★内容 —— ★PASS
+
+```
+★検証器（B/C/D/E）    … ★rc 0 ／ ★self-RED が旧 head の ★11 件を検出（＝計器は生きている）
+★★E2 meta-RED ★5/5 赤 … ★壊したのは ★対象側（messages / llms.txt）・★test 側の定数は壊していない
+★全 unit suite        … ★167 file / ★2,371 test 緑（★2,353 → +18）／ ★tsc rc 0
+★F 整形               … ja 78 / en 76 行（全 2,650 行）＝ ★局所・formatter 痕跡なし
+★preview              … /ja/advisory と /ja/tokushoho とも ★新価格 6 種・★旧価格 ★0 件
+```
+
+★**Codex が基準を上回った点**（★型2）: ★`docs/advisory/legal-pricing-review-20260921.md` が
+★**「回答を得て表示を確定するまで ★販売開始・法定表示確認完了とは扱わない」**と自ら書き、
+★**「meta-RED は mued 課の検収担当。Codex は本補正でその検収を代行しない」**と ★検証の代行を辞退した
+（→ [[feedback-the-check-must-not-share-an-origin-with-the-checked]] を ★実装側が守った形）。
+★旧包括文「月額サービスはいつでも解約できます」を削除し ★お守りプランだけに限定・
+★3ヶ月の中途解約を ★可とも不可とも断定していない（★創作しない側に倒した）。
+
+## ★★merge 不可 ① —— CI が赤（`Verify declared paths`）・★当課は宣言を書けない
+
+```
+★逐語 … Codex scope check failed: the PR body has no single parseable '編集を許した path' line.
+★★旧 head `de9f5185` でも 04:20:15Z に failure ＝ ★新 commit が壊したのではない
+★CI 本体（Build / Test / Validate）は ★緑。★落ちているのは "Codex scope" workflow だけ
+★★当課の前回判定はこれを見落とした（★check-runs を name ごとに引いていなかった）
+```
+★★**当課が宣言行を書いてはいけない。** ★根拠は ★checker 自身の docstring:
+> `Check a Codex-authored PR against the path allowlist written into its body by the ★ordering [party]`
+
+★**∴ 宣言の出所は ★発注側。** ★**実 diff から作ると `findOutOfScopeFiles` が空になることが保証され、
+★checker が ★恒真になる**（→ ★(1k) 型5 に当課が書いた形そのもの）。
+★**新 head で 2 path 増えた**（`app/llms.txt/route.ts` ／ `docs/advisory/legal-pricing-review-20260921.md`）
+——★**実 diff を写すのでなく ★発注に含めたかで書く。**
+
+## ★★merge 不可 ② —— ★`[kimny 確認]` が ★客に見える側に出る（★merge ＝ 公開）
+
+★**特商法ページは ★すでに本番 live**（#1049）∴ ★**merge が公開**。
+
+```
+★preview /ja/tokushoho を ★script と ★描画 DOM に分けて数えた:
+   ★script（RSC payload）内 … 10 件
+   ★★描画 DOM 内           … ★★5 件 ← ★客に見える側
+★★囲みタグは ★<p> ＝ ★可視テキスト（★hidden 属性や payload だけではない）
+★→ [[gotcha-innertext-is-not-visibility]] の逆向き ＝ ★今回は ★本当に見える
+```
+★**Codex の docs は「販売開始とは扱わない」で ★売る側を止めているが、★ページの公開は止まらない。**
+★**当課の推奨＝(a)**: ★kimny の 2 点（支払方法・分割／中途解約）回答 → ★マーカーを確定文へ置換 → merge。
+★(b) 今 merge ＝ ★法定表示ページに社内マーカー ／ ★(c) flag で伏せる ＝ ★売るなら表示義務は残るので先送り。
+
+## ★★当課の計器が 3 回 壊れた（★同じ session 内・★申し送り）
+
+```
+★① ★空白を落とした文字列に ★語を含む EN の pattern を当てた
+   （"arranged individually" → "arrangedindividually" ∴ ★永久に一致しない）
+★② ★"cancelled at any time" を ★"cancel at any time" で撃って ★EN を取りこぼした
+★★③ ★meta-RED の case が ★no-op だった（★"¥30,000" で注入・新 head は ★全角「円」）
+   ★→ ★test は正しく緑 ★→ ★「llms.txt は母集団の外＝unguarded」と ★報告しかけた
+   ★→ ★実際は ★source の readFileSync ＋ ★GET 応答の ★2 本で咬んでいた
+```
+★**①② の tell は ★「ja だけ発火して en が沈黙する非対称」。**
+★**③ は ★向きが悪い** ——★**存在しない欠陥を他課へ報告する側**に倒れる。
+★**型は memory へ**: [[feedback-a-red-case-that-no-ops-reports-unguarded]]
+（★陽性対照は ★計器を検査するが、★★RED case 自身は 誰も検査しない）。
+
+★**手当て（★以後 meta-RED を書く時）**:
+```
+★注入対象の文字列が ★実在することを ★先に assert（★無ければ「この case は無効」と印字して ★合否を出さない）
+★★「壊した」を ★git diff で確かめてから ★合否を読む
+★★「unguarded」と書く前に ★test が その file を読んでいるかを ★grep で 1 回 逆から測る
+```
