@@ -138,6 +138,20 @@ describe("advisory pricing — locale parity and publication coverage", () => {
     for (const locale of LOCALES) {
       expect(Object.keys(messages(locale).tokushoho.advisory.price.plans).sort()).toEqual(planKeys);
     }
+
+    // The same four names live in a THIRD place: the legal page asks for them by literal.
+    // CCO measured (2026-09-21) that nothing reached it — no test under tests/ or e2e/ reads
+    // page.tsx for these keys, and tokushoho-newline-render.test.ts excludes them because its
+    // population is "values containing a newline" and all four are single-line. So renaming
+    // messages + PLAN_KEYS while forgetting the page left this guard green, tsc green, and the
+    // legal page broken at runtime. `length > 0` is load-bearing for the same reason as above:
+    // if the regex stops matching, an empty list would equal an empty list and pass.
+    const page = readFileSync(join(process.cwd(), "app/[locale]/tokushoho/page.tsx"), "utf8");
+    const asked = [...page.matchAll(/t\("advisory\.price\.plans\.([A-Za-z]+)"\)/g)]
+      .map((m) => m[1])
+      .sort();
+    expect(asked.length, "page.tsx must reference the plan keys").toBeGreaterThan(0);
+    expect(asked).toEqual(planKeys);
   });
 
   it.each(LOCALES)("%s publishes the new prices in the rendered legal disclosure rows", (locale) => {
