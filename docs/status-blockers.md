@@ -1493,3 +1493,97 @@ git worktree add --detach <tmp> refs/pull/<n>/head
 ★★「壊した」を ★git diff で確かめてから ★合否を読む
 ★★「unguarded」と書く前に ★test が その file を読んでいるかを ★grep で 1 回 逆から測る
 ```
+
+### (1n) — ★#1069 の確定文を当課が適用（★kimny 確定回答 2026-09-21）／★conductor の完了条件に 1 つ穴が在った
+
+★**conductor が実装を当課へ差し戻した**（★kimny 9/17 裁定＝実装は Codex だが、★task の割り振りは conductor の委任範囲）。
+★**blocker ① は conductor が処理**（★PR 本文に ★発注側の射程で宣言行を追記 →★`Verify declared paths` は ★05:24:28Z に ★success）。
+
+★**kimny 確定回答（conductor relay・逐語の要点）**:
+```
+★1. ★中途解約なし。★一括払いもしくは分割払いのみ
+★2. ★支払方法は Stripe で商品作成済。★但し Stripe CLI は API key 期限切れ ∴ ★分割の各回の支払期日は未確認
+```
+
+## ★★conductor の完了条件① が ★locale 盲目だった（★当課の検出）
+
+```
+★conductor の完了条件 … 「`git grep "kimny 確認"` が PR branch で 0 件」
+★conductor の申告     … 「en.json にマーカーは 0 個」
+★★当課の実測          … ★ja.json 5 個（`[kimny 確認:`）／★★en.json 5 個（`[kimny confirmation:`）
+★★∴ ★完了条件を満たしても ★EN の特商法ページは ★マーカーを出し続ける
+```
+★**綴りが locale で違うので、★片方の述語では ★もう片方が ★永久に見えない。**
+★**当日 3 度目の同型**（→ [[feedback-a-red-case-that-no-ops-reports-unguarded]] の周辺・★tell はいつも「ja だけ発火して en が沈黙」）。
+★**∴ ★述語を ★`/\[kimny (?:確認|confirmation):/` の ★1 本にして ★locale 非依存にした。**
+
+## ★★test は マーカーの ★存在 を assert していた（★消すと赤くなる）
+
+```
+★line 151 … expect(globalMethod).toMatch(/未確定.*\[kimny 確認:/ : /not yet confirmed.*\[kimny confirmation:/)
+★line 172 … expect(program).toMatch(/\[kimny 確認:.*中途解約の可否/ : /…early termination is permitted/)
+★line 180 … expect(paymentTiming).toMatch(/分割の回数・各回の金額と支払期日/ : /…due date of each installment/)
+★∴ ★確定文へ置換するには ★test も同じ回に付け替える必要が在った（★`tests/unit` は宣言射程内）
+```
+★**足した検出子 2 つ ＋ ★陽性control 1 本ずつ**:
+```
+★pendingMarker   … ★2 綴りを locale 非依存で（★上の穴を ★test 側で塞ぐ）
+★inventedDueDays … ★「14日以内」/「within N days」＝ ★発明された日数
+   ★理由＝★kimny は ★支払期日を確定していない ∴ ★書いてはならない。
+   ★conductor の指示「日数を発明しないこと」を ★散文でなく ★assert にした
+```
+
+## ★確定文（★両 locale・★行単位置換のみ・formatter 非適用）
+
+```
+★支払方法（有料3メニュー共通）… クレジットカード（Stripe 経由）又は銀行振込（請求書）
+   ★★payment.value と paymentTiming の先頭行に ★同一文字列で入っている
+   ∴ ★global 置換で 2 箇所が同時に直る（★test が両者の ★一致 を assert している）
+★3ヶ月プログラムの支払時期 … 一括又は分割。★分割は 月額100,000円（税込110,000円）を ★3 回、各契約月の初め
+   ★支払期日は ★「請求書に記載の支払期日まで」（★日数は書かない）
+   ★★3 回 は ★公開済の価格表（月額100,000円 × 契約期間3ヶ月 ＝ 総額300,000円）から ★導出される ∴ ★発明ではない
+★スポット相談 … 都度請求・★請求書に記載の支払期日まで
+★中途解約 … ★契約成立後の中途解約及び返金は不可。★分割払いの未払残額は ★契約期間満了まで存続
+★社内お守り（月単位解約）／スポット（前日までキャンセル・全額返金）… ★既存文のまま
+★連絡先 … ★メールのみ（★電話番号は書かない）
+```
+
+## ★検収（★当課が測った）
+
+```
+★マーカー   … ★2 綴りで ★ja 0 / en 0（★messages・★preview の DOM・★script payload とも）
+★meta-RED  … ★★6/6 赤（★① ja だけマーカー ★② ★en だけマーカー ★③ 14日以内 ★④ 中途解約なしを消す
+              ★⑤ 支払方法を placeholder へ ★⑥ 分割3回を消す）
+              ★★② が ★conductor の完了条件では拾えなかった側
+★suite     … ★167 file / ★2,373 test 緑 ／ ★tsc rc 0
+★整形      … ja / en とも ★6 行 変更・★行数 2,650 不変 ＝ ★formatter 痕跡なし
+★preview   … ★/ja/tokushoho ・/en/tokushoho とも ★マーカー 0 ／ 旧価格 0 ／ 新価格 6/6
+              ★★status ではなく ★本文の述語で判定（★deploy 未着なら旧内容が 200 で返る）
+★★leaflet PDF … ★旧価格 0 ／ マーカー 0 ／ 電話番号 0 ／ support@mued.jp 在り
+              ★★陽性control＝新価格 6 種すべて 見える（★これが無いと 0 は無意味）
+★leaflet HTML … ★電話欄は ★空欄（`aria-label="手書き用の空欄"`）＝ ★kimny 指示どおり
+              （★web はメールのみ・★商工会議所 行き PDF に ★後で手書き追記）
+★/refund   … ★矛盾なし（★§5 が「購入時点で表示される条件」へ委ねている・★plugins は FastSpring MoR 範囲）
+```
+
+★★**PDF は「再生成」ではなく「★成果物を直接 検証」で閉じた。**
+★前回 当課は ★`qrcode` 不在で ★再生成できず ★「検証不能」と報告した。★**再生成は手段であって目的ではない**
+——★`pdftotext` で ★中身を読めば足りる。★**但し ★自作の zlib 抽出では ★旧も新も 0 件になった**
+（★= ★陽性control が落ちた ∴ ★あの 0 は ★証拠ではなく ★計器の死）。
+
+## ★★残件 1 つ（★merge を止めない・conductor 合意）
+
+★**分割の各回の具体的な支払期日**は ★Stripe で確認後に必要なら追補。
+★**「請求書に記載の支払期日まで」で ★特商法上は成立する**（★期日を ★書面で特定する形）。
+★**Stripe CLI は API key 期限切れ**（`stripe login` 未実施）＝ ★当課は ★API key を作らない（★秘密情報の新規作成は kimny 承認案件）。
+
+## ★当課が添える ★法務上の注記（★差し戻しではない・★kimny 判断の材料）
+
+```
+★① ★「中途解約なし」は ★事業者間契約（★対象＝小規模事業者）を前提に ★開示として適法
+   ★特商法 通信販売 に ★役務の法定クーリングオフは無い ∴ ★条件を ★開示すれば足りる
+★★② ★但し ★購入者が ★消費者（非事業者）の場合、★消費者契約法 10 条 で
+   ★絶対的な不返金条項の ★一部が 効力を争われうる（★開示義務とは別の層）
+★★③ ★今回は ★着手前キャンセルも 不可 の ★一本化（★conductor 明示・kimny 回答が「中途解約なし」の一本）
+   ＝ ★最も強い形 ∴ ★争われるとすれば ★ここ。★当課は ★指示どおり適用し、★事実として添える
+```
