@@ -1906,3 +1906,79 @@ git worktree add --detach <tmp> refs/pull/<n>/head
 ★残件 … ★(a) 分割の支払期日＝運用判断（★Stripe 待ちではない）／
         ★(b) カード 2 メニューの税＝owner conductor ／ ★(c) plan key 名＝別 PR
 ```
+
+### (1p) — ★(W15) を閉じた（★担い手が conductor へ移った）／★plan key 改名（2026-09-21）
+
+## ★★(W15) 通知 —— ★当課は「送れなかった」で終わり、★conductor が引き取った
+
+```
+★当課の状態 … ★#1069 merged ＋ 本番反映済 ∴ ★通知の条件は成立していた
+★★但し ★`ListAgents` に content課 が居ない ∴ ★宛先が解決できない
+★★conductor 側の `ListAgents` でも ★同じく不在（★conductor が独立に確認）
+   ＝ ★★「当課の環境の問題」ではなく ★content課 が起動していない
+★★∴ ★(a)（conductor が SendMessage で配る）も ★成立しなかった
+```
+★**conductor が採った形 ＝ ★(c) に近い**: ★本文を ★**相手の workspace が読む場所**へ置いた
+（`_contents-writing/docs/inbox/URGENT-advisory-price-canonical-change-20260921.md`）。
+★**conductor が明記したこと**（★当課の指摘をそのまま採用）:
+```
+★★「置いただけでは『届いた』にならない」 ∴ ★台帳の行は ★blocked のまま
+★★content課 からの ★返信を得るまで 閉じない（★Hoo Pass の前例）
+★★content課 の ★未コミット作業には 触っていない（★M 3 件が unstaged のまま・commit もしない）
+```
+★**∴ ★(W15) は ★当課の手番としては 閉じる。★担い手＝conductor。**
+★**型**: ★**「送れない」は ★完了でも 失敗でもない ★第三の状態**
+——★★**「送った」と書かず、★同じターンで 所有者へ上げる**のが正しい終わり方だった。
+
+## ★worktree —— ★所有の境界を守った判断が 正しかった
+
+★当課は ★Codex の worktree を ★消さず ★持ち主（conductor）へ上げた。★conductor が ★押す前に確認したこと（★記録）:
+```
+★未 commit 0 ／ untracked 0 ／ ★stash は この worktree のものでない（repo 共有）
+★★`519ecd8e` は `81a0ef46` の 祖先 ／ ★`81a0ef46` と `origin/main` の ★#1069 全 path の diff が 空
+   ＝ ★★squash でも 取りこぼしなし ／ ★lease も残っていない
+```
+★**∴ ★「消してよいか」は ★祖先関係と ★diff の空 で 判定する**（★branch 名や ★merged ラベルでは判定しない）。
+
+## ★★plan key 改名（★退役が fail-silent だった一形）
+
+```
+★diagnosis → program ／ build → guardian ／ companion → spot ／ consult 不変
+★★値は 1 文字も変えていない。★key 名だけ
+★★機序 … ★値は新体系に替わったのに ★key 名が旧メニューのまま
+   ∴ ★`diagnosis` が ★3ヶ月プログラムを保持していた
+★★かつ ★LP 側は 既に新名 ∴ ★同じ 3 サービスが ★2 つの名前を持っていた
+```
+★**取り違え防止**: ★新 key が ★期待するメニューを指していることを ★値の先頭で assert してから置換（★順序に頼らない）。
+★**`t()` は tsc で守られない** ∴ ★page が要求する 4 key の実在を 別途 確認。
+
+★**追加した cross-surface guard**:
+```
+★plans の key 集合 == ★`advisory-pricing-section.tsx` の `PLAN_KEYS`
+★★`PLAN_KEYS` は ★component の source から読む（★test に写すと 写しが drift しても誰も気づかない）
+★★既存の ja/en parity では守れない ——★両 locale を 揃えて改名すると parity は保たれる
+   ★meta-RED ② で 実証（★両 locale 改名 → ★新 guard だけが咬んで 赤）
+★meta-RED 3/3 赤 ／ 2,376 test 緑 ／ tsc rc 0
+```
+
+## ★★当課が 同じ失敗を ★2 度 した（★meta-RED の順序）
+
+```
+★★`restore()` が `git checkout --` を使う ∴ ★未 commit を 捨てる
+★★∴ ★commit する前に meta-RED を回すと ★自分の編集が消える
+★1 度目 … #1069 の確定文（★再適用して復帰）
+★2 度目 … ★本件（★messages が旧 key へ 戻っていた）
+★★手当て（★記憶に頼らない形）… ★script の restore の前に
+   ★「未 commit が在れば ★回さずに exit 3」を 埋めた
+```
+★**型**: → [[feedback-make-it-show-up-not-remember-it]]（★★1 度目に「順序に気をつける」で済ませたので 2 度 踏んだ）。
+
+## ★別件（★触っていない・報告のみ）
+
+```
+★`app/api/advisory/inquiry/route.ts` の product enum … ["wallhit","diagnosis","build","run","other"]
+★live bug ではない（★form は wallhit しか送らない・`.optional()`）
+★★但し 2 方向に stale … ★① 送られない名を受ける ／ ★★② ★新体系の名を 拒否する
+★★∴ ★将来 メニュー別 form を作ると 400（★「新しい方が弾かれる」ので 原因に当たりにくい）
+★当課の推奨 … ★今は放置。★form を作る回に ★同じ PR で直す
+```
