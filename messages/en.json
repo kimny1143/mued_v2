@@ -513,9 +513,9 @@
         "description": "Prices below are shown before tax, with amounts including 10% consumption tax in parentheses:",
         "plans": {
           "consult": "First consultation: First 60 minutes free",
-          "diagnosis": "3-month workflow improvement & handover program: ¥100,000/month (¥110,000 incl. tax), ¥300,000 total (¥330,000 incl. tax; installments available)",
-          "build": "In-house support plan: ¥30,000/month (¥33,000 incl. tax)",
-          "companion": "One-off consultation: ¥30,000 (¥33,000 incl. tax) / 90 minutes"
+          "program": "3-month workflow improvement & handover program: ¥100,000/month (¥110,000 incl. tax), ¥300,000 total (¥330,000 incl. tax; installments available)",
+          "guardian": "In-house support plan: ¥30,000/month (¥33,000 incl. tax)",
+          "spot": "One-off consultation: ¥30,000 (¥33,000 incl. tax) / 90 minutes"
         }
       },
       "paymentTiming": {

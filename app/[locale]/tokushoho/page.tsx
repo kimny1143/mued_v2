@@ -168,9 +168,9 @@ function TokushohoContent({ locale }: { locale: string }) {
                 priceDescription={t("advisory.price.description")}
                 pricePlans={[
                   t("advisory.price.plans.consult"),
-                  t("advisory.price.plans.diagnosis"),
-                  t("advisory.price.plans.build"),
-                  t("advisory.price.plans.companion"),
+                  t("advisory.price.plans.program"),
+                  t("advisory.price.plans.guardian"),
+                  t("advisory.price.plans.spot"),
                 ]}
                 paymentTimingTitle={t("advisory.paymentTiming.title")}
                 paymentTimingValue={t("advisory.paymentTiming.value")}
