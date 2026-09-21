@@ -416,7 +416,7 @@
     },
     "payment": {
       "title": "Payment Methods",
-      "value": "Varies by service.\nMUEDial: credit card (via Stripe)\nMUEDsp paid plugins: FastSpring checkout (payment methods offered by FastSpring, Inc. as the Merchant of Record)\nMUED advisory: arranged individually"
+      "value": "Varies by service.\nMUEDial: credit card (via Stripe)\nMUEDsp paid plugins: FastSpring checkout (payment methods offered by FastSpring, Inc. as the Merchant of Record)\nMUED advisory: The 3-month program is invoiced by bank transfer (invoice) only. The in-house support plan and one-off consultations may be paid by credit card (via Stripe) or bank transfer (invoice)."
     },
     "contractEstablishment": {
       "title": "Contract Establishment",
@@ -503,32 +503,32 @@
     },
     "advisory": {
       "name": "MUED advisory",
-      "description": "Consultation, design, build, and ongoing support for AI systems",
+      "description": "AI workflow improvement and handover support for small businesses",
       "url": {
         "title": "Sales URL",
         "value": "https://mued.jp/en/advisory"
       },
       "price": {
         "title": "Pricing",
-        "description": "Prices below are shown as pre-tax (tax-included in parentheses):",
+        "description": "Prices below are shown before tax, with amounts including 10% consumption tax in parentheses:",
         "plans": {
-          "consult": "First consultation: First 60 min free / then ¥30,000 (¥33,000 incl. tax) per session",
-          "diagnosis": "Assessment + blueprint (one-off): ¥250,000 (¥275,000 incl. tax, lump sum prepaid)",
-          "build": "Monthly build: ¥200,000 (¥220,000 incl. tax)/month~ (scoped per engagement)",
-          "companion": "Monthly companion: ¥400,000 (¥440,000 incl. tax)/month~ (scoped per engagement)"
+          "consult": "First consultation: First 60 minutes free",
+          "diagnosis": "3-month workflow improvement & handover program: ¥100,000/month (¥110,000 incl. tax), ¥300,000 total (¥330,000 incl. tax; installments available)",
+          "build": "In-house support plan: ¥30,000/month (¥33,000 incl. tax)",
+          "companion": "One-off consultation: ¥30,000 (¥33,000 incl. tax) / 90 minutes"
         }
       },
       "paymentTiming": {
-        "title": "Payment Timing",
-        "value": "Consultation: per session. Assessment + blueprint: prepaid lump sum. Monthly plans: billed at the start of each month.\n* Payment method (invoice or payment link) will be stated once the payment design is finalized."
+        "title": "Payment Method & Timing",
+        "value": "Payment method: The 3-month program is invoiced by bank transfer (invoice) only. The in-house support plan and one-off consultations may be paid by credit card (via Stripe) or bank transfer (invoice).\nFirst consultation: free.\n3-month program: ¥100,000/month (¥110,000 incl. tax), a three-month contract totaling ¥300,000 (¥330,000 incl. tax; installments available). You may pay in a lump sum or in installments. For installments, ¥100,000 (¥110,000 incl. tax) is invoiced three times, at the start of each contract month. In either case, payment is due by the due date stated on the invoice.\nIn-house support plan: billed at the start of each month.\nOne-off consultation: billed per session. Payment is due by the due date stated on the invoice."
       },
       "delivery": {
         "title": "Service Delivery",
-        "value": "Free consultations and advisory sessions are held online at the reserved date and time. The one-off assessment is delivered by a due date agreed individually at the initial meeting after the contract is concluded (the delivery due date is stated in the quotation, the booking confirmation email, or the contract). Monthly services are provided on a rolling monthly basis from the start date stated in the contract or the booking confirmation email."
+        "value": "The first consultation (60 minutes) and one-off consultations (90 minutes) are held online at the reserved date and time. The 3-month program runs for three months from the start date stated in the contract or booking confirmation email. Deliverable due dates are agreed individually at the initial meeting and stated in the quotation, booking confirmation email, or contract. The in-house support plan is provided on a rolling monthly basis from the start date stated in the contract or booking confirmation email."
       },
       "cancellation": {
         "title": "Cancellation & Refund Policy",
-        "description": "Free consultations and advisory sessions may be cancelled if you notify us by the day before the scheduled date (a full refund is given if payment has already been made). No refund is given for same-day cancellation or no-show. For the one-off assessment, cancellation before work has begun is fully refunded. If you terminate midway after work has begun, we refund the balance after deducting the fee corresponding to the services already provided and the deliverables already produced, together with any external costs already incurred (the basis for calculating the deduction is stated in the individual contract, the quotation, or the booking confirmation email, and an itemized statement is provided at the time of refund). Monthly services may be cancelled at any time (please contact support@mued.jp). Cancellation takes effect on the last day of the contract month in which we receive your cancellation request; there is no pro-rated refund for the current month, and billing stops from the following contract month onward. For the purposes of this section, \"beginning of work\" means that, after the contract is concluded, we hold the initial meeting, or begin any research, analysis, design, or deliverable production based on the information or materials you provide (administrative steps alone — such as scheduling, invoice issuance, or payment confirmation — do not constitute the beginning of work)."
+        "description": "First consultation: please notify us of cancellation by the day before the scheduled date.\n3-month program: the contract period is three months (¥300,000 total; ¥330,000 incl. tax; installments available). Due to the nature of the service, early termination and refunds are not available once the contract is concluded. If you pay in installments, your obligation to pay any unpaid balance continues until the end of the contract period.\nIn-house support plan: may be cancelled month to month. Cancellation takes effect on the last day of the contract month in which we receive your cancellation request; there is no prorated refund for the current month, and billing stops from the following contract month onward.\nOne-off consultation: a single session. You may cancel by notifying us by the day before the scheduled date (a full refund is given if payment has already been made). No refund is given for same-day cancellation or no-show.\nFor cancellation or termination of any of these services, please contact support@mued.jp."
       },
       "environment": {
         "title": "Delivery Method",
@@ -2129,7 +2129,7 @@
       "lead1": "\"I want to make my work more efficient with AI.\" \"I want to turn a new idea into something real with AI.\" But on your own, it's hard to know where to start or what to build. From the assessment to the build, we do it with you.",
       "lead2": "For example: automated booking. Draft replies to inquiries. Quotes and proposal decks. Cutting daily back-office work. Prototyping a new idea. We turn \"could AI do this?\" into a tool that actually runs.",
       "lead3": "You don't need any technical knowledge. We take care of the technical side. You just tell us what you want to do — that's enough.",
-      "cta": "Start with a free 60 minutes"
+      "cta": "Email us for a free 60-minute consultation"
     },
     "who": {
       "title": "Who does the work",
@@ -2166,30 +2166,36 @@
     "pricing": {
       "title": "Pricing",
       "subtitle": "It starts with a free consultation. This isn't a place you jump straight into a big contract.",
-      "headerWhat": "What it is",
-      "headerPrice": "Price",
+      "taxNote": "Prices are shown before tax, with tax-inclusive totals in parentheses (10% consumption tax).",
+      "values": {
+        "initialConsultationYen": 0,
+        "programMonthlyYen": 100000,
+        "programTotalYen": 300000,
+        "guardianMonthlyYen": 30000,
+        "spotYen": 30000
+      },
       "consult": {
         "name": "First consultation",
-        "what": "We sort out your current challenges and what AI can do, together.",
-        "price": "First 60 min free / then ¥30,000 (¥33,000 incl. tax) per session"
+        "what": "We sort out the work that's getting in your way and where to start.",
+        "price": "Free (60 minutes)"
       },
-      "diagnosis": {
-        "name": "Assessment + blueprint (one-off)",
-        "what": "An assessment of what can be built and how, plus one concrete blueprint. No follow-on contract required.",
-        "price": "¥250,000 (¥275,000 incl. tax)"
+      "program": {
+        "name": "3-month workflow improvement & handover program",
+        "what": "¥300,000 total (¥330,000 incl. tax; installments available). Includes two 60-minute meetings per month, chat support, initial setup for up to two workflows, hands-on instruction, and a short manual.",
+        "price": "¥100,000/month (¥110,000 incl. tax)"
       },
-      "build": {
-        "name": "Monthly build",
-        "what": "Based on the blueprint, we build a working tool and deploy it.",
-        "price": "From ¥220,000/month (incl. tax)"
+      "guardian": {
+        "name": "In-house support plan",
+        "what": "Chat support, a 60-minute review every three months, and practical AI updates. Cancel month to month.",
+        "price": "¥30,000/month (¥33,000 incl. tax)"
       },
-      "companion": {
-        "name": "Monthly companion",
-        "what": "Ongoing support for improvements, additions, and operational questions after launch.",
-        "price": "From ¥440,000/month (incl. tax)"
+      "spot": {
+        "name": "One-off consultation",
+        "what": "We work through one defined issue together in 90 minutes. No ongoing contract required.",
+        "price": "¥30,000 (¥33,000 incl. tax) / 90 minutes"
       },
-      "monthlyLabel": "Ongoing build & companion (monthly)",
-      "monthlyNote": "Prices are a guide — scoped per engagement; tell us the details in your free consultation."
+      "cancellationTitle": "Term & cancellation",
+      "cancellation": "The 3-month program is a fixed three-month engagement. Early termination and refunds are not available once the contract is concluded (any unpaid balance under an installment plan also remains payable until the end of the contract period). The in-house support plan may be cancelled month to month (no prorated refund for a partial month). One-off consultations may be cancelled through the day before the session. Same-day cancellations and no-shows are non-refundable."
     },
     "myWay": {
       "title": "How I work",
@@ -2217,14 +2223,18 @@
     "footerCta": {
       "title": "Let's start with a free 60 minutes",
       "description": "\"Could AI do this?\" — 60 minutes, free. No jargon.",
-      "cta": "Start with a free 60 minutes"
+      "cta": "Email us for a free 60-minute consultation"
     },
     "footer": {
       "operator": "Operated by glasswerks inc.",
-      "contact": "Contact: support@mued.jp",
+      "contactLabel": "Contact:",
       "legalLink": "Legal",
       "privacyLink": "Privacy Policy",
       "signature": "MUED — AI-delegated development, run at a quality you can actually use."
+    },
+    "contact": {
+      "email": "support@mued.jp",
+      "emailLabel": "Contact us by email"
     },
     "booking": {
       "title": "Book your free 60-minute consultation",
@@ -2255,7 +2265,7 @@
       }
     },
     "cta": {
-      "short": "Free 60 min"
+      "short": "Email us"
     }
   },
   "muedialLp": {
