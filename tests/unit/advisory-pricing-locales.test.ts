@@ -122,10 +122,30 @@ describe("advisory pricing — locale parity and publication coverage", () => {
     expectNoRetiredPrices(messages(locale));
   });
 
+  // The legal page and the pricing surface must name the SAME four menus. They drifted once:
+  // tokushoho kept the retired 3-tier key names while advisory-pricing-section.tsx already used
+  // the new ones, so `diagnosis` held the 3-month program. Read PLAN_KEYS from the component
+  // source rather than restating it here — a copy in the test would drift with nothing noticing.
+  it("uses the same plan keys as the advisory pricing surface", () => {
+    const component = readFileSync(
+      join(process.cwd(), "components/features/advisory-landing/advisory-pricing-section.tsx"),
+      "utf8",
+    );
+    const match = component.match(/const PLAN_KEYS = \[([^\]]+)\] as const;/);
+    expect(match, "PLAN_KEYS must be findable in the pricing section").not.toBeNull();
+    const planKeys = [...match![1].matchAll(/"([A-Za-z]+)"/g)].map((m) => m[1]).sort();
+    expect(planKeys.length, "PLAN_KEYS must not parse empty").toBeGreaterThan(0);
+    for (const locale of LOCALES) {
+      expect(Object.keys(messages(locale).tokushoho.advisory.price.plans).sort()).toEqual(planKeys);
+    }
+  });
+
   it.each(LOCALES)("%s publishes the new prices in the rendered legal disclosure rows", (locale) => {
     const disclosure = messages(locale).tokushoho.advisory;
-    // These legacy keys are the four rows actually consumed by the tokushoho page.
-    const { consult, diagnosis: program, build: support, companion: spot } = disclosure.price.plans;
+    // Renamed 2026-09-21 from the retired 3-tier names (diagnosis/build/companion) to the
+    // current menu names, which now match advisory-pricing-section.tsx's PLAN_KEYS. The old
+    // names outlived the values they held: `diagnosis` was holding the 3-month program.
+    const { consult, program, guardian: support, spot } = disclosure.price.plans;
     expect(consult).toMatch(locale === "ja" ? /無料/ : /free/i);
     expect(consult).toContain("60");
     for (const price of [100000, 110000, 300000, 330000]) {
