@@ -72,18 +72,29 @@ function rawLegalText(locale: (typeof LOCALES)[number]): RawLegalText {
 }
 
 // Text guards deliberately receive raw strings, never compact() output.
-// Explicit [kimny confirmation] notes remain allowed until the business decision;
-// the obsolete promises to disclose payment details later must not return.
+// kimny settled the terms on 2026-09-21: no early termination, lump sum or installments,
+// credit card (Stripe) or bank transfer (invoice). The [kimny confirmation] markers must
+// now be ABSENT. Both spellings are checked deliberately: a ja-only predicate
+// (`git grep "kimny 確認"`) returns 0 while the English page still renders markers.
+// Invented due-day counts must not appear either — kimny has not fixed the due dates.
 function textGuardHits(locale: (typeof LOCALES)[number], raw: RawLegalText) {
   const anytime = locale === "ja" ? /いつでも解約/ : /at any time/i;
   const fixedTerm = locale === "ja" ? /3ヶ月/ : /3-month/i;
   const deferredPayment = locale === "ja"
     ? /確定後に記載|個別にご案内(?:します)?|決定後に(?:記載|ご案内)/
     : /will be stated once|arranged individually|will be (?:stated|specified) (?:once|after)/i;
+  const pendingMarker = /\[kimny (?:確認|confirmation):/;
+  const inventedDueDays = locale === "ja" ? /\d+\s*日以内/ : /within\s+\d+\s+days/i;
   return {
     cancellationMissingTerm: Number(anytime.test(raw.cancellation) && !fixedTerm.test(raw.cancellation)),
     deferredPayment: Number(deferredPayment.test(raw.payment)),
     deferredPaymentTiming: Number(deferredPayment.test(raw.paymentTiming)),
+    pendingMarker: Number(
+      pendingMarker.test(raw.cancellation)
+      || pendingMarker.test(raw.payment)
+      || pendingMarker.test(raw.paymentTiming),
+    ),
+    inventedDueDays: Number(inventedDueDays.test(raw.payment) || inventedDueDays.test(raw.paymentTiming)),
   };
 }
 
@@ -148,8 +159,9 @@ describe("advisory pricing — locale parity and publication coverage", () => {
     const globalMethod = legal.payment.value.split("\n").find((line) => line.startsWith("MUED advisory: "));
     expect(globalMethod).toBe(`MUED advisory: ${legal.advisory.paymentTiming.value.split("\n")[0]}`);
     expect(globalMethod).toMatch(locale === "ja" ? /有料3メニュー共通/ : /all three paid services/);
-    expect(globalMethod).toMatch(locale === "ja" ? /未確定.*\[kimny 確認:/ : /not yet confirmed.*\[kimny confirmation:/);
-    expect(globalMethod).toMatch(locale === "ja" ? /請求書\/銀行振込/ : /invoice\/bank transfer/);
+    expect(globalMethod).toMatch(locale === "ja" ? /クレジットカード（Stripe 経由）/ : /credit card \(via Stripe\)/i);
+    expect(globalMethod).toMatch(locale === "ja" ? /銀行振込（請求書）/ : /bank transfer \(invoice\)/i);
+    expect(globalMethod).not.toMatch(/\[kimny (?:確認|confirmation):/);
   });
 
   it.each(LOCALES)("%s scopes delivery, payment and cancellation to each new paid service", (locale) => {
@@ -169,7 +181,7 @@ describe("advisory pricing — locale parity and publication coverage", () => {
     const support = clauses.find((line) => line.startsWith(`${names[1]}:`))!;
     const spot = clauses.find((line) => line.startsWith(`${names[2]}:`))!;
     expect(program).toMatch(isJa ? /契約期間は3ヶ月/ : /contract period is three months/);
-    expect(program).toMatch(isJa ? /\[kimny 確認:.*中途解約の可否/ : /\[kimny confirmation:.*early termination is permitted/);
+    expect(program).toMatch(isJa ? /中途解約及び返金はお受けできません/ : /early termination and refunds are not available/i);
     expect(program).toMatch(isJa ? /未払残額/ : /unpaid balance/);
     expect(program).not.toMatch(isJa ? /翌契約月以降の課金は停止/ : /billing stops from the following contract month/);
     expect(support).toMatch(isJa ? /月単位で解約できます/ : /may be cancelled month to month/);
@@ -177,7 +189,8 @@ describe("advisory pricing — locale parity and publication coverage", () => {
     expect(spot).toMatch(isJa ? /前日まで/ : /day before/);
     expect(spot).toMatch(isJa ? /当日キャンセル又は無断不参加/ : /same-day cancellation or no-show/);
     expect(legal.cancellation.description).not.toMatch(isJa ? /月額サービスはいつでも解約できます/ : /Monthly services may be cancelled at any time/);
-    expect(legal.paymentTiming.value).toMatch(isJa ? /分割の回数・各回の金額と支払期日/ : /number of installments, amount and due date of each installment/);
+    expect(legal.paymentTiming.value).toMatch(isJa ? /月額100,000円（税込110,000円）を3回/ : /invoiced three times/i);
+    expect(legal.paymentTiming.value).toMatch(isJa ? /請求書に記載の支払期日/ : /due date stated on the invoice/i);
     expect(legal.price.description).toContain("10%");
     expect(legal.contact.value).toBe("support@mued.jp");
   });
@@ -203,25 +216,37 @@ describe("advisory pricing — locale parity and publication coverage", () => {
       name: "unqualified cancellation",
       ja: { cancellation: "いつでも解約できます。", payment: "銀行振込", paymentTiming: "毎月初に請求" },
       en: { cancellation: "You may cancel at any time.", payment: "Bank transfer", paymentTiming: "Billed monthly" },
-      expected: { cancellationMissingTerm: 1, deferredPayment: 0, deferredPaymentTiming: 0 },
+      expected: { cancellationMissingTerm: 1, deferredPayment: 0, deferredPaymentTiming: 0, pendingMarker: 0, inventedDueDays: 0 },
     },
     {
       name: "deferred disclosure in both payment locations",
       ja: { cancellation: "3ヶ月契約", payment: "支払方法は確定後に記載します。", paymentTiming: "確定後に記載します。" },
       en: { cancellation: "3-month contract", payment: "Payment method will be stated once finalized.", paymentTiming: "Details will be stated once finalized." },
-      expected: { cancellationMissingTerm: 0, deferredPayment: 1, deferredPaymentTiming: 1 },
+      expected: { cancellationMissingTerm: 0, deferredPayment: 1, deferredPaymentTiming: 1, pendingMarker: 0, inventedDueDays: 0 },
     },
     {
       name: "individually arranged placeholder in both payment locations",
       ja: { cancellation: "3ヶ月契約", payment: "MUED advisory: 個別にご案内します", paymentTiming: "個別にご案内します" },
       en: { cancellation: "3-month contract", payment: "MUED advisory: arranged individually", paymentTiming: "arranged individually" },
-      expected: { cancellationMissingTerm: 0, deferredPayment: 1, deferredPaymentTiming: 1 },
+      expected: { cancellationMissingTerm: 0, deferredPayment: 1, deferredPaymentTiming: 1, pendingMarker: 0, inventedDueDays: 0 },
     },
     {
       name: "qualified cancellation satisfies the requested implication",
       ja: { cancellation: "3ヶ月契約。お守りプランはいつでも解約できます。", payment: "銀行振込", paymentTiming: "毎月初に請求" },
       en: { cancellation: "3-month contract. The support plan may be cancelled at any time.", payment: "Bank transfer", paymentTiming: "Billed monthly" },
-      expected: { cancellationMissingTerm: 0, deferredPayment: 0, deferredPaymentTiming: 0 },
+      expected: { cancellationMissingTerm: 0, deferredPayment: 0, deferredPaymentTiming: 0, pendingMarker: 0, inventedDueDays: 0 },
+    },
+    {
+      name: "pending marker left behind in either spelling",
+      ja: { cancellation: "3ヶ月契約。[kimny 確認: 中途解約の可否]", payment: "銀行振込", paymentTiming: "毎月初に請求" },
+      en: { cancellation: "3-month contract. [kimny confirmation: early termination]", payment: "Bank transfer", paymentTiming: "Billed monthly" },
+      expected: { cancellationMissingTerm: 0, deferredPayment: 0, deferredPaymentTiming: 0, pendingMarker: 1, inventedDueDays: 0 },
+    },
+    {
+      name: "invented due-day count in the payment wording",
+      ja: { cancellation: "3ヶ月契約", payment: "請求書発行から14日以内にお支払いください。", paymentTiming: "14日以内にお支払いください。" },
+      en: { cancellation: "3-month contract", payment: "Please pay within 14 days of the invoice.", paymentTiming: "Payable within 14 days." },
+      expected: { cancellationMissingTerm: 0, deferredPayment: 0, deferredPaymentTiming: 0, pendingMarker: 0, inventedDueDays: 1 },
     },
   ])("raw-text detector control: $name fires equally in ja/en", ({ ja, en, expected }) => {
     const jaHits = textGuardHits("ja", ja);

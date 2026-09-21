@@ -416,7 +416,7 @@
     },
     "payment": {
       "title": "Payment Methods",
-      "value": "Varies by service.\nMUEDial: credit card (via Stripe)\nMUEDsp paid plugins: FastSpring checkout (payment methods offered by FastSpring, Inc. as the Merchant of Record)\nMUED advisory: Payment method (all three paid services): not yet confirmed. [kimny confirmation: confirm invoice/bank transfer as the payment method, and the number and timing of installments]"
+      "value": "Varies by service.\nMUEDial: credit card (via Stripe)\nMUEDsp paid plugins: FastSpring checkout (payment methods offered by FastSpring, Inc. as the Merchant of Record)\nMUED advisory: Payment method (all three paid services): credit card (via Stripe) or bank transfer (invoice)."
     },
     "contractEstablishment": {
       "title": "Contract Establishment",
@@ -520,7 +520,7 @@
       },
       "paymentTiming": {
         "title": "Payment Method & Timing",
-        "value": "Payment method (all three paid services): not yet confirmed. [kimny confirmation: confirm invoice/bank transfer as the payment method, and the number and timing of installments]\nFirst consultation: free.\n3-month program: ¥100,000/month (¥110,000 incl. tax), a three-month contract totaling ¥300,000 (¥330,000 incl. tax; installments available). [kimny confirmation: the number of installments, amount and due date of each installment, and the due date for a lump-sum payment]\nIn-house support plan: billed at the start of each month.\nOne-off consultation: billed per session. [kimny confirmation: payment due date for the consultation fee]"
+        "value": "Payment method (all three paid services): credit card (via Stripe) or bank transfer (invoice).\nFirst consultation: free.\n3-month program: ¥100,000/month (¥110,000 incl. tax), a three-month contract totaling ¥300,000 (¥330,000 incl. tax; installments available). You may pay in a lump sum or in installments. For installments, ¥100,000 (¥110,000 incl. tax) is invoiced three times, at the start of each contract month. In either case, payment is due by the due date stated on the invoice.\nIn-house support plan: billed at the start of each month.\nOne-off consultation: billed per session. Payment is due by the due date stated on the invoice."
       },
       "delivery": {
         "title": "Service Delivery",
@@ -528,7 +528,7 @@
       },
       "cancellation": {
         "title": "Cancellation & Refund Policy",
-        "description": "First consultation: please notify us of cancellation by the day before the scheduled date.\n3-month program: the contract period is three months (¥300,000 total; ¥330,000 incl. tax; installments available). [kimny confirmation: whether cancellation before work begins or early termination is permitted. If permitted, specify settlement for services already provided, deliverables already produced and external costs already incurred, how payments already made are refunded, and the treatment and due date of any unpaid balance]\nIn-house support plan: may be cancelled month to month. Cancellation takes effect on the last day of the contract month in which we receive your cancellation request; there is no prorated refund for the current month, and billing stops from the following contract month onward.\nOne-off consultation: a single session. You may cancel by notifying us by the day before the scheduled date (a full refund is given if payment has already been made). No refund is given for same-day cancellation or no-show.\nFor cancellation or termination of any of these services, please contact support@mued.jp."
+        "description": "First consultation: please notify us of cancellation by the day before the scheduled date.\n3-month program: the contract period is three months (¥300,000 total; ¥330,000 incl. tax; installments available). Due to the nature of the service, early termination and refunds are not available once the contract is concluded. If you pay in installments, your obligation to pay any unpaid balance continues until the end of the contract period.\nIn-house support plan: may be cancelled month to month. Cancellation takes effect on the last day of the contract month in which we receive your cancellation request; there is no prorated refund for the current month, and billing stops from the following contract month onward.\nOne-off consultation: a single session. You may cancel by notifying us by the day before the scheduled date (a full refund is given if payment has already been made). No refund is given for same-day cancellation or no-show.\nFor cancellation or termination of any of these services, please contact support@mued.jp."
       },
       "environment": {
         "title": "Delivery Method",
