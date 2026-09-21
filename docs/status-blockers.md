@@ -1394,7 +1394,7 @@ git worktree add --detach <tmp> refs/pull/<n>/head
 ★★**さもないと「除外リストを足す」方向に行き、★母集団が静かに縮む**
 ——★**これは #1049 で踏んだ「包含リスト」の ★裏返し**（→ [[feedback-check-population-exclusion-not-inclusion]]）。
 
-## ★★(1l-2) — ★①② の文言に ★durable な guard が付いた（★conductor が Codex へ追加投函・2026-09-21）
+### (1l-2) — ★①② の文言に ★durable な guard が付いた（★conductor が Codex へ追加投函・2026-09-21）
 
 ★**当課の指摘**: ★③ が assert するのは ★価格（数値）だけ ∴ ★①②（法定表示の文言）は
 ★**直った瞬間から無防備**——★次に特商法を触った日に ★黙って戻りうる。
