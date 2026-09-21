@@ -1,10 +1,10 @@
 {
-  "reachable_contacts": 946,
-  "net_new_day": 13,
-  "remaining_to_1000": 54,
-  "portal_registrations": 120,
-  "measured_at": "2026-09-20T06:48:44.327Z",
+  "reachable_contacts": 953,
+  "net_new_day": 12,
+  "remaining_to_1000": 47,
+  "portal_registrations": 122,
+  "measured_at": "2026-09-21T06:55:58.062Z",
   "trigger": "schedule",
-  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/35495150632",
-  "source_report": "reports/plugin-funnel/2026-09-19.json"
+  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/35570482407",
+  "source_report": "reports/plugin-funnel/2026-09-20.json"
 }
