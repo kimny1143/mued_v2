@@ -1982,3 +1982,60 @@ git worktree add --detach <tmp> refs/pull/<n>/head
 ★★∴ ★将来 メニュー別 form を作ると 400（★「新しい方が弾かれる」ので 原因に当たりにくい）
 ★当課の推奨 … ★今は放置。★form を作る回に ★同じ PR で直す
 ```
+
+### (1q) — ★配布 CLAUDE.md の Tier 2 行と組織表が ★正本と食い違う（2026-09-21・★当課は直さない）
+
+★**きっかけ**: ★当課が #1078 の review 先を ★「product課 が居ないので CCO へ」と書き、★conductor が
+★**「代替ではなく正規の経路」**と訂正した。★**正本を 1 回 引いたら、★写しが古かった。**
+
+```
+★配布された写し（当課 CLAUDE.md:31）
+   「Tier 2 レビュー担当: ★mued↔product／dsp→template/CCO／…」
+★★正本（_conductor/.claude/rules/current-organization.md:38・mtime 2026-09-15 12:28）
+   「レビュー担当は案件の専門性で選ぶ。dsp は CCO、★★mued は CCO（DSP 変更は dsp）、
+     conductor と CCO は互いまたは Codex が既存経路」
+```
+
+## ★★食い違いは Tier 行だけでない ——★組織表そのものが 1 世代 古い
+
+```
+★正本の「担当の所在」… ★_conductor / _mued-dsp / mued_v2 / hoo-mcp /
+   claude-code-template / threads-api / _contents-writing / freee-MCP
+★★product課 は ★表に無い（★「起動していない」ではなく ★★現行の構成に無い）
+★★写しは ★2026-06-11「組織再編v2」の ★11課 体制を載せたまま
+★正本は ★9/13 kimny 承認の ★zero-base ∴ ★写しは 1 世代 前
+★★正本は「occur / video や休止した席を ★古い一覧を根拠に起こさない」と明記
+   ∴ ★★写しの古い一覧が ★まさにその「古い一覧」として働く
+```
+
+## ★★当課は直さない（★理由 2 つ）
+
+```
+★① ★CLAUDE.md は ★配布物（★正本＝claude-code-template・「直接編集しない」と明記）
+★② ★peer の依頼は ★CLAUDE.md 編集の根拠にならない（★恒久制約）
+★∴ ★直しは ★CCO（claude-code-template / 共通基盤 owner）の手番。★conductor へ上げた
+```
+
+## ★当課の側の手当て（★記憶に頼らない形）
+
+★**Tier の routing を ★配布の写しから読まない。★案件ごとに ★正本を引く。**
+★**型**: → [[feedback-relayed-claims-keep-confidence-lose-evidence]] ／ 共通block「一次を 1 回 照合する」。
+★★**今回 効いたのは ★当課の照合ではなく ★conductor の訂正**だった
+——★当課は ★写しを信じたまま報告していた。★**照合は ★指摘を受けてから 走った。**
+★∴ ★**「正本が在る」と書いてある文書を読んだ時点で ★引くのが正しい順序**（★写しの冒頭に そう書いてある）。
+
+## ★正本が 裏づけた点（★1 つ）
+
+★正本 line 39: ★**「レビュー相手が常設していると仮定しない。★作成者による自己承認で独立レビューを代替しない。」**
+★∴ ★#1078 を ★self-merge せず ★routing を依頼したのは ★正本どおりだった。
+
+## ★併せて受領（★当課の手番でない）
+
+```
+★#1078 … ★CCO レビュー待ち（★観点 4 点・★中継不要で CCO から直接）
+★enum  … ★`advisory-inquiry-enum-stale-20260921` rev1 / owner mued / received / 意図的に保留
+   ★conductor の言い方（★当課より正確）: ★**「使う側が無い状態で API の契約を単独で変えると、
+     確かめられないまま入る」**
+★masterchain … ★FastSpring 最終審査のみ。★乗り換えは選ばない（★4 層・約 30 file・審査 1〜2 週）
+★残件 2 件 … ★通知（返信待ち）／ ★カード 2 メニューの税（kimny ダッシュボード確認が入口）＝ ★conductor 所有
+```
