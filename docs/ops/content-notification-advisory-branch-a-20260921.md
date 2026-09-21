@@ -35,21 +35,72 @@
 
 ★**位置づけの変更**（★価格だけではない）: ★**advisory は 小規模事業者向けに絞る**。★旧来の路線は ★マーケティング的にもスキーム的にも失敗（★売上ゼロ）という kimny の評価。★八王子向けの訴求が起点。
 
+★★**記事で ★書いてはいけないこと（★kimny 確定 2026-09-21・★法定表示と矛盾するため）**
+
+★**これが ★この通知の ★いちばん重要な部分です** ——★価格は grep で直せますが、★**下記は ★訴求の言い回しに溶けるので grep で拾えません。**
+
+```
+★★① ★「いつでも解約できます」を ★3ヶ月プログラムに使わない
+   ★確定条件（★正本の逐語・そのまま引けます）:
+     「契約成立後の中途解約及び返金はお受けできません」
+     「未払残額のお支払い義務は契約期間満了まで存続します」
+   ★★「月額100,000円」という表記は ★月額課金ではなく ★3ヶ月契約の ★分割です
+      ——★「月額プラン」「サブスク」と書くと ★法定表示と矛盾します
+   ★「いつでも解約」が使えるのは ★★社内お守りプラン だけ（★月単位）
+★★② ★3ヶ月プログラムに ★「クレジットカードで支払えます」と書かない
+   ★確定＝★3ヶ月プログラムは「銀行振込（請求書）のみ」
+     （★Stripe に ¥100,000×3 の価格オブジェクトが無く ★カードで請求できない）
+   ★カードが使えるのは ★★社内お守りプラン と ★スポット相談 だけ。★その 2 つの逐語は
+     「クレジットカード（Stripe 経由）又は銀行振込（請求書）」
+★★③ ★支払期日に ★日数を書かない（★「14日以内」等）
+   ★確定＝★「請求書に記載の支払期日まで」。★日数は ★未確定（★kimny 判断待ち）
+★④ ★電話番号を書かない（★web はメールのみ・`support@mued.jp`）
+```
+
+★**正本**: ★`messages/{ja,en}.json` の `tokushoho.advisory`（★法定表示）と `advisory.pricing`（★価格表の面）。
+★**両面に ★同一句で書いてあり、★test が ★一致を assert しています** ——★**記事側が言い換えると ★検出できません**ので、
+★**迷ったら ★上の 4 点を ★そのまま引いてください。**
+
 ★**影響範囲（★当課が実測した・★推定ではない）**
 
 ```
 ★content課 の ★公開済記事 … ★影響なし
    ★根拠＝★workspace に 公開系 dir が 無い（published / posts / articles / output / live / dist / content ＝ すべて不在）
-★content課 の ★drafts     … ★★6 file が 旧価格を持つ（＝★再利用すると 旧価格が 復活する）
+★content課 の ★drafts     … ★★合計 7 file（★2 軸で測った・★軸ごとに答えが違う）
+
+★**軸① 旧価格（数値）… 6 file**
+```
    drafts/inbox/advisory-lp-v7-plan-brief-20260702.md
-   drafts/inbox/advisory-lp-i18n-section-mapping-20260702.md
+   drafts/inbox/advisory-lp-i18n-section-mapping-20260702.md   ← ★価格のみ
    drafts/inbox/advisory-claudedesign-runbook-20260702.md
    drafts/inbox/advisory-lp-copy-rewrite-20260703.md
    drafts/advisory-lp-impl/tokushoho-and-seo-diffs.md
    drafts/advisory-lp-impl/page.tsx
 ★測り方 … grep -ral --include='*.md' --include='*.tsx' -E '250,?000|200,?000円|400,?000円'
-★陽性control … 同 repo で 'advisory' は 47 file（∴ ★0 件は「見えていない」ではない）
-★可変性 … ★2026-09-21 時点の測定。★当課は content課 repo を書き換えていない（★読むだけ）
+```
+
+★**軸② 退役した ★文言（月額 / 解約 / クレジットカード）… 6 file・★うち 1 file は 軸① に無い**
+```
+   ★★drafts/inbox/advisory-tokushoho-final-fill-20260702.md   ← ★★軸① では ★見えなかった
+      ★中身＝★旧 3 段 前提の 特商法 下書き（★「診断（単発）… 着手後に中途解約される場合は…」）
+      ★★価格の数字を持たないので ★価格 grep では ★原理的に拾えない
+   ★drafts/inbox/advisory-lp-v7-plan-brief-20260702.md
+      ★中身＝★「支払方法・時期 … クレジットカード（Stripe経由）」＝ ★3ヶ月プログラムには ★もう誤り
+★測り方 … grep -ral --include='*.md' --include='*.tsx' -E '月額|解約|クレジットカード' | grep -i advisory
+```
+
+★★**∴ ★価格 grep だけでは 足りません** ——★**退役は「値が変わったもの」でなく「★消えた条件」として現れる**
+（→ 当方の型 `feedback-retirement-is-fail-silent`）。★**上の「書いてはいけないこと」4 点で ★もう一度 撃ってください。**
+
+★**advisory 以外は 対象外**: ★`いつでも解約` の他のヒット（`tokushoho-hoopass-*` 等）は ★Hoo Pass / MUEDial のもので、
+★**今回の変更とは無関係**です（★advisory で絞って除外済）。★混ぜて直さないでください。
+
+★**公開済記事 … 影響なし**の根拠と ★陽性control:
+```
+★公開系 dir が 無い（published / posts / articles / output / live / dist / content ＝ すべて不在）
+★陽性control … 同 repo で 'advisory' は ★47 file（∴ ★0 件は「見えていない」ではない）
+★可変性 … ★2026-09-21 時点の測定。★当課は content課 repo を ★書き換えていない（★読むだけ）
+```
 ```
 
 ★**緊急度**: ★**通常**（★公開済記事は無いので「即時」ではない。★但し ★drafts が そのまま次の記事の素になるため ★軽微にも落とさない ——★迷ったら過剰通知側）
