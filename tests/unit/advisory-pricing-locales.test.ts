@@ -56,6 +56,37 @@ function priceValues(locale: (typeof LOCALES)[number]): Record<string, unknown> 
   return messages(locale).advisory.pricing.values;
 }
 
+type RawLegalText = {
+  cancellation: string;
+  payment: string;
+  paymentTiming: string;
+};
+
+function rawLegalText(locale: (typeof LOCALES)[number]): RawLegalText {
+  const legal = messages(locale).tokushoho;
+  return {
+    cancellation: legal.advisory.cancellation.description,
+    payment: legal.payment.value,
+    paymentTiming: legal.advisory.paymentTiming.value,
+  };
+}
+
+// Text guards deliberately receive raw strings, never compact() output.
+// Explicit [kimny confirmation] notes remain allowed until the business decision;
+// the obsolete promises to disclose payment details later must not return.
+function textGuardHits(locale: (typeof LOCALES)[number], raw: RawLegalText) {
+  const anytime = locale === "ja" ? /いつでも解約/ : /at any time/i;
+  const fixedTerm = locale === "ja" ? /3ヶ月/ : /3-month/i;
+  const deferredPayment = locale === "ja"
+    ? /確定後に記載|個別にご案内(?:します)?|決定後に(?:記載|ご案内)/
+    : /will be stated once|arranged individually|will be (?:stated|specified) (?:once|after)/i;
+  return {
+    cancellationMissingTerm: Number(anytime.test(raw.cancellation) && !fixedTerm.test(raw.cancellation)),
+    deferredPayment: Number(deferredPayment.test(raw.payment)),
+    deferredPaymentTiming: Number(deferredPayment.test(raw.paymentTiming)),
+  };
+}
+
 describe("advisory pricing — locale parity and publication coverage", () => {
   it.each(LOCALES)("%s has every canonical numeric price key", (locale) => {
     const values = priceValues(locale);
@@ -149,6 +180,55 @@ describe("advisory pricing — locale parity and publication coverage", () => {
     expect(legal.paymentTiming.value).toMatch(isJa ? /分割の回数・各回の金額と支払期日/ : /number of installments, amount and due date of each installment/);
     expect(legal.price.description).toContain("10%");
     expect(legal.contact.value).toBe("support@mued.jp");
+  });
+
+  it.each(LOCALES)("%s qualifies any unrestricted cancellation wording with the 3-month term (raw text)", (locale) => {
+    expect(textGuardHits(locale, rawLegalText(locale)).cancellationMissingTerm).toBe(0);
+  });
+
+  it.each(LOCALES)("%s contains no obsolete payment placeholders in either location (raw text)", (locale) => {
+    const hits = textGuardHits(locale, rawLegalText(locale));
+    expect(hits.deferredPayment).toBe(0);
+    expect(hits.deferredPaymentTiming).toBe(0);
+  });
+
+  it("has identical ja/en firing counts for EACH raw-text guard", () => {
+    expect(textGuardHits("ja", rawLegalText("ja"))).toEqual(textGuardHits("en", rawLegalText("en")));
+  });
+
+  // Known inputs assert nonzero hits as well as locale parity: two broken detectors
+  // returning zero must not pass. Spaces in the English phrases are intentional.
+  it.each([
+    {
+      name: "unqualified cancellation",
+      ja: { cancellation: "いつでも解約できます。", payment: "銀行振込", paymentTiming: "毎月初に請求" },
+      en: { cancellation: "You may cancel at any time.", payment: "Bank transfer", paymentTiming: "Billed monthly" },
+      expected: { cancellationMissingTerm: 1, deferredPayment: 0, deferredPaymentTiming: 0 },
+    },
+    {
+      name: "deferred disclosure in both payment locations",
+      ja: { cancellation: "3ヶ月契約", payment: "支払方法は確定後に記載します。", paymentTiming: "確定後に記載します。" },
+      en: { cancellation: "3-month contract", payment: "Payment method will be stated once finalized.", paymentTiming: "Details will be stated once finalized." },
+      expected: { cancellationMissingTerm: 0, deferredPayment: 1, deferredPaymentTiming: 1 },
+    },
+    {
+      name: "individually arranged placeholder in both payment locations",
+      ja: { cancellation: "3ヶ月契約", payment: "MUED advisory: 個別にご案内します", paymentTiming: "個別にご案内します" },
+      en: { cancellation: "3-month contract", payment: "MUED advisory: arranged individually", paymentTiming: "arranged individually" },
+      expected: { cancellationMissingTerm: 0, deferredPayment: 1, deferredPaymentTiming: 1 },
+    },
+    {
+      name: "qualified cancellation satisfies the requested implication",
+      ja: { cancellation: "3ヶ月契約。お守りプランはいつでも解約できます。", payment: "銀行振込", paymentTiming: "毎月初に請求" },
+      en: { cancellation: "3-month contract. The support plan may be cancelled at any time.", payment: "Bank transfer", paymentTiming: "Billed monthly" },
+      expected: { cancellationMissingTerm: 0, deferredPayment: 0, deferredPaymentTiming: 0 },
+    },
+  ])("raw-text detector control: $name fires equally in ja/en", ({ ja, en, expected }) => {
+    const jaHits = textGuardHits("ja", ja);
+    const enHits = textGuardHits("en", en);
+    expect(jaHits).toEqual(expected);
+    expect(enHits).toEqual(expected);
+    expect(jaHits).toEqual(enHits);
   });
 
   it("has no retired prices in the entire llms.txt source, including gated content", () => {
