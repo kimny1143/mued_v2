@@ -2129,7 +2129,7 @@
       "lead1": "\"I want to make my work more efficient with AI.\" \"I want to turn a new idea into something real with AI.\" But on your own, it's hard to know where to start or what to build. From the assessment to the build, we do it with you.",
       "lead2": "For example: automated booking. Draft replies to inquiries. Quotes and proposal decks. Cutting daily back-office work. Prototyping a new idea. We turn \"could AI do this?\" into a tool that actually runs.",
       "lead3": "You don't need any technical knowledge. We take care of the technical side. You just tell us what you want to do — that's enough.",
-      "cta": "Start with a free 60 minutes"
+      "cta": "Email us for a free 60-minute consultation"
     },
     "who": {
       "title": "Who does the work",
@@ -2166,30 +2166,36 @@
     "pricing": {
       "title": "Pricing",
       "subtitle": "It starts with a free consultation. This isn't a place you jump straight into a big contract.",
-      "headerWhat": "What it is",
-      "headerPrice": "Price",
+      "taxNote": "Prices are shown before tax, with tax-inclusive totals in parentheses (10% consumption tax).",
+      "values": {
+        "initialConsultationYen": 0,
+        "programMonthlyYen": 100000,
+        "programTotalYen": 300000,
+        "guardianMonthlyYen": 30000,
+        "spotYen": 30000
+      },
       "consult": {
         "name": "First consultation",
-        "what": "We sort out your current challenges and what AI can do, together.",
-        "price": "First 60 min free / then ¥30,000 (¥33,000 incl. tax) per session"
+        "what": "We sort out the work that's getting in your way and where to start.",
+        "price": "Free (60 minutes)"
       },
-      "diagnosis": {
-        "name": "Assessment + blueprint (one-off)",
-        "what": "An assessment of what can be built and how, plus one concrete blueprint. No follow-on contract required.",
-        "price": "¥250,000 (¥275,000 incl. tax)"
+      "program": {
+        "name": "3-month workflow improvement & handover program",
+        "what": "¥300,000 total (¥330,000 incl. tax; installments available). Includes two 60-minute meetings per month, chat support, initial setup for up to two workflows, hands-on instruction, and a short manual.",
+        "price": "¥100,000/month (¥110,000 incl. tax)"
       },
-      "build": {
-        "name": "Monthly build",
-        "what": "Based on the blueprint, we build a working tool and deploy it.",
-        "price": "From ¥220,000/month (incl. tax)"
+      "guardian": {
+        "name": "In-house support plan",
+        "what": "Chat support, a 60-minute review every three months, and practical AI updates. Cancel month to month.",
+        "price": "¥30,000/month (¥33,000 incl. tax)"
       },
-      "companion": {
-        "name": "Monthly companion",
-        "what": "Ongoing support for improvements, additions, and operational questions after launch.",
-        "price": "From ¥440,000/month (incl. tax)"
+      "spot": {
+        "name": "One-off consultation",
+        "what": "We work through one defined issue together in 90 minutes. No ongoing contract required.",
+        "price": "¥30,000 (¥33,000 incl. tax) / 90 minutes"
       },
-      "monthlyLabel": "Ongoing build & companion (monthly)",
-      "monthlyNote": "Prices are a guide — scoped per engagement; tell us the details in your free consultation."
+      "cancellationTitle": "Term & cancellation",
+      "cancellation": "The 3-month program is a fixed three-month engagement. The in-house support plan may be cancelled month to month (no prorated refund for a partial month). One-off consultations may be cancelled through the day before the session. Same-day cancellations and no-shows are non-refundable."
     },
     "myWay": {
       "title": "How I work",
@@ -2217,14 +2223,18 @@
     "footerCta": {
       "title": "Let's start with a free 60 minutes",
       "description": "\"Could AI do this?\" — 60 minutes, free. No jargon.",
-      "cta": "Start with a free 60 minutes"
+      "cta": "Email us for a free 60-minute consultation"
     },
     "footer": {
       "operator": "Operated by glasswerks inc.",
-      "contact": "Contact: support@mued.jp",
+      "contactLabel": "Contact:",
       "legalLink": "Legal",
       "privacyLink": "Privacy Policy",
       "signature": "MUED — AI-delegated development, run at a quality you can actually use."
+    },
+    "contact": {
+      "email": "support@mued.jp",
+      "emailLabel": "Contact us by email"
     },
     "booking": {
       "title": "Book your free 60-minute consultation",
@@ -2255,7 +2265,7 @@
       }
     },
     "cta": {
-      "short": "Free 60 min"
+      "short": "Email us"
     }
   },
   "muedialLp": {

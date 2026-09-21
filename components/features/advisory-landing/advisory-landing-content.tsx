@@ -20,6 +20,7 @@ import { AdvisoryCtaSection } from "./advisory-cta-section";
 export function AdvisoryLandingContent() {
   const locale = useLocale();
   const tf = useTranslations("advisory.footer");
+  const tContact = useTranslations("advisory.contact");
   // nav link + vertical tab use the short label (avoids a 2-line wrap in the tight header/tab);
   // the Hero and CONTACT buttons keep the full hero.cta / footerCta.cta.
   const tcta = useTranslations("advisory.cta");
@@ -49,7 +50,10 @@ export function AdvisoryLandingContent() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="space-y-4">
             <p className="text-sm text-neutral-500">
-              {tf("operator")}／{tf("contact")}
+              {tf("operator")}／{tf("contactLabel")} {" "}
+              <a href={`mailto:${tContact("email")}`} className="text-[#865109] hover:underline">
+                {tContact("email")}
+              </a>
             </p>
             <nav className="flex items-center gap-6">
               <Link href={`/${locale}/tokushoho`} className="text-sm text-neutral-500 transition-colors hover:text-[#865109]">

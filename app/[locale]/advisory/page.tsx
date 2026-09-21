@@ -56,6 +56,19 @@ export default async function AdvisoryPage({ params }: PageProps) {
 
   const tFaq = await getTranslations({ locale, namespace: "advisory.faq" });
   const tMeta = await getTranslations({ locale, namespace: "advisory.meta" });
+  const tPricing = await getTranslations({ locale, namespace: "advisory.pricing" });
+  const priceValues = tPricing.raw("values") as {
+    initialConsultationYen: number;
+    programMonthlyYen: number;
+    programTotalYen: number;
+    guardianMonthlyYen: number;
+    spotYen: number;
+  };
+  const taxIncluded = (price: number) => Math.round(price * 1.1);
+  const offerDescription = (key: "consult" | "program" | "guardian" | "spot") =>
+    locale === "ja"
+      ? `${tPricing(`${key}.price`)}。${tPricing(`${key}.what`)}`
+      : `${tPricing(`${key}.price`)}. ${tPricing(`${key}.what`)}`;
 
   // FAQPage — LLMO/GEO. FAQ copy is v7.1 draft (kimny redline before unlock).
   const faqStructuredData = {
@@ -90,7 +103,7 @@ export default async function AdvisoryPage({ params }: PageProps) {
       "@type": "Organization",
       name: "glasswerks inc.",
       url: "https://www.glasswerks.jp",
-      email: "info@glasswerks.jp",
+      email: "support@mued.jp",
       founder: {
         "@type": "Person",
         name: "Atsushi Kimura",
@@ -113,33 +126,43 @@ export default async function AdvisoryPage({ params }: PageProps) {
       itemListElement: [
         {
           "@type": "Offer",
-          name: locale === "ja" ? "まず相談（壁打ち）" : "First consultation",
-          price: "33000",
+          name: tPricing("consult.name"),
+          price: String(priceValues.initialConsultationYen),
           priceCurrency: "JPY",
-          description:
-            locale === "ja"
-              ? "初回60分無料。以降 33,000円（税込）/回。"
-              : "First 60 minutes free. Then ¥33,000 (incl. tax) per session.",
+          description: offerDescription("consult"),
         },
         {
           "@type": "Offer",
-          name: locale === "ja" ? "見立て＋設計図（単発）" : "Assessment + blueprint (one-off)",
-          price: "275000",
+          name: tPricing("program.name"),
+          price: String(taxIncluded(priceValues.programTotalYen)),
           priceCurrency: "JPY",
+          description: offerDescription("program"),
+          priceSpecification: {
+            "@type": "UnitPriceSpecification",
+            price: String(taxIncluded(priceValues.programMonthlyYen)),
+            priceCurrency: "JPY",
+            unitText: "MONTH",
+          },
         },
         {
           "@type": "Offer",
-          name: locale === "ja" ? "月額でつくる" : "Monthly build",
-          price: "220000",
+          name: tPricing("guardian.name"),
+          price: String(taxIncluded(priceValues.guardianMonthlyYen)),
           priceCurrency: "JPY",
-          description: locale === "ja" ? "22万円〜／月（税込）" : "From ¥220,000/month (incl. tax)",
+          description: offerDescription("guardian"),
+          priceSpecification: {
+            "@type": "UnitPriceSpecification",
+            price: String(taxIncluded(priceValues.guardianMonthlyYen)),
+            priceCurrency: "JPY",
+            unitText: "MONTH",
+          },
         },
         {
           "@type": "Offer",
-          name: locale === "ja" ? "月額で並走する" : "Monthly companion",
-          price: "440000",
+          name: tPricing("spot.name"),
+          price: String(taxIncluded(priceValues.spotYen)),
           priceCurrency: "JPY",
-          description: locale === "ja" ? "44万円〜／月（税込）" : "From ¥440,000/month (incl. tax)",
+          description: offerDescription("spot"),
         },
       ],
     },
