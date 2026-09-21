@@ -154,14 +154,35 @@ describe("advisory pricing — locale parity and publication coverage", () => {
     expect(keys(messages("ja"))).toEqual(keys(messages("en")));
   });
 
+  // Both legal locations must state the SAME payment methods. They differ only in their prefix
+  // ("MUED advisory: " vs "支払方法: "), so compare the REMAINDER byte-for-byte. A `toBe` on the
+  // whole line would force the prefixes to match too — which they must not.
+  // Per menu (kimny 2026-09-21): the 3-month program is invoice-only, because no ¥100,000×3
+  // price object exists in Stripe and it therefore cannot be charged by card.
   it.each(LOCALES)("%s uses identical payment-method wording in both legal locations", (locale) => {
+    const isJa = locale === "ja";
     const legal = messages(locale).tokushoho;
-    const globalMethod = legal.payment.value.split("\n").find((line) => line.startsWith("MUED advisory: "));
-    expect(globalMethod).toBe(`MUED advisory: ${legal.advisory.paymentTiming.value.split("\n")[0]}`);
-    expect(globalMethod).toMatch(locale === "ja" ? /有料3メニュー共通/ : /all three paid services/);
-    expect(globalMethod).toMatch(locale === "ja" ? /クレジットカード（Stripe 経由）/ : /credit card \(via Stripe\)/i);
-    expect(globalMethod).toMatch(locale === "ja" ? /銀行振込（請求書）/ : /bank transfer \(invoice\)/i);
-    expect(globalMethod).not.toMatch(/\[kimny (?:確認|confirmation):/);
+    const GLOBAL_PREFIX = "MUED advisory: ";
+    const TIMING_PREFIX = isJa ? "支払方法: " : "Payment method: ";
+    const globalLine = legal.payment.value.split("\n").find((line) => line.startsWith(GLOBAL_PREFIX));
+    expect(globalLine, "payment.value must carry a MUED advisory line").toBeDefined();
+    const timingLine = legal.advisory.paymentTiming.value.split("\n")[0];
+    expect(timingLine.startsWith(TIMING_PREFIX), "paymentTiming must carry its prefix").toBe(true);
+    const common = globalLine!.slice(GLOBAL_PREFIX.length);
+    expect(common, "the shared sentence must be byte-identical in both legal locations")
+      .toBe(timingLine.slice(TIMING_PREFIX.length));
+    expect(common).not.toMatch(/\[kimny (?:確認|confirmation):/);
+
+    const clauses = common.split(isJa ? "。" : ". ").filter(Boolean);
+    const program = clauses.find((c) => c.includes(isJa ? "3ヶ月プログラム" : "3-month program"));
+    expect(program, "the 3-month program clause must exist").toBeDefined();
+    expect(program).toMatch(isJa ? /銀行振込（請求書）のみ/ : /bank transfer \(invoice\) only/i);
+    expect(program, "the 3-month program is invoice-only").not.toMatch(isJa ? /クレジットカード/ : /credit card/i);
+    const others = clauses.find((c) => c.includes(isJa ? "社内お守りプラン" : "in-house support plan"));
+    expect(others, "the other-menus clause must exist").toBeDefined();
+    expect(others).toMatch(isJa ? /スポット相談/ : /one-off consultation/i);
+    expect(others).toMatch(isJa ? /クレジットカード（Stripe 経由）/ : /credit card \(via Stripe\)/i);
+    expect(others).toMatch(isJa ? /銀行振込（請求書）/ : /bank transfer \(invoice\)/i);
   });
 
   it.each(LOCALES)("%s scopes delivery, payment and cancellation to each new paid service", (locale) => {

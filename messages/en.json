@@ -416,7 +416,7 @@
     },
     "payment": {
       "title": "Payment Methods",
-      "value": "Varies by service.\nMUEDial: credit card (via Stripe)\nMUEDsp paid plugins: FastSpring checkout (payment methods offered by FastSpring, Inc. as the Merchant of Record)\nMUED advisory: Payment method (all three paid services): credit card (via Stripe) or bank transfer (invoice)."
+      "value": "Varies by service.\nMUEDial: credit card (via Stripe)\nMUEDsp paid plugins: FastSpring checkout (payment methods offered by FastSpring, Inc. as the Merchant of Record)\nMUED advisory: The 3-month program is invoiced by bank transfer (invoice) only. The in-house support plan and one-off consultations may be paid by credit card (via Stripe) or bank transfer (invoice)."
     },
     "contractEstablishment": {
       "title": "Contract Establishment",
@@ -520,7 +520,7 @@
       },
       "paymentTiming": {
         "title": "Payment Method & Timing",
-        "value": "Payment method (all three paid services): credit card (via Stripe) or bank transfer (invoice).\nFirst consultation: free.\n3-month program: ¥100,000/month (¥110,000 incl. tax), a three-month contract totaling ¥300,000 (¥330,000 incl. tax; installments available). You may pay in a lump sum or in installments. For installments, ¥100,000 (¥110,000 incl. tax) is invoiced three times, at the start of each contract month. In either case, payment is due by the due date stated on the invoice.\nIn-house support plan: billed at the start of each month.\nOne-off consultation: billed per session. Payment is due by the due date stated on the invoice."
+        "value": "Payment method: The 3-month program is invoiced by bank transfer (invoice) only. The in-house support plan and one-off consultations may be paid by credit card (via Stripe) or bank transfer (invoice).\nFirst consultation: free.\n3-month program: ¥100,000/month (¥110,000 incl. tax), a three-month contract totaling ¥300,000 (¥330,000 incl. tax; installments available). You may pay in a lump sum or in installments. For installments, ¥100,000 (¥110,000 incl. tax) is invoiced three times, at the start of each contract month. In either case, payment is due by the due date stated on the invoice.\nIn-house support plan: billed at the start of each month.\nOne-off consultation: billed per session. Payment is due by the due date stated on the invoice."
       },
       "delivery": {
         "title": "Service Delivery",
