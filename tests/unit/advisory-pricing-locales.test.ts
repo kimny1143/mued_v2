@@ -23,7 +23,7 @@ const PRICE_KEYS = Object.keys(CANONICAL_PRICES) as (keyof typeof CANONICAL_PRIC
 const RETIRED_PRICES = [250000, 275000, 200000, 220000, 400000, 440000] as const;
 
 type Messages = {
-  advisory: { pricing: { values: Record<string, unknown> } };
+  advisory: { pricing: { values: Record<string, unknown>; cancellation: string } };
   tokushoho: {
     payment: { value: string };
     advisory: {
@@ -193,6 +193,23 @@ describe("advisory pricing — locale parity and publication coverage", () => {
     expect(legal.paymentTiming.value).toMatch(isJa ? /請求書に記載の支払期日/ : /due date stated on the invoice/i);
     expect(legal.price.description).toContain("10%");
     expect(legal.contact.value).toBe("support@mued.jp");
+  });
+
+  // The strongest term must appear where the buying decision is made, not only on the legal page.
+  // Direction matters: assert tokushoho states it, THEN that the pricing surface repeats it —
+  // dropping it from EITHER side then fails. Both use the same phrase on purpose, so one
+  // regex covers both surfaces; a paraphrase on one side would not be detectable.
+  it.each(LOCALES)("%s repeats the no-termination term on the pricing surface, not only in tokushoho", (locale) => {
+    const isJa = locale === "ja";
+    const noTermination = isJa ? /中途解約及び返金はお受けできません/ : /early termination and refunds are not available/i;
+    const unpaidBalance = isJa ? /未払残額/ : /unpaid balance/i;
+    const legal = messages(locale).tokushoho.advisory.cancellation.description;
+    const lp = messages(locale).advisory.pricing.cancellation;
+    expect(noTermination.test(legal), "tokushoho must state the no-termination term").toBe(true);
+    expect(noTermination.test(lp), "advisory.pricing must repeat the no-termination term").toBe(true);
+    expect(unpaidBalance.test(lp), "advisory.pricing must mention the unpaid balance").toBe(true);
+    expect(lp).toMatch(isJa ? /月単位で解約できます/ : /cancelled month to month/i);
+    expect(lp).not.toMatch(/\[kimny (?:確認|confirmation):/);
   });
 
   it.each(LOCALES)("%s qualifies any unrestricted cancellation wording with the 3-month term (raw text)", (locale) => {
