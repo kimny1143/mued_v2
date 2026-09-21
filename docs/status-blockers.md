@@ -1351,3 +1351,71 @@ git worktree add --detach <tmp> refs/pull/<n>/head
 ★★**この rule の実例が まさに Hoo Pass 退役で落ちた件**で、★原因は ★「merge 後にやる」と後ろへずらしたこと。
 ★**∴ ★押す者が その手で送る。** ★担い手は conductor へ確認中（(a) 押す者／(b) conductor 一括・★当課推奨は (a)）。
 ★**`next_action` でなく `blocked_by` に置く**（★退役は構造的に fail-silent）。
+
+### (1l-1) — ★全レイヤー sweep の 2 件（★`--include` を付けずに撃った・2026-09-21）
+
+★**CLAUDE.md「価格改定は全レイヤーを網羅する（Stripe定数 → UI → 翻訳 → ★AIプロンプト → テスト期待値）」**に従い、
+★`--include` を ★付けずに repo 全体を撃った（→ [[feedback-zero-hits-means-your-filter-not-absence]]）。
+
+## ★★① Codex が基準を上回った —— ★JSON-LD が ★焼き値から 導出へ（★型2）
+
+★**main には ★構造化データに旧価格が ★焼かれていた**（★当課は これを criteria に挙げていない）:
+```
+★main  app/[locale]/advisory/page.tsx … price: "275000" / "220000" / "440000"
+★★＋ 生文言も … "22万円〜／月（税込）" / "44万円〜／月（税込）"
+★PR head … ★literal 0。★`tPricing.raw("values")` からの導出:
+   price: String(taxIncluded(priceValues.programTotalYen))
+   priceSpecification.price: String(taxIncluded(priceValues.programMonthlyYen))
+```
+★**∴ ★構造化データが messages から ★乖離できない形になった。**
+★**効く理由**: ★JSON-LD は ★AI/検索が読む面で ★人の目視では見つからない
+（→ [[feedback-shipped-but-unreachable-is-silent]] の裏＝★見えないから壊れても報告されない）。
+
+★**残差（★差し戻しではない・★手番は次に触る回）**:
+```
+★`taxIncluded = (p) => Math.round(p * 1.1)` ＝ ★税率 10% が ★code 側にも在る
+★`advisory.pricing.taxNote` にも「消費税10%」が在る ∴ ★税率が動く日に ★2 箇所
+```
+
+## ★★② ★母集団を ★repo 全体へ広げてはいけない（★数値の部分一致・★実測）
+
+★conductor の射程（★ja/en 全 namespace ＋ llms.txt）は ★偽陽性 0（★当課 実測）。
+★**但し「広い方が安全」と読んで ★repo 全体へ広げると 壊れる**:
+
+```
+★550e8400-e29b-41d4-a716-446655440000 （★UUID・booking/interview の test）→ ★"440000"
+★86400000  （★1 日 の ms）  → ★"400000"
+★259200000 （★3 日 の ms）  → ★"200000"
+★7200000   （★2 時間 の ms）→ ★"200000"
+★（新価格側は衝突なし … 330000 / 100000 とも 0 件）
+```
+★**∴ ★射程は 今のまま が正しい**（★広げないことが ★手抜きではなく ★測った上の判断）。
+★★**将来 広げるなら ★裸の数字でなく ★`円` / `¥` と桁区切りを含む形で照合する。**
+★★**さもないと「除外リストを足す」方向に行き、★母集団が静かに縮む**
+——★**これは #1049 で踏んだ「包含リスト」の ★裏返し**（→ [[feedback-check-population-exclusion-not-inclusion]]）。
+
+## ★★(1l-2) — ★①② の文言に ★durable な guard が付いた（★conductor が Codex へ追加投函・2026-09-21）
+
+★**当課の指摘**: ★③ が assert するのは ★価格（数値）だけ ∴ ★①②（法定表示の文言）は
+★**直った瞬間から無防備**——★次に特商法を触った日に ★黙って戻りうる。
+★**当課の検証器は ★session 限りの script** ∴ ★durable な guard にならない。
+
+★**conductor が投函した 2 本**:
+```
+★(a) cancellation が「いつでも解約 / at any time」を含むなら ★「3ヶ月 / 3-month」も含むこと
+★(b) tokushoho.payment と advisory.paymentTiming に ★placeholder 文言
+     （確定後に記載 / will be stated once）が ★無いこと
+★いずれも ★圧縮前の生文字列に当てる ＋ ★ja/en の発火数一致も assert
+```
+★**∴ ★当課の E2 ＝「★repo の test が 赤くなるか」を ★新 head で測る**
+（★`tokushoho.advisory.cancellation` に「いつでも解約」を戻して ★赤を見る）。
+★**緑なら ★unguarded として `blocked_by` に残す**（★conductor と合意）。
+
+★**当課が この作業中に ★自分の計器で 2 回 踏んだ形**（★申し送り済）:
+```
+★① ★空白を落とした文字列に ★語を含む EN の pattern を当てていた
+   （"arranged individually" → "arrangedindividually" ∴ ★永久に一致しない）
+★② ★"cancelled at any time" を ★"cancel at any time" で撃って ★EN を取りこぼした
+★★どちらも ★tell は「★ja だけ発火して en が沈黙する非対称」
+★★∴ ★数値は圧縮して可・★語は raw に当てる・★ja/en の発火数一致を見る
+```
