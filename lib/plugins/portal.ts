@@ -167,3 +167,78 @@ export function buildAvailableItems(owned: readonly { pluginKey: string }[] | nu
   }
   return out;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// P-4 — the PAID line. Kept separate from buildPortalItems on purpose: that function documents
+// "NEVER emits a licenseKey", and the way to keep that true is for the licence path to be a
+// different function with its own type, not a nullable field threaded through the free one.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Minimal purchase shape the assembler consumes (decoupled from the Drizzle row). */
+export interface OwnedPurchase {
+  licenseKey: string | null;
+  createdAt: Date;
+}
+
+export interface PurchaseItem {
+  productKey: "masterchain";
+  /**
+   * ★Derived from the download URL, not stored in a second constant. The free modules keep
+   * `*_VERSION` and `*_DOWNLOAD_URL` side by side and plugin-version-matches-download.test.ts exists
+   * precisely because "the same fact lives in two constants, so they WILL drift again". Adding
+   * MASTERCHAIN_VERSION would buy that problem for a value the URL already carries.
+   * ★Null when the filename carries no parseable version — the row still renders, without a version.
+   */
+  version: string | null;
+  downloadUrl: string;
+  /** ★Only ever the caller's OWN row — the query upstream is scoped to their verified emails. */
+  licenseKey: string;
+  purchasedAt: Date;
+}
+
+/** "…/MUEDsp-masterchain-0.1.3-installer.pkg" → "0.1.3". Null when the filename carries none. */
+function versionInUrl(url: string): string | null {
+  try {
+    const m = new URL(url).pathname.match(/-(\d+\.\d+\.\d+)(?:-[a-z]+)?-installer\.pkg$/);
+    return m ? m[1] : null;
+  } catch {
+    return null; // a malformed/relative URL must not throw the whole shelf
+  }
+}
+
+/**
+ * Map a buyer's masterchain purchases → portal rows. The caller MUST pass rows already filtered to
+ * verifiedEmailsOf() on the server.
+ *
+ * ★Rows with no licenseKey are SKIPPED, not rendered blank. A purchase row exists from the moment the
+ * webhook lands; the key is written in the same handler, but a partially-written row (or a legacy row
+ * from before issuance moved in-house) would otherwise put an empty "copy this" box on the buyer's
+ * screen — which looks like the key was lost. Showing nothing is honest; showing an empty box is not.
+ * ★Deduped by licenceKey: one buyer with two verified addresses must not see the same key twice.
+ * Ordered newest purchase first.
+ */
+export function buildPurchaseItems(
+  purchases: readonly OwnedPurchase[] | null | undefined,
+  downloadUrl: string,
+): PurchaseItem[] {
+  const items: PurchaseItem[] = [];
+  const seen = new Set<string>();
+  for (const p of purchases ?? []) {
+    const raw = p.licenseKey;
+    // ★Emptiness is judged on a trimmed copy; the value we EMIT is verbatim. The keyfile is signed
+    // over its exact bytes (licence.ts "prefix rule": nothing is re-serialised or normalised on
+    // either side), and it ends with a newline. Trimming it for tidiness would hand the buyer bytes
+    // we never signed — a mutation visible only at offline verification, i.e. only to purchasers.
+    if (!raw || raw.trim() === "" || seen.has(raw)) continue;
+    seen.add(raw);
+    items.push({
+      productKey: "masterchain",
+      version: versionInUrl(downloadUrl),
+      downloadUrl,
+      licenseKey: raw,
+      purchasedAt: p.createdAt,
+    });
+  }
+  items.sort((a, b) => b.purchasedAt.getTime() - a.purchasedAt.getTime());
+  return items;
+}

@@ -2645,6 +2645,16 @@
       "title": "Your rack is empty",
       "body": "Claim a free MUEDsp module and it shows up here — with the latest build one click away, for good.",
       "cta": "Browse the MUEDsp plugins"
+    },
+    "purchased": {
+      "label": "Purchased",
+      "kind": "Mastering chain",
+      "licenseLabel": "License key",
+      "copy": "Copy key",
+      "copied": "Copied",
+      "copyFailed": "Could not copy. Select the key and copy it manually.",
+      "howto": "Save the copied key as a file named license.key here: ~/Library/Application Support/glasswerks/MUEDsp/",
+      "purchasedOn": "Purchased {date}"
     }
   }
 }

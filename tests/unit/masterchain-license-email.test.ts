@@ -177,6 +177,20 @@ describe("masterchain licence delivery email", () => {
     }
   });
 
+  // ★P-4 added a second route to the key (the dashboard). The mail must gain that line WITHOUT
+  // losing the key itself: buying masterchain does not require an account, so a buyer who never
+  // signs up has only this mail. Asserting both together is the point — "mentions the dashboard"
+  // alone would stay green if someone later replaced the key with a link to it.
+  it("★names the dashboard as a second route AND still carries the key itself", async () => {
+    for (const locale of ["ja", "en"] as const) {
+      const mail = await render(URL, locale);
+      for (const surface of [mail.html, mail.text]) {
+        expect(surface, "the key itself must remain in the mail").toContain(KEY);
+        expect(surface).toMatch(locale === "ja" ? /ダッシュボード/ : /dashboard/i);
+      }
+    }
+  });
+
   it("★install comes before the key — that is the order the buyer has to do it in", async () => {
     const mail = await render(URL);
     expect(mail.html.indexOf(URL)).toBeLessThan(mail.html.indexOf(KEY));

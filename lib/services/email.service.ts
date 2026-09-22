@@ -966,6 +966,12 @@ Hoo MCP経由の自動送信
     const keep = isJa
       ? 'このメールは保管してください。キーを再取得できます。'
       : 'Keep this email — it is how you get the key again.';
+    // ★P-4. The key stays in this mail on purpose: buying does not require an account, and a buyer who
+    // never signs up must still be able to get their key from what they were sent. This line adds a
+    // second route for the people who do sign up — it does not replace the first.
+    const portal = isJa
+      ? 'ライセンスキーは mued.jp のダッシュボード（サインアップ後、同じメールアドレスで自動的に表示されます）でもいつでも確認できます。'
+      : 'You can also find your license key any time on your mued.jp dashboard — sign up with this same email address and it appears automatically.';
 
     // ★The plugin itself. Ordered BEFORE the key on purpose: install first, then licence — that is
     //   the order the buyer has to do it in, and a key pasted with nothing to unlock is confusing.
@@ -995,13 +1001,14 @@ Hoo MCP経由の自動送信
       <p style="background: #f4f4f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; word-break: break-all;">${path}</p>
       <pre style="background: #111113; color: #e5e7eb; padding: 16px; border-radius: 6px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all;">${data.licenseKey}</pre>
       <p>${keep}</p>
+      <p>${portal}</p>
       <p style="color: #9ca3af; font-size: 12px;">glasswerks inc. — mued.jp</p>
     `;
 
     const textHowTo = isJa
       ? `下のブロックを（1 行目の ${LICENSE_MAGIC} から最終行の sig= まで）すべてコピーし、次の場所に license.key という名前で保存してください。`
       : `Copy the whole block below — from the first line ${LICENSE_MAGIC} to the last line beginning sig= — and save it as license.key here:`;
-    const text = `${intro}\n\n${downloadText}\n\n${textHowTo}\n${path}\n\n${data.licenseKey}\n\n${keep}\n\nglasswerks inc. — mued.jp`;
+    const text = `${intro}\n\n${downloadText}\n\n${textHowTo}\n${path}\n\n${data.licenseKey}\n\n${keep}\n${portal}\n\nglasswerks inc. — mued.jp`;
 
     return { subject, html, text };
   },

@@ -2645,6 +2645,16 @@
       "title": "ラックはまだ空です",
       "body": "無料の MUEDsp モジュールを入手すると、ここに表示されます。以降は最新ビルドがワンクリックで手に入ります。",
       "cta": "MUEDsp プラグインを見る"
+    },
+    "purchased": {
+      "label": "購入したもの",
+      "kind": "マスタリング・チェーン",
+      "licenseLabel": "ライセンスキー",
+      "copy": "キーをコピー",
+      "copied": "コピーしました",
+      "copyFailed": "コピーできませんでした。キーを選択して手動でコピーしてください。",
+      "howto": "コピーしたキーを license.key というファイル名で次の場所に保存します: ~/Library/Application Support/glasswerks/MUEDsp/",
+      "purchasedOn": "{date} に購入"
     }
   }
 }

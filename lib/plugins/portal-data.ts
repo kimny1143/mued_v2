@@ -6,8 +6,16 @@
 // "fail-closed when no verified email" guarantees are unit-tested with a mocked DB.
 import { and, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { pluginEntitlements } from "@/db/schema";
-import { verifiedEmailsOf, buildPortalItems, type PortalItem, type ClerkUserLike } from "@/lib/plugins/portal";
+import { pluginEntitlements, masterchainPurchases } from "@/db/schema";
+import {
+  verifiedEmailsOf,
+  buildPortalItems,
+  buildPurchaseItems,
+  type PortalItem,
+  type PurchaseItem,
+  type ClerkUserLike,
+} from "@/lib/plugins/portal";
+import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 
 /**
  * The free-module portal items owned by `user`, resolved by the user's VERIFIED emails only.
@@ -51,4 +59,26 @@ export async function markPortalRegistered(user: ClerkUserLike | null | undefine
   } catch {
     // FAIL-OPEN — registration tracking must never break the portal/DL experience.
   }
+}
+
+/**
+ * P-4 — the masterchain purchases owned by `user`, resolved by the user's VERIFIED emails only.
+ *
+ * ★SAME authorization boundary as getPortalItemsForUser, deliberately: one seam, one place to get it
+ * wrong, one place the Tier-3 test points at. A second path "just for the paid line" is how the two
+ * drift until only one of them checks verification.
+ * ★Fail-closed: with no verified email the query is NOT run and [] is returned (never "everything").
+ * ★Selects only licenseKey + createdAt. The row also carries amount / order id / EULA columns; none of
+ * them belong on this screen, and not selecting them means a future view change cannot leak them.
+ */
+export async function getPurchaseItemsForUser(user: ClerkUserLike | null | undefined): Promise<PurchaseItem[]> {
+  const emails = verifiedEmailsOf(user);
+  if (emails.length === 0) return []; // fail-closed — no verified email owns nothing
+
+  const rows = await db
+    .select({ licenseKey: masterchainPurchases.licenseKey, createdAt: masterchainPurchases.createdAt })
+    .from(masterchainPurchases)
+    .where(inArray(masterchainPurchases.email, emails)); // scoped to the caller's verified emails ONLY
+
+  return buildPurchaseItems(rows, MASTERCHAIN_DOWNLOAD_URL);
 }
