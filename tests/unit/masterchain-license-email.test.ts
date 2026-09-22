@@ -159,6 +159,14 @@ describe("masterchain licence delivery email", () => {
         // MOCKS the URL, so production moving to a signed one would never show up here.
         // ★Removing the URL is stronger than forbidding `sig=` inside it: the assertion then cannot be
         // satisfied by anything except the prose it is about, whatever the URL later becomes.
+        // ★The strip depends on an EXACT match, so assert its premise on the rendered output. CCO
+        // measured (2026-09-22) that if the surface ever HTML-escapes the URL (`?exp=1&amp;sig=…`)
+        // the strip whiffs silently and `sig=` comes back. The template interpolates
+        // `href="${MASTERCHAIN_DOWNLOAD_URL}"` raw today, so this cannot happen yet — but when it
+        // does, this line says "the strip stopped working" instead of the next one quietly passing.
+        // ★Note this asserts the RENDERED surface, not the mock constant: a premise written against
+        // the fixture would not fire on the very change it guards against.
+        expect(surface.slice(0, keyAt), "the download URL must appear verbatim").toContain(URL);
         const instructions = surface.slice(0, keyAt).split(URL).join("");
         expect(instructions, "instructions must name the first line").toContain(LICENSE_MAGIC);
         expect(instructions, "instructions must name the last line").toContain("sig=");
