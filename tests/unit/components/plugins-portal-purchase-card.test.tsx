@@ -96,10 +96,15 @@ describe("purchase card — the buyer can actually get the key", () => {
     expect(screen.queryByRole("button", { name: "purchased.copied" })).toBeNull();
   });
 
-  it("★no purchases → no card, and no empty key box", () => {
+  it("★no purchases → no card, no empty key box, and no empty section heading", () => {
     render(<PluginsPortalView items={[]} purchases={[]} />);
     expect(document.querySelector("pre")).toBeNull();
     expect(screen.queryByRole("button", { name: "purchased.copy" })).toBeNull();
+    // ★The heading too. Rendering "Purchased 0" to everyone who never bought advertises a section
+    // they have no rows in — and an empty labelled rack reads like something went missing.
+    // ★Asserted separately because the map alone yields nothing: dropping the length guard would
+    // leave the heading behind while the two checks above still passed.
+    expect(screen.queryByText("purchased.label")).toBeNull();
   });
 
   it("carries the download link and the version alongside the key", () => {
