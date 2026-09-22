@@ -2118,3 +2118,117 @@ git worktree add --detach <tmp> refs/pull/<n>/head
 ★★CCO の手当て … ★**「全数が同じ向きに外れたら、まず自分を疑う」**を手順に足す
 ★当課の同型 … ★PDF で ★陽性control が 1 件だけ落ちた件（★(1n-3)）
 ```
+
+### (1s) — ★納品メールの欠陥を直し、★試験送信は ★経路を替えて 着地（2026-09-21〜22）
+
+## ★欠陥（★conductor が 実装を読んで検出）
+
+```
+★メールの手順文 … 「-----BEGIN と -----END の行を含めて」コピーせよ
+★★issueLicense() … ★その行を 発行しない（★MUEDSP-LICENSE-v2 … sig=<base64>・armour 無し）
+★★license.ts:16 の コメント自身が ★「以前の版が BEGIN/END armour を発明したが誤りだった」と 破棄を記録
+★∴ ★退役が fail-silent の一形 ——★実装は直ったが ★メールだけが 旧い想定を持ち続けた
+★★実害 … ★買った人が 最初に読む文 で「その行が 無い」＝ ★コピー範囲が 分からない
+```
+
+## ★手当て（#1082 / #1083 / #1084）
+
+```
+★手順文 … ★「1 行目の MUEDSP-LICENSE-v2 から最終行の sig= まで」（★実在する目印）
+★★形式名は ★書き写さず ★`LICENSE_MAGIC` を import ——★打つと ★3 つ目の写しになり ★v3 の日に古くなる
+   （★CCO 実測: ★license.ts 内の `sig=` は 4 箇所以上・★export 定数なし ∴ ★email の literal は ★5 つ目）
+★fixture … ★架空 armour → ★`issueLicense()` の実出力（★throwaway pair）
+   ★旧 fixture と 手順文が ★同じ誤った想定を共有 ∴ ★食い違えなかった
+★env … ★退避/復元を 姉妹 test に揃えた（★`isolate` は config に ★一度も書かれていない＝寄りかかる対象が 未明文）
+```
+
+## ★★当課が 恒真な guard を 1 度 書いた（★meta-RED だけが 捕まえた）
+
+```
+★初版 … ★`expect(surface).toContain(LICENSE_MAGIC)`（surface ＝ 描画メール全体）
+★★機序 … ★メールには ★キー本体が埋まり ★その 1 行目が magic・★最終行が sig=
+   ∴ ★★手順文を 丸ごと消しても ★データ側だけで 満たされる
+★実測 … ★meta-RED ★4 case すべて ★緑
+★★同時に ★meta-RED script も 壊れていた（★`$4` 未渡し ＝ ★置換でなく削除
+   ＝ ★「BEGIN を戻す」case を ★一度も撃っていなかった）
+★★2 つが 同じ向きに重なって ★「全部 緑」に見えた
+★修正 … ★キーの位置で slice し ★手順文の領域だけを見る → ★4/4 赤
+★★∴ ★meta-RED を回さなければ ★「guard を足した」と報告して ★守らない物を出していた
+```
+
+## ★★CCO の 2 段の指摘（★どちらも 非 blocking・★どちらも 実在）
+
+```
+★① ★slice は ★download ブロックを含む ∴ ★署名付き URL（?exp=…&sig=…）になると
+   ★`sig=` が ★URL だけで満たされ ★assertion 1 本が 黙って死ぬ
+   ★★かつ ★この test は URL を mock する ∴ ★本番の変化は 見えない
+   ★手当て … ★CCO 案（fixture への assert）ではなく ★**URL を除いてから assert**
+      ★理由 … ★fixture への assert は ★守りたい変化で ★発火しない（★CCO も撤回）
+      ★実測 … 署名＋削除で ★旧版 sig=True / ★新版 sig=False
+★② ★strip は ★完全一致依存 ∴ ★HTML escape（&amp;）で ★空振りして sig= が復活
+   ★手当て … ★**描画結果に対して** URL が逐語で在ることを assert（★#1084）
+      ★meta-RED … ★署名＋escape → 赤 ／ ★署名のみ（escape 無し）→ 緑 ＝ ★陰性対照つき
+```
+
+## ★★試験送信 —— ★当課の環境からは 送れなかった（★迂回しない）
+
+```
+★kimny 逐語「なんでもいいならkimny1143@gmail.comでいいよ」＝ 本人指定
+★★当課の送信 … ★ja / en とも ★success=false ／ ★message id ★無し
+★切り分け … ★api.resend.com は ★到達する（★認証なし 403）／ ★mued.jp・api.github.com は 200
+   ★key は 在り（長さ 36・`re_` 始まり・★値は出力せず）
+   ★★認証つき GET → ★403 ／ body ★「error code: 1010」＝ ★★Cloudflare の code
+   ★★Resend 公式 SDK（★自前 UA）も 同じく落ちた ∴ ★client の問題でなく ★この環境の egress
+★★迂回しない … ★UA 偽装は ★bot 防御の回避 ／ ★通っても「本番が送る経路」ではない
+★★当課の script の欠陥 … ★`console.log` だけで ★assert せず ∴ ★success=false でも ★「Tests 1 passed」
+   ★★「送った」は ★rc でも passed でもなく ★**message id が出たか**で読む
+```
+
+★**採った形**: ★conductor の Resend 連携（★egress が別・★接続先は ★本番と同じ Resend アカウント）。
+★**当課は ★描画 file 6 本を 出し、★送信は conductor。**
+```
+★★着地 … ★ja id 01a0c966-e4cc-7654-96cc-ebd928a22303 ／ ★en id 01a0c967-0fbb-7612-8d7e-28b08dc65115
+★アカウント同一性 … ★送信前の list-emails に ★本番の過去送信（MUEDlim/MUEDrive/MUEDsat）が並んだ
+   ＝ ★鍵の値を 比較せずに ★確定
+★★既知の差（記録）… ★本番の code path（email.service.ts → SDK）は ★通っていない
+   ★Reply-To も 付いていない（★連携の制約・★本番は SUPPORT_EMAIL 既定）
+   ∴ ★**描画結果までは 本番と同一・★送信経路だけが 別**
+```
+
+## ★★From メモを 本文 file に 入れなかった（★依頼の形を 変えた）
+
+```
+★依頼 … ★「file の冒頭にコメントで書き添えて」
+★★やったこと … ★body 6 本は ★byte 完全 ／ ★メモは `_meta.txt` へ 分離
+★理由 … ★本文 file に メモを混ぜると ★貼り付けた時に ★本文として 送られる
+   ＝ ★★注記が payload になる形（★本日 何度も見た型）を ★構造で 避けた
+★★conductor 側でも 効いた … ★彼らの grep が ★`_meta.txt` を母集団に含み
+   ★★検査語の一覧そのものに 当たって ★6 語が「1」と出た（★本文 6 本で撃ち直して 0）
+   ＝ ★分離していたので ★誤検出が ★安全側に 倒れた
+```
+
+## ★★sha を 渡す時は ★アルゴリズムも（★当課が 受け手側で 踏みかけた）
+
+```
+★conductor 申告 … ★ja.html 052760e5 / en.html b6289a50 / ja.txt c8981b4f / en.txt 5d9bf3da
+★★当課の 最初の照合 … ★`shasum`（★既定 sha-1）→ ★4 本とも 不一致
+★★あやうく ★「payload が違う」と報告するところだった
+★測り直し … ★sha-1 / ★sha-256 / sha-512 / md5 / cksum を 並べた
+   ★★sha-256 が ★4 本とも 一致 ＝ ★payload は ★byte 同一
+★★型 … ★共通block「値を渡す時は 成立条件を同じメッセージに書く」の ★受け手側
+   ★★memory に ★同型の前例が 在り（★「受け手が sha1 で測って『合わない』と報告しかけた」）
+   ★★∴ ★今回は ★記録が 効いた（★朝の CLAUDE.md の注記は 効かなかったのと 対照的）
+```
+
+## ★★本日の 同族 6 件（★3 課・★逆向きの失敗は 0 件）
+
+```
+★当課 ① 恒真 guard ＋ ② meta-RED script の `$4` 落ち（★同時・相殺）
+★当課 ③ `console.log` だけで assert せず ★passed を 送信成功と読みかけた
+★当課 ④ `grep -c` の exit 1 を `|| echo 0` で拾い ★"0\n0" ＝ ★「混入」と 誤表示（★安全側）
+★当課 ⑤ ★sha を ★別アルゴリズムで測り ★不一致と読みかけた（★上記）
+★CCO  … ★marker `BEGIN`↔`START` ／ ★header 剥がしの順序 ／ ★stale な origin/main
+★conductor … ★`$H:lib/...` が zsh `:l` に食われ 0/0 ／ ★`_meta.txt` を母集団に含め 検査語に当たった
+★★**逆向き（危険側）の失敗は 1 件も 出ていない**
+   ★理由＝★「全数が同じ向きなら まず自分の計器」が ★3 課で 揃っていた（★CCO 起案）
+```
