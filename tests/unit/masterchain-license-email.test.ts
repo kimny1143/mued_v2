@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { generateKeyPairSync } from "node:crypto";
+import { issueLicense, LICENSE_MAGIC } from "@/lib/masterchain/license";
 
 /**
  * Unit — a $69 buyer must be told where to GET the plugin, not only where to save the key.
@@ -24,7 +26,17 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
  * buyer receives, not what the source says. The only module-level input is the URL constant, and
  * mocking it is what lets both branches be exercised.
  */
-const KEY = "-----BEGIN MUED LICENSE-----\nAAAA.BBBB.CCCC\n-----END MUED LICENSE-----";
+// ★The fixture is ISSUED, not typed. The previous value was `-----BEGIN MUED LICENSE-----…`, an
+// armour container this product has never emitted — and the buyer instructions in the template
+// carried the same invented assumption, so the check and the checked shared one origin (the
+// author's belief) and could not disagree. Asking `issueLicense()` for the bytes means the format
+// comes from the implementation: if it moves to v3, this fixture moves with it and the instruction
+// assertions below fail loudly instead of the mail going out wrong.
+// Throwaway pair, same pattern as masterchain-license.test.ts — no real key, no env dependency.
+process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = generateKeyPairSync("ed25519")
+  .privateKey.export({ type: "pkcs8", format: "pem" })
+  .toString();
+const KEY = issueLicense({ owner: "buyer@example.com", order: "FS-TEST-0001" })!;
 const URL = "https://mued.jp/downloads/MUEDsp-masterchain-1.0.0-installer.pkg";
 
 async function render(downloadUrl: string, locale: "ja" | "en" = "ja") {
@@ -107,6 +119,30 @@ describe("masterchain licence delivery email", () => {
         const subjectSaysDownload = /ダウンロード|download/i.test(m.subject);
         const bodyHasUrl = m.text.includes("https://");
         expect(subjectSaysDownload, `url=${url || "(empty)"} locale=${locale}`).toBe(bodyHasUrl);
+      }
+    }
+  });
+
+  // ★The defect this file missed until conductor read the implementation (2026-09-21): the buyer
+  // instructions said to copy "including the -----BEGIN and -----END lines", which `issueLicense()`
+  // does not emit. `lib/masterchain/license.ts:16` records that a previous version invented that
+  // armour and that it was discarded — the mail kept the discarded assumption. The instructions must
+  // name landmarks that EXIST in the bytes the buyer receives, so assert against the issued key.
+  it("★the copy instructions name landmarks that the issued key actually has", async () => {
+    const first = KEY.split("\n")[0];
+    const lastLine = KEY.trimEnd().split("\n").at(-1)!;
+    expect(first, "issued key must start with the magic line").toBe(LICENSE_MAGIC);
+    expect(lastLine.startsWith("sig="), `last line was ${lastLine.slice(0, 12)}…`).toBe(true);
+
+    for (const locale of ["ja", "en"] as const) {
+      const mail = await render(URL, locale);
+      for (const surface of [mail.html, mail.text]) {
+        // Names a real first line and a real last line.
+        expect(surface).toContain(LICENSE_MAGIC);
+        expect(surface).toContain("sig=");
+        // ★Never re-introduce armour the issuer does not produce.
+        expect(surface).not.toContain("-----BEGIN");
+        expect(surface).not.toContain("-----END");
       }
     }
   });

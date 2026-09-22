@@ -14,6 +14,9 @@ import { MUEDSAT_DOWNLOAD_URL } from '@/lib/muedsat/config';
 import { MUEDLIM_DOWNLOAD_URL } from '@/lib/muedlim/config';
 import { MUEDRIVE_DOWNLOAD_URL } from '@/lib/muedrive/config';
 import { MASTERCHAIN_DOWNLOAD_URL } from '@/lib/masterchain/config';
+// ★The keyfile's first line. Imported, never retyped: the buyer instructions below name it, and a
+// second copy of the format string would go stale silently the day the format moves to v3.
+import { LICENSE_MAGIC } from '@/lib/masterchain/license';
 import { signUnsubscribeToken } from '@/lib/plugins/unsubscribe-token';
 
 // ========================================
@@ -958,8 +961,8 @@ Hoo MCP経由の自動送信
       ? 'masterchain をご購入いただきありがとうございます。ライセンスキーをお届けします。'
       : 'Thank you for buying masterchain. Here is your license key.';
     const howTo = isJa
-      ? `下のブロックを（<code>-----BEGIN</code> と <code>-----END</code> の行を含めて）すべてコピーし、次の場所に <strong>license.key</strong> という名前のテキストファイルとして保存してください。`
-      : `Copy the whole block below (including the <code>-----BEGIN</code> and <code>-----END</code> lines) and save it as a text file named <strong>license.key</strong> here:`;
+      ? `下のブロックを（1 行目の <code>${LICENSE_MAGIC}</code> から最終行の <code>sig=</code> まで）すべてコピーし、次の場所に <strong>license.key</strong> という名前のテキストファイルとして保存してください。`
+      : `Copy the whole block below — from the first line <code>${LICENSE_MAGIC}</code> to the last line beginning <code>sig=</code> — and save it as a text file named <strong>license.key</strong> here:`;
     const keep = isJa
       ? 'このメールは保管してください。キーを再取得できます。'
       : 'Keep this email — it is how you get the key again.';
@@ -996,8 +999,8 @@ Hoo MCP経由の自動送信
     `;
 
     const textHowTo = isJa
-      ? `下のブロックを（-----BEGIN と -----END の行を含めて）すべてコピーし、次の場所に license.key という名前で保存してください。`
-      : `Copy the whole block below (including the -----BEGIN and -----END lines) and save it as license.key here:`;
+      ? `下のブロックを（1 行目の ${LICENSE_MAGIC} から最終行の sig= まで）すべてコピーし、次の場所に license.key という名前で保存してください。`
+      : `Copy the whole block below — from the first line ${LICENSE_MAGIC} to the last line beginning sig= — and save it as license.key here:`;
     const text = `${intro}\n\n${downloadText}\n\n${textHowTo}\n${path}\n\n${data.licenseKey}\n\n${keep}\n\nglasswerks inc. — mued.jp`;
 
     return { subject, html, text };
