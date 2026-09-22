@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterAll } from "vitest";
 import { generateKeyPairSync } from "node:crypto";
 import { issueLicense, LICENSE_MAGIC } from "@/lib/masterchain/license";
 
@@ -33,10 +33,19 @@ import { issueLicense, LICENSE_MAGIC } from "@/lib/masterchain/license";
 // comes from the implementation: if it moves to v3, this fixture moves with it and the instruction
 // assertions below fail loudly instead of the mail going out wrong.
 // Throwaway pair, same pattern as masterchain-license.test.ts — no real key, no env dependency.
-process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = generateKeyPairSync("ed25519")
+const THROWAWAY_PEM = generateKeyPairSync("ed25519")
   .privateKey.export({ type: "pkcs8", format: "pem" })
   .toString();
+// ★Save and restore, matching masterchain-license.test.ts. CCO measured that leaking it is currently
+// unreachable — `vitest.config.ts` names no `isolate`, so the default `isolate: true` gives each file its
+// own environment — but that is a default we would be depending on, not a property we assert.
+const ORIGINAL_PEM = process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY;
+process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = THROWAWAY_PEM;
 const KEY = issueLicense({ owner: "buyer@example.com", order: "FS-TEST-0001" })!;
+afterAll(() => {
+  if (ORIGINAL_PEM === undefined) delete process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY;
+  else process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = ORIGINAL_PEM;
+});
 const URL = "https://mued.jp/downloads/MUEDsp-masterchain-1.0.0-installer.pkg";
 
 async function render(downloadUrl: string, locale: "ja" | "en" = "ja") {
@@ -143,7 +152,14 @@ describe("masterchain licence delivery email", () => {
         // was vacuous and meta-RED caught it: deleting the instruction text left it green.
         const keyAt = surface.indexOf(KEY);
         expect(keyAt, "the issued key must appear in the surface").toBeGreaterThan(-1);
-        const instructions = surface.slice(0, keyAt);
+        // ★Strip the download URL before asserting. CCO measured (2026-09-22) that the region before
+        // the key also holds the download block, so a signed URL (`?exp=…&sig=…`) would satisfy the
+        // `sig=` assertion on its own — the instruction text could be deleted and that half of the
+        // check would die silently. Expiring download links are ordinary evolution, and this test
+        // MOCKS the URL, so production moving to a signed one would never show up here.
+        // ★Removing the URL is stronger than forbidding `sig=` inside it: the assertion then cannot be
+        // satisfied by anything except the prose it is about, whatever the URL later becomes.
+        const instructions = surface.slice(0, keyAt).split(URL).join("");
         expect(instructions, "instructions must name the first line").toContain(LICENSE_MAGIC);
         expect(instructions, "instructions must name the last line").toContain("sig=");
         // ★Never re-introduce armour the issuer does not produce.
