@@ -1,9 +1,14 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { MuednoteLayout } from "@/components/layouts/muednote-layout";
-import { getPortalItemsForUser, markPortalRegistered } from "@/lib/plugins/portal-data";
+import { getPortalItemsForUser, getPurchaseItemsForUser, markPortalRegistered } from "@/lib/plugins/portal-data";
 import { buildAvailableItems } from "@/lib/plugins/portal";
-import { PluginsPortalView, type PortalViewItem, type AvailableViewItem } from "./plugins-portal-view";
+import {
+  PluginsPortalView,
+  type PortalViewItem,
+  type AvailableViewItem,
+  type PurchaseViewItem,
+} from "./plugins-portal-view";
 
 /**
  * User portal — /dashboard/plugins (P-2, docs/portal/plan-brief-user-portal-20260717.md).
@@ -28,6 +33,9 @@ export default async function PluginsPortalPage() {
   if (!user) redirect("/sign-in?redirect_url=/dashboard/plugins");
 
   const items = await getPortalItemsForUser(user);
+  // P-4 — the paid line. Same authorization boundary (verified emails only); see
+  // plugin-portal-purchases.test.ts. Returns [] for everyone who has not bought.
+  const purchases = await getPurchaseItemsForUser(user);
   // North Star §③: record that this owner reached their portal (best-effort, fail-open, once). Does not
   // block or affect the render — a write error is swallowed inside markPortalRegistered.
   await markPortalRegistered(user);
@@ -43,6 +51,13 @@ export default async function PluginsPortalPage() {
   // The live free modules this user does NOT own yet. Registry-derived and read-only — nothing is
   // written, and the alternative (bulk-inserting entitlement rows so the shelf looks right) was
   // rejected because it would put "never obtained it" rows into the table the funnel collector reads.
+  const purchaseViewItems: PurchaseViewItem[] = purchases.map((p) => ({
+    version: p.version,
+    downloadUrl: p.downloadUrl,
+    licenseKey: p.licenseKey, // ★verbatim — the keyfile is signed over its exact bytes
+    purchasedAtISO: p.purchasedAt.toISOString(),
+  }));
+
   const available: AvailableViewItem[] = buildAvailableItems(items).map((a) => ({
     pluginKey: a.pluginKey,
     lpPath: a.lpPath,
@@ -50,7 +65,7 @@ export default async function PluginsPortalPage() {
 
   return (
     <MuednoteLayout>
-      <PluginsPortalView items={viewItems} available={available} />
+      <PluginsPortalView items={viewItems} available={available} purchases={purchaseViewItems} />
     </MuednoteLayout>
   );
 }

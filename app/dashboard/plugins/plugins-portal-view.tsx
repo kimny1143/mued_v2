@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import type { PluginKey } from "@/lib/plugins/registry";
@@ -44,6 +45,18 @@ function fileExt(url: string): string {
 // A live free module the signed-in user does NOT own yet. ★lpPath, never a .pkg URL — the landing
 // page carries the email gate that writes the entitlement, and a direct .pkg download would leave the
 // shelf empty forever (see lib/plugins/portal.ts buildAvailableItems).
+/**
+ * A masterchain purchase belonging to the signed-in buyer. ★Reaches this component ONLY through
+ * getPurchaseItemsForUser, which scopes the query to the caller's Clerk-VERIFIED emails.
+ * ★licenseKey is verbatim — the keyfile is signed over its exact bytes, so nothing normalises it.
+ */
+export interface PurchaseViewItem {
+  version: string | null;
+  downloadUrl: string;
+  licenseKey: string;
+  purchasedAtISO: string;
+}
+
 export interface AvailableViewItem {
   pluginKey: string;
   lpPath: string;
@@ -52,9 +65,11 @@ export interface AvailableViewItem {
 export function PluginsPortalView({
   items,
   available = [],
+  purchases = [],
 }: {
   items: PortalViewItem[];
   available?: AvailableViewItem[];
+  purchases?: PurchaseViewItem[];
 }) {
   const t = useTranslations("pluginPortal");
   const locale = useLocale();
@@ -71,6 +86,20 @@ export function PluginsPortalView({
         <p className={styles.eyebrow}>{t("eyebrow")}</p>
         <h1 className={styles.title}>{t("title")}</h1>
         <p className={styles.lede}>{t("lede")}</p>
+
+        {purchases.length > 0 && (
+          <>
+            <div className={styles.racklabel}>
+              <span>{t("purchased.label")}</span>{" "}
+              <span className={styles.count}>{purchases.length}</span>
+            </div>
+            <div className={styles.rack}>
+              {purchases.map((p) => (
+                <PurchaseCard key={p.licenseKey} item={p} fmtDate={fmtDate} />
+              ))}
+            </div>
+          </>
+        )}
 
         <div className={styles.racklabel}>
           <span>{t("owned")}</span> <span className={styles.count}>{items.length}</span>
@@ -232,6 +261,66 @@ const FACEPLATE: Record<PluginKey, ReactElement> = {
     </svg>
   ),
 };
+
+/**
+ * ★The copy button reports what actually happened. `navigator.clipboard` is undefined on insecure
+ * origins and can reject (permission, focus), so we AWAIT it and only then say "copied" — a button
+ * that claims success without checking is the same shape as a test that passes without asserting.
+ * ★The key is also rendered selectable, so manual copy works even when the API is unavailable: the
+ * button is an enhancement, not the only path to the bytes.
+ */
+function PurchaseCard({
+  item,
+  fmtDate,
+}: {
+  item: PurchaseViewItem;
+  fmtDate: (iso: string) => string;
+}) {
+  const t = useTranslations("pluginPortal");
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(item.licenseKey);
+      setState("copied");
+      setTimeout(() => setState("idle"), 2000);
+    } catch {
+      setState("failed"); // ★no auto-clear: the reader needs time to act on the fallback instruction
+    }
+  }
+
+  return (
+    <div className={styles.module}>
+      <Faceplate pluginKey="masterchain" />
+      <div className={styles.meta}>
+        <div className={styles.name}>
+          <h3>masterchain</h3>
+          <span className={styles.kind}>{t("purchased.kind")}</span>
+        </div>
+        <p className={styles.claimed}>{t("purchased.purchasedOn", { date: fmtDate(item.purchasedAtISO) })}</p>
+        <p className={styles.licenseLabel}>{t("purchased.licenseLabel")}</p>
+        <pre className={styles.licenseKey}>{item.licenseKey}</pre>
+        <button type="button" className={styles.copyBtn} onClick={copy}>
+          {state === "copied" ? t("purchased.copied") : t("purchased.copy")}
+        </button>
+        {state === "failed" && <p className={styles.copyFailed}>{t("purchased.copyFailed")}</p>}
+        <p className={styles.howto}>{t("purchased.howto")}</p>
+      </div>
+      <div className={styles.action}>
+        {item.version && (
+          <span className={styles.readout}>
+            <span className={styles.led} aria-hidden="true" />
+            <span className={styles.vlabel}>{t("versionLabel")}</span> {item.version}
+          </span>
+        )}
+        <a className={styles.dl} href={item.downloadUrl} download>
+          {t("download")}
+          <small>{`masterchain${item.version ? ` ${item.version}` : ""}${fileExt(item.downloadUrl) ? ` · ${fileExt(item.downloadUrl)}` : ""}`}</small>
+        </a>
+      </div>
+    </div>
+  );
+}
 
 function Faceplate({ pluginKey }: { pluginKey: string }) {
   // pluginKey comes from the DB row, so an unknown string is possible at runtime; fall back to the

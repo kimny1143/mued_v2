@@ -210,3 +210,74 @@
 @media (prefers-reduced-motion: reduce) {
   .dl { transition: none; }
 }
+
+/* ── P-4: the purchased (paid) card ───────────────────────────────────────────
+   ★The key is the thing the buyer came for, so it is shown in full rather than masked behind a
+   reveal. It is already theirs, it arrived in their inbox in plain text, and a masked field would
+   add a click without adding secrecy. ★It stays selectable so manual copy works when the clipboard
+   API is unavailable (insecure origin), which is why there is no user-select:none anywhere here. */
+.licenseLabel {
+  margin: 12px 0 4px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.licenseKey {
+  margin: 0;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(245, 165, 36, 0.22);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-primary, #e8e3da);
+  /* ★The keyfile is line-based and one line (sig=) is long. Wrap rather than scroll: a horizontal
+     scrollbar inside a card is easy to miss, and a buyer who copies only what they can see gets a
+     key the plugin rejects. */
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  max-height: 168px;
+  overflow-y: auto;
+}
+
+.copyBtn {
+  margin-top: 8px;
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--amber);
+  border-radius: 5px;
+  color: var(--amber);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.copyBtn:hover {
+  background: var(--amber);
+  color: #140d00;
+}
+.copyBtn:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.copyFailed {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #f0a3a3;
+}
+
+.howto {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  word-break: break-all;
+}
