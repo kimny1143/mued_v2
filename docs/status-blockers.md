@@ -2232,3 +2232,42 @@ git worktree add --detach <tmp> refs/pull/<n>/head
 ★★**逆向き（危険側）の失敗は 1 件も 出ていない**
    ★理由＝★「全数が同じ向きなら まず自分の計器」が ★3 課で 揃っていた（★CCO 起案）
 ```
+
+### (1t) — ★P-4 着地。★「307 → sign-in」は ★面の実在を言わない（陰性対照で判明・2026-09-23）
+
+## ★着地
+
+```
+★#1086 merged … main `0274be24`（★Tier 3・conductor 承認 head `b0830345`・review id 5279877719）
+★ローカル main … ★19 passed / 3 file（purchases 9・card 5・既存 data 5）
+   ★理由＝`test.yml` に push trigger が無い ∴ ★main は merge 間が CI 無風
+★本番 deploy … ★state=READY ／ sha=`0274be2420c4…` ／ ★alias に `mued.jp` ／ aliasError=null
+```
+
+## ★★計器の話 ——★conductor 指定の述語は ★門を測っていて ★面を測っていない
+
+```
+★指定 … 「本番の /dashboard/plugins が 307 → sign-in になること（署名なし）」
+★実測 … 307 → /sign-in?redirect_url=%2Fdashboard%2Fplugins   ← ★指定どおり
+★★陰性対照 … /dashboard/nonexistent-negative-control も ★同じ形で 307
+   （→ /sign-in?redirect_url=%2Fdashboard%2Fnonexistent-negative-control）
+★★∴ この述語は ★middleware が /dashboard/* を丸ごと弾くことしか 言っていない
+   ★面が在っても 無くても 同じ値が出る ＝ ★★P-4 の着地の証拠にならない
+★★※ 指示が誤りだったのではない —— conductor 自身が「中は見えない」と明記していた。
+   ★当課が足したのは ★「では何なら見えるか」＝ ★deploy 側の述語（sha + alias + READY）
+```
+
+★**型**: ★**陰性対照は「計器が生きているか」だけでなく ★「その述語が対象を弁別するか」も測る。**
+★**今回は 陽性（307 が出た）と 陰性（同じ 307）が ★一致した ＝ ★弁別力ゼロ。**
+★**「0% と 100% は同じこと」（CCO）の 向き違い版 —— ★★全部 同じ値が返る 述語は 何も測っていない。**
+
+## ★content課 通知 ——★本件は 軽微（★ログ追記のみ・★rule 自身の基準）
+
+```
+★trigger … product spec（UI 仕様）の 機能追加 ＝ ★形式上は 該当する
+★★但し 緊急度基準の「軽微」… ★公開済記事の数値・機能訴求に 影響しない
+   ★理由＝ ★masterchain は ★store activation 前（★購入 0）∴ ★誤情報になっている記事が ★存在しえない
+   ★配達メールは ★キー本文を 載せたまま（★アカウント不要の約束は 不変）＝ ★訴求の前提も 動いていない
+★∴ ★rule の「軽微＝即時通知不要・ログ追記のみ」を ★適用し、★ここに記す
+★★黙って skip しない ——★conductor へ 報告し、★開店の便に 畳んでもらう
+```
