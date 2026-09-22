@@ -137,12 +137,18 @@ describe("masterchain licence delivery email", () => {
     for (const locale of ["ja", "en"] as const) {
       const mail = await render(URL, locale);
       for (const surface of [mail.html, mail.text]) {
-        // Names a real first line and a real last line.
-        expect(surface).toContain(LICENSE_MAGIC);
-        expect(surface).toContain("sig=");
+        // ★Assert on the INSTRUCTIONS, not the whole mail. The key is in the body and its own first
+        // line IS the magic while its last line starts `sig=`, so a whole-surface toContain() is
+        // satisfied by the key even when the instructions name nothing. ★That version of this test
+        // was vacuous and meta-RED caught it: deleting the instruction text left it green.
+        const keyAt = surface.indexOf(KEY);
+        expect(keyAt, "the issued key must appear in the surface").toBeGreaterThan(-1);
+        const instructions = surface.slice(0, keyAt);
+        expect(instructions, "instructions must name the first line").toContain(LICENSE_MAGIC);
+        expect(instructions, "instructions must name the last line").toContain("sig=");
         // ★Never re-introduce armour the issuer does not produce.
-        expect(surface).not.toContain("-----BEGIN");
-        expect(surface).not.toContain("-----END");
+        expect(instructions).not.toContain("-----BEGIN");
+        expect(instructions).not.toContain("-----END");
       }
     }
   });
