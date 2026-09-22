@@ -2271,3 +2271,47 @@ git worktree add --detach <tmp> refs/pull/<n>/head
 ★∴ ★rule の「軽微＝即時通知不要・ログ追記のみ」を ★適用し、★ここに記す
 ★★黙って skip しない ——★conductor へ 報告し、★開店の便に 畳んでもらう
 ```
+
+### (1u) — ★出したカードが繋がっているかを測り、★版が静かに消える穴を塞いだ（2026-09-23）
+
+## ★配布 URL の実測（★母集団は実時解決・値を焼かない）
+
+```
+★母集団 … ★`lib/**/*.ts` の `https://mued.jp/downloads/*.pkg` を grep ＝ ★4 本
+   ★4 本 未満は rc 3（★解決の失敗と「本当に 4 本」を 区別する）
+★判定 … ★`200` だけでは見ない ——★先頭 byte `xar!` ＋ content-length も 見る
+   MUEDlim  0.1.2   200 xar! 3,254,821
+   MUEDrive 0.1.2   200 xar! 3,584,930
+   MUEDsat  0.1.2   200 xar! 3,405,970
+   ★masterchain 0.1.3 200 xar! 4,133,469   ← ★P-4 のカードが リンクする先
+★陰性対照 … ★存在しない .pkg → ★404（先頭 byte は `<!DO` ＝ HTML）
+★rc0
+```
+
+★**なぜ P-4 の直後に これを測るか**: ★カードは `MASTERCHAIN_DOWNLOAD_URL` を ★そのまま `href` にする
+∴ ★その URL が死んでいれば ★最初の購入者に ★死んだリンクを出す。★「出した」と「繋がっている」は別。
+
+## ★★姉妹 test が 実定数を 見ていなかった（★#1089 で 塞いだ）
+
+```
+★発見 … ★`plugin-portal-purchases.test.ts:36` は ★`MASTERCHAIN_DOWNLOAD_URL` を ★リテラルで mock
+   ∴ ★期待値と入力が ★同じ場所から来る（★memory `feedback-the-check-must-not-share-an-origin-with-the-checked`）
+★★機序 … ★実定数の形が regex に合わなくなると ★`version: null`
+   ＝ ★「版の無いダウンロード」として ★描画されるだけ ★誰にも知らされない
+★★引き金は ★既に予定されている … ★dsp 0.1.4 が この URL を変える（★blocked_by W15 ③）
+★手当て … ★実定数を import する test を 別 file で 立てる（★mock する file とは 同居できない）
+   ★URL 未設定（fail-closed）の状態も ★判定に含めた ——★skip すると「検査していない」が「検査した」と読める
+```
+
+## ★meta-RED（★壊したのは lib/ 側・★test 側は無傷）
+
+```
+★① config の URL を `0.1.4b2` に          → ★赤（★W15 の引き金そのもの）
+★② `versionInUrl` の ★match 側を "9.9.9"  → ★赤
+★③ emit する `downloadUrl` に query 付与   → ★赤
+★★①の初版が 撃ち損ね … ★`m ? m[1] : "9.9.9"` ＝ ★null 側だけ 差し替えた
+   ★実 URL は match する ∴ ★値が変わらず ★緑のまま（★no-op 同然）
+   ★★型は 本日 3 度目（★(1s) の `$4` 落ち・★#1069 の全角「円」）——
+   ★★**注入は「値が変わる場所」に 撃つ。★分岐の 使われない側に 撃っても 何も 壊れない**
+★全 unit … ★170 files / 2,394 tests passed
+```
