@@ -97,6 +97,7 @@ function SupportContent({ faqStructuredData, locale }: SupportContentProps) {
                   support@glasswerks.jp
                 </a>
               </p>
+              <p className="text-slate-400 mt-2">{t("contact.hours")}</p>
             </div>
           </section>
 

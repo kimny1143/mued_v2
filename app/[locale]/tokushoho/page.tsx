@@ -125,6 +125,7 @@ function TokushohoContent({ locale }: { locale: string }) {
                   lipo      → x86_64 + arm64（∴ Universal）
                   otool -l  → LC_BUILD_VERSION minos 11.0（∴ macOS 11.0 以降）
                 ★minos は site copy のどこにも書かれていない ∴ ここが初出。
+                メモリの記載は kimny 承認（2026-09-23）の推奨値であり、installer の実測値ではない。
                 ★∴ installer を差し替えた日に この3行は ★黙って古くなる（法定表記なのに何も失敗しない）。
                 再測は status.md (W0) の「次に .pkg を差し替えた日」に束ねてある。 */}
             {MUEDSP_LIVE && (
@@ -149,6 +150,8 @@ function TokushohoContent({ locale }: { locale: string }) {
                 environmentTitle={t("muedsp.environment.title")}
                 environmentItems={[
                   t("muedsp.environment.os"),
+                  t("muedsp.environment.mac"),
+                  t("muedsp.environment.memory"),
                   t("muedsp.environment.formats"),
                   t("muedsp.environment.host"),
                   t("muedsp.environment.windows"),
