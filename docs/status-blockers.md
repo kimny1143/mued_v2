@@ -2952,3 +2952,35 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
    ／ ★masterchain そのものでの test 注文（当課のページ or 本番の EULA flag 後）
 ★残る activation 後の通し確認（(2a)）… ① keyfile→plugin LICENSED ＝ ⑥ の本番購入 ／ ② webhook secret ＝ ★これで済
 ```
+
+### (2e) — ★④ 完了：masterchain の test 注文で ★popup の tags が webhook に届いた（C1-b 閉鎖）／ skip 行の status（2026-09-23T22:58+0900）
+
+## ★結果（conductor 報告・kimny の操作・当課のページ＝main 64315191・pid 43584）
+
+```
+★注文 … GLASSWERKSJP260923-4650-20139・MUEDsp masterchain・¥12,365（税 ¥1,124）
+   ★完了画面は商品名のみ ＝ ★FastSpring 側の license の表示は無い（conductor の懸念「Display Licenses on Completion Page」は ★実害なし）
+★Webhooks Log … order.completed・Success・attempts 0（22:54:01）
+★read-fastspring-event-tags.ts（kimny 実行・22:56:27 JST・rows 3）
+   1 行目（今回）… skipped_test true・live false・★tags: eula_version／gaClientId／marketingConsent ＝ non-empty
+                  ★UTM 5 本は absent（★UTM 無しの流入なので想定どおり）
+   2 行目 … Preview の Example Product ＝ tags MISSING（★Preview 経路は tags を付けない＝想定どおり）
+   3 行目 … 9/16 の分（processed・skipped_test false ＝ ★#1039 より前の行）
+⇒ ★C1-b「popup の tags が webhook に届くか」＝ ★届く（★W12 (c) TODO(C1-b) を閉じる）
+★ローカルのページ … 22:57:35 に停止（dev の log の最後の書き込み）・AGENTS.md は戻した
+```
+
+## ★★skip 行の status が "processing" のまま ＝ ★設計どおり（conductor の問い）
+
+```
+★route.ts:268-291 … test の skip は ★status を書かず completedAt と errorMessage=SKIPPED_TEST_MARKER だけ
+   ∴ ★終端の印は「status='processing' AND completed_at IS NOT NULL」
+   ★processed にしない＝冪等 guard が processed を弾く ∴ live を読み違えた本物の注文を ★封じない（CCO #1038）
+   ★failed にしない＝意図どおりの skip を失敗の棚に積まない ／ ★専用値は pgEnum ゆえ migration が要る
+★紛れる読み手は ★今は無い … webhook_events を読むのは 2 route の冪等確認（event_id 単位）と #1109 の script だけ
+   ★stuck の監視・再処理は repo に無い ／ ★Stripe の route も completedAt は processed と一緒にしか書かない（不変条件は成立）
+```
+
+★★**(常設) 将来 webhook_events の「止まった event」を検知する時の述語** ＝ ★`status='processing' AND completed_at IS NULL`（★`status='processing'` だけで探すと ★FastSpring の test skip を数える）。
+★conductor 決定（9/23）… ★(a) script の表示に「state: skipped（終端）」を出す（★述語＝status='processing' かつ completed_at が在る かつ errorMessage=SKIPPED_TEST_MARKER をそのまま書き、★stuck＝completed_at IS NULL とは別表示・Codex・Tier 2（CCO）・本番の既存行は触らない）／ ★(b) 上の常設 ／ ★(c) migration はやらない。★④ はこれで完了。
+
