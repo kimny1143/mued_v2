@@ -20,10 +20,13 @@ import { db } from '@/db';
 import { dialSessions, dialTasks, dialTracks } from '@/db/schema';
 import { buildFirstTouch, firstTouchInputSchema } from '@/lib/dial/first-touch';
 
-// The GET's inline poll hands an R2 copy to after(), which runs inside this function's lifetime.
-// One copy can take up to 90s (COPY_TIMEOUT_MS in lib/dial/r2-storage.ts); mastering/final runs the
-// same copy under the same bound.
-export const maxDuration = 120;
+// The GET's inline poll hands an R2 copy to after(), which runs inside this function's lifetime —
+// and maxDuration counts from the start of the invocation, not from after(). So the budget has to
+// cover the poll first (one RoEx call per processing task, in sequence, each ≤ ROEX_POLL_TIMEOUT_MS
+// = 45s) and then the copy (one attempt ≤ COPY_TIMEOUT_MS = 90s). At 120 a 45s poll + 90s copy
+// (135s) was killed mid-way, leaving no row and no log. 300 (= final/route.ts) covers four polls +
+// one copy; tests/unit/api/dial-session-poll-r2.test.ts asserts it covers at least two + one.
+export const maxDuration = 300;
 
 // ─── POST: Create session ───────────────────────────────────────────────────
 

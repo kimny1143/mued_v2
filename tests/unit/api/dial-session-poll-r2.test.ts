@@ -70,7 +70,10 @@ vi.mock('@/lib/roex', () => ({
   pollMasterPreview: vi.fn(),
   masterFinal: vi.fn(),
 }));
-vi.mock('@/lib/dial/r2-storage', () => ({ copyToR2: vi.fn() }));
+vi.mock('@/lib/dial/r2-storage', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/dial/r2-storage')>()),
+  copyToR2: vi.fn(),
+}));
 vi.mock('@/lib/dial/task-timeout', () => ({
   markDialTaskFailedWithReconcile: vi.fn(),
   isUnchargedMasteringReservation: vi.fn(),
@@ -86,11 +89,12 @@ vi.mock('@/db', () => ({
 }));
 
 import { after } from 'next/server';
-import { GET } from '@/app/api/dial/session/route';
+import { GET, maxDuration } from '@/app/api/dial/session/route';
 import { db } from '@/db';
 import { verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { isRoExDevKey, pollMixFinal, masterFinal } from '@/lib/roex';
-import { copyToR2 } from '@/lib/dial/r2-storage';
+import { ROEX_POLL_TIMEOUT_MS } from '@/lib/roex/client';
+import { copyToR2, COPY_TIMEOUT_MS } from '@/lib/dial/r2-storage';
 import { isUnchargedMasteringReservation } from '@/lib/dial/task-timeout';
 
 const R2 = { r2Url: 'https://r2.example/download/sessions/s1/final.wav', expiresAt: new Date('2026-10-23T00:00:00Z') };
@@ -166,6 +170,17 @@ describe('GET /api/dial/session — R2 copy of a deliverable completed by the in
       expect.objectContaining({ sourceUrl: 'https://gcs.example/master.wav', taskId: 't1', taskType: 'mastering' }),
     );
     expect(r2Writes()).toEqual([{ values: { r2FinalUrl: R2.r2Url, r2ExpiresAt: R2.expiresAt } }]);
+  });
+
+  it('maxDuration covers the inline poll that runs before after() plus one R2 copy', () => {
+    // maxDuration counts from the start of the invocation, not from after(). The inline poll runs
+    // first — one RoEx call per processing task, in sequence, each capped at ROEX_POLL_TIMEOUT_MS —
+    // and only then does after() start the copy (one attempt capped at COPY_TIMEOUT_MS). If the
+    // budget is shorter than that sum, the copy is killed mid-way and leaves no row and no log.
+    // Two polls: a session can have more than one task processing at once (e.g. mix_check + mastering).
+    expect(ROEX_POLL_TIMEOUT_MS).toBeGreaterThan(0);
+    expect(COPY_TIMEOUT_MS).toBeGreaterThan(0);
+    expect(maxDuration * 1000).toBeGreaterThanOrEqual(2 * ROEX_POLL_TIMEOUT_MS + COPY_TIMEOUT_MS);
   });
 
   it('writes nothing to r2 columns when the copy fails (copyToR2 returns null)', async () => {
