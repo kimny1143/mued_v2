@@ -6,18 +6,24 @@
  */
 
 import { randomBytes } from 'crypto';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { eq, desc, max, and, ne } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership, verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { createRoExClient, isRoExDevKey, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
-import { copyToR2 } from '@/lib/dial/r2-storage';
+import { persistDeliverableToR2 } from '@/lib/dial/r2-persist';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { markDialTaskFailedWithReconcile, isUnchargedMasteringReservation } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialSessions, dialTasks, dialTracks } from '@/db/schema';
 import { buildFirstTouch, firstTouchInputSchema } from '@/lib/dial/first-touch';
+
+// The GET's inline poll hands an R2 copy to after(), which runs inside this function's lifetime.
+// One copy can take up to 90s (COPY_TIMEOUT_MS in lib/dial/r2-storage.ts); mastering/final runs the
+// same copy under the same bound.
+export const maxDuration = 120;
 
 // ─── POST: Create session ───────────────────────────────────────────────────
 
@@ -173,22 +179,19 @@ export const GET = withDialAuth(async (auth) => {
                   completedAt: new Date(),
                 }).where(and(eq(dialTasks.id, task.id), ne(dialTasks.status, 'failed')));
 
-                // Fire-and-forget: copy deliverable to R2 for stable download URL
-                if (result.finalUrl) {
-                  copyToR2({
-                    sourceUrl: result.finalUrl,
-                    sessionId: sessionId,
+                // Copy the deliverable to R2 for a stable download URL. after() keeps the function
+                // alive until the copy AND its row update finish, without holding this poll response.
+                // (It used to be fire-and-forget with the update built inside .then() but never
+                // awaited — a Drizzle query only runs when awaited, so r2_final_url was never written.)
+                const finalUrl = result.finalUrl;
+                after(() =>
+                  persistDeliverableToR2({
+                    sourceUrl: finalUrl,
+                    sessionId,
                     taskId: task.id,
                     taskType: task.taskType,
-                  }).then((r2Result) => {
-                    if (r2Result) {
-                      db.update(dialTasks).set({
-                        r2FinalUrl: r2Result.r2Url,
-                        r2ExpiresAt: r2Result.expiresAt,
-                      }).where(eq(dialTasks.id, task.id));
-                    }
-                  }).catch(() => {});
-                }
+                  }).catch((err) => console.error('[session/GET] R2 copy failed:', err)),
+                );
 
                 // Mix check: stay in mixing state. Final: check if mastering follows.
                 const sessionRow = await db.query.dialSessions.findFirst({
@@ -261,22 +264,16 @@ export const GET = withDialAuth(async (auth) => {
                   completedAt: new Date(),
                 }).where(and(eq(dialTasks.id, task.id), ne(dialTasks.status, 'failed')));
 
-                // Fire-and-forget: copy deliverable to R2 for stable download URL
-                if (result.finalUrl) {
-                  copyToR2({
-                    sourceUrl: result.finalUrl,
-                    sessionId: sessionId,
+                // Same as the final branch above: copy + record, both awaited, after the response.
+                const finalUrl = result.finalUrl;
+                after(() =>
+                  persistDeliverableToR2({
+                    sourceUrl: finalUrl,
+                    sessionId,
                     taskId: task.id,
                     taskType: 'mastering',
-                  }).then((r2Result) => {
-                    if (r2Result) {
-                      db.update(dialTasks).set({
-                        r2FinalUrl: r2Result.r2Url,
-                        r2ExpiresAt: r2Result.expiresAt,
-                      }).where(eq(dialTasks.id, task.id));
-                    }
-                  }).catch(() => {});
-                }
+                  }).catch((err) => console.error('[session/GET] R2 copy failed:', err)),
+                );
 
                 await db.update(dialSessions).set({
                   status: 'completed',
