@@ -93,8 +93,8 @@ function SupportContent({ faqStructuredData, locale }: SupportContentProps) {
               <p className="font-semibold text-white">{t("contact.company")}</p>
               <p className="text-slate-400">
                 Email:{" "}
-                <a href="mailto:support@glasswerks.jp" className="text-blue-400 hover:underline">
-                  support@glasswerks.jp
+                <a href="mailto:support@mued.jp" className="text-blue-400 hover:underline">
+                  support@mued.jp
                 </a>
               </p>
               <p className="text-slate-400 mt-2">{t("contact.hours")}</p>
