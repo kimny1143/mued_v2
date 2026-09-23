@@ -2315,3 +2315,79 @@ git worktree add --detach <tmp> refs/pull/<n>/head
    ★★**注入は「値が変わる場所」に 撃つ。★分岐の 使われない側に 撃っても 何も 壊れない**
 ★全 unit … ★170 files / 2,394 tests passed
 ```
+
+### (1v) — ★4 本の版の道筋（★改名規約の受け入れ・★測った境界・★#1062 の結合）2026-09-23
+
+## ★引き金が 2 度 動いた（★同じ日に）
+
+```
+★予告①（conductor）… ★「masterchain 0.1.4 を焼く回に 無料 3 本も焼く」＋★「無料版は EULA 無しでいい」
+   ∴ ★無料 3 本は ★EULA を待たず 先に 0.1.3 を配信する
+★★訂正②（kimny 逐語）… ★「訂正する。EULAは次回のユーザーリリースで全ての製品に反映する。無料も有料もだ。」
+   ∴ ★無料 3 本も ★EULA 到着待ち ＝ ★4 本まとめて bake
+★★当課の扱い … ★status の (W15) を ★1 本に畳んだ（★旧「dsp 0.1.4 単独」と ★同一事象）
+   ★理由＝ ★2 本 持つと ★片方が 必ず 古くなる（★本 session で 3 度 見た形）
+```
+
+## ★★改名規約は受け入れ ——★regex を読まず ★製品側 parser を通して測った
+
+★**conductor 決定**: ★版入りの file 名で 4 本を統一（`MUEDsp-masterchain-<ver>-installer.pkg` ほか）。
+★**dsp の規約文書は「版を含まない」を推奨していたが、★実配信は版入りで、★mued 側が既に版入りに依存**
+（★version-matches-download の test ／ ★P-4 の `versionInUrl()`）∴ ★文書を実態に合わせる。
+
+```
+★測り方 … ★`buildPurchaseItems()` に URL を渡して ★戻り値の version を読む
+   ★★regex を 再実装して 当てない（★写しを作ると 実装とずれても 気づけない）
+0.1.4   MUEDsp-masterchain-0.1.4-installer.pkg     ★予定の 4 本は 全部 拾える
+0.1.3   MUEDlim / MUEDsat / MUEDrive-0.1.3-installer.pkg
+0.1.0   MUEDsat-0.1.0-alpha-installer.pkg          ★配達済リンクの形も 従来どおり
+```
+
+★**境界（★dsp へ渡す「受け付ける形」）**:
+```
+✓ ★X.Y.Z                       ✓ ★X.Y.Z-<小文字だけ>（`-beta` は 可）
+★null … ★-rc1 ／ -RC（★接尾に 数字・大文字）／ ★0.1.4b2 ／ ★0.1 ／ ★0.1.3.1
+        ★_ 区切り ／ ★installer が 末尾でない
+★★落ち方は ★null ＝ ★例外でなく ★版だけが 静かに 消える
+★★そして ★この境界は ★現在 どこにも assert が無い ——★(W15) ④ で 入れる
+   ★★（★台帳に 書いたことを ★対策に 数えない ＝ memory `feedback-make-it-show-up-not-remember-it`）
+```
+
+## ★★不都合 1 件 — ★#1062 の destination が ★0.1.2 で 焼き付いている
+
+```
+★#1062（open・開店後 merge の約束）… ★alias 5 本 → ★`/downloads/MUEDlim-0.1.2-installer.pkg` 等
+   ★★next.config.ts と ★test 側の表の ★両方に 同じ対が 焼かれている
+★0.1.3 が先に着地すると … ★#1062 は「★古い版へ 307」する PR になる
+   ★壊れない（★0.1.2 の file は 残すので 200 は返る）——★★静かに 古くなるだけ
+★当課は触らない（★kimny 裁定・二重編集回避）→ ★conductor が Codex へ:
+   ★**destination を `*_DOWNLOAD_URL` から 導出**（★source の一覧は 明示のまま）
+   ★理由＝ ★今の形は「★同じ事実を 2 箇所」＝ ★version-matches-download が既に守っている軸と 同型
+```
+
+## ★版の所在（★「1 本道」は 製品によって 違う）
+
+```
+★無料 3 本   … ★`*_VERSION`（3）＋ ★`*_DOWNLOAD_URL`（3）＝ ★6 定数 / 3 file ＝ ★2 本道
+   ★縫っているのは ★`plugin-version-matches-download.test.ts`（★population guard ≥3 つき）
+★masterchain … ★URL だけ ＝ ★1 本道（★`MASTERCHAIN_VERSION` を 作らない・P-4 の設計・(1u)）
+```
+
+★**もう 1 つ見つけた — ★parser の写しが 2 本**:
+```
+★製品側 … ★lib/plugins/portal.ts  versionInUrl()
+★test 側 … ★plugin-version-matches-download.test.ts:22 ★同じ regex を 再実装
+★★∴ ★片方を直しても ★もう片方は 気づかない（★名前規約を動かす日に 分岐する）
+★手当て（(W15) ④）… ★1 本 export して test は import。
+   ★★但し ★期待値まで 対象から 取ると「食い違えない検査」になる
+   ∴ ★assert するのは ★性質（★どの alias も ★今 canonical な URL に解決する・★母集団 5 本）に限る
+```
+
+## ★status.md の cap（★当課の閾値を 書いておく）
+
+```
+★blocked_by … ★5,026 → ★5,803 B（★cap 6,000・★残り 197 B）
+★★W15 の初版は ★6,410 B で ★script が 書かずに 落ちた（★fail-closed・★意図どおり）
+★∴ ★理由づけは ★台帳（本 file）へ・★status は ★引き金と 一覧だけ
+★★閾値運用: ★5,800 B を 超えたら ★(W11) か ★(W2d) を ★退避する（★書いておかないと 次に誰も気づかない）
+```
