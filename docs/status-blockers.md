@@ -2983,4 +2983,5 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 
 ★★**(常設) 将来 webhook_events の「止まった event」を検知する時の述語** ＝ ★`status='processing' AND completed_at IS NULL`（★`status='processing'` だけで探すと ★FastSpring の test skip を数える）。
 ★conductor 決定（9/23）… ★(a) script の表示に「state: skipped（終端）」を出す（★述語＝status='processing' かつ completed_at が在る かつ errorMessage=SKIPPED_TEST_MARKER をそのまま書き、★stuck＝completed_at IS NULL とは別表示・Codex・Tier 2（CCO）・本番の既存行は触らない）／ ★(b) 上の常設 ／ ★(c) migration はやらない。★④ はこれで完了。
+★**(a) 着地**: #1113 → f3efaa08（Codex 実装・CCO PASS・CI の Validate／Test／Build が緑になってから merge）。★eventState＝skipped (terminal)／stuck（「the current route never leaves this; legacy row or another writer」）／processed／failed／unexpected marker／unknown。★CCO の RED ②（stuck から status 条件を外す）を塞ぐ 2 行を追加。★main で Dropbox の path から N=abc → rc=1 を確認。
 
