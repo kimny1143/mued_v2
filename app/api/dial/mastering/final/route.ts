@@ -6,6 +6,7 @@
  * Requires a completed mastering preview task.
  */
 
+import { after } from 'next/server';
 import { z } from 'zod';
 import { and, eq, ne, sql } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
@@ -14,6 +15,7 @@ import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError }
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterFinal, isRoExDevKey } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
+import { persistDeliverableToR2 } from '@/lib/dial/r2-persist';
 import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile, isUnchargedMasteringReservation } from '@/lib/dial/task-timeout';
 import { sessionStateForCompletedTask } from '@/lib/dial/session-state';
@@ -21,7 +23,11 @@ import { advanceDialSessionState } from '@/lib/dial/session-state-write';
 import { db } from '@/db';
 import { dialTasks, dialSessions } from '@/db/schema';
 
-export const maxDuration = 120;
+// maxDuration counts from the start of the invocation. GET: a poll (≤ ROEX_POLL_TIMEOUT_MS = 45s) and
+// then the R2 copy in after() (≤ COPY_TIMEOUT_MS = 90s per attempt). POST: the submit, then an
+// awaited copy. 120 was below 45+90; 300 matches final/route.ts. Asserted in
+// tests/unit/api/dial-mastering-final-get-r2.test.ts.
+export const maxDuration = 300;
 
 // Advisory-lock namespace for mastering submission (PR#426 style). Two-key form
 // pg_advisory_xact_lock(CLASS, hashtext(session_id)) serializes concurrent mastering
@@ -284,23 +290,25 @@ export const GET = withDialAuth(async (auth) => {
       const pollResult = await masterFinal(client, task.roexTaskId, { poll: true });
 
       if (pollResult.finalUrl) {
-        let r2FinalUrl: string | undefined;
-        try {
-          const r2Result = await copyToR2({
-            sourceUrl: pollResult.finalUrl,
-            sessionId: task.sessionId,
-            taskId: task.id,
-            taskType: 'mastering',
-          });
-          r2FinalUrl = r2Result?.r2Url;
-        } catch { /* non-blocking */ }
-
+        // Complete first. The R2 copy used to run before this write, so a slow copy (≤90s) after the
+        // poll (≤45s) got the invocation killed before the task was ever marked completed.
         await db.update(dialTasks).set({
           status: 'completed',
           finalUrl: pollResult.finalUrl,
           completedAt: new Date(),
-          ...(r2FinalUrl ? { r2FinalUrl } : {}),
         }).where(and(eq(dialTasks.id, taskId), ne(dialTasks.status, 'failed')));
+
+        // Then copy to R2 for a stable download URL, recording the URL and its expiry, in after()
+        // (same helper as the session GET) so the response does not wait on the copy.
+        const finalUrl = pollResult.finalUrl;
+        after(() =>
+          persistDeliverableToR2({
+            sourceUrl: finalUrl,
+            sessionId: task.sessionId,
+            taskId: task.id,
+            taskType: 'mastering',
+          }).catch((err) => console.error('[mastering/final/GET] R2 copy failed:', err)),
+        );
 
         const session = await db.query.dialSessions.findFirst({
           where: eq(dialSessions.id, task.sessionId),
