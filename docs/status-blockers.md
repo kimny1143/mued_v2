@@ -2651,3 +2651,73 @@ pinned sha ではない）・★**role / DB レベルの `ALTER … SET` は 未
 
 ★#465（preview の R2）の規模を測るために ★subagent に調査させ、★その報告が ★この欠陥を「likely bug」として挙げた。
 ★**当課は 報告を そのまま運ばず** ★コード（route の該当行）と ★drizzle の source（`query-promise.js`）の ★2 点で 一次確認してから 直した。
+
+### (1z) — ★EULA 後の正式配信は ★4 製品すべて 1.0.0（版に依存する場所の棚卸し・2026-09-23T19:28+0900）
+
+★**kimny 逐語（conductor 便・2026-09-23）**: 「EULAが届いてからの正式な書き出しについては 全ての製品についてバージョン番号を1.0.0にしてください。」
+★∴ ★(1v)/(W15) の「無料 3 本 0.1.3・masterchain 0.1.4」は ★置き換え。★引き金（EULA 本文 → dsp が 4 本まとめて bake）は不変。
+
+## ★測った（origin/main af1a4788・node_modules 除外）
+
+```
+★版の定数 … lib/{muedsat,muedlim,muedrive}/config.ts の *_VERSION ＝ "0.1.2"（3）
+           ＋ *_DOWNLOAD_URL ＝ …-0.1.2-installer.pkg（3）
+           ＋ lib/masterchain/config.ts:70 MASTERCHAIN_DOWNLOAD_URL ＝ …-masterchain-0.1.3-installer.pkg
+           ★masterchain は URL だけ（MASTERCHAIN_VERSION は作らない・portal は URL から版を読む）
+★表示 … ★registry（PLUGIN_DIST.version）→ portal ／ ★/plugins/versions.json（plugin の更新通知）
+        ★masterchain の版は portal.ts の versionInUrl() が URL から読む
+        ★messages（ja/en）に 版の文字列 0 件・"alpha" 0 件 ／ JSON-LD softwareVersion 0 件
+★メール … 本文の版は無い（URL は定数から）∴ ★定数を変えれば追随
+★license … ★版を含まない（payload＝name+email+product+scope）。LICENSE_VERSION=2 は ★key の書式版
+★EULA_VERSION … lib/legal/eula.ts:5 ＝ "PENDING-LAWYER-TEXT" ——★EULA 文書の版であって ★製品の版ではない
+★test … plugin-version-matches-download（定数 2 本の一致）／ plugin-download-artifact-integrity（★sha256 の pin）
+        ／ plugin-download-retention（★一度 *_DOWNLOAD_URL に載った URL の file は消せない）／ portal 系 test
+★特商法 … app/[locale]/tokushoho/page.tsx:123 の動作環境は ★0.1.3 installer の実測（xar/lipo/otool）
+```
+
+★**parser の境界（★製品側 `buildPurchaseItems()` に URL を渡して測った・regex は写していない）**:
+```
+✓ MUEDsp-masterchain-1.0.0 ／ MUEDlim-1.0.0 ／ MUEDsat-1.0.0 ／ MUEDrive-1.0.0（-installer.pkg）→ "1.0.0"
+★null … 1.0 ／ v1.0.0 ／ 1.0.0-rc1 ——★落ち方は null ＝ ★版だけが静かに消える
+```
+
+## ★dsp へ（conductor 経由）
+
+```
+① 4 本とも PLUG_VERSION を 1.0.0 に ② file 名は ★<Name>-1.0.0-installer.pkg ちょうど（★v 無し・-rc 無し・3 桁）
+③ sha256 は ★shasum -a 256 で 4 本ぶん ④ ★plugin の更新通知が 0.1.x < 1.0.0（★major の繰り上がり）を正しく比べるか
+   （★versions.json は latest="1.0.0" を返す ∴ 比較は plugin 側）
+```
+
+## ★mued の実装（★Codex へ・dsp の名前と sha256 を受けてから）
+
+```
+1. 定数 7 本 … 無料 3 本の *_VERSION・*_DOWNLOAD_URL ＋ MASTERCHAIN_DOWNLOAD_URL
+2. public/downloads/ に 1.0.0 の 4 本を置く（★旧 file は消さない＝retention test が守る）
+3. artifact-integrity test の sha256 pin を 4 本（★masterchain の pin は今 null）
+4. #1062 の作り直し … ★source＝alias 5 本 ＋ ★0.1.2 の canonical 3 本 ＋ ★masterchain 0.1.3 ＝ 9 本
+   ★destination は 現在の *_DOWNLOAD_URL から導出
+   ★test は性質で … 「retained な URL のうち 現在の URL でないものは ★全部 同じ製品の現在の URL へ 307」
+5. parser の写し 2 本を 1 本化（portal.ts ↔ version-matches-download.test.ts）＋ ★境界の assert（上の表）
+6. lib/*/config.ts の 0.1.2 の由来コメントを 1.0.0 に
+7. 特商法の動作環境を ★1.0.0 の installer から再測（xar / lipo / otool）
+8. メール手順文・purchased.howto は ★貼り付けボタンが同じ回に乗る場合だけ（W15 ⑤）
+```
+
+## ★判断が要るもの（conductor / kimny）
+
+```
+Q1 旧 URL … (a) ★9 本すべて 1.0.0 へ 307（推奨）／ (b) 旧 build を そのまま配り続ける
+   ★推奨理由 … ★「EULA は次回のユーザーリリースで全製品に反映」と ★旧 link が EULA 前の build を配り続けることは両立しない
+              ★#1062 自身が「古い名前が古い build を配り続けない」を目的にしている
+              ★file は残る（retention）∴ ★必要なら redirect を外すだけで戻せる
+Q2 EULA_VERSION の値 … ★製品版（1.0.0）と ★別物として 文書の版（例: 日付）にする（推奨）——★混ぜると order の tags で区別できない
+Q3 FastSpring 側の商品名・版の表記 … ★当課は dashboard を見られない（owner＝conductor / kimny）
+```
+
+## ★本番後（当課が測る）
+
+```
+★(W0) … 1.0.0 の 4 URL を ★xar! ＋ size ＋ 陰性対照 ／ ★/plugins/versions.json が latest=1.0.0
+★#1062 の 9 本 … ★307 と Location ／ ★特商法の動作環境の値
+```
