@@ -3087,3 +3087,35 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
    meta-RED … llms.txt を戻す → 2 件を名指しで failed ／ 新 component に旧アドレス → failed
 ★CCO へ再レビュー依頼（msg 7f29fcbb・head 7fda4fec）
 ```
+
+
+### (2g) — ★連絡先は support@mued.jp に（#1119 本番着地）／ content課への置き便の文面（2026-09-24T00:57+0900）
+
+## ★#1119 本番着地
+
+```
+★CCO PASS（b64beb62・7fda4fec とも review で pin）→ merge 5fa1513d
+★本番（2026-09-24T00:55:41+0900・curl）… glasswerks.jp のメールアドレス ＝ 5 面とも 0
+   /ja/support・/en/support … mailto と表示が support@mued.jp
+   /ja/tokushoho・/en/tokushoho … 「メールアドレス」の欄が support@mued.jp
+   /llms.txt … 運営会社の「メール」2 か所が support@mued.jp
+★#1120（Tier 1・test のみ）… CCO の non-blocking 2 点: 走査に public/ を足す・kimny の理由は逐語で引く
+```
+
+## ★content課への置き便（canonical 変更通知・★未送信＝content課のセッションが無い）
+
+```
+★canonical … mued.jp の連絡先アドレス ／ 特商法（muedsp）の動作環境 ／ サポートの受付時間 ／ masterchain のライセンスキーのメール手順
+★変更
+   ① 連絡先: support@glasswerks.jp（サポートページ）・info@glasswerks.jp（特商法・llms.txt）→ ★すべて support@mued.jp（kimny 9/24・#1119・★live）
+   ② 特商法の動作環境: macOS 11.0 以降／Apple シリコン（M1 以降）または Intel の Mac／メモリ 8GB 以上（16GB 推奨）（#1118・★live）
+   ③ サポートの受付時間: 平日 10:00〜18:00（日本時間）・土日祝・年末年始は休み・通常 1〜2 営業日で返信（#1118・★live）
+   ④ ライセンスキーのメールとダッシュボード: 隠しフォルダに license.key を置く手順 → コピー → DEMO → "Paste license from clipboard" → LICENSED
+      （#1116・★未 merge＝1.0.0 の配信と同時）
+★影響範囲の推定 … content課の repo（_contents-writing@9dbcb91）の git grep で、旧アドレスは drafts の 5 file だけ
+   drafts/advisory-lp-impl/page.tsx・tokushoho-and-seo-diffs.md・drafts/inbox/advisory-lp-v7-plan-brief-20260702.md・
+   consent-privacy-assessment-20260718.md・consent-privacy-dropin-copy-20260718.md
+   ＝ 公開済みの面には無い（mued.jp の面は #1119 の test が 0 件を assert）。drafts を再利用する時に旧アドレスが戻る恐れ
+   陽性対照 … 同 repo で support@mued.jp は 23 file
+★緊急度 … 通常（公開済みの記事が誤った連絡先を載せている証拠は無い・drafts の再利用時に直せば足りる）。④ は開店の便で
+```
