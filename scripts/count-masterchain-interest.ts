@@ -22,7 +22,7 @@ import { sql } from "drizzle-orm";
 import { db } from "../db";
 
 async function main() {
-  // ★JST, measured in the same statement as the read — a timestamp written afterwards drifts.
+  // ★JST, taken by this process immediately before the read — a timestamp written afterwards drifts.
   const measuredAt = new Date().toLocaleString("sv-SE", { timeZone: "Asia/Tokyo" });
 
   const res = await db.execute(sql`
@@ -39,8 +39,14 @@ async function main() {
   console.log(`rows              : ${r.rows}`);
   // ★An empty table gives NULL for both dates. Print that as "—" rather than "null", and never as
   // today's date: a fabricated range is worse than no range.
-  console.log(`first created_at  : ${r.first_date ?? "— (0 rows)"}`);
-  console.log(`last created_at   : ${r.last_date ?? "— (0 rows)"}`);
+  // ★The dates are UTC, NOT JST like measured_at above. `created_at` is `timestamp` without time
+  // zone, written by defaultNow() under the server session TimeZone (measured GMT — memory
+  // reference-dial-prod-db-direct-query), so its wall clock is UTC; `::date::text` runs server-side,
+  // so the driver never re-parses it. A row written 00:00–08:59 JST shows the previous day here.
+  // Say so on the line itself: two zones on adjacent lines with one label is a misread waiting.
+  const utcDate = (d: string | null) => (d === null ? "— (0 rows)" : `${d} (UTC date)`);
+  console.log(`first created_at  : ${utcDate(r.first_date)}`);
+  console.log(`last created_at   : ${utcDate(r.last_date)}`);
 }
 
 main()
