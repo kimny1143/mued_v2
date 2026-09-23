@@ -2778,3 +2778,56 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
    ★conductor 実測の逐語（W12 から移した）＝ 管理画面が「Storefront status cannot be changed until activation is
    completed.」で ★popup の Online 切替をブロックする
 ```
+
+### (2b) — ★FastSpring store activation 済 → ③④⑤ の準備（2026-09-23T21:14+0900）
+
+★**①activation**: Kevin 2026-09-22T17:50:51Z「your store has been activated!」（conductor が Gmail で確認）。★順序（conductor 台帳 masterchain-ready-to-open-20260916 rev11）＝ ②kimny が popup「glasswerks」を Online（★テスト用・販売開始ではない）→ ③DOM 3 点 → ④popup 発テスト注文 → ⑤live storefront env（kimny 承認）→ EULA・1.0.0 → ⑥kimny の本番購入 → ⑦開店。
+
+## ★★前提の訂正 ——★テスト注文では keyfile は発行されない（当課が route を読んで確認）
+
+```
+★app/api/webhooks/fastspring/route.ts（#1039・9/16）… ★live !== true の order.completed は ★fulfillment を skip
+   ★license 発行 ／ masterchain_purchases ／ 配達メール … ★どれも無し
+   ★残るのは … webhook_events の 1 行（payload 付き・errorMessage＝SKIPPED_TEST_MARKER）＋ warn log
+   ★=== true で見る ＝ ★欠損も発行しない側（★発行済みキーは撤回できない）
+★∴ ④ で確かめられるのは … (a) ★FASTSPRING_WEBHOOK_SECRET（★HMAC は skip より前 ∴ FastSpring の webhook log が 200 なら正・401 なら誤）
+                            (b) ★popup の tags（C1-b）… ★payload を読む＝本番 DB 読み＝kimny
+★keyfile→plugin LICENSED の通し … ★live 注文だけ ＝ ★⑥（kimny の本番購入）。★鍵は K1（(2a)）∴ ⑥ で見るのは書式〜検証
+★当課の memory（project-masterchain-paid-line）は ★「live 未参照 ∴ test 注文も本番扱い」のままだった → ★訂正済
+```
+
+## ★conductor 決定（9/23 21:1x）
+
+```
+④ ＝ ★(a) テスト注文 1 件・★本番への書き込みは webhook_events の 1 行だけ・★LICENSED の通しは ⑥
+③ の値（★公開値・conductor が 9/16 に管理画面で実測した逐語）
+   test popup storefront … glasswerks.test.onfastspring.com/popup-glasswerks
+   product path          … muedsp-masterchain（★2026-07-29 から存在・$69.00 USD・表示名 MUEDsp masterchain）
+   ★「kimny が決める」は ★この既存 product で決着済として扱う
+★live の識別子 … ★Online 切替の後に 管理画面で確かめてから決める（★.test. を除いた形は推測 ∴ 先に env へ入れない）
+★webhook の配送先が test/both か … ★Online 切替と一緒に conductor が kimny に確認
+★tag を読む read-only script … ★Codex で用意（★実行は kimny）
+```
+
+## ★③ の方法（★本番の設定は変えない）
+
+```
+★本番では今はできない … script は STOREFRONT ＋ PRODUCT_PATH ＋ NEXT_PUBLIC_EULA_LIVE=1 が ★全部 build に在る時だけ読まれる
+   （masterchain-purchase-control.tsx:32）∴ ★EULA 前の本番は button disabled のまま（★意図どおり）
+★ローカルで起動 ／ 3 値は ★shell の環境変数だけ（★file にも Vercel にも書かない）／ /muedsp は ★DB を読まない（確認済）
+★見る 3 点 … (1) script#fsc-api の data-storefront と data-fs-settled="1" (2) window.fastspring
+             (3) ★EULA の checkbox を入れた後に button が enabled
+★本番の同じ 3 点 … ★⑤ と EULA flag の後に もう一度
+```
+
+## ★⑤ の手順（★kimny の承認事項・当課は手順だけ）
+
+```
+1. printf '%s' '<live storefront>' | vercel env add NEXT_PUBLIC_FASTSPRING_STOREFRONT production（★echo は末尾改行が入る）
+   ★PRODUCT_PATH も同様（muedsp-masterchain）
+2. vercel env ls production で ★名前を確認（値は出ない）
+3. ★build 時に埋め込まれる ∴ ★新しい deploy が要る ——★git push の自動 deploy か dashboard の Redeploy（★CLI deploy はしない）
+4. 確認 … ★EULA flag が off の間は 見た目は変わらない（disabled のまま）
+   ★埋め込みの確認＝/en/muedsp の JS chunk に ★storefront の文字列が在る（陽性）＋ ★".test." が無い（陰性）＝当課が測れる
+5. 戻し … vercel env rm ＋ redeploy
+```
