@@ -2997,7 +2997,7 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ★(3) 特商法の動作環境・サポートページの受付時間を C に揃える
 ★実装は Codex・Tier 2 は CCO・本番の設定は変えない
 ★判断 1（conductor）… 位置の語＝「画面上部の DEMO（プラグイン名の横）」／ en "at the top, next to the plugin name"
-★判断 2（kimny 待ち）… サポートページの連絡先（support@glasswerks.jp か support@mued.jp か）＝ ★その行は変えない
+★判断 2（kimny 待ち → 9/24 決定＝support@mued.jp・#1119）… サポートページの連絡先（glasswerks の業務用アドレスか support@mued.jp か）＝ ★その行は変えない
 ```
 
 ## ★(1) ロゴ ＝ 完了
@@ -3055,4 +3055,23 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ★#1118（新規）… 特商法の動作環境（os・mac・memory）＋ サポートページの受付時間・5 file（aa3a879c から取り出し）
    検証＝customer-support-copy 3 tests・typecheck／eslint rc=0・meta-RED（mac の key 名 → 1 failed）
 ★CCO へ依頼済（msg 2a492813・#1116 head f0185951・#1118 head 42168457）
+```
+
+
+## ★#1118 本番着地・#1116 に版の歯止め・連絡先は support@mued.jp（#1119）（2026-09-24T00:40+0900）
+
+```
+★#1118 … CCO PASS（head 42168457 に pin）→ merge ac737f98 → ★本番で確認（2026-09-24T00:36:46+0900・curl）
+   新しい文言 … /ja/tokushoho・/en/tokushoho に mac・memory の行・/ja/support・/en/support に受付時間（連絡先の下の <p>）
+   陰性対照 … 旧 os の「Universal バイナリ」／"Universal binary supporting" ＝ 0
+★#1116 … CCO PASS（f0185951・内容）。★CCO の提案（non-blocking）を採用して、版の歯止めを test に（261c21a6）
+   ＝ MASTERCHAIN_DOWNLOAD_URL の版が 1.0.0 以上であることを assert（portal の parser を使う）
+   ★今は わざと赤（0.1.3）。1.0.0 の URL 切り替えが同じ PR に入ると緑 ＝ draft（人の記憶）に頼らず CI が止める
+   0.1.3 → 1 failed ／ 1.0.0 → pass ／ 版の無い URL → 1 failed
+★連絡先 … kimny 決定（9/24・逐語）「support@mued.jpに合わせましょう」
+   理由（kimny・要約）: glasswerks の support アドレスは音楽制作会社の業務管理用（求人の受付など）で、mued 系では使わない ＝ ★MUED の文脈では例外なく support@mued.jp
+   #1119（Tier 2・CCO 待ち）… support ページの mailto と表示 2 か所 ＋ test 1 行 ＝ 母集団 3 行 → 3 / 3
+   repo の外（disk の mued/ 以下・_mued-dsp・apps/muedear を含む）は gitignore の coverage/ のみ・memory 0
+   ★この台帳の自分の 1 行も書き換えた（旧アドレスの字を残さない）
+★確認中 … info@glasswerks.jp の 4 か所（特商法の「メールアドレス」ja/en・llms.txt の「運営会社」2 か所）は support@ ではない ∴ 触らず conductor へ
 ```
