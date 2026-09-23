@@ -2391,3 +2391,63 @@ git worktree add --detach <tmp> refs/pull/<n>/head
 ★∴ ★理由づけは ★台帳（本 file）へ・★status は ★引き金と 一覧だけ
 ★★閾値運用: ★5,800 B を 超えたら ★(W11) か ★(W2d) を ★退避する（★書いておかないと 次に誰も気づかない）
 ```
+
+### (1w) — ★`masterchain_interest` = ★0 行（★実測・2026-09-23）と、★渡し方を 1 度 壊した記録
+
+## ★実測（★kimny が実行・★当課は撃てない）
+
+```
+measured_at (JST) : 2026-09-23 10:59:32
+table             : masterchain_interest
+rows              : ★0
+first created_at  : — (0 rows)      ★日付を 捏造しない（★0 行なら 空と印字）
+last  created_at  : — (0 rows)
+```
+
+★**経路**: ★`scripts/count-masterchain-interest.ts`（★PR #1093・★Tier 2・★self-merge しない）。
+★**当課は撃てない**——★本番 DB read は ★実行セッション内の kimny 直接アクション限定で、
+★**実測で 分類器が `[Production Reads]` で deny した**（★DB に触らない typecheck を含む compound でさえ）。
+★**但し「kimny が実行する」は「kimny が SQL を組み立てる」ではない** ∴ ★組み立ては org・★実行 1 回だけ kimny。
+
+## ★★この 0 の意味 —— ★「需要ゼロ」ではなく ★未計測
+
+```
+★`MASTERCHAIN_INTEREST_LIVE = false`（lib/masterchain/config.ts:16）
+★`interest-handler.ts:48` … ★gate は ★insert の 手前で return（`registered:false`）
+★`app/` `components/` から 当該 route を 叩く面 … ★0 件
+★書き込み経路は ★他に無い（★insert は 1 箇所・★backfill script も 無し）
+★★∴ ★誰にも フォームが 出ていない ＝ ★0 は ★構造的に 決まっていた
+★★kimny 逐語「潜在的な有料顧客いるかな」への 答えに ★この列は 使えない
+   ★使えるのは 別の分母（★/muedsp の GA4 到達・★無料 3 本の DL 実数）
+★★予測（0）と 実測（0）が 一致したが、★一致は ★予測の正しさの 証拠であって
+   ★★「測る必要が 無かった」証拠ではない ——★0 でなければ ★gate を越えて 何かが書いた発見だった
+```
+
+## ★★当課が 渡し方を 1 度 壊した（★kimny が 実行して 初めて 判った）
+
+```
+★渡した … ★`npx tsx scripts/count-masterchain-interest.ts`
+★★実際 … ★`ERR_MODULE_NOT_FOUND`
+   ★機序 … ★script を ★保全 branch に commit し ★その後 main に戻った
+          ∴ ★作業ツリーに ★file が 無い
+★★自分の memory に ★そのままの規律が 在る:
+   ★`feedback-workaround-must-itself-be-checked`「★回避策は、それ自身を 1 回 実行してから書く」
+★★踏んだ理由 … ★script の中身は 検査した（★型・read-only・PII 無し）が
+   ★★「★渡した コマンドが ★渡した状態で 通るか」は ★検査していない
+   ＝ ★★検査の対象が ★成果物で 止まり ★引き渡し面に 届いていなかった
+★手当て … ★`git checkout <branch> -- <path>` で ★file だけ 取り寄せ（★branch は main のまま）
+   ★`fs.existsSync` ＋ `tsx --version` で ★解決を 確認してから 再度 渡した → ★通った
+★★恒久手当て … ★#1093 が merge されれば ★main に在る ＝ ★この罠は 消える
+   ★それまでは ★status に「★作業ツリーに 取り寄せ済・★main には 未 merge」と 書く
+```
+
+★★**同じ件で もう 1 度 踏んだ（★同じ 30 分の中で）**: ★本 entry を出す docs commit に
+★**script が 混入した**（★`git stash pop` が ★staged のまま戻し、★`git add status.md docs/…` の
+★外に在ったのに ★index には 乗っていた）。★**`[Tier 1]` と書いた commit に ★code が 入った**
+＝ ★**Tier を 低く読んで self-merge する向き**。★**捕まえたのは ★PR を出す前の `git show --stat`**
+（★CLAUDE.md「★self-merge の前に 実 diff を見る」）。★amend で docs だけに戻し、★script は
+★untracked のまま 作業ツリーに残した（★#1093 が 正本）。★★`git add <明示 path>` は
+★**「他が 入らない」ことを 保証しない** ——★index の状態は ★別に 見る。
+
+★**型として一段**: ★**「file を 作った」「型が 通った」は ★受け手の手元で 動く証拠ではない。**
+★**引き渡しの単位は ★成果物ではなく ★★『相手が打つ 1 行』** ——★**その 1 行を ★自分で 1 回 打つ。**
