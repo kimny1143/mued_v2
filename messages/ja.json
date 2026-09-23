@@ -491,7 +491,9 @@
       },
       "environment": {
         "title": "動作環境",
-        "os": "macOS 11.0 以降（Apple Silicon・Intel の両方に対応する Universal バイナリ）",
+        "os": "macOS 11.0 以降",
+        "mac": "Apple シリコン（M1 以降）または Intel プロセッサの Mac",
+        "memory": "メモリ 8GB 以上（16GB 以上推奨）",
         "formats": "プラグイン形式: VST3・AU（Audio Units）・AAX（Pro Tools）",
         "host": "上記いずれかの形式に対応した DAW が必要です。",
         "windows": "Windows 版は現在ご提供しておりません。"
@@ -978,6 +980,7 @@
     "contact": {
       "title": "お問い合わせ",
       "description": "MUEDnoteに関するご質問、ご要望、不具合のご報告は、以下のメールアドレスまでお問い合わせください。",
+      "hours": "受付時間: 平日 10:00〜18:00（日本時間）。土日祝・年末年始はお休みです。通常 1〜2 営業日以内にお返事します。",
       "company": "株式会社グラスワークス"
     },
     "faq": {
