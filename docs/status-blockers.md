@@ -2664,7 +2664,7 @@ pinned sha ではない）・★**role / DB レベルの `ALTER … SET` は 未
            ＋ *_DOWNLOAD_URL ＝ …-0.1.2-installer.pkg（3）
            ＋ lib/masterchain/config.ts:70 MASTERCHAIN_DOWNLOAD_URL ＝ …-masterchain-0.1.3-installer.pkg
            ★masterchain は URL だけ（MASTERCHAIN_VERSION は作らない・portal は URL から版を読む）
-★表示 … ★registry（PLUGIN_DIST.version）→ portal ／ ★/plugins/versions.json（plugin の更新通知）
+★表示 … ★registry（PLUGIN_DIST.version）→ portal ／ ★/plugins/versions.json（★但し plugin からは読まれていない＝下の訂正）
         ★masterchain の版は portal.ts の versionInUrl() が URL から読む
         ★messages（ja/en）に 版の文字列 0 件・"alpha" 0 件 ／ JSON-LD softwareVersion 0 件
 ★メール … 本文の版は無い（URL は定数から）∴ ★定数を変えれば追随
@@ -2686,7 +2686,7 @@ pinned sha ではない）・★**role / DB レベルの `ALTER … SET` は 未
 ```
 ① 4 本とも PLUG_VERSION を 1.0.0 に ② file 名は ★<Name>-1.0.0-installer.pkg ちょうど（★v 無し・-rc 無し・3 桁）
 ③ sha256 は ★shasum -a 256 で 4 本ぶん ④ ★plugin の更新通知が 0.1.x < 1.0.0（★major の繰り上がり）を正しく比べるか
-   （★versions.json は latest="1.0.0" を返す ∴ 比較は plugin 側）
+   （★versions.json は latest="1.0.0" を返す ∴ 比較は plugin 側 ——★9/23 dsp 実測で ★そもそも比較も取得も無い＝下の訂正）
 ```
 
 ## ★mued の実装（★Codex へ・dsp の名前と sha256 を受けてから）
@@ -2724,9 +2724,26 @@ Q3 ＝ ★conductor が引き取る（★activation 後に kimny と確認）＝
 ★順序 … ★dsp の名前と sha256 が届く → ★Codex で実装 → 当課が独立確認 ／ ★特商法の再測は 1.0.0 installer が出てから
 ```
 
+## ★★訂正 — ★/plugins/versions.json は ★plugin から読まれていない（dsp 実測・当課が一次で照合）
+
+```
+★dsp の実測（conductor 便 9/23）… plugin に versions.json を読んで版を比べる処理は ★無い
+   ★MUEDsp / MUEDlim に在るのは ★表示の枠（SetUpdateAvailable）だけ・★呼ぶ側は どの branch にも無い
+★当課の照合（mued-dsp・git grep・2026-09-23）
+   ★'versions.json' を C++（*.cpp *.h *.hpp *.mm）で … ★remote 423 branch すべて 0 件
+   ★陽性対照 … 同じ loop で 'SetUpdateAvailable' ＝ 40 branch 中 30 件（★loop は生きている）
+   ★origin/main の SetUpdateAvailable は ★定義 2 件と「a future startup version check」のコメントだけ
+★∴ ★route.ts:4-8 のコメント「The free MUEDsp plugins fetch this once at startup … surface a "update
+   available" banner」は ★事実ではない（★7/19 の dsp↔mued の約束を ★実装済みのように書いている）
+★1.0.0 の回 … ★dsp は「比べる関数と test だけ」を足し ★起動時の取得はつながない（★新しい外部通信は kimny 判断）
+   ★当課の versions.json は ★1.0.0 を返すように更新する前提のまま（registry から自動）
+★★書かないこと … ★「plugin への更新通知が効いている」。★versions.json が 1.0.0 を返すことは ★通知の証拠ではない
+★Codex の実装一覧に ★9 を追加 … route.ts のコメントを事実に直す（★取得する plugin は無い・約束は 7/19・つなぐのは kimny 判断）
+```
+
 ## ★本番後（当課が測る）
 
 ```
-★(W0) … 1.0.0 の 4 URL を ★xar! ＋ size ＋ 陰性対照 ／ ★/plugins/versions.json が latest=1.0.0
+★(W0) … 1.0.0 の 4 URL を ★xar! ＋ size ＋ 陰性対照 ／ ★/plugins/versions.json が latest=1.0.0（★endpoint の値の確認であって「更新通知が効く」の確認ではない）
 ★#1062 の 9 本 … ★307 と Location ／ ★特商法の動作環境の値
 ```
