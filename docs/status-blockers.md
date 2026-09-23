@@ -2831,3 +2831,64 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
    ★埋め込みの確認＝/en/muedsp の JS chunk に ★storefront の文字列が在る（陽性）＋ ★".test." が無い（陰性）＝当課が測れる
 5. 戻し … vercel env rm ＋ redeploy
 ```
+★**追記（2026-09-16 の実測・muedsp-landing-content.tsx のコメント）**: env を入れた後の build でも button が disabled のままだった前例があり、★build cache を疑っている ∴ ★Redeploy は ★build cache を使わない形でも行い、★判定は env の一覧でなく ★button の描画（disabled 形か enabled 形か）で見る。
+
+### (2c) — ★③ で本番の CSP が FastSpring を拒否していた → #1108 で修正・本番着地 ／ ④ の準備完了（2026-09-23T21:52+0900）
+
+## ★③ の実測（ローカル・test storefront・Buy は popup を開くだけで注文しない）
+
+```
+★修正前（21:29:53 JST・main）… console「Refused to load the script 'https://d1f8f9xcsvx3ha.cloudfront.net/sbl/1.0.1/
+   fastspring-builder.min.js' … script-src …」／ window.fastspring 無し ／ EULA を入れても button disabled ／ popup 開かない
+   ★data-fs-settled="1" は error 側でも付く ∴ ★settled を「読めた」と読まない
+★本番の CSP を curl … script/style/connect/frame に FastSpring が 0 件 ∴ ★EULA flag と env を入れても 本番は買えなかった
+★修正後（21:30:37 JST）… window.fastspring と builder 在り ／ button enabled ／ popup の iframe 表示 ／ ★当課の CSP 違反 0
+★残る観察（★当課の CSP ではない）
+   ① FastSpring の入れ子 frame（dk9c86k2d45gh.cloudfront.net）が ★自分の frame-ancestors で localhost を拒否 → 本番で再測
+   ② 「payment is not allowed in this document」（SBL の iframe に allow="payment" が無い見込み・カード決済は影響なし見込み）
+      → ★SBL の版（FastSpring の snippet は sbl.onfastspring.com/sbl/1.0.9）を上げる判断の材料（★別判断・conductor）
+   ③ popup の価格 ＝ ¥12,365（消費税 ¥1,124・10% 込）→ ★kimny 決定「現状でいい」＝ サイト $69・決済は地域価格 JPY
+   ④ popup の帯「http://localhost:3217 needs to be whitelisted to accept live transactions」
+      ∴ ★test は whitelist 不要・live は要る → ★kimny が https://mued.jp と https://www.mued.jp を登録済（21:3x）
+★ボタンの文言「Coming soon／近日発売」（muedsp.masterchain.buyLabel）は enabled でも変わらない → ★開店の便の作業（copy は conductor×kimny）
+```
+
+## ★#1108（CSP・Tier 3・実装 Codex・review/検証 mued・conductor PASS）
+
+```
+★足した 5 本 … script/style＋d1f8f9xcsvx3ha.cloudfront.net ／ img＋sbl.onfastspring.com ／ connect/frame＋*.onfastspring.com
+★1 回目の CI … ★Test が落ちた（Module did not self-register: @parcel/watcher-linux-x64-glibc）
+   ★test が next.config.ts を import → next-intl の plugin が native module を読み、Linux の worker thread で load 不可
+   ★macOS では 173 files 全部 緑だった ＝ ★手元の緑は手元の OS の緑（memory に追記）
+★直し … CSP を副作用の無い lib/security/content-security-policy.ts へ（contentSecurityPolicy({ isProduction })）
+   test はその module を import・next.config.ts は text で読む guard
+   ★header は byte 単位で不変（Codex: 旧/新 config の headers() を両 mode で diff＝空 ／ ★mued: 本番 live 1003 B ＋ 5 本 ＝ 新 1162 B）
+★merge … c2d4e534（--match-head-commit 621f4550・conductor の再 pin 後・Test と Build pass の後）
+★本番着地 … mued.jp → dpl_6zVTTwceuJttgwds9aHFSH56JBbe（production・Ready）
+   ★live の CSP header ＝ merge 前の live（1003 B）＋ ちょうど 5 本（1162 B）＝ ★完全一致
+   ★本番は EULA flag off ∴ script はまだ読まない（意図どおり）→ ★本番の popup は ⑤ と EULA flag の後に測る
+```
+
+## ★#1109（tags を読む read-only script・Tier 2・実装 Codex・CCO PASS）
+
+```
+★merge … 44708557（--match-head-commit bdf34cdf）
+★CCO の要修正（★実在・当課の見落とし）… entry guard が ★symlink 越しの絶対 path で main を走らせず ★rc=0 で黙る
+   （kimny の Dropbox は symlink）→ ★realpathSync で両辺をそろえた ＋ test
+   ★当課の最初の確認は repo の中の相対 path で、★その経路を測っていなかった
+★推奨 2 件も反映 … SQL 側 jsonb_object_agg で ★値を DB から出さない ／ 失敗は name と code だけ
+★non-blocking（直さず記録）… live は生の値のまま DB から出る（表示は formatter が INVALID に落とす）
+★引き渡しの 1 行を ★kimny の打ち方そのもので打った（main 44708557・DB に触らないよう引数 abc）
+   cd /Users/kimny/Dropbox/_DevProjects/mued/mued_v2 で相対 ／ Dropbox の絶対 path → ★どちらも rc=1「no data was read … expected N: 1–50」
+```
+
+## ★④ の準備
+
+```
+★手順書（kimny 向け 1 枚）… conductor へ送付済（URL・test card 4242…・完了画面の license 表示・webhook log 200/401・script の打ち方）
+★起動 … conductor から「kimny の準備ができた」→ 当課がローカル（port 3217・test storefront の値は shell の環境変数だけ）
+★test card … FastSpring 公式 4242 4242 4242 4242・未来の日付（★CVV の値は公式の表に無い）
+★test 注文でも FastSpring は通知と fulfillment を simulate ∴ ★FastSpring 側の license が完了画面に出るかを見る
+```
+
+★**時刻の訂正**: ★当課は便と手順書に「22:1x」「22:0x」「21:5x」と ★測らずに書いた。★実測（`gh pr view --json mergedAt`）は #1108 ＝ 21:49:19 JST・#1109 ＝ 21:50:35 JST。★conductor へ訂正済（memory `feedback-timestamps-must-be-measured-not-narrated` に 2 件目として追記）。
