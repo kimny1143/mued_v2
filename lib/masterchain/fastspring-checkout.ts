@@ -130,7 +130,7 @@ export function readAttribution(marketingConsent?: boolean): CheckoutAttribution
 }
 
 const SCRIPT_ID = "fsc-api";
-const BUILDER_SRC = "https://d1f8f9xcsvx3ha.cloudfront.net/sbl/1.0.1/fastspring-builder.min.js";
+export const BUILDER_SRC = "https://d1f8f9xcsvx3ha.cloudfront.net/sbl/1.0.1/fastspring-builder.min.js";
 
 type FastSpringBuilder = {
   push: (payload: Record<string, unknown>) => void;
