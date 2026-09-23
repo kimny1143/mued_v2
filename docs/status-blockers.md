@@ -2939,3 +2939,16 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ```
 
 ★ローカルのページ（pid 30133）は ★22:31:12 に止め（dev のログの最後の書き込み＝終了時の出力）、`next dev` が書き足した AGENTS.md は元に戻した（git status 空）。
+
+## ★★④ の結果（conductor 報告・2026-09-23 22:4x 受領 ——★受領時刻は当課の date で 22:41:02 の直前）
+
+```
+★kimny が ★管理画面の Popup Preview から ★正しい CVV で test 注文を完了 … order GLASSWERKSJP260923-4650-40122
+★商品 … ★FastSpring の見本「Example Product」の月額 ¥2,680 ＝ ★¥2,680 の正体（★誤って作られた商品ではない）
+★FastSpring の Webhooks Log … order.completed が Status「Success」・Attempts 0（9/16 の分と合わせて 2 件）
+⇒ ★FASTSPRING_WEBHOOK_SECRET は正しい（★route は HMAC を skip より前に検証し、失敗なら 401 ∴ Success＝HMAC を通過）
+   ★test ∴ fulfillment は skip ・ webhook_events に 1 行（★当課は本番 DB を読んでいない＝行の実在は未測）
+★未了（★開店の便で決める）… ★popup の tags（Preview の経路なので付かない ∴ read-fastspring-event-tags.ts は今回は打たない）
+   ／ ★masterchain そのものでの test 注文（当課のページ or 本番の EULA flag 後）
+★残る activation 後の通し確認（(2a)）… ① keyfile→plugin LICENSED ＝ ⑥ の本番購入 ／ ② webhook secret ＝ ★これで済
+```
