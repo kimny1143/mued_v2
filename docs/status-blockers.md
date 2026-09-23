@@ -2451,3 +2451,71 @@ last  created_at  : — (0 rows)
 
 ★**型として一段**: ★**「file を 作った」「型が 通った」は ★受け手の手元で 動く証拠ではない。**
 ★**引き渡しの単位は ★成果物ではなく ★★『相手が打つ 1 行』** ——★**その 1 行を ★自分で 1 回 打つ。**
+
+### (1x) — ★EULA の env は `=1`（★`true` は黙って off）／★#1093 の日付 zone（2026-09-23T11:26+0900）
+
+## ★conductor 再起動の便（2026-09-23・Opus 5.5）を ★一次と照合した
+
+★**便の主張**: 「EULA 到着時は messages `eula.sections.*` → `EULA_VERSION` → `EULA_LIVE` + `NEXT_PUBLIC_EULA_LIVE` → kimny Go の順」。
+
+```
+★照合（origin/main 7205fdc7・grep）
+EULA_VERSION           … lib/legal/eula.ts:5                    = "PENDING-LAWYER-TEXT"（★まだ仮）
+EULA_LIVE              … lib/legal/config.ts:4                  = process.env.EULA_LIVE === "1"
+NEXT_PUBLIC_EULA_LIVE  … masterchain-purchase-control.tsx:13    = process.env.NEXT_PUBLIC_EULA_LIVE === "1"
+messages               … en/ja とも eula.sections = { status, agreement, contact }（★仮の 3 節）
+★∴ 順序は コードと矛盾しない
+```
+
+## ★★便に無かった条件 ——★真と読む文字列は `"1"`
+
+```
+LEARN_LIVE             … === "true"
+EULA_LIVE              … === "1"    ← ★LEARN_LIVE に倣って `true` と set すると ★黙って off
+NEXT_PUBLIC_EULA_LIVE  … === "1" ＋ ★build 時に埋め込み ∴ ★set した ★後の deploy で初めて効く
+★向き     … fail-closed（★購入ボタンは disabled のまま・★/eula は noindex のまま）＝安全側
+             ★但し ★「開けたのに開かない」が ★エラー無しで起きる
+★正しい値 … `.env.local.example:67-68`（`EULA_LIVE=1` / `NEXT_PUBLIC_EULA_LIVE=1`）
+★担い手   … ★Vercel Production env ＝ 本番設定 ∴ ★kimny / conductor（★当課は PR を作れない）
+★検収     … ★deploy の後に ★面で見る（★購入欄の同意 checkbox ／ ★/eula の robots）
+             ★「env を set した」は ★証拠でない（memory reference-vercel-env-set-verify-gotchas）
+```
+
+★**memory も 1 本 古くなっていた**: ★`reference-live-flag-gates-different-surfaces-per-product` は
+★「env は 8 中 1 本だけ（9/16 実測）」と書いていたが、★`EULA_LIVE` が ★翌 9/17（`6da7298e`）に入った
+∴ ★今は ★9 中 2 本。★「client ∴ code 定数」も ★言い過ぎ（★client の要求は ★build 時埋め込みで、
+★`NEXT_PUBLIC_*` でも満たせる）。★両方 直した。
+
+## ★#1093 — ★日付の zone を ★行に書いた（★CCO PASS）
+
+```
+★追加 commit … f7cec9b0（★SQL は不変・★出力の行に "(UTC date)"）
+★理由       … created_at は timestamp（tz なし）・defaultNow()・session TZ=GMT（★memory 2026-07-06 実測）
+               ∴ 壁時計 UTC。★measured_at は JST ∴ ★隣り合う 2 行で zone が違っていた
+               ★0 行の今は無害。★行が入ると JST 00:00–08:59 の行が ★前日として出る
+★CI の射程   … ★scripts/ は tsconfig の exclude ＋ eslint の ignore ∴ ★CI はこの file を見ていない
+★当課の検証 … scratch tsconfig で単体 typecheck rc=0 ／ ★型エラー 1 行で rc=2（meta-RED）／ 戻して rc=0
+★DB では測っていない … ★ローカル Postgres の起動が ★分類器で deny → ★迂回せず、
+               ★SQL を変えない形（★表示だけ）に ★変更を縮めた
+★CCO        … review 5286175043（★head f7cec9b0 に pin・★静的のみ・★DB には撃っていない）PASS
+★merge      … squash 7d26c9a8（★--match-head-commit f7cec9b0・★CI 全 pass の後）
+               ★着地 … `git ls-tree origin/main scripts/count-masterchain-interest.ts` で在る・"UTC date" 1 件
+               ∴ ★(1w) の「★main には 未 merge」の罠は ★消えた（★main で そのまま打てる）
+```
+
+★★**CCO の non-blocking（★実在）**: ★GMT の実測は ★**読む側の session** のもの。★書く側（app の Pool）で
+上書きしていないことは ★code search で `SET TIME` / `PGTZ` とも 0 件（★default branch の index であって
+pinned sha ではない）・★**role / DB レベルの `ALTER … SET` は 未測** ∴ ★ラベルは ★「上書きが無い限り」の条件つき。
+
+★**script のコメントは「(measured GMT)」** で、★書く側を測ったように読める。★**レビュー後に sha を動かさないため
+★この回は 直していない。** ★次に この file を触る回に ★「読む側 session で実測・書く側は未測」と書き直す。
+
+## ★memory 索引を 畳んだ（★hook の警告で）
+
+```
+★MEMORY.md … 190 行 / 23,527 文字 → ★107 行 / 13,951 文字（★切られる境界は ≒24.4K 文字）
+★リンク    … 130 本 ＝ file 130 本（★dangling 0 ／ ★索引漏れ 0 ／ ★畳む前と同じ照合で確認）
+★落とした行 … ★現在形だったもの 2 本（★「8/9 audit bypass 期限」＝#767 は 7/26 merged・★
+               「masterchain の律速は kimny・parse は実物と未照合」＝(W12) (a)(b) で 9/16 に閉じた）
+               ★memory に現在形を置かない ∴ ★台帳へ寄せず 消した（★正本は ここと status.md）
+```
