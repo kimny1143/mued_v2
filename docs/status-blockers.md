@@ -3075,3 +3075,15 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
    ★この台帳の自分の 1 行も書き換えた（旧アドレスの字を残さない）
 ★確認中 … info@glasswerks.jp の 4 か所（特商法の「メールアドレス」ja/en・llms.txt の「運営会社」2 か所）は support@ ではない ∴ 触らず conductor へ
 ```
+
+## ★info@glasswerks.jp も support@mued.jp に（#1119 に追加）（2026-09-24T00:48+0900）
+
+```
+★kimny（9/24・逐語）「アドレスの件は全てsupport@mued.jpね。bです。」
+★母集団（origin/main の git grep）… 6 行（出現 7）→ 顧客に見える 4 行を直した（特商法 ja/en・llms.txt 2）＝ 7fda4fec
+   直していない 2 行 ＝ docs の記録（advisory 7/2 の推論メモ・audit 8/30 の照合記録）＝ 書き換えると記録が偽になる
+   legal-compliance skill の値の複製は 8/30 にポインタ化済み（残っていない）
+★test … app/・components/・lib/・messages/ の全 file で glasswerks.jp のメールアドレス 0 件を assert（除外で切る・読んだ数 > 200 と support@mued.jp 4 面が陽性対照）
+   meta-RED … llms.txt を戻す → 2 件を名指しで failed ／ 新 component に旧アドレス → failed
+★CCO へ再レビュー依頼（msg 7f29fcbb・head 7fda4fec）
+```
