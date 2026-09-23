@@ -1,25 +1,17 @@
-import { beforeAll, describe, expect, it } from "vitest";
-import config from "@/next.config";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+import { contentSecurityPolicy } from "@/lib/security/content-security-policy";
 import { BUILDER_SRC } from "@/lib/masterchain/fastspring-checkout";
 
-describe("FastSpring popup checkout CSP", () => {
-  let directives: Map<string, string[]>;
-
-  beforeAll(async () => {
-    if (!config.headers) throw new Error("Next config must define headers()");
-    const entries = await config.headers();
-    const csp = entries
-      .find((entry) => entry.source === "/(.*)")
-      ?.headers.find((header) => header.key === "Content-Security-Policy")?.value;
-    if (!csp) throw new Error("Global Content-Security-Policy header is missing");
-
-    directives = new Map(
-      csp.split(";").filter((part) => part.trim()).map((part) => {
-        const [directive, ...sources] = part.trim().split(/\s+/);
-        return [directive, sources];
-      }),
-    );
-  });
+describe.each([true, false])("FastSpring popup checkout CSP (isProduction: %s)", (isProduction) => {
+  const csp = contentSecurityPolicy({ isProduction });
+  const directives = new Map(
+    csp.split(";").filter((part) => part.trim()).map((part) => {
+      const [directive, ...sources] = part.trim().split(/\s+/);
+      return [directive, sources];
+    }),
+  );
 
   // Source membership is independent of NODE_ENV's optional 'unsafe-eval'.
   it.each(["script-src", "style-src"])("%s allows the SBL origin", (directive) => {
@@ -34,6 +26,10 @@ describe("FastSpring popup checkout CSP", () => {
     expect(directives.get("img-src")).toContain("https://sbl.onfastspring.com");
   });
 
+  it("allows unsafe-eval only outside production", () => {
+    expect(directives.get("script-src")?.includes("'unsafe-eval'")).toBe(!isProduction);
+  });
+
   it("does not allow bare wildcards or unrestricted HTTP(S) schemes", () => {
     for (const [directive, sources] of directives) {
       for (const broadSource of ["*", "https:", "http:"]) {
@@ -41,4 +37,11 @@ describe("FastSpring popup checkout CSP", () => {
       }
     }
   });
+});
+
+it("next.config.ts uses the shared CSP builder instead of inline directives", () => {
+  // Read as text: importing the config loads native dependencies in Vitest workers.
+  const configSource = readFileSync(resolve(__dirname, "../../next.config.ts"), "utf8");
+  expect(configSource).toMatch(/\bcontentSecurityPolicy\s*\(/);
+  expect(configSource).not.toContain("script-src");
 });
