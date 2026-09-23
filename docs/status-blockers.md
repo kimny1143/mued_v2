@@ -2938,4 +2938,4 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ★決着に要るもの … 管理画面の Products 一覧（Subscription 件数・名前・作成日）と popup「glasswerks」の既定の商品 ＝ ★kimny の次の入室時
 ```
 
-★ローカルのページ（pid 30133）は ★22:2x に止め、`next dev` が書き足した AGENTS.md は元に戻した（git status 空）。
+★ローカルのページ（pid 30133）は ★22:31:12 に止め（dev のログの最後の書き込み＝終了時の出力）、`next dev` が書き足した AGENTS.md は元に戻した（git status 空）。
