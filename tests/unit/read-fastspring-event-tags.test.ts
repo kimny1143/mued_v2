@@ -43,10 +43,13 @@ const fixture = (overrides: Partial<SelectedFastspringEvent> = {}): SelectedFast
 describe("read-fastspring-event-tags state", () => {
   it.each([
     { status: "processing", completed: true, error_message: SKIPPED_TEST_MARKER, expected: "skipped (terminal)" },
-    { status: "processing", completed: false, error_message: SKIPPED_TEST_MARKER, expected: "stuck (processing, not completed)" },
-    { status: "processing", completed: false, error_message: null, expected: "stuck (processing, not completed)" },
+    { status: "processing", completed: false, error_message: SKIPPED_TEST_MARKER, expected: "stuck (processing, not completed — the current route never leaves this; legacy row or another writer)" },
+    { status: "processing", completed: false, error_message: null, expected: "stuck (processing, not completed — the current route never leaves this; legacy row or another writer)" },
     { status: "processed", completed: true, error_message: SKIPPED_TEST_MARKER, expected: "processed" },
     { status: "failed", completed: true, error_message: SKIPPED_TEST_MARKER, expected: "failed" },
+    // Legacy terminal rows written before completedAt was used are not stuck.
+    { status: "processed", completed: false, error_message: null, expected: "processed" },
+    { status: "failed", completed: false, error_message: null, expected: "failed" },
     { status: "processing", completed: true, error_message: "different marker", expected: "processing (completed, unexpected marker)" },
     { status: "processing", completed: true, error_message: null, expected: "processing (completed, unexpected marker)" },
     { status: "unrecognized", completed: true, error_message: SKIPPED_TEST_MARKER, expected: "unknown" },

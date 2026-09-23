@@ -69,7 +69,10 @@ export function eventState(row: SelectedFastspringEvent) {
   if (row.status === "processing" && row.completed === true && row.error_message === SKIPPED_TEST_MARKER) {
     return "skipped (terminal)";
   }
-  if (row.status === "processing" && row.completed === false) return "stuck (processing, not completed)";
+  // app/api/webhooks/fastspring/route.ts uses one db.transaction for insert and terminal state; throws roll back the insert.
+  if (row.status === "processing" && row.completed === false) {
+    return "stuck (processing, not completed — the current route never leaves this; legacy row or another writer)";
+  }
   if (row.status === "processed") return "processed";
   if (row.status === "failed") return "failed";
   if (row.status === "processing" && row.completed === true && row.error_message !== SKIPPED_TEST_MARKER) {
