@@ -16,7 +16,7 @@
  */
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const COPY_TIMEOUT_MS = 90_000;
+export const COPY_TIMEOUT_MS = 90_000;
 /** Backoff (ms) before retry attempts 2 and 3. Total attempts = length + 1. */
 const DEFAULT_BACKOFF_MS = [500, 1500];
 
