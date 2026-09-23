@@ -1,8 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { CHECKOUT_TAG_NAMES } from "@/lib/masterchain/fastspring-checkout";
 import {
   formatFastspringEventTags,
+  isEntryPoint,
   parseLimit,
+  summarizeError,
   SKIPPED_TEST_MARKER,
   type SelectedFastspringEvent,
 } from "../../scripts/read-fastspring-event-tags";
@@ -27,7 +34,7 @@ const fixture = (overrides: Partial<SelectedFastspringEvent> = {}): SelectedFast
   created_at: "2026-09-23 12:00:00",
   live: false,
   tags_type: null,
-  tags: null,
+  tag_flags: null,
   ...overrides,
 });
 
@@ -55,17 +62,20 @@ describe("read-fastspring-event-tags formatting", () => {
   it("lists present keys, empty flags, and only the absent contract names", () => {
     const output = formatFastspringEventTags([fixture({
       tags_type: "object",
-      tags: { gaClientId: "", eula_version: null, marketingConsent: false, utmSource: "fixture", extra: 0 },
+      tag_flags: { gaClientId: false, eula_version: false, marketingConsent: true, utmSource: true, extra: true },
     })]);
     expect(output).toContain('tags: "eula_version"=empty, "extra"=non-empty, "gaClientId"=empty, "marketingConsent"=non-empty, "utmSource"=non-empty');
     expect(output).toContain("absent CHECKOUT_TAG_NAMES: utmCampaign, utmContent, utmMedium, utmTerm");
   });
 
-  it("never prints tag VALUES (including nested values) or raw error messages", () => {
+  it("accepts only tag flags, never raw tag values, and never prints raw error messages", () => {
+    type FormatterRow = Parameters<typeof formatFastspringEventTags>[0][number];
+    expectTypeOf<FormatterRow["tag_flags"]>().toEqualTypeOf<Record<string, boolean> | null>();
+    expectTypeOf<Extract<keyof FormatterRow, "tags">>().toEqualTypeOf<never>();
     const sentinel = "SECRET-VALUE-DO-NOT-PRINT";
     const output = formatFastspringEventTags([fixture({
       tags_type: "object",
-      tags: { gaClientId: sentinel, utmSource: sentinel, extra: { nested: sentinel } },
+      tag_flags: { gaClientId: true, utmSource: true, extra: true },
       error_message: sentinel,
     })]);
     expect(output).not.toContain(sentinel);
@@ -76,10 +86,11 @@ describe("read-fastspring-event-tags formatting", () => {
   });
 
   it("distinguishes empty objects, JSON null and malformed tags from a missing path", () => {
-    expect(formatFastspringEventTags([fixture({ tags_type: "object", tags: {} })])).toContain("tags: {}");
+    expect(formatFastspringEventTags([fixture({ tags_type: "object", tag_flags: {} })])).toContain("tags: {}");
+    expect(formatFastspringEventTags([fixture({ tags_type: "object", tag_flags: null })])).toContain("tags: {}");
     expect(formatFastspringEventTags([fixture({ tags_type: "null" })])).toContain("tags: INVALID (null)");
     const output = formatFastspringEventTags([fixture({
-      tags_type: "array", tags: ["SECRET-VALUE-DO-NOT-PRINT"], live: "SECRET-VALUE-DO-NOT-PRINT",
+      tags_type: "array", tag_flags: null, live: "SECRET-VALUE-DO-NOT-PRINT",
     })]);
     expect(output).toContain("tags: INVALID (array)");
     expect(output).toContain("live: INVALID");
@@ -94,7 +105,76 @@ describe("read-fastspring-event-tags limit", () => {
     expect(parseLimit(["50"])).toBe(50);
   });
 
-  it.each([["0"], ["51"], ["-1"], ["1.5"], ["5x"], [""], ["1", "2"]])("rejects invalid arguments %j", (...args) => {
+  it.each([["0"], ["51"], ["-1"], ["1.5"], ["5x"], ["abc"], [""], ["1", "2"]])("rejects invalid arguments %j", (...args) => {
     expect(() => parseLimit(args)).toThrow("Expected N from 1 to 50");
+  });
+});
+
+describe("read-fastspring-event-tags errors", () => {
+  it.each(["28P01", "42P01", "ECONNREFUSED", "ENOTFOUND"])("reports only name and code %s", (code) => {
+    const sentinel = "postgresql://SECRET-USER:SECRET-PASSWORD@SECRET-HOST/SECRET-DB";
+    const error = Object.assign(new Error(sentinel), {
+      name: "DatabaseError", code, sql: sentinel, parameters: [sentinel], connectionString: sentinel,
+    });
+    expect(summarizeError(error)).toBe(
+      `FAILED — no data was read; no report produced; name=DatabaseError; code=${code}`,
+    );
+    expect(summarizeError(error)).not.toContain(sentinel);
+  });
+
+  it("omits absent or unsafe diagnostic fields", () => {
+    const base = "FAILED — no data was read; no report produced";
+    expect(summarizeError(undefined)).toBe(base);
+    expect(summarizeError(null)).toBe(base);
+    expect(summarizeError("secret")).toBe(base);
+    expect(summarizeError({ name: "postgresql://secret", code: "ENOTFOUND\nsecret" })).toBe(base);
+    expect(summarizeError(new Error("secret"))).toBe(`${base}; name=Error`);
+  });
+
+  it("keeps a fixed range hint for limit validation", () => {
+    try {
+      parseLimit(["abc"]);
+      expect.fail("Expected invalid limit to throw");
+    } catch (error) {
+      expect(summarizeError(error)).toBe(
+        "FAILED — no data was read; no report produced; name=LimitValidationError; expected N: 1–50",
+      );
+    }
+  });
+});
+
+describe("read-fastspring-event-tags entry guard", () => {
+  const repoRoot = realpathSync(resolve(dirname(fileURLToPath(import.meta.url)), "../.."));
+
+  it("treats missing or unresolvable argv paths as not the entry", () => {
+    expect(isEntryPoint(undefined)).toBe(false);
+    expect(isEntryPoint("\0")).toBe(false);
+  });
+
+  it.each(["real", "symlink"] as const)("runs main via an absolute %s path outside the repo before any DB import", (kind) => {
+    const tempDir = mkdtempSync(join(tmpdir(), "fastspring-event-tags-"));
+    try {
+      const scriptsDir = join(repoRoot, "scripts");
+      const linkedScripts = join(tempDir, "linked-scripts");
+      symlinkSync(scriptsDir, linkedScripts, "dir");
+      const script = join(kind === "symlink" ? linkedScripts : scriptsDir, "read-fastspring-event-tags.ts");
+      // Always invalid: main must fail before its lazy DB/env imports, even in a configured checkout.
+      // Outside the repo, explicitly supply its tsconfig for the checkout module's @/ imports.
+      const result = spawnSync(join(repoRoot, "node_modules/.bin/tsx"), [
+        "--tsconfig", join(repoRoot, "tsconfig.json"), script, "abc",
+      ], {
+        cwd: tempDir,
+        encoding: "utf8",
+        timeout: 10_000,
+      });
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(1);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("no data was read");
+      expect(result.stderr).toContain("name=LimitValidationError");
+      expect(result.stderr).toContain("expected N: 1–50");
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });

@@ -9,12 +9,12 @@
  * db/index.ts loads .env.local. Dev/Preview/Prod share one DATABASE_URL, so this reads PRODUCTION.
  * Only kimny runs it. Importing the formatter does not load the DB or execute the command.
  *
- * NO TAG VALUES IN OUTPUT: only tag names and empty/non-empty flags. The SELECT reads only
- * event metadata, top-level live, and data.tags, never the whole payload or buyer fields.
+ * NO TAG VALUES LEAVE THE DB: SQL reduces data.tags to names and empty/non-empty flags.
+ * The SELECT also reads event metadata and top-level live, never the whole payload or buyer fields.
  * Do not log selected rows or caught errors: either could disclose personal data.
  */
-import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { CHECKOUT_TAG_NAMES } from "../lib/masterchain/fastspring-checkout";
 
 // Importing the route also initializes DB/fulfillment dependencies. Keep it out of this script;
@@ -31,39 +31,51 @@ export interface SelectedFastspringEvent {
   created_at: string;
   live: unknown;
   tags_type: JsonType | null;
-  tags: unknown;
+  tag_flags: Record<string, boolean> | null;
+}
+
+class LimitValidationError extends Error {
+  constructor() {
+    super("Expected N from 1 to 50");
+    this.name = "LimitValidationError";
+  }
 }
 
 export function parseLimit(args: readonly string[]): number {
   if (args.length === 0) return 5;
-  if (args.length !== 1 || !/^[0-9]+$/.test(args[0])) throw new Error("Expected N from 1 to 50");
+  if (args.length !== 1 || !/^[0-9]+$/.test(args[0])) throw new LimitValidationError();
   const limit = Number(args[0]);
-  if (!Number.isInteger(limit) || limit < 1 || limit > 50) throw new Error("Expected N from 1 to 50");
+  if (!Number.isInteger(limit) || limit < 1 || limit > 50) throw new LimitValidationError();
   return limit;
 }
 
-// Empty means null, empty string, or empty container. false and 0 are present, non-empty values;
-// whitespace is non-empty, matching the webhook parser's treatment of strings.
-function isNonEmpty(value: unknown): boolean {
-  if (value == null || value === "") return false;
-  if (typeof value === "object") return Object.keys(value).length > 0;
-  return true;
+/** Only identifier-shaped name/code fields may leave an error; never its message or stack. */
+export function summarizeError(error: unknown): string {
+  const parts = ["FAILED — no data was read; no report produced"];
+  if (error !== null && typeof error === "object") {
+    for (const key of ["name", "code"] as const) {
+      const value = (error as Record<string, unknown>)[key];
+      if (typeof value === "string" && /^[A-Za-z0-9_]{1,64}$/.test(value)) {
+        parts.push(`${key}=${value}`);
+      }
+    }
+  }
+  if (error instanceof LimitValidationError) parts.push("expected N: 1–50");
+  return parts.join("; ");
 }
 
 /** Pure, value-free report from already-selected rows. Never stringify a row, tags, or errors. */
 export function formatFastspringEventTags(rows: readonly SelectedFastspringEvent[]): string {
   if (rows.length === 0) return "rows: 0 — no fastspring webhook event recorded";
   const events = rows.map((row) => {
-    const tags = row.tags_type === "object" && row.tags !== null &&
-      typeof row.tags === "object" && !Array.isArray(row.tags)
-      ? row.tags as Record<string, unknown>
-      : null;
+    // jsonb_object_agg returns NULL for an empty object; tags_type keeps it distinct from missing.
+    const tags = row.tags_type === "object" ? row.tag_flags ?? {} : null;
     const names = tags ? Object.keys(tags).sort() : [];
     const absent = CHECKOUT_TAG_NAMES.filter((name) => !names.includes(name));
     const tagSummary = row.tags_type === null
       ? "MISSING"
       : tags
-        ? names.map((name) => `${JSON.stringify(name)}=${isNonEmpty(tags[name]) ? "non-empty" : "empty"}`).join(", ") || "{}"
+        ? names.map((name) => `${JSON.stringify(name)}=${tags[name] ? "non-empty" : "empty"}`).join(", ") || "{}"
         : `INVALID (${row.tags_type})`;
     // Reject malformed live contents instead of printing arbitrary payload data.
     const live = typeof row.live === "boolean" ? String(row.live) : row.live == null ? "MISSING" : "INVALID";
@@ -91,7 +103,10 @@ async function main() {
            created_at::text AS created_at,
            payload->'live' AS live,
            jsonb_typeof(payload->'data'->'tags') AS tags_type,
-           payload->'data'->'tags' AS tags
+           CASE WHEN jsonb_typeof(payload->'data'->'tags') = 'object' THEN
+             (SELECT jsonb_object_agg(k, NOT (v = 'null'::jsonb OR v = '""'::jsonb OR v = '{}'::jsonb OR v = '[]'::jsonb))
+                FROM jsonb_each(payload->'data'->'tags') AS t(k, v))
+           END AS tag_flags
     FROM webhook_events
     WHERE source = 'fastspring'
     ORDER BY created_at DESC, event_id DESC
@@ -105,11 +120,19 @@ async function main() {
   console.log(`measured_at (JST): ${measuredAt}\n${report}`);
 }
 
-const entry = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : undefined;
-if (entry === import.meta.url) {
-  main().then(() => process.exit(0)).catch(() => {
+export function isEntryPoint(entryPath: string | undefined): boolean {
+  if (!entryPath) return false;
+  try {
+    return realpathSync(entryPath) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (isEntryPoint(process.argv[1])) {
+  main().then(() => process.exit(0)).catch((error: unknown) => {
     // Fail loudly, without exposing errors that may contain SQL parameters or connection secrets.
-    console.error("FAILED — no data was read; no report produced (expected N: 1–50). Error details suppressed.");
+    console.error(summarizeError(error));
     process.exit(1);
   });
 }
