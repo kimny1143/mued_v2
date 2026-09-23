@@ -2747,3 +2747,23 @@ Q3 ＝ ★conductor が引き取る（★activation 後に kimny と確認）＝
 ★(W0) … 1.0.0 の 4 URL を ★xar! ＋ size ＋ 陰性対照 ／ ★/plugins/versions.json が latest=1.0.0（★endpoint の値の確認であって「更新通知が効く」の確認ではない）
 ★#1062 の 9 本 … ★307 と Location ／ ★特商法の動作環境の値
 ```
+
+### (2a) — ★本番の license 署名鍵は K1（★秘密に触れずに 3 者照合・2026-09-23T20:35+0900）
+
+★**依頼（conductor）**: ★台帳（conductor 側）の「K1 私鍵が本番に無い」（ship-prod-secrets-two・9/10）が ★実物を見ずに書かれた可能性 ∴ 本番の `MASTERCHAIN_LICENSE_PRIVATE_KEY` が K1 と対かを確かめる。★条件＝秘密の値を出さない・`vercel env pull` しない・署名／注文／DB 書き込みをしない。
+
+★**結果＝★一致。**
+
+```
+★経路 … ★既存の本番 GET https://mued.jp/api/health の masterchain.licenseKeyPublic
+        ＝ 本番の秘密鍵から ★導出した Ed25519 公開鍵（raw 32 byte hex）。★秘密は返さない（dsp 7/27 の計器）
+★測定 … 2026-09-23 20:35 JST ／ mued.jp → dpl_8ErPoUquw8FUqawJtix9GroZfkwz（production・Ready）
+本番の導出値          54a6246f7103387e4e72adf44b4c2c5f5607c82e4db198416088e5a7be1d1d41（http 200・json・2 回同値）
+K1 公開鍵 file        54a6246f…1d1d41 ★一致（★先頭行 BEGIN PUBLIC KEY を確認してから読んだ・SPKI 44 byte の後ろ 32）
+plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/main faf9ae4b・LicenseVerifier.h:105-106 の 1 つ目）
+★陰性対照 K2          fea9d3b3…81f69a ≠ 本番（★LicenseVerifier.h:108-109 の 2 つ目・★比較は区別できている）
+```
+
+★**言えること**: ★本番 deploy の秘密鍵は ★K1 と対。★発行側 issueLicense も同じ privateKey() を読む ∴ ★発行される keyfile は K1 で署名される。
+★**言えないこと**: ★keyfile の書式から plugin の検証までを ★通しで確かめたことにはならない（★実 keyfile を plugin で検証する試験が別に要る）。★env は deploy ごとに固定 ∴ ★env を変えた後の deploy では測り直し。
+★∴ ★「K1 私鍵が本番に無い」（9/10）は ★今の本番と食い違う。★根拠は /api/health の curl 1 回（★conductor へ報告済）。

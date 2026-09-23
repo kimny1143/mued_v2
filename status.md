@@ -10,7 +10,7 @@ urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: null
-last_update: 2026-09-23T19:35:19+09:00
+last_update: 2026-09-23T20:36:26+09:00
 evidence: ★**本番 critical の解消** = PR #986 merged（squash `75043779` @2026-09-10T02:03:03Z）＋ `npm audit --omit=dev` を origin/main の lock で実行 → high 0 / critical 0。★**main の緑の根拠は tree 同一**（main tree `379a1307` ＝ #986 head `c0ee5e51` tree・main parent ＝ `5762e8b6`）。 ★**本番実見** = deploy `dpl_64M8S8jzxU9HkSqRpyCWzSP64ngK`（READY・main 75043779 由来）・`/_next/image` が実 JPEG を decode・**q=74 が live 400 `INVALID_IMAGE_OPTIMIZE_REQUEST`（cache ヘッダ無し）**。 ★**未着地 branch の実測** = 8本を per-file 比較（ABSENT-ON-MAIN 12件・うち採用10・不採用2）。★**driver の描画差** = drizzle `ANY(($1,$2,$3))` ⇔ neon `ANY($1)`/params=`[[...]]`（両方 実行して測定・test に canary 化）。 ★**floor の実測** = `npx semver -r ^0.35.0 0.35.3` → ADMITTED／`-r ^0.35.4 0.35.3` → rejected（3件とも）。 ★**PR** = open #982 #983 #985 #987 #988（すべて #986 後の main へ rebase 済 or 新設）。
 confidence: high
 lane: delivery
