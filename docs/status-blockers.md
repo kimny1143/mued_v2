@@ -2715,6 +2715,15 @@ Q2 EULA_VERSION の値 … ★製品版（1.0.0）と ★別物として 文書�
 Q3 FastSpring 側の商品名・版の表記 … ★当課は dashboard を見られない（owner＝conductor / kimny）
 ```
 
+★★**conductor 決定（2026-09-23 19:30 JST 受領）**:
+```
+Q1 ＝ ★(a) 9 本すべて 1.0.0 へ 307・★file は残す（★EULA 反映と整合・redirect を外せば戻せる）
+Q2 ＝ ★EULA_VERSION は 製品版と分けて ★文書の版（日付など）
+Q3 ＝ ★conductor が引き取る（★activation 後に kimny と確認）＝ ★当課は扱わない
+★dsp への 4 点 … ★conductor から dsp へ渡す
+★順序 … ★dsp の名前と sha256 が届く → ★Codex で実装 → 当課が独立確認 ／ ★特商法の再測は 1.0.0 installer が出てから
+```
+
 ## ★本番後（当課が測る）
 
 ```
