@@ -2621,5 +2621,33 @@ pinned sha ではない）・★**role / DB レベルの `ALTER … SET` は 未
    （★subagent の指摘＝この GET は r2FinalUrl を書くが r2ExpiresAt を書かない）
 ```
 
+## ★着地 2（#1099 ／ #1101・2026-09-23 昼）
+
+```
+★#1099 … squash 2a766392（--match-head-commit 4c74ecec・CCO PASS・★merge 前に Test pass を確認）
+         ★本番 … mued.jp → dpl_Hm1zHGMGhYS6ntHJDUh2zEFJcDsV（main b7ed6279 の deploy）
+★#1101 … squash 137fad48（--match-head-commit 8cc6fff9・CCO PASS・★merge 前に Test pass を確認）
+         ★GET だけ … ★completion を先に書く → ★copy は after(persistDeliverableToR2)（★URL と期限の両方）
+         ★maxDuration 120→300（★POST の submit→await copy にも効く）・★POST（220cr の charge 経路）は不変
+         ★CCO … ★POST も読んで確認: ★advisory lock 内の予約行 insert が charge より前 ∴
+                  ★関数が長く生きる間に再送されても ★二重 charge の経路は開かない
+         ★test … 修正前 3 failed / 1 passed → 修正後 4 passed ／ ★meta-RED（after を即時実行）1 failed
+         ★本番 … mued.jp → dpl_8VvViyYKKVtQUS5BXG9B9Ja8EVbE（main 137fad48 の deploy・Ready）
+★memory … ★gotcha-drizzle-query-runs-only-when-awaited を新設 ／
+           ★feedback-do-not-buy-a-property-with-a-value に「前例と同じ値は導出ではない」を 4 件目として追記
+```
+
+## ★CLAUDE.md 共通 block 04（#1102・CCO 配布）
+
+```
+★依頼 … CCO（conductor 承認済）・★block 04 の 11 課一覧を消して 正本へのポインタに（+16/−32）
+★当課の扱い … ★他 session の依頼で CLAUDE.md を編集しない ∴ ★kimny に提示して ★go を得てから適用
+★照合 … patch sha256（shasum -a 256）一致 eadb1858…d366f7e ／ 基準 origin/main 137fad48 ＝ 現在の main
+★手順 … origin/main から worktree → git apply --check rc=0 → apply rc=0 → ★hunk は marker 内（249-270 の中）
+★push … ★block-main-push hook が ★変数の path を判定できず fail-closed（★実行前に止まる・何も起きていない）
+         → ★literal path で commit・push は別コマンド
+★残 … CI → merge → CCO へ通知（★CCO が verify-blocks-landing-gate で照合）
+```
+
 ★#465（preview の R2）の規模を測るために ★subagent に調査させ、★その報告が ★この欠陥を「likely bug」として挙げた。
 ★**当課は 報告を そのまま運ばず** ★コード（route の該当行）と ★drizzle の source（`query-promise.js`）の ★2 点で 一次確認してから 直した。
