@@ -2985,3 +2985,105 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ★conductor 決定（9/23）… ★(a) script の表示に「state: skipped（終端）」を出す（★述語＝status='processing' かつ completed_at が在る かつ errorMessage=SKIPPED_TEST_MARKER をそのまま書き、★stuck＝completed_at IS NULL とは別表示・Codex・Tier 2（CCO）・本番の既存行は触らない）／ ★(b) 上の常設 ／ ★(c) migration はやらない。★④ はこれで完了。
 ★**(a) 着地**: #1113 → f3efaa08（Codex 実装・CCO PASS・CI の Validate／Test／Build が緑になってから merge）。★eventState＝skipped (terminal)／stuck（「the current route never leaves this; legacy row or another writer」）／processed／failed／unexpected marker／unknown。★CCO の RED ②（stuck から status 条件を外す）を塞ぐ 2 行を追加。★main で Dropbox の path から N=abc → rc=1 を確認。
 
+
+
+### (2f) — ★購入者のメール: ロゴの URL が本番に着地・キーのメール B ＋ 動作環境・受付時間（#1116）（2026-09-24T00:19+0900）
+
+## ★依頼（conductor 便・9/24）
+
+```
+★(1) ロゴ … `public/email/mued-logo.png` を `_conductor/designsystem/mued-email-logo/mued-email-logo@2x.png` と byte 同一で置く → 本番で 200 image/png を確認 → URL を報告
+★(2) キーのメール … masterchainLicenseDelivery を案 B（貼り付け手順）へ・末尾に動作環境と受付時間（C）・件名は不変・reply-to を確認
+★(3) 特商法の動作環境・サポートページの受付時間を C に揃える
+★実装は Codex・Tier 2 は CCO・本番の設定は変えない
+★判断 1（conductor）… 位置の語＝「画面上部の DEMO（プラグイン名の横）」／ en "at the top, next to the plugin name"
+★判断 2（kimny 待ち → 9/24 決定＝support@mued.jp・#1119）… サポートページの連絡先（glasswerks の業務用アドレスか support@mued.jp か）＝ ★その行は変えない
+```
+
+## ★(1) ロゴ ＝ 完了
+
+```
+★#1115（Tier 1・png 1 枚のみ・CI 緑）→ self-merge → main 6a4648b3
+★本番（2026-09-24T00:18:04+0900・curl・shasum -a 256）… 200・image/png・13,828 B・573×148
+   sha256 1576d642c35eb362ab22b7cf6f89a8223d5e1dc7061467303ab78bfc75b26b50 ＝ ★正本の png と同じ値（00:18:15 に並べて再確認）
+★陰性対照 … /email/does-not-exist.png → 404 text/html
+★conductor へ URL を報告済（msg 38aca90a）。★FastSpring の Shared Snippets は ★当課では触っていない
+```
+
+## ★(2)(3) ＝ #1116（CCO レビュー待ち）
+
+```
+★Codex 実装（worktree）→ mued が検証して commit（aa3a879c）
+★検証 … 対象 15 tests・test:unit 175 files／2461 tests・typecheck／eslint rc=0
+   ★meta-RED … 旧 license.key の文を戻す → FAIL（Codex）／ en の受付時間を変える → 2 failed（mued）
+★Reply-To … sendMasterchainLicenseDelivery は replyTo を渡さない → 既定の SUPPORT_EMAIL（support@mued.jp）∴ 「返信でも届く」は本当
+★text 版の実出力（ja/en・fake URL・使い捨て鍵・sig は伏せた）を PR コメントに貼った
+★特商法の memory の行は ★installer の実測値ではなく kimny 承認の推奨値（page.tsx にコメント）
+   ∴ (W0) の「installer 差し替えで再測」の対象は ★os・形式・ホストの行（memory は対象外）
+★CCO へ依頼済（msg c93c55af・head aa3a879c）
+```
+
+## ★残り（`blocked_by` (W17)）
+
+```
+★#1116 … CCO PASS ＋ CI 緑で merge → 本番の /ja/tokushoho・/en/support で文言を 1 度 見る
+★サポートの連絡先アドレス … kimny の判断が来たら ★別の PR
+★content課への通知 … ★置き便（開店の便に畳む・★未送信）
+   中身＝キーのメールの手順（隠しフォルダ → 貼り付け）・特商法の動作環境（M1/Intel・メモリ）・サポートの受付時間
+   影響＝公開済みの記事が license.key の保存手順や動作環境を書いていれば古くなる（★未確認）
+```
+
+
+## ★CCO の要修正 2 点 → conductor 判断 → #1116 を組み直し・#1118 に分割（2026-09-24T00:33+0900）
+
+```
+★CCO（#1116 aa3a879c への指摘）… 当課が dsp origin/main c7fef3a1 で一次照合 ＝ 2 点とも正しい
+   ① 実物に入力欄は無い … DEMO の panel のボタン "Paste license from clipboard" がクリップボードを読む
+      （MUEDsp.cpp:811 GetTextFromClipboard・:846 ラベル・同梱 README.txt:35-39 の 4 段）
+   ② 順序 … MASTERCHAIN_DOWNLOAD_URL は 0.1.3・貼り付け UI は dsp 35a12e3（9/23）＝ 0.1.3 には無い
+★conductor 判断
+   ① 4 段に: 全部コピー → DEMO → "Paste license from clipboard"（ja でも英語のまま）→ LICENSED
+   ② #1116 は ★1.0.0 の配信 PR と同じ deploy で merge（今は販売前で送る相手はいないが順番を守る）
+   ③ バッジの位置は (b)「画面左上の DEMO（SIGNATURE の文字の横）」
+      ＝ ヘッダは「MUEDsp」＋「SIGNATURE」で「masterchain」の字は画面に無い（MUEDsp.cpp:1424-1425・README も "next to SIGNATURE"）
+   ④ 特商法と受付時間は版に依存しない ∴ 分けて先に出してよい（Tier 2・CCO）
+★当課が見つけた 2 か所目 … ダッシュボードの pluginPortal.purchased.howto（ja/en）も隠しフォルダの手順だった
+   ＝ メールだけ直すと開店後に食い違う ∴ #1116 に入れた（conductor OK）
+★#1116 … origin/main から組み直し（force-push・旧 aa3a879c → f0185951・draft）
+   中身＝メール ＋ howto 1 行ずつ ＋ test 2 本（howto の test は新 file ＝ #1118 と file を共有しない）
+   検証＝対象 18 tests・test:unit 175 files／2464 tests・typecheck／eslint rc=0・meta-RED 4 本すべて赤
+★#1118（新規）… 特商法の動作環境（os・mac・memory）＋ サポートページの受付時間・5 file（aa3a879c から取り出し）
+   検証＝customer-support-copy 3 tests・typecheck／eslint rc=0・meta-RED（mac の key 名 → 1 failed）
+★CCO へ依頼済（msg 2a492813・#1116 head f0185951・#1118 head 42168457）
+```
+
+
+## ★#1118 本番着地・#1116 に版の歯止め・連絡先は support@mued.jp（#1119）（2026-09-24T00:40+0900）
+
+```
+★#1118 … CCO PASS（head 42168457 に pin）→ merge ac737f98 → ★本番で確認（2026-09-24T00:36:46+0900・curl）
+   新しい文言 … /ja/tokushoho・/en/tokushoho に mac・memory の行・/ja/support・/en/support に受付時間（連絡先の下の <p>）
+   陰性対照 … 旧 os の「Universal バイナリ」／"Universal binary supporting" ＝ 0
+★#1116 … CCO PASS（f0185951・内容）。★CCO の提案（non-blocking）を採用して、版の歯止めを test に（261c21a6）
+   ＝ MASTERCHAIN_DOWNLOAD_URL の版が 1.0.0 以上であることを assert（portal の parser を使う）
+   ★今は わざと赤（0.1.3）。1.0.0 の URL 切り替えが同じ PR に入ると緑 ＝ draft（人の記憶）に頼らず CI が止める
+   0.1.3 → 1 failed ／ 1.0.0 → pass ／ 版の無い URL → 1 failed
+★連絡先 … kimny 決定（9/24・逐語）「support@mued.jpに合わせましょう」
+   理由（kimny・要約）: glasswerks の support アドレスは音楽制作会社の業務管理用（求人の受付など）で、mued 系では使わない ＝ ★MUED の文脈では例外なく support@mued.jp
+   #1119（Tier 2・CCO 待ち）… support ページの mailto と表示 2 か所 ＋ test 1 行 ＝ 母集団 3 行 → 3 / 3
+   repo の外（disk の mued/ 以下・_mued-dsp・apps/muedear を含む）は gitignore の coverage/ のみ・memory 0
+   ★この台帳の自分の 1 行も書き換えた（旧アドレスの字を残さない）
+★確認中 … info@glasswerks.jp の 4 か所（特商法の「メールアドレス」ja/en・llms.txt の「運営会社」2 か所）は support@ ではない ∴ 触らず conductor へ
+```
+
+## ★info@glasswerks.jp も support@mued.jp に（#1119 に追加）（2026-09-24T00:48+0900）
+
+```
+★kimny（9/24・逐語）「アドレスの件は全てsupport@mued.jpね。bです。」
+★母集団（origin/main の git grep）… 6 行（出現 7）→ 顧客に見える 4 行を直した（特商法 ja/en・llms.txt 2）＝ 7fda4fec
+   直していない 2 行 ＝ docs の記録（advisory 7/2 の推論メモ・audit 8/30 の照合記録）＝ 書き換えると記録が偽になる
+   legal-compliance skill の値の複製は 8/30 にポインタ化済み（残っていない）
+★test … app/・components/・lib/・messages/ の全 file で glasswerks.jp のメールアドレス 0 件を assert（除外で切る・読んだ数 > 200 と support@mued.jp 4 面が陽性対照）
+   meta-RED … llms.txt を戻す → 2 件を名指しで failed ／ 新 component に旧アドレス → failed
+★CCO へ再レビュー依頼（msg 7f29fcbb・head 7fda4fec）
+```
