@@ -2892,3 +2892,50 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ```
 
 ★**時刻の訂正**: ★当課は便と手順書に「22:1x」「22:0x」「21:5x」と ★測らずに書いた。★実測（`gh pr view --json mergedAt`）は #1108 ＝ 21:49:19 JST・#1109 ＝ 21:50:35 JST。★conductor へ訂正済（memory `feedback-timestamps-must-be-measured-not-narrated` に 2 件目として追記）。
+
+### (2d) — ★④ の 1 回目は失敗：原因は CVV（store の設定ではなかった）／ ¥2,680 月額の商品（2026-09-23T22:34+0900）
+
+## ★起きたこと
+
+```
+★kimny（ローカルのページ・TEST MODE・¥12,365）… 4242…／4012 8888 8888 1881・12/30・★CVV 123
+   → 「テスト モードでは、サポートされていません。」で進まない
+★当課の切り分け（Playwright・★FastSpring 公式の decline カード 4000 0000 0000 0002＝注文を作らない）
+   22:07:08 popup を開いて session の JSON を保存（JP・JPY・items は masterchain 1 件）
+   22:10:04 JP で送信 → POST …/session/<id>/payment ＝ {"messages":[{"type":"danger","phrase":"UnsupportedInTestMode"}],"next":"error","production":false}
+            送った paymentType＝"card"
+   22:14:43 US（$69.00・USD・郵便番号 10001）・★autoRenew=false でも ★同じ UnsupportedInTestMode
+   ⇒ ①（JP・JPY）と ②（支払いの保存）は ★否定（←ここまでは正しい）
+★当課の結論「∴ store 側の設定」は ★誤り ——★CVV を 123 のまま 一度も振っていなかった
+★kimny が管理画面の Popup Preview でも 123 で同じ文言 → conductor は Kevin 宛ての下書きを作った
+```
+
+## ★★原因 ＝ ★CVV（一次で確認）
+
+```
+★Kevin 7/30（_conductor/docs/archive/inbox-20260815/fastspring-kevin-reply-20260730.md:31）
+   「Looks like the problem is the cvv code. Yours is *56MB for a successful order.」
+   :88 … ★管理画面の Checkout Links に表示されている値が このストアの test 用の正しい CVV ／ ★4242… は正しく 123 が誤り
+★9/16（conductor 台帳 fastspring-dashboard-setup-20260916 rev4）… subagent も 123 で ★同じ文言 → Kevin の値で 2 回目に成功
+   （order GLASSWERKSJP260916-5300-60118）
+★∴ ★Kevin 宛ての下書きは ★送らない（★同じ質問に 7/30 に回答済）→ ★conductor へ URGENCY high で停止を依頼済
+★次の一手 … ★kimny が ★Checkout Links の CVV で ④ を再試行（★当課は値を記録・便に書かない）
+```
+
+★**教訓（memory `feedback-grep-org-records-for-the-error-string-first` 新設）**: ★**同じ日本語の逐語が conductor の台帳に在った** ＝ ★grep 1 回で済んだ。★変数を振る切り分けは ★**振っていない変数（CVV）を列挙していなかった** ∴ ★「残るのは ③」は 言えなかった。
+
+## ★¥2,680 月額の商品（conductor の依頼・管理画面は見ていない）
+
+```
+★Preview（管理画面の popup「glasswerks」）は ¥2,680・月額 のサブスク商品で開いた（conductor 報告）
+★当課のページの session … groups 1・items 1（muedsp-masterchain だけ）・hasRecurring=false ⇒ ★当課の経路には載らない
+   ★当課のコードは SBL に products:[{ path: NEXT_PUBLIC_FASTSPRING_PRODUCT_PATH }] を 1 件 push するだけ（商品の作成・選択の処理なし）
+★記録 … 9/16 の管理画面の実測（台帳 fastspring-dashboard-setup-20260916 rev2）＝「One-Time product muedsp-masterchain
+   （$69.00 USD・作成 Jul 29, 2026）が既に 1 件（Subscription 0）」／ runbook も「買い切り（★月額ではありません）」
+   ／ mued_v2 に ¥2,680・月額・FastSpring subscription の記述 0 件
+★∴ ★9/16 以降に作られたか ★Preview が popup の既定の商品（見本など）を出しているか ——★記録からは区別できない
+★送信の subscribe=true … ★月額の印ではない（hasRecurring=false・保存は autoRenew で別）・★意味は未確認
+★決着に要るもの … 管理画面の Products 一覧（Subscription 件数・名前・作成日）と popup「glasswerks」の既定の商品 ＝ ★kimny の次の入室時
+```
+
+★ローカルのページ（pid 30133）は ★22:2x に止め、`next dev` が書き足した AGENTS.md は元に戻した（git status 空）。
