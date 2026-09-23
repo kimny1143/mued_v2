@@ -2767,3 +2767,14 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ★**言えること**: ★本番 deploy の秘密鍵は ★K1 と対。★発行側 issueLicense も同じ privateKey() を読む ∴ ★発行される keyfile は K1 で署名される。
 ★**言えないこと**: ★keyfile の書式から plugin の検証までを ★通しで確かめたことにはならない（★実 keyfile を plugin で検証する試験が別に要る）。★env は deploy ごとに固定 ∴ ★env を変えた後の deploy では測り直し。
 ★∴ ★「K1 私鍵が本番に無い」（9/10）は ★今の本番と食い違う。★根拠は /api/health の curl 1 回（★conductor へ報告済）。
+★**conductor 受領（9/23）**: ★陰性対照まで付いていて根拠として十分 → ★conductor 側台帳の ship-prod-secrets-two を訂正（conductor #3569）。
+
+## ★★activation 後に残る 通し確認 2 件（★今は待ち・conductor 9/23）
+
+```
+① ★keyfile の発行 → plugin で LICENSED（★書式〜検証の通し。鍵の同一性は (2a) で済・通しは未測）
+② ★FASTSPRING_WEBHOOK_SECRET の ★値の正しさ（★「在る」は 9/16 に確認済・★値が FastSpring 側と一致するかは未測）
+★起床条件 … ★FastSpring store の activation（W12 と同じ）
+   ★conductor 実測の逐語（W12 から移した）＝ 管理画面が「Storefront status cannot be changed until activation is
+   completed.」で ★popup の Online 切替をブロックする
+```
