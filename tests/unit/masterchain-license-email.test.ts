@@ -196,4 +196,63 @@ describe("masterchain licence delivery email", () => {
     expect(mail.html.indexOf(URL)).toBeLessThan(mail.html.indexOf(KEY));
     expect(mail.text.indexOf(URL)).toBeLessThan(mail.text.indexOf(KEY));
   });
+
+  for (const locale of ["ja", "en"] as const) {
+    for (const surface of ["html", "text"] as const) {
+      it(`${locale} ${surface}: orders copy, DEMO, clipboard paste, and LICENSED activation`, async () => {
+        for (const url of [URL, ""]) {
+          const body = (await render(url, locale))[surface];
+          const heading = locale === "ja" ? "2. ライセンスキーを貼り付ける" : "2. Paste your license key";
+          const headingAt = body.indexOf(heading);
+          const keyAt = body.indexOf(KEY);
+          expect(headingAt).toBeGreaterThan(-1);
+          expect(keyAt).toBeGreaterThan(headingAt);
+          const instructions = body.slice(headingAt + heading.length, keyAt);
+          const steps = [
+            locale === "ja" ? "全部コピーします。" : "Copy the whole license key below",
+            "DEMO",
+            "Paste license from clipboard",
+            "LICENSED",
+          ];
+          let previous = -1;
+          for (const step of steps) {
+            expect(instructions).toContain(step);
+            const position = instructions.indexOf(step);
+            expect(position, `${step} must follow the previous sub-step`).toBeGreaterThan(previous);
+            previous = position;
+          }
+          // The badge is found by text the buyer can see: the plugin header reads "MUEDsp" / "SIGNATURE"
+          // and never "masterchain" (dsp MUEDsp.cpp header; its README says "next to SIGNATURE").
+          expect(instructions).toContain("SIGNATURE");
+          expect(body).not.toContain(locale === "ja" ? "欄" : "box that appears");
+          if (surface === "html") {
+            expect(instructions).toContain("<ol>");
+            expect(instructions).toContain("</ol>");
+            expect(instructions.match(/<li>/g)).toHaveLength(4);
+          } else {
+            expect(instructions.match(/^\([1-4]\) /gm)).toEqual(["(1) ", "(2) ", "(3) ", "(4) "]);
+            expect(instructions).not.toMatch(/<\/?(?:strong|code)>/);
+          }
+        }
+      });
+
+      it(`${locale} ${surface}: describes paste activation, requirements, and support hours`, async () => {
+        const requirements = locale === "ja"
+          ? "動作環境: macOS 11.0 以降／Apple シリコン（M1 以降）または Intel プロセッサの Mac／メモリ 8GB 以上（16GB 以上推奨）／VST3・AU・AAX（Pro Tools）に対応する DAW"
+          : "System requirements: macOS 11.0 or later / Mac with Apple silicon (M1 or later) or an Intel processor / 8 GB RAM or more (16 GB recommended) / A DAW that supports VST3, AU, or AAX (Pro Tools)";
+        const hours = locale === "ja"
+          ? "サポートの受付時間: 平日 10:00〜18:00（日本時間）。土日祝・年末年始はお休みです。通常 1〜2 営業日以内にお返事します。"
+          : "Support hours: Weekdays 10:00–18:00 Japan Time (JST), excluding Japanese public holidays and the New Year break. We usually reply within 1–2 business days.";
+        for (const url of [URL, ""]) {
+          const body = (await render(url, locale))[surface];
+          expect(body).toContain("DEMO");
+          expect(body).toContain("LICENSED");
+          expect(body).toContain(requirements);
+          expect(body).toContain(hours);
+          expect(body).not.toContain("Application Support");
+          expect(body).not.toContain("license.key");
+        }
+      });
+    }
+  }
 });

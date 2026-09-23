@@ -2653,7 +2653,7 @@
       "copy": "Copy key",
       "copied": "Copied",
       "copyFailed": "Could not copy. Select the key and copy it manually.",
-      "howto": "Save the copied key as a file named license.key here: ~/Library/Application Support/glasswerks/MUEDsp/",
+      "howto": "After copying, open MUEDsp masterchain in your DAW, click the DEMO badge at the top left (next to SIGNATURE), then click \"Paste license from clipboard\". When it shows LICENSED, you're all set.",
       "purchasedOn": "Purchased {date}"
     }
   }

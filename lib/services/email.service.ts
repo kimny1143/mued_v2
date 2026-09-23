@@ -915,8 +915,8 @@ Hoo MCP経由の自動送信
    * attachments draw spam filtering and on a phone the buyer often cannot tell where the file went.
    * A text block always arrives, is quotable in support, and can be re-copied later.
    *
-   * The plugin reads ~/Library/Application Support/glasswerks/MUEDsp/license.key, so the copy has to
-   * say what to DO with the text — a key with no destination is not a delivery.
+   * In masterchain 1.0.0, copy the whole key, click the DEMO badge at the top left (next to SIGNATURE), then click
+   * "Paste license from clipboard". The badge changes to LICENSED when activation is complete.
    *
    * ★AND A KEY WITH NO PLUGIN IS NOT A DELIVERY EITHER (2026-09-10). This email shipped the licence
    * key alone: the buyer paid $69, was told where to save a key, and was never told where to get the
@@ -956,22 +956,43 @@ Hoo MCP経由の自動送信
         ? '[MUEDsp] masterchain のライセンスキー'
         : '[MUEDsp] Your masterchain license key';
 
-    const path = '~/Library/Application Support/glasswerks/MUEDsp/license.key';
     const intro = isJa
-      ? 'masterchain をご購入いただきありがとうございます。ライセンスキーをお届けします。'
+      ? 'masterchain をご購入いただき、ありがとうございます。ライセンスキーをお届けします。'
       : 'Thank you for buying masterchain. Here is your license key.';
+    const installHeading = isJa ? '1. インストール' : '1. Install';
+    const install = isJa
+      ? '下のボタンからインストーラーをダウンロードして、開いてください（macOS 11.0 以降・VST3 / AU / AAX）。'
+      : 'Download the installer with the button below and open it (macOS 11.0 or later · VST3 / AU / AAX).';
+    const licenseHeading = isJa ? '2. ライセンスキーを貼り付ける' : '2. Paste your license key';
     const howTo = isJa
-      ? `下のブロックを（1 行目の <code>${LICENSE_MAGIC}</code> から最終行の <code>sig=</code> まで）すべてコピーし、次の場所に <strong>license.key</strong> という名前のテキストファイルとして保存してください。`
-      : `Copy the whole block below — from the first line <code>${LICENSE_MAGIC}</code> to the last line beginning <code>sig=</code> — and save it as a text file named <strong>license.key</strong> here:`;
-    const keep = isJa
-      ? 'このメールは保管してください。キーを再取得できます。'
-      : 'Keep this email — it is how you get the key again.';
+      ? [
+          `下のライセンスキーを、最初の行（<code>${LICENSE_MAGIC}</code>）から最後の行（<code>sig=</code> で始まる行）まで全部コピーします。`,
+          'DAW で MUEDsp masterchain を開き、画面左上の <strong>DEMO</strong>（SIGNATURE の文字の横）を押します。',
+          '"Paste license from clipboard" を押します。',
+          '<strong>LICENSED</strong> に変われば完了です。',
+        ]
+      : [
+          `Copy the whole license key below — from the first line (<code>${LICENSE_MAGIC}</code>) to the last line (starting with <code>sig=</code>).`,
+          'Open MUEDsp masterchain in your DAW and click the <strong>DEMO</strong> badge at the top left, next to SIGNATURE.',
+          'Click "Paste license from clipboard".',
+          "When it shows <strong>LICENSED</strong>, you're all set.",
+        ];
     // ★P-4. The key stays in this mail on purpose: buying does not require an account, and a buyer who
     // never signs up must still be able to get their key from what they were sent. This line adds a
     // second route for the people who do sign up — it does not replace the first.
     const portal = isJa
-      ? 'ライセンスキーは mued.jp のダッシュボード（サインアップ後、同じメールアドレスで自動的に表示されます）でもいつでも確認できます。'
-      : 'You can also find your license key any time on your mued.jp dashboard — sign up with this same email address and it appears automatically.';
+      ? 'このメールは保管してください。ライセンスキーは、mued.jp のダッシュボード（同じメールアドレスでサインアップすると表示されます）でも確認できます。'
+      : 'Please keep this email. You can also find your license key on your mued.jp dashboard — sign up with this same email address and it appears automatically.';
+    const support = isJa
+      ? `ご不明な点は ${SUPPORT_EMAIL} まで（このメールへの返信でも届きます）。`
+      : `Questions? ${SUPPORT_EMAIL} (or just reply to this email).`;
+    const requirements = isJa
+      ? '動作環境: macOS 11.0 以降／Apple シリコン（M1 以降）または Intel プロセッサの Mac／メモリ 8GB 以上（16GB 以上推奨）／VST3・AU・AAX（Pro Tools）に対応する DAW'
+      : 'System requirements: macOS 11.0 or later / Mac with Apple silicon (M1 or later) or an Intel processor / 8 GB RAM or more (16 GB recommended) / A DAW that supports VST3, AU, or AAX (Pro Tools)';
+    const hours = isJa
+      ? 'サポートの受付時間: 平日 10:00〜18:00（日本時間）。土日祝・年末年始はお休みです。通常 1〜2 営業日以内にお返事します。'
+      : 'Support hours: Weekdays 10:00–18:00 Japan Time (JST), excluding Japanese public holidays and the New Year break. We usually reply within 1–2 business days.';
+    const signature = isJa ? 'MUED ／ glasswerks inc.' : 'MUED / glasswerks inc.';
 
     // ★The plugin itself. Ordered BEFORE the key on purpose: install first, then licence — that is
     //   the order the buyer has to do it in, and a key pasted with nothing to unlock is confusing.
@@ -980,15 +1001,14 @@ Hoo MCP経由の自動送信
            <a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
              ${isJa ? 'masterchain をダウンロード' : 'Download masterchain'}
            </a>
-         </p>
-         <p style="color: #6b7280; font-size: 13px; text-align: center;">VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon &amp; Intel)</p>`
+         </p>`
       : `<div class="info-box">
            <p style="margin: 0;">${isJa
              ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
              : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you."}</p>
          </div>`;
     const downloadText = hasLink
-      ? `${isJa ? 'ダウンロード' : 'Download'}: ${MASTERCHAIN_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS`
+      ? `${isJa ? 'masterchain をダウンロード' : 'Download masterchain'}: ${MASTERCHAIN_DOWNLOAD_URL}`
       : (isJa
         ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
         : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you.");
@@ -996,19 +1016,21 @@ Hoo MCP経由の自動送信
     const html = `
       <h2 style="color: #f5a524; margin-top: 0;">${isJa ? 'MUEDsp masterchain' : 'MUEDsp masterchain'}</h2>
       <p>${intro}</p>
+      <h3>${installHeading}</h3>
+      ${hasLink ? `<p>${install}</p>` : ''}
       ${downloadHtml}
-      <p>${howTo}</p>
-      <p style="background: #f4f4f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; word-break: break-all;">${path}</p>
+      <h3>${licenseHeading}</h3>
+      <ol>${howTo.map((step) => `<li>${step}</li>`).join('')}</ol>
       <pre style="background: #111113; color: #e5e7eb; padding: 16px; border-radius: 6px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all;">${data.licenseKey}</pre>
-      <p>${keep}</p>
       <p>${portal}</p>
-      <p style="color: #9ca3af; font-size: 12px;">glasswerks inc. — mued.jp</p>
+      <p>${support}</p>
+      <p>${requirements}</p>
+      <p>${hours}</p>
+      <p style="color: #9ca3af; font-size: 12px;">${signature}</p>
     `;
 
-    const textHowTo = isJa
-      ? `下のブロックを（1 行目の ${LICENSE_MAGIC} から最終行の sig= まで）すべてコピーし、次の場所に license.key という名前で保存してください。`
-      : `Copy the whole block below — from the first line ${LICENSE_MAGIC} to the last line beginning sig= — and save it as license.key here:`;
-    const text = `${intro}\n\n${downloadText}\n\n${textHowTo}\n${path}\n\n${data.licenseKey}\n\n${keep}\n${portal}\n\nglasswerks inc. — mued.jp`;
+    const textHowTo = howTo.map((step, index) => `(${index + 1}) ${step.replace(/<\/?(?:strong|code)>/g, '')}`).join('\n');
+    const text = `MUEDsp masterchain\n\n${intro}\n\n${installHeading}\n${hasLink ? `${install}\n` : ''}${downloadText}\n\n${licenseHeading}\n${textHowTo}\n\n${data.licenseKey}\n\n${portal}\n\n${support}\n\n${requirements}\n\n${hours}\n\n${signature}`;
 
     return { subject, html, text };
   },

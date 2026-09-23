@@ -2653,7 +2653,7 @@
       "copy": "キーをコピー",
       "copied": "コピーしました",
       "copyFailed": "コピーできませんでした。キーを選択して手動でコピーしてください。",
-      "howto": "コピーしたキーを license.key というファイル名で次の場所に保存します: ~/Library/Application Support/glasswerks/MUEDsp/",
+      "howto": "コピーしたら、DAW で MUEDsp masterchain を開き、画面左上の DEMO（SIGNATURE の文字の横）を押して、\"Paste license from clipboard\" を押します。LICENSED に変われば完了です。",
       "purchasedOn": "{date} に購入"
     }
   }
