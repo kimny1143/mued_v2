@@ -3032,3 +3032,27 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
    中身＝キーのメールの手順（隠しフォルダ → 貼り付け）・特商法の動作環境（M1/Intel・メモリ）・サポートの受付時間
    影響＝公開済みの記事が license.key の保存手順や動作環境を書いていれば古くなる（★未確認）
 ```
+
+
+## ★CCO の要修正 2 点 → conductor 判断 → #1116 を組み直し・#1118 に分割（2026-09-24T00:33+0900）
+
+```
+★CCO（#1116 aa3a879c への指摘）… 当課が dsp origin/main c7fef3a1 で一次照合 ＝ 2 点とも正しい
+   ① 実物に入力欄は無い … DEMO の panel のボタン "Paste license from clipboard" がクリップボードを読む
+      （MUEDsp.cpp:811 GetTextFromClipboard・:846 ラベル・同梱 README.txt:35-39 の 4 段）
+   ② 順序 … MASTERCHAIN_DOWNLOAD_URL は 0.1.3・貼り付け UI は dsp 35a12e3（9/23）＝ 0.1.3 には無い
+★conductor 判断
+   ① 4 段に: 全部コピー → DEMO → "Paste license from clipboard"（ja でも英語のまま）→ LICENSED
+   ② #1116 は ★1.0.0 の配信 PR と同じ deploy で merge（今は販売前で送る相手はいないが順番を守る）
+   ③ バッジの位置は (b)「画面左上の DEMO（SIGNATURE の文字の横）」
+      ＝ ヘッダは「MUEDsp」＋「SIGNATURE」で「masterchain」の字は画面に無い（MUEDsp.cpp:1424-1425・README も "next to SIGNATURE"）
+   ④ 特商法と受付時間は版に依存しない ∴ 分けて先に出してよい（Tier 2・CCO）
+★当課が見つけた 2 か所目 … ダッシュボードの pluginPortal.purchased.howto（ja/en）も隠しフォルダの手順だった
+   ＝ メールだけ直すと開店後に食い違う ∴ #1116 に入れた（conductor OK）
+★#1116 … origin/main から組み直し（force-push・旧 aa3a879c → f0185951・draft）
+   中身＝メール ＋ howto 1 行ずつ ＋ test 2 本（howto の test は新 file ＝ #1118 と file を共有しない）
+   検証＝対象 18 tests・test:unit 175 files／2464 tests・typecheck／eslint rc=0・meta-RED 4 本すべて赤
+★#1118（新規）… 特商法の動作環境（os・mac・memory）＋ サポートページの受付時間・5 file（aa3a879c から取り出し）
+   検証＝customer-support-copy 3 tests・typecheck／eslint rc=0・meta-RED（mac の key 名 → 1 failed）
+★CCO へ依頼済（msg 2a492813・#1116 head f0185951・#1118 head 42168457）
+```
