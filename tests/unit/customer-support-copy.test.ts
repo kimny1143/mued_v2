@@ -27,6 +27,16 @@ describe("customer requirements and support copy", () => {
       .map((match) => match[1]);
     expect(keys).toEqual(["os", "mac", "memory", "formats", "host", "windows"]);
     expect(support).toContain('t("contact.hours")');
-    expect(support.indexOf('t("contact.hours")')).toBeGreaterThan(support.indexOf("mailto:support@glasswerks.jp"));
+    // indexOf is -1 for a missing string, so assert presence first or the ordering check passes vacuously.
+    expect(support).toContain("mailto:support@mued.jp");
+    expect(support.indexOf('t("contact.hours")')).toBeGreaterThan(support.indexOf("mailto:support@mued.jp"));
+  });
+
+  // kimny, 2026-09-24: 「support@mued.jpに合わせましょう」. The page now names the same address the
+  // licence mail's Reply-To and the FastSpring receipt already use.
+  it("the support page names support@mued.jp and no longer the glasswerks address", () => {
+    const support = readFileSync("app/[locale]/support/page.tsx", "utf8");
+    expect(support.match(/support@mued\.jp/g)).toHaveLength(2); // the mailto and the visible label
+    expect(support).not.toContain("support@glasswerks.jp");
   });
 });

@@ -37,7 +37,7 @@ HooはMUEDのAIアシスタントです。ユーザーの認知特性・制作�
 
 **glasswerks inc.**（株式会社グラスワークス）
 - URL: https://www.glasswerks.jp
-- メール: info@glasswerks.jp
+- メール: support@mued.jp
 
 ## 関連サービス
 
@@ -95,7 +95,7 @@ MUEDialは、ステムファイルをアップロードしてAIと話すだけ�
 **glasswerks inc.**（株式会社グラスワークス）
 - 法人番号: 5011001139866
 - URL: https://www.glasswerks.jp
-- メール: info@glasswerks.jp
+- メール: support@mued.jp
 - 設立: 2021年1月21日
 
 ## 関連サービス
