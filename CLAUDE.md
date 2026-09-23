@@ -250,38 +250,22 @@ chrome拡張（claude-in-chrome）は共有リソース。同時に1課しか使
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/04-org-structure.md -->
 <!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
-<!-- Evidence: 2026-06-11 組織再編 v2 改定 (kimny Q1-Q7 確定 / 即時移行)。
-     確定版 = _conductor/docs/inbox/proposal-org-restructure-20260611.md (v2)。
-     旧構成: プロダクト部=mued/native/dsp/occur、マーケ部=SNS/write/LP、分析研究部=reserch/data。
-     変更: occur=closed / native→product課 畳込 / write+LP+blender→content課 / reserch+data→insight課 / product課・Chief 新設。
-     ★ native の workspace 物理畳込は Tier2 matrix main 反映後 (保護条件)。 -->
-## 組織体制（2026-06-11 組織再編v2改定）
+<!-- Evidence: 2026-09-21 に一覧を削除しポインタ化。それまでの中身 = 2026-06-11 組織再編 v2 の
+     11 課体制一覧（経営体制表・部署構成表・product課/content課/insight課/Chief の注記）。
+     削除理由は下の注記に逐語で残す。旧内容は git 履歴と
+     _conductor/docs/archive/claude-docs-before-20260914/ に在る。 -->
+## 組織体制
 
-> **この一覧は写しである。正本は `_conductor/.claude/rules/current-organization.md`。食い違ったら正本が勝つ。**
+> **役職・部署・担当の正本は `/Volumes/strage/_DevProjects/_conductor/.claude/rules/current-organization.md`。**
+> **ここに一覧を複製しない。** 案件ごとにその file を開いて確かめる。
 
-### 経営体制
-| 役職 | 課 | 機能 |
-|------|-----|------|
-| CEO | kimny | 最終判断・方針決定 |
-| COO | conductor | 執行・調整・記録 |
-| CCO | template課 | プロダクト基盤・品質・技術戦略 |
-| CFO | freee課 | 財務・コスト・収益性チェック |
-| 参謀(Chief) | Chief課 | 戦略助言（on-demand・指揮権なし・`_chief`のみ書込） |
-
-### 部署構成（11課常時 + Chief on-demand）
-| 部 | 課 |
-|----|----|
-| 経営部 | conductor(COO)、template課(CCO)、freee課(CFO)、cowork課 |
-| プロダクト部 | mued課、product課、dsp課 |
-| マーケティング部 | SNS課、content課、growth課 |
-| 分析部 | insight課 |
-
-- **product課** = 旧 native課 / occur課 の畳み先・製品横断統括（occur は 2026-06-11 closed、記憶は product課が保持）
-- **content課**（母体 `_contents-writing`）= 旧 write課 + LP課 + blender課 の統合（制作・配信）
-- **insight課**（母体 `_data-analysis`）= 旧 reserch課 + data課 の統合（reserch は dormant化、free15計測は母体継続=無断絶）
-- **Chief（参謀）** = on-demand 起動・指揮権なし・戦略助言のみ（`_chief` に書込、コードPRは出さない）
-
-戦略的提案はconductor経由でpolicy-gate（経営部会議）を通してからCEO(kimny)に提示する。
+> **ここに表を書き戻さないこと。2026-09-21 まで、実際に書いてあって失敗した。**
+> この block は 2026-06-11 の 11 課体制の一覧を持ち、**2026-09-13 の zero-base 承認後も残った**。
+> ★**その一覧には「この一覧は写しである。正本は … 食い違ったら正本が勝つ」と★既に書いてあった。**
+> それでも約 2 か月 古いまま読まれ、**存在しない課へレビューを回す理解が実際に生じた**（2026-09-21 実測）。
+> ★**∴ 写しに「正本が勝つ」と注記しても足りない。** 写しは**起動時に自動で context へ載り**、
+> 正本は**開きに行かないと読めない** —— ★**availability が precedence に勝つ。**
+> だから同期でも注記の強化でもなく、**複製そのものをやめる。**
 
 <!-- COMMON-BLOCK-END: 04-org-structure -->
 
