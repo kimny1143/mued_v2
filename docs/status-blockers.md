@@ -2581,5 +2581,45 @@ pinned sha ではない）・★**role / DB レベルの `ALTER … SET` は 未
 
 ## ★見つけ方
 
+## ★着地（2026-09-23 昼）
+
+```
+★CCO … #1096 review 5286361825 ／ #1097 review 5286387597 ともに PASS（★本番 DB には撃っていない）
+   ★#1097 の SQL は ★CCO が 使い捨てのローカル PG14 で ★逐語のまま実行・★手製 fixture と全セル一致
+   ★FILTER…::int は集約全体にかかる（pg_typeof=integer）・★≤3d は session TZ を Tokyo/UTC にしても同値
+★merge … #1097 → 76e1a203（--match-head-commit ae7210d2）／ #1096 → 560ecc6f（--match-head-commit 49242321）
+★本番 … commit status「Vercel success」・GitHub deployment 6605341731 env=Production
+         ★`vercel inspect mued.jp` → dpl_DgcNAQ2wycoBfQUZY1U2MoVcUNAy（production・Ready）＝この deploy の id
+★kimny への 1 行 … main で `npx tsx scripts/count-dial-finals-missing-r2.ts`
+   ★当課の確認（★実行はしていない）: main に file 在り・`npx tsx --version`＝v4.20.6・.env.local 在り
+★★読み方（CCO）… ★missing_r2 は copy 失敗・R2 導入前の行も含む ∴ ★#1096 起因の「上限」
+                  ★効く数（再コピーの余地）は ★missing<=3d
+```
+
+## ★★CCO の non-blocking（★実在）→ #1099
+
+```
+★maxDuration は ★呼び出しの開始から数える
+★after() の前に inline poll（task ごとに順番・1 回最大 45s）→ ★最悪 45+90=135s > 120s
+   ∴ ★after() の copy が途中で kill され ★行もログも残らない ＝ ★#1096 が直したのと同じ「静かな欠落」
+★#1099 … maxDuration 300（= final/route.ts）・★COPY_TIMEOUT_MS を export
+   ★test は値でなく性質 … maxDuration×1000 ≥ 2×ROEX_POLL_TIMEOUT_MS + COPY_TIMEOUT_MS
+   ★120 で RED（120000 < 180000）→ 300 で GREEN
+★残る穴 … processing が 5 本以上 ／ 5xx 再試行で copy が複数 attempt → ★まだ超えうる
+```
+
+★★**当課の見落とし**: ★#1096 で `maxDuration=120` を書いた時、★「copy は 90s」だけを見て ★**同じ関数の中で after() より前に走る poll を足していなかった。** ★コメントに「mastering/final と同じ」と書いた ——★**前例と同じ値にしたことを ★根拠と取り違えた。**
+★★**しかも 前例の側も 同じ足し算で 足りていなかった**（★この台帳を書く途中で 1 度「順序が違う」と書きかけ、★コードを開いて 誤りと分かった）:
+
+```
+★mastering/final GET … poll（≤45s）→ ★await copy（≤90s）→ ★その後に completion の行更新
+   ∴ ★同じく 45+90=135s > 120s
+★但し 落ち方が違う … ★kill されると ★completion 前 ∴ task は processing のまま ＝ ★次の poll でやり直す
+   ★R2 だけが 静かに欠ける形ではない ／ ★並行の session GET（#1096 後は after()）が先に完了させることが多い
+★★残る危険 … ★copy が毎回 遅いと ★完了しないまま backstop に達して ★有料 mastering（220cr）が failed になりうる
+★手当て … ★#1099 は review 中ゆえ ★触らない。★別 PR で mastering/final を ★maxDuration 300 ＋ ★r2ExpiresAt を書く
+   （★subagent の指摘＝この GET は r2FinalUrl を書くが r2ExpiresAt を書かない）
+```
+
 ★#465（preview の R2）の規模を測るために ★subagent に調査させ、★その報告が ★この欠陥を「likely bug」として挙げた。
 ★**当課は 報告を そのまま運ばず** ★コード（route の該当行）と ★drizzle の source（`query-promise.js`）の ★2 点で 一次確認してから 直した。
