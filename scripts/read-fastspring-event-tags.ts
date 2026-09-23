@@ -27,6 +27,7 @@ export interface SelectedFastspringEvent {
   event_id: string;
   type: string;
   status: string;
+  completed: boolean;
   error_message: string | null;
   created_at: string;
   live: unknown;
@@ -64,6 +65,19 @@ export function summarizeError(error: unknown): string {
   return parts.join("; ");
 }
 
+export function eventState(row: SelectedFastspringEvent) {
+  if (row.status === "processing" && row.completed === true && row.error_message === SKIPPED_TEST_MARKER) {
+    return "skipped (terminal)";
+  }
+  if (row.status === "processing" && row.completed === false) return "stuck (processing, not completed)";
+  if (row.status === "processed") return "processed";
+  if (row.status === "failed") return "failed";
+  if (row.status === "processing" && row.completed === true && row.error_message !== SKIPPED_TEST_MARKER) {
+    return "processing (completed, unexpected marker)";
+  }
+  return "unknown";
+}
+
 /** Pure, value-free report from already-selected rows. Never stringify a row, tags, or errors. */
 export function formatFastspringEventTags(rows: readonly SelectedFastspringEvent[]): string {
   if (rows.length === 0) return "rows: 0 — no fastspring webhook event recorded";
@@ -83,6 +97,7 @@ export function formatFastspringEventTags(rows: readonly SelectedFastspringEvent
       `event_id: ${JSON.stringify(row.event_id)}`,
       `type: ${JSON.stringify(row.type)}`,
       `status: ${JSON.stringify(row.status)}`,
+      `state: ${eventState(row)}`,
       `skipped_test: ${row.error_message === SKIPPED_TEST_MARKER}`,
       `created_at (UTC): ${row.created_at}`,
       `live: ${live}`,
@@ -100,6 +115,7 @@ async function main() {
   const { db } = await import("../db");
   const query = sql`
     SELECT event_id, type, status, error_message,
+           completed_at IS NOT NULL AS completed,
            created_at::text AS created_at,
            payload->'live' AS live,
            jsonb_typeof(payload->'data'->'tags') AS tags_type,

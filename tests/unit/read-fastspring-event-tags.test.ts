@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { CHECKOUT_TAG_NAMES } from "@/lib/masterchain/fastspring-checkout";
 import {
+  eventState,
   formatFastspringEventTags,
   isEntryPoint,
   parseLimit,
@@ -30,12 +31,31 @@ const fixture = (overrides: Partial<SelectedFastspringEvent> = {}): SelectedFast
   event_id: "fixture-event-1",
   type: "order.completed",
   status: "processing",
+  completed: true,
   error_message: SKIPPED_TEST_MARKER,
   created_at: "2026-09-23 12:00:00",
   live: false,
   tags_type: null,
   tag_flags: null,
   ...overrides,
+});
+
+describe("read-fastspring-event-tags state", () => {
+  it.each([
+    { status: "processing", completed: true, error_message: SKIPPED_TEST_MARKER, expected: "skipped (terminal)" },
+    { status: "processing", completed: false, error_message: SKIPPED_TEST_MARKER, expected: "stuck (processing, not completed)" },
+    { status: "processing", completed: false, error_message: null, expected: "stuck (processing, not completed)" },
+    { status: "processed", completed: true, error_message: SKIPPED_TEST_MARKER, expected: "processed" },
+    { status: "failed", completed: true, error_message: SKIPPED_TEST_MARKER, expected: "failed" },
+    { status: "processing", completed: true, error_message: "different marker", expected: "processing (completed, unexpected marker)" },
+    { status: "processing", completed: true, error_message: null, expected: "processing (completed, unexpected marker)" },
+    { status: "unrecognized", completed: true, error_message: SKIPPED_TEST_MARKER, expected: "unknown" },
+  ])("$status / completed=$completed / marker=$error_message → $expected", ({ expected, ...overrides }) => {
+    const row = fixture(overrides);
+    expect(eventState(row)).toBe(expected);
+    expect(formatFastspringEventTags([row]).split("\n").filter((line) => line.startsWith("state:")))
+      .toEqual([`state: ${expected}`]);
+  });
 });
 
 describe("read-fastspring-event-tags formatting", () => {
