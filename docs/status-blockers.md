@@ -2985,3 +2985,50 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ★conductor 決定（9/23）… ★(a) script の表示に「state: skipped（終端）」を出す（★述語＝status='processing' かつ completed_at が在る かつ errorMessage=SKIPPED_TEST_MARKER をそのまま書き、★stuck＝completed_at IS NULL とは別表示・Codex・Tier 2（CCO）・本番の既存行は触らない）／ ★(b) 上の常設 ／ ★(c) migration はやらない。★④ はこれで完了。
 ★**(a) 着地**: #1113 → f3efaa08（Codex 実装・CCO PASS・CI の Validate／Test／Build が緑になってから merge）。★eventState＝skipped (terminal)／stuck（「the current route never leaves this; legacy row or another writer」）／processed／failed／unexpected marker／unknown。★CCO の RED ②（stuck から status 条件を外す）を塞ぐ 2 行を追加。★main で Dropbox の path から N=abc → rc=1 を確認。
 
+
+
+### (2f) — ★購入者のメール: ロゴの URL が本番に着地・キーのメール B ＋ 動作環境・受付時間（#1116）（2026-09-24T00:19+0900）
+
+## ★依頼（conductor 便・9/24）
+
+```
+★(1) ロゴ … `public/email/mued-logo.png` を `_conductor/designsystem/mued-email-logo/mued-email-logo@2x.png` と byte 同一で置く → 本番で 200 image/png を確認 → URL を報告
+★(2) キーのメール … masterchainLicenseDelivery を案 B（貼り付け手順）へ・末尾に動作環境と受付時間（C）・件名は不変・reply-to を確認
+★(3) 特商法の動作環境・サポートページの受付時間を C に揃える
+★実装は Codex・Tier 2 は CCO・本番の設定は変えない
+★判断 1（conductor）… 位置の語＝「画面上部の DEMO（プラグイン名の横）」／ en "at the top, next to the plugin name"
+★判断 2（kimny 待ち）… サポートページの連絡先（support@glasswerks.jp か support@mued.jp か）＝ ★その行は変えない
+```
+
+## ★(1) ロゴ ＝ 完了
+
+```
+★#1115（Tier 1・png 1 枚のみ・CI 緑）→ self-merge → main 6a4648b3
+★本番（2026-09-24T00:18:04+0900・curl・shasum -a 256）… 200・image/png・13,828 B・573×148
+   sha256 1576d642c35eb362ab22b7cf6f89a8223d5e1dc7061467303ab78bfc75b26b50 ＝ ★正本の png と同じ値（00:18:15 に並べて再確認）
+★陰性対照 … /email/does-not-exist.png → 404 text/html
+★conductor へ URL を報告済（msg 38aca90a）。★FastSpring の Shared Snippets は ★当課では触っていない
+```
+
+## ★(2)(3) ＝ #1116（CCO レビュー待ち）
+
+```
+★Codex 実装（worktree）→ mued が検証して commit（aa3a879c）
+★検証 … 対象 15 tests・test:unit 175 files／2461 tests・typecheck／eslint rc=0
+   ★meta-RED … 旧 license.key の文を戻す → FAIL（Codex）／ en の受付時間を変える → 2 failed（mued）
+★Reply-To … sendMasterchainLicenseDelivery は replyTo を渡さない → 既定の SUPPORT_EMAIL（support@mued.jp）∴ 「返信でも届く」は本当
+★text 版の実出力（ja/en・fake URL・使い捨て鍵・sig は伏せた）を PR コメントに貼った
+★特商法の memory の行は ★installer の実測値ではなく kimny 承認の推奨値（page.tsx にコメント）
+   ∴ (W0) の「installer 差し替えで再測」の対象は ★os・形式・ホストの行（memory は対象外）
+★CCO へ依頼済（msg c93c55af・head aa3a879c）
+```
+
+## ★残り（`blocked_by` (W17)）
+
+```
+★#1116 … CCO PASS ＋ CI 緑で merge → 本番の /ja/tokushoho・/en/support で文言を 1 度 見る
+★サポートの連絡先アドレス … kimny の判断が来たら ★別の PR
+★content課への通知 … ★置き便（開店の便に畳む・★未送信）
+   中身＝キーのメールの手順（隠しフォルダ → 貼り付け）・特商法の動作環境（M1/Intel・メモリ）・サポートの受付時間
+   影響＝公開済みの記事が license.key の保存手順や動作環境を書いていれば古くなる（★未確認）
+```
