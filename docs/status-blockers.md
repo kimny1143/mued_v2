@@ -2519,3 +2519,67 @@ pinned sha ではない）・★**role / DB レベルの `ALTER … SET` は 未
                「masterchain の律速は kimny・parse は実物と未照合」＝(W12) (a)(b) で 9/16 に閉じた）
                ★memory に現在形を置かない ∴ ★台帳へ寄せず 消した（★正本は ここと status.md）
 ```
+
+### (1y) — ★有料 final の R2 URL が DB に書かれていなかった（★#1096 で修正・2026-09-23T11:45+0900）
+
+## ★欠陥
+
+```
+★場所 … app/api/dial/session/route.ts（★修正前 main の :176-191 final 系 ／ :264-279 mastering）
+   copyToR2({...}).then((r2Result) => {
+     if (r2Result) { db.update(dialTasks).set({ r2FinalUrl, r2ExpiresAt }).where(...) }
+   }).catch(() => {});
+★★内側の update は ★await も return もされていない
+★★Drizzle の query は lazy ——★`QueryPromise.then()` が `execute()` を呼ぶ
+   （★一次＝node_modules/drizzle-orm/query-promise.js を読んだ）
+   ∴ ★組み立てただけでは ★何も実行されない ＝ ★r2_final_url は この経路で ★一度も書かれない
+★★エラーは出ない（★.catch(() => {}) も 空）
+```
+
+## ★★なぜ効くか（★珍しい経路ではない）
+
+```
+★ページを開いた直後 … fetchSession()＝session GET が ★先に走る（page.tsx:338）
+   ★5 秒 poll の /api/dial/final は その後（:368）
+★render は 8〜34 分 ∴ ★離れて戻ったユーザーの final は ★session GET で完了する
+★/api/dial/final GET は ★completed なら即 return（final/route.ts:391）＝ ★後から直さない
+★RoEx が task を消すと（★数日・#465）★有料 final の DL は R2 に逃げられず ★410
+```
+
+## ★手当て（#1096・Tier 2・CCO review 待ち）
+
+```
+★lib/dial/r2-persist.ts … copyToR2 と 行更新を ★1 つの async 関数で ★両方 await
+★session route          … ★after(() => persistDeliverableToR2(...))
+                          ★応答は待たせない・★関数は copy と書き込みが終わるまで生きる
+★maxDuration = 120      … after() は関数の寿命の中で走る・copy は最大 90s・mastering/final と同じ
+★test                   … ★fake db は ★await された時だけ 書き込みを記録（★Drizzle と同じく lazy）
+                          ★control test で ★fake が lazy であることを固定
+                          ★修正前 4 failed / 2 passed（★copyToR2 は呼ばれるが ★書き込み 0）
+                          ★修正後 6 passed ／ ★meta-RED（helper の await を外す）4 failed
+★全体                   … typecheck rc=0 ／ eslint rc=0 ／ test:unit 171 files・2400 tests rc=0
+```
+
+## ★影響件数は まだ 測っていない
+
+```
+★#1097 … scripts/count-dial-finals-missing-r2.ts（★集計のみ・★kimny が 1 回 実行）
+   task_type 別 … completed / with_r2 / missing_r2 / missing<=3d / paid / free15 / 最終日（UTC date）
+   ★with_r2 > 0 ＝ ★他の完了経路では copy 自体は動いている（★対照）
+   ★missing<=3d ＝ ★RoEx の task が まだ在るかもしれない（★再コピーの余地・★purge 時間は概算）
+★★SQL は ★DB で 一度も 実行していない（★ローカル Postgres の起動は 分類器で deny・迂回しない）
+★予想 … ★dial の実到達は ≈0（memory・7 月の実測）∴ ★件数は 小さいはず ——★★但し 予想は 測定の代わりにならない
+```
+
+## ★範囲外（★PR 本文にも 列挙）
+
+```
+★#465   … preview を R2 に写さない（★別の判断・issue は low・スケジュールは kimny）
+★mastering/final GET（:286-303）… r2FinalUrl を書くが ★r2ExpiresAt を書かない（★不整合・欠落ではない）
+★既存行の修復 … ★件数を見てから（★W16）
+```
+
+## ★見つけ方
+
+★#465（preview の R2）の規模を測るために ★subagent に調査させ、★その報告が ★この欠陥を「likely bug」として挙げた。
+★**当課は 報告を そのまま運ばず** ★コード（route の該当行）と ★drizzle の source（`query-promise.js`）の ★2 点で 一次確認してから 直した。
