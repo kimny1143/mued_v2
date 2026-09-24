@@ -7,6 +7,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { toFunnelNumbers, NORTH_STAR_TARGET, type FunnelReport } from "@/lib/funnel/numbers";
+import type { Newsletter } from "@/lib/funnel/newsletters";
 
 /** Shaped from the real 2026-09-09 report, so the fixture cannot drift into a shape that never ships. */
 const REPORT: FunnelReport = {
@@ -90,5 +91,68 @@ describe("funnel numbers for the PWA", () => {
     it("★self-RED: the happy path does NOT throw — the assertions above are not vacuous", () => {
       expect(() => toFunnelNumbers(REPORT, META)).not.toThrow();
     });
+  });
+});
+
+describe("optional newsletters in funnel numbers", () => {
+  const newsletter: Newsletter = {
+    id: "nl-1",
+    name: "NL#1",
+    sent_at: "2026-09-01T09:00:00.000Z",
+    delivered: 866,
+    unique_opened: 346,
+    unique_clicked: 0,
+    unsubscribed: 25,
+    bounced: 0,
+    complained: 0,
+    open_tracked: true,
+  };
+
+  it("passes the newsletter array through unchanged, including unknown counts", () => {
+    const newsletters = [newsletter, {
+      ...newsletter,
+      id: "nl-2",
+      delivered: null,
+      unique_opened: null,
+      unique_clicked: null,
+      unsubscribed: null,
+      bounced: null,
+      complained: null,
+      open_tracked: null,
+    }];
+    expect(toFunnelNumbers({ ...REPORT, newsletters }, META).newsletters).toBe(newsletters);
+  });
+
+  it("preserves an empty successful collection", () => {
+    expect(toFunnelNumbers({ ...REPORT, newsletters: [] }, META).newsletters).toEqual([]);
+  });
+
+  it("publishes all four numbers from an older report with no newsletters key", () => {
+    expect(toFunnelNumbers(REPORT, META)).toMatchObject({
+      reachable_contacts: 814,
+      net_new_day: 8,
+      remaining_to_1000: 186,
+      portal_registrations: 104,
+      newsletters: null,
+    });
+  });
+
+  it.each([undefined, null])("treats explicit %s as null without changing other values", (newsletters) => {
+    expect(toFunnelNumbers({ ...REPORT, newsletters }, META)).toEqual(toFunnelNumbers(REPORT, META));
+  });
+
+  it.each([
+    { label: "object", value: {} },
+    { label: "string", value: "newsletters" },
+    { label: "null item", value: [null] },
+    { label: "primitive item", value: [42] },
+    { label: "array item", value: [[]] },
+    { label: "missing identity", value: [{}] },
+    { label: "numeric id", value: [{ ...newsletter, id: 1 }] },
+    { label: "missing name", value: [{ ...newsletter, name: undefined }] },
+    { label: "null sent_at", value: [{ ...newsletter, sent_at: null }] },
+    { label: "mixed valid and invalid", value: [newsletter, {}] },
+  ])("treats malformed newsletters ($label) as null", ({ value }) => {
+    expect(toFunnelNumbers({ ...REPORT, newsletters: value }, META)).toEqual(toFunnelNumbers(REPORT, META));
   });
 });

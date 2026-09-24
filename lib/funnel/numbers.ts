@@ -27,12 +27,15 @@
 // closed in the NAME rather than in a comment nobody reads at the call site.
 //
 
+import type { Newsletter } from "./newsletters";
+
 /** The shape this reads out of `reports/plugin-funnel/<date>.json`. Only these fields are used. */
 export interface FunnelReport {
   muedsp_reachable?: { count?: unknown };
   resend?: { mued_sp_net_new_day?: unknown };
   portal_registrations?: { cumulative?: unknown };
   generated_at?: unknown;
+  newsletters?: unknown;
 }
 
 export interface FunnelNumbersMeta {
@@ -53,6 +56,7 @@ export interface FunnelNumbers {
   trigger: string;
   workflow_run: string;
   source_report: string;
+  newsletters: Newsletter[] | null;
 }
 
 /** The North Star target the `remaining_to_1000` difference is taken against (kimny, 2026-07-18). */
@@ -98,5 +102,10 @@ export function toFunnelNumbers(report: FunnelReport, meta: FunnelNumbersMeta): 
     trigger: meta.trigger,
     workflow_run: meta.workflow_run,
     source_report: meta.source_report,
+    // Older reports and failed collections still publish the four required numbers.
+    newsletters: Array.isArray(report.newsletters) && report.newsletters.every((item) =>
+      item !== null && typeof item === "object" && !Array.isArray(item) &&
+      typeof item.id === "string" && typeof item.name === "string" && typeof item.sent_at === "string",
+    ) ? report.newsletters as Newsletter[] : null,
   };
 }
