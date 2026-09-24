@@ -3134,3 +3134,19 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ★CCO PASS（head b8336ab3 に pin・non-blocking 1 件＝「Lighthouseスコアが低い」は core-web-vitals とも当たる → 本文の使用タイミングの逐語で・診断と修正は補い合う ∴ 残す）→ merge 91afab19
 ★到達 … ★確認済（2026-09-24T09:20:26+09:00・main を pull した直後に、このセッションの skill 一覧へ 5 本とも name＋description で出た＝自動で選ばれる状態）
 ```
+
+
+### (2i) — ★checkout（kimny の指示・新しい CLAUDE.md で全体を再起動）（2026-09-24T12:41+0900）
+
+```
+★未 commit … なし
+   mued_v2（main）… clean・origin/main と 0 0（HEAD 08c4a2ab）
+   wt-email（scratchpad の worktree・fix/codex-customer-email-b＝#1116）… clean・origin と 0 0（261c21a6）
+      ★scratchpad は session ごとに消えうる ∴ 再起動後は origin の branch から worktree を作り直す
+   /private/tmp/codex-spawn/downloads-alias-redirect-20260917（#1062 の 9/17 の Codex worktree）
+      … dir は在るが .git の link が切れている（git は prunable と表示）。branch は origin に在る（65a61b43＝PR head と一致）
+      ★prune も削除もしていない（中身の確認をしていないため・必要なら所有者の判断で）
+★open PR … #1116（draft・1.0.0 と同時・版の test がわざと赤）／ #1062（開店後 merge）
+★CLAUDE.md … #1125（配布 #682）・#1126（配布 #684＝block 01・10）を kimny の承認のうえ merge。次の配布も同じ形（kimny に確認 → CLAUDE.md だけの Tier 1 PR）
+★当課の手番 … 0 件。引き金待ち＝EULA 本文 → dsp の 1.0.0 bake（(W15)）・kimny の dial の 1 回（(W16)）
+```
