@@ -1,3 +1,8 @@
+---
+name: web-performance
+description: Next.js 16 App Router向けのCore Web Vitals最適化パターン（Server Components優先・画像最適化・フォント最適化・動的インポート・Suspenseバウンダリ・キャッシュ活用・Bundle最適化）。Vercel Speed Insightsでスコアが90未満、Lighthouseスコアが低い、ページ読み込みが遅い、新しいページ/コンポーネント作成時のパフォーマンス考慮に使用。
+---
+
 # Web Performance Optimization Skill
 
 Next.js 16 App Router向けのCore Web Vitals最適化スキル。

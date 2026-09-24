@@ -1,3 +1,8 @@
+---
+name: video-branding
+description: MUEDear関連の動画・ビジュアルコンテンツ制作時のブランディングガイドライン。動画ブランディング、MUEDear色、カラーパレット、ゲームカラー、Hooマスコット、プロモ素材制作時に使用。
+---
+
 # Video Branding (MUEDear)
 
 MUEDear関連の動画・ビジュアルコンテンツ制作時のブランディングガイドライン。
