@@ -1,6 +1,6 @@
 {
   "date": "2026-09-23",
-  "generated_at": "2026-09-24T05:16:45.779Z",
+  "generated_at": "2026-09-24T05:37:12.706Z",
   "resend": {
     "mued_sp_total_contacts": 1027,
     "mued_sp_net_new_day": 11,
@@ -50,5 +50,44 @@
     "muedsat: db_net_new(5) > email_delivered(1) — welcome email未達の疑い",
     "muedlim: db_net_new(7) > email_delivered(1) — welcome email未達の疑い",
     "muedrive: db_net_new(3) > email_delivered(0) — welcome email未達の疑い"
-  ]
+  ],
+  "newsletters": [
+    {
+      "id": "1f07ebe9-5a78-496b-b215-30deac2d5825",
+      "name": "MUEDsp NL #1 — The −0.3 dB (2026-09-16)",
+      "sent_at": "2026-09-16T05:24:27.479Z",
+      "delivered": 866,
+      "unique_opened": 346,
+      "unique_clicked": 0,
+      "unsubscribed": 25,
+      "bounced": 27,
+      "complained": 1,
+      "open_tracked": true
+    },
+    {
+      "id": "908ead08-170a-4159-8bd2-9339f66cc5a4",
+      "name": "MUEDrive launch — third free plugin announcement (2026-08-29)",
+      "sent_at": "2026-08-29T05:10:26.842Z",
+      "delivered": 641,
+      "unique_opened": 0,
+      "unique_clicked": 0,
+      "unsubscribed": 1,
+      "bounced": 11,
+      "complained": 1,
+      "open_tracked": null
+    },
+    {
+      "id": "a9b8951c-6608-42c7-98a7-607d9b0856ff",
+      "name": "MUEDsp Portal Launch — plugin owners announcement (2026-07-18)",
+      "sent_at": "2026-07-18T10:21:52.583Z",
+      "delivered": 315,
+      "unique_opened": 0,
+      "unique_clicked": 0,
+      "unsubscribed": 2,
+      "bounced": 0,
+      "complained": 0,
+      "open_tracked": null
+    }
+  ],
+  "newsletters_definition": "Sent broadcasts with non-null sent_at, newest first; cumulative counts matched by broadcast_id through collection time (generated_at), with missing rows/fields or non-finite/non-number values as null, never assumed zero; open_tracked is true only when unique_opened > 0, otherwise null (unknown), never false; no rates."
 }

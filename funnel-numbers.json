@@ -3,8 +3,46 @@
   "net_new_day": 11,
   "remaining_to_1000": 15,
   "portal_registrations": 123,
-  "measured_at": "2026-09-24T05:16:45.779Z",
+  "measured_at": "2026-09-24T05:37:12.706Z",
   "trigger": "workflow_dispatch",
-  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/35959136543",
-  "source_report": "reports/plugin-funnel/2026-09-23.json"
+  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/35960680934",
+  "source_report": "reports/plugin-funnel/2026-09-23.json",
+  "newsletters": [
+    {
+      "id": "1f07ebe9-5a78-496b-b215-30deac2d5825",
+      "name": "MUEDsp NL #1 — The −0.3 dB (2026-09-16)",
+      "sent_at": "2026-09-16T05:24:27.479Z",
+      "delivered": 866,
+      "unique_opened": 346,
+      "unique_clicked": 0,
+      "unsubscribed": 25,
+      "bounced": 27,
+      "complained": 1,
+      "open_tracked": true
+    },
+    {
+      "id": "908ead08-170a-4159-8bd2-9339f66cc5a4",
+      "name": "MUEDrive launch — third free plugin announcement (2026-08-29)",
+      "sent_at": "2026-08-29T05:10:26.842Z",
+      "delivered": 641,
+      "unique_opened": 0,
+      "unique_clicked": 0,
+      "unsubscribed": 1,
+      "bounced": 11,
+      "complained": 1,
+      "open_tracked": null
+    },
+    {
+      "id": "a9b8951c-6608-42c7-98a7-607d9b0856ff",
+      "name": "MUEDsp Portal Launch — plugin owners announcement (2026-07-18)",
+      "sent_at": "2026-07-18T10:21:52.583Z",
+      "delivered": 315,
+      "unique_opened": 0,
+      "unique_clicked": 0,
+      "unsubscribed": 2,
+      "bounced": 0,
+      "complained": 0,
+      "open_tracked": null
+    }
+  ]
 }
