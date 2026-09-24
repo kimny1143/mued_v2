@@ -1,3 +1,8 @@
+---
+name: muedial-api
+description: MUEDial（AIミキシング/マスタリング）の技術リファレンス。RoEx Tonn API仕様、認証、決済フロー、価格体系。MUEDial、RoEx、ミキシングAPI、マスタリングAPI、Dial API、/api/dial、lib/roex/、withDialAuthの確認時に使用。
+---
+
 # MUEDial API Reference
 
 MUEDial（AIミキシング/マスタリング）の技術リファレンス。RoEx Tonn API仕様、認証、決済フロー、価格体系。

@@ -1,3 +1,8 @@
+---
+name: threads-insight
+description: 作業セッション中に出たThreadsの短文投稿（insight）になりそうな気づきを抽出し、会話の区切りで提案する。Threads、インサイト、SNS投稿、気づき投稿の提案時に使用。
+---
+
 # Threads Insight 抽出
 
 作業セッション中に、記事にするほどではないが Threads の短文投稿（insight）になりそうな気づきが出たら、会話の区切りで提案する。
