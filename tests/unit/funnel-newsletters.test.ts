@@ -40,6 +40,13 @@ describe("newsletter results", () => {
     expect(toNewsletters([NL1, later], []).map((item) => item.id)).toEqual(["later", "nl-1"]);
   });
 
+  it("★normalises Resend's Postgres-style sent_at to ISO (the PWA reader is Safari)", () => {
+    const real = { ...NL1, sent_at: "2026-09-16 05:24:27.479028+00" };
+    expect(toNewsletters([real], [])[0].sent_at).toBe("2026-09-16T05:24:27.479Z");
+    const junk = { ...NL1, sent_at: "not a date" };
+    expect(toNewsletters([junk], [])[0].sent_at).toBe("not a date");
+  });
+
   it("matches metrics by broadcast_id and carries the real NL#1 counts without rates", () => {
     const result = toNewsletters([NL1], [
       { ...NL1_METRICS, broadcast_id: "unrelated", delivered: 999 },

@@ -30,6 +30,14 @@ export interface Newsletter {
 
 export const NEWSLETTERS_DEFINITION = "Sent broadcasts with non-null sent_at, newest first; cumulative counts matched by broadcast_id through collection time (generated_at), with missing rows/fields or non-finite/non-number values as null, never assumed zero; open_tracked is true only when unique_opened > 0, otherwise null (unknown), never false; no rates.";
 
+// ★Resend returns sent_at Postgres-style ("2026-09-16 05:24:27.479028+00", measured 2026-09-24), which
+//   V8 parses but Safari's Date does not reliably — and the reader is kimny's iPhone PWA. Normalise to
+//   ISO here, on the Node side. An unparseable value is passed through verbatim rather than guessed.
+function toIso(value: string): string {
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : value;
+}
+
 function count(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
@@ -51,7 +59,7 @@ export function toNewsletters(
       return {
         id: broadcast.id,
         name: broadcast.name,
-        sent_at: broadcast.sent_at,
+        sent_at: toIso(broadcast.sent_at),
         delivered: count(row?.delivered),
         unique_opened: uniqueOpened,
         unique_clicked: count(row?.unique_clicked),
