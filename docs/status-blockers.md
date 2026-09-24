@@ -3150,3 +3150,25 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ★CLAUDE.md … #1125（配布 #682）・#1126（配布 #684＝block 01・10）を kimny の承認のうえ merge。次の配布も同じ形（kimny に確認 → CLAUDE.md だけの Tier 1 PR）
 ★当課の手番 … 0 件。引き金待ち＝EULA 本文 → dsp の 1.0.0 bake（(W15)）・kimny の dial の 1 回（(W16)）
 ```
+
+
+### (2j) — ★旧 MUEDial の外部有料 2 件を DB 上「完了」に（手で納品済み）／ newsletters #1128 着地（2026-09-24T22:16+0900）
+
+```
+★newsletters … #1128（Codex 実装・CCO PASS）merge 6805e297 → main から dispatch（run 35960680934）→ data branch 1c5bfd37
+   funnel-numbers.json に newsletters（3 便・NL #1＝866/346/25＝conductor の値と一致）。既存 8 キーは不変
+★旧 MUEDial の照会（kimny が MUED のタブで直接承認・SELECT のみ）… 7/25 以降 session 0 件・task 0 件
+   外部の有料は 2 件（$7.49 ×2・pi_3TcLG…＝5/29／pi_3TfzA…＝6/08）＝ kimny が見た Stripe と一致
+★手で納品した記録（この欄が正本・dial_sessions に該当する列が無いため）
+   session b2d5a98f-4829-… と a64befc1-f8ac-… は ★kimny がシステムの外で final を渡し、対応は完了
+   （kimny 逐語 2026-09-24「それ対応してるよ。ファイナル渡してる。完了してるよ」＝conductor 経由）
+   ∴ DB に final の task 行・URL が無いのは ★正しい（作っていない・作らない）
+★DB の更新（kimny が MUED のタブで SQL の全文を見て直接承認）
+   UPDATE dial_sessions SET status='completed', updated_at=now()
+     WHERE id IN (上の 2 件) AND status IN ('uploading','previewing')
+   rowCount=2 で COMMIT（2 件でなければ ROLLBACK する形）
+   件数: completed 10→12・uploading 36→35・previewing 5 ← 6（この 2 行だけ）
+   ★state は変えていない（'delivered'＝アプリ内で DL できる成果物、の意味なので当てはまらない）
+★旧 MUEDial の今後 … Next のローンチと同時に停止。それまでは今のまま放置（kimny 2026-09-24）。販売停止の改修は不要
+★RoEx 台帳 roex_vendor_packs は 2026-04-15 以降 未更新（残高 12,570cr の内訳・失効日は未確認 → kimny が RoEx の管理画面で）
+```
