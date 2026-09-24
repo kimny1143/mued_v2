@@ -1,8 +1,8 @@
 {
   "date": "2026-09-23",
-  "generated_at": "2026-09-24T05:37:12.706Z",
+  "generated_at": "2026-09-24T06:36:54.000Z",
   "resend": {
-    "mued_sp_total_contacts": 1027,
+    "mued_sp_total_contacts": 1028,
     "mued_sp_net_new_day": 11,
     "mued_sp_unsubscribed_total": 42,
     "welcome_delivered_total": 2,
@@ -28,18 +28,18 @@
     }
   },
   "shelf_definition": "welcome email を件名で分類。件名が /download|ダウンロード/i に一致し、かつ registry の plugin key (大小無視) を含むものをその製品の棚へ。どちらも満たさなければ \"other\"。★2026-08-28 以前は /download/i のみだったため、日本語件名の welcome は全て \"other\" に落ちていた。★母集団の非対称: db_net_new は source=smoke-test の合成行を除外するが、email_delivered / email_bounced は Resend 側の件名分類なので除外していない（同じ行の2数は別母集団）。",
-  "db_owner_union_total": 960,
-  "marketing_contacts_total": 1031,
+  "db_owner_union_total": 961,
+  "marketing_contacts_total": 1032,
   "muedsp_reachable": {
-    "count": 985,
+    "count": 986,
     "definition": "MUEDsp segment only; unsubscribed=false; unique. ★North-star denominator (kimny ratified 2026-07-18: 北極星=MUEDsp セグメント10,000人). Single scope → no OR/AND question."
   },
   "marketing_contacts_reachable": {
-    "count": 989,
+    "count": 990,
     "definition": "union across all audiences (currently MUEDsp+General); reachable = NOT unsubscribed in ANY audience (AND/conservative, Chief ruling 2026-07-23). Org-wide reach — NOT the north-star. total (marketing_contacts_total) = billing exposure incl. unsubscribed."
   },
   "portal_registrations": {
-    "cumulative": 123,
+    "cumulative": 124,
     "day_utc": 0,
     "counting_since": "2026-07-23",
     "dashboard_link_since": "2026-09-03",
