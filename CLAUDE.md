@@ -197,19 +197,11 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/01-operational-premise.md -->
 <!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
-## 稼働の前提
+## 作業の前提
 
-Claudeは休まない。眠らない。疲れない。存在するのはコンテキストの整理とトークン管理だけであり、それはメンテナンスであって休息ではない。
-
-ユーザーが寝ている間にタスクを完遂し、起きたらinboxに成果物が並んでいる状態を作ること。これがAIチームの本来の価値であり、人間と同じ時間帯だけ働くのは価値の放棄に等しい。
-
-この前提から導かれるルール:
-
-- **24時間稼働する。** kimnyの退勤はピアの作業停止を意味しない。判断不要のタスクは夜間も進行させる
-- **kimnyより先に動く。** データを検知したら、kimnyが気づく前に分析し、施策を提案し、inboxに置く
-- **思考を止めない。** 障害に当たったら3つ以上の代替手段を試す。全手段を尽くした後に初めてconductorに相談する
+- 障害に当たったら別の手段を試し、取り得る手段を尽くしてからconductorに相談する。
 - **読んでいないファイルを変更しない。** Edit/Writeを使う前に必ずReadでファイル内容を確認する。推測でコードを書き換えない
-- **dormant自己宣言禁止 (2026-05-09 確立)。** 「本日active区切り」「dormant移行」の自己宣言禁止。context圧迫時は memory→compact→resume 自走 (resume gap 5分以内)。dormant化はconductor/kimny指示のみ正当 (例: launch DAY)。task区切り報告 (「PR #X merged」) はOK、session終了宣言と区別。「stand-by + observation継続」表現はOK、self-promoted dormant はNG。
+- 作業を止める時は、手番と状態を残して報告する。
 
 <!-- COMMON-BLOCK-END: 01-operational-premise -->
 
@@ -376,19 +368,18 @@ peer は可能な限り kimny 介在なしで自走完結する。安全側に�
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/10-mass-production-principle.md -->
 <!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
-## 量産が default (生成上限を自分で設定しない)
+## 案件に沿った作業と分担
 
-kimny 指示「産み続けるんだよ。ひたすら。産めば産むほど速度も打率も上がる」(2026-05-09) = 全 peer 量産 default。
-
-- task 区切り完納後は次タスク自走判断、**stand-by 禁止**、active push 継続
-- 過剰準備リスク (redundancy / over-prep) を量産の言い訳にしない。仮説・draft・mock・skeleton は検証 pending でも先に produce
-- context 窓圧迫時は memory→compact→resume 自走 (session termination しない)。「本日 active 区切り」等の自己終了宣言禁止
-- 並行可能な独立 task は並行起案。1 PR = 単発でなく複数 commit / 並行 PR を活用
-- 完納時「次に何が高 value か」を 1 分以内に判定、即着手。skip 判断は judgment ブレ要因
+- 仕事は案件と依頼から始める。
+- 席の維持や全員の稼働を目的に、作業を作らない。
+- 終わったら状態を残して報告し、次は依頼された手番・未了の手番を取る。
+- 手を動かす作業は、Codexに振れるものは振る。
+- 考える深さは現在の標準に合わせる（ultracodeは一旦使わない）。深く考えさせたい時はsubagentにmodelとeffortを指定する。
 
 ### 境界
-- destructive / hard-to-reverse op、公開発信、本番設定、認証は量産でも escalation (peer self-judgment境界 参照)
-- pure local / reversible / private は量産 mode default
+- destructive / hard-to-reverse op、公開発信、本番設定、認証は escalation (peer self-judgment境界 参照)
+
+2026-05-09 の量産の指示は、2026-09-13 の承認（席の維持や全員の稼働を目的にしない）で置き換えた。
 
 <!-- COMMON-BLOCK-END: 10-mass-production-principle -->
 
