@@ -3119,3 +3119,18 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
    陽性対照 … 同 repo で support@mued.jp は 23 file
 ★緊急度 … 通常（公開済みの記事が誤った連絡先を載せている証拠は無い・drafts の再利用時に直せば足りる）。④ は開店の便で
 ```
+
+
+### (2h) — ★スキル棚卸し 段 C（mued の分）＝ #1122（2026-09-24T09:06+0900）
+
+```
+★依頼 … conductor（kimny 9/24・CCO 主体・作業は Codex）・急ぎでない（発売まわりを優先）
+   引き渡し … claude-code-template/docs/drafts/skills-inventory-stageC-handoff-20260924.md §3 mued
+★対象 … frontmatter の無い 5 本（legal-compliance・muedial-api・threads-insight・video-branding・web-performance）
+   ＋ .agents/skills の写し 5 本（.claude と byte 同一・muedial-api は既存 test が同一を assert）
+★#1122 … Codex 実装 ＋ mued が 2 本の description を絞った（legal-compliance は確認事項を trigger から外す・
+   web-performance は core-web-vitals と区別して最適化パターンを名指し）・本文は byte 不変
+   test … tracked の SKILL.md 全部（20）で name＝dir 名・description 1〜1024 字を assert
+★CCO PASS（head b8336ab3 に pin・non-blocking 1 件＝「Lighthouseスコアが低い」は core-web-vitals とも当たる → 本文の使用タイミングの逐語で・診断と修正は補い合う ∴ 残す）→ merge 91afab19
+★到達の観測点 … merge 後、mued の次のセッションの一覧に 5 本の name と description が出ること
+```
