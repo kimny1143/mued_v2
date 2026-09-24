@@ -3131,6 +3131,6 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ★#1122 … Codex 実装 ＋ mued が 2 本の description を絞った（legal-compliance は確認事項を trigger から外す・
    web-performance は core-web-vitals と区別して最適化パターンを名指し）・本文は byte 不変
    test … tracked の SKILL.md 全部（20）で name＝dir 名・description 1〜1024 字を assert
-★CCO へ依頼済（msg 2d6de53d・head b8336ab3）
+★CCO PASS（head b8336ab3 に pin・non-blocking 1 件＝「Lighthouseスコアが低い」は core-web-vitals とも当たる → 本文の使用タイミングの逐語で・診断と修正は補い合う ∴ 残す）→ merge 91afab19
 ★到達の観測点 … merge 後、mued の次のセッションの一覧に 5 本の name と description が出ること
 ```
