@@ -23,8 +23,7 @@
  * ★count-plugin-backfill-dryrun.ts に残る "General"(6293ccef-...) 参照は rescue-8 統合前の名残と判断
  *   したが未確定 — レビューで誤りなら指摘ください。
  *
- * broadcast開封率・クリック率は本v1では未収集（broadcast送信日のみ意味があり非ブロッキング — Resendが
- * 自動保持するため必要な時に別途pull可能。将来のfollow-upとする）。
+ * newsletters に broadcast ごとの送信結果を収集（generated_at までの累計件数。率は算出しない）。
  *
  * Usage:
  *   npx tsx scripts/aggregate-plugin-funnel-daily.ts                 # 直近UTC完全1日（昨日）
@@ -36,6 +35,13 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { db } from "@/db";
 import { PLUGIN_DIST, MUEDSP_AUDIENCE_ID, type PluginKey } from "@/lib/plugins/registry";
 import { sql } from "drizzle-orm";
+import {
+  NEWSLETTERS_DEFINITION,
+  toNewsletters,
+  type Broadcast,
+  type BroadcastMetricRow,
+  type Newsletter,
+} from "@/lib/funnel/newsletters";
 
 const KEY = process.env.RESEND_API_KEY;
 if (!KEY) {
@@ -152,6 +158,47 @@ async function fetchWelcomeEmailsForDay(day: string): Promise<Email[]> {
     url = last ? `https://api.resend.com/emails?limit=100&after=${last.id}` : null;
   }
   return all.filter((e) => (e.created_at || "").startsWith(day));
+}
+
+async function fetchNewsletters(): Promise<Newsletter[]> {
+  const broadcasts: Broadcast[] = [];
+  const params = new URLSearchParams({ limit: "100" });
+  for (let page = 0; page < 20; page++) {
+    const r = await fetch(`https://api.resend.com/broadcasts?${params}`, { method: "GET", headers: H });
+    const text = await r.text();
+    if (!r.ok) throw new Error(`broadcast list ${r.status}: ${text.slice(0, 160)}`);
+    const body = JSON.parse(text) as { data: Broadcast[]; has_more: boolean };
+    broadcasts.push(...body.data);
+    if (!body.has_more) break;
+    const last = body.data[body.data.length - 1];
+    if (!last || page === 19) {
+      throw new Error("broadcast list has_more=true — pagination incomplete (20-page cap or missing cursor)");
+    }
+    params.set("after", last.id);
+  }
+
+  const sent = broadcasts.filter((broadcast): broadcast is Broadcast & { sent_at: string } =>
+    broadcast.status === "sent" && typeof broadcast.sent_at === "string",
+  );
+  const metricRows: BroadcastMetricRow[] = [];
+  const endDate = new Date().toISOString();
+  for (let offset = 0; offset < sent.length; offset += 100) {
+    const chunk = sent.slice(offset, offset + 100);
+    const startDate = new Date(Math.min(...chunk.map((broadcast) => Date.parse(broadcast.sent_at)))).toISOString();
+    const metricsParams = new URLSearchParams({
+      dimensions: "broadcast",
+      metrics: "delivered,unique_opened,unique_clicked,unsubscribed,bounced,complained",
+      broadcast_id: chunk.map((broadcast) => broadcast.id).join(","),
+      start_date: startDate,
+      end_date: endDate,
+    });
+    const r = await fetch(`https://api.resend.com/emails/metrics?${metricsParams}`, { method: "GET", headers: H });
+    const text = await r.text();
+    if (!r.ok) throw new Error(`broadcast metrics ${r.status}: ${text.slice(0, 160)}`);
+    const body = JSON.parse(text) as { data: BroadcastMetricRow[] };
+    metricRows.push(...body.data);
+  }
+  return toNewsletters(broadcasts, metricRows);
 }
 
 type Contact = { email?: string | null; unsubscribed?: boolean; created_at?: string };
@@ -455,6 +502,14 @@ async function main() {
 
   // anomaly signal: DB純増(権威) > email delivered なら「DLは成立したがwelcome email失敗」を示唆。
   const anomalies: string[] = [];
+  // Sequential after the existing Promise.all: no additional concurrent Resend requests.
+  let newsletters: Newsletter[] | null = null;
+  try {
+    newsletters = await fetchNewsletters();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    anomalies.push(`★newsletters: Resend 取得失敗 — null で出す。0 ではない。${redact(message)}`);
+  }
   if (!jaHealthy) {
     anomalies.push(
       "★welcome_ja_delivered: 検出器の自己検査が失敗（陽性/陰性 control）— この日は null で出す。0 ではない。",
@@ -507,6 +562,8 @@ async function main() {
     // ③b 北極星③ registration signal (列 0059)。cumulative=tz非依存 / day_utc=レポート全体と同 UTC 基準。
     portal_registrations: portalReg,
     anomalies,
+    newsletters,
+    newsletters_definition: NEWSLETTERS_DEFINITION,
   };
 
   mkdirSync("reports/plugin-funnel", { recursive: true });
