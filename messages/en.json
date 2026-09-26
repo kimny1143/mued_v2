@@ -315,19 +315,19 @@
     },
     "scope": {
       "title": "1. Scope",
-      "body": "These terms apply to mued.jp and its subdomains, to the free MUEDsp plugins, and to paid MUEDsp products. Where a product is accompanied by its own licence agreement, that agreement governs the use of the software itself and these terms govern the surrounding service."
+      "body": "These terms apply to mued.jp and its subdomains, to the free MUEDsp plugins, and to paid MUEDsp products. Where a product is accompanied by its own license agreement, that agreement governs the use of the software itself and these terms govern the surrounding service."
     },
     "accounts": {
       "title": "2. Accounts",
-      "body": "Some features require an account. You are responsible for the accuracy of the email address you provide, because product downloads and licence keys are delivered to it. Accounts may be closed on request."
+      "body": "Some features require an account. You are responsible for the accuracy of the email address you provide, because product downloads and license keys are delivered to it. Accounts may be closed on request."
     },
     "purchase": {
       "title": "3. Purchases and pricing",
       "body": "Prices are shown on the product page and charged in US dollars. Paid plugin orders are completed on FastSpring's checkout; FastSpring is the seller of record for those transactions and its terms apply to the payment itself. Taxes are determined and collected by FastSpring based on your location."
     },
     "license": {
-      "title": "4. Licence and delivery",
-      "body": "Paid plugins are licensed, not sold. The licence terms are supplied with the product. After a successful purchase, the download link and licence key are sent to the email address given at checkout, normally immediately. Licence keys are verified offline by the plugin and must not be shared or published."
+      "title": "4. License and delivery",
+      "body": "Paid plugins are licensed, not sold. The license terms are supplied with the product. After a successful purchase, the download link and license key are sent to the email address given at checkout, normally immediately. License keys are verified offline by the plugin and must not be shared or published."
     },
     "refund": {
       "title": "5. Refunds",
@@ -335,7 +335,7 @@
     },
     "prohibited": {
       "title": "6. Prohibited use",
-      "body": "Do not redistribute, resell, or publish licence keys or plugin binaries; do not attempt to defeat licence verification; do not use the services to infringe others' rights or to break applicable law."
+      "body": "Do not redistribute, resell, or publish license keys or plugin binaries; do not attempt to defeat license verification; do not use the services to infringe others' rights or to break applicable law."
     },
     "disclaimer": {
       "title": "7. Disclaimer and liability",
@@ -483,7 +483,7 @@
       },
       "delivery": {
         "title": "Delivery",
-        "value": "After payment completes, the download link and licence key are sent immediately to the email address you registered."
+        "value": "After payment completes, the download link and license key are sent immediately to the email address you registered."
       },
       "cancellation": {
         "title": "Cancellation and Refunds",
