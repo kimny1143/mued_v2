@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { parseEulaContent } from "@/lib/legal/eula-content";
 
 const ROOT = process.cwd();
 const PAGE = join(ROOT, "app", "[locale]", "eula", "page.tsx");
@@ -40,6 +41,32 @@ describe("staged EULA page", () => {
     const en = JSON.parse(readFileSync(join(ROOT, "messages", "en.json"), "utf8")).eula;
 
     expect(leafKeyPaths(ja).sort()).toEqual(leafKeyPaths(en).sort());
+  });
+
+  it("★carries the article container in both locales, parses, and keeps ja/en in step", () => {
+    const load = (l: string) => JSON.parse(readFileSync(join(ROOT, "messages", `${l}.json`), "utf8")).eula;
+    const ja = load("ja");
+    const en = load("en");
+    for (const e of [ja, en]) {
+      // ★Absent until decided — never "" (messages hold no empty strings; see translations.test.ts).
+      if ("effectiveDate" in e) expect(e.effectiveDate.trim()).not.toBe("");
+      expect(Array.isArray(e.intro)).toBe(true);
+      expect(Array.isArray(e.articles)).toBe(true);
+      // The real messages must parse — the page does the same at build time.
+      expect(() => parseEulaContent(e)).not.toThrow();
+    }
+    // ★A clause present in one language only must fail here, not ship.
+    expect(ja.articles.length).toBe(en.articles.length);
+    expect(ja.intro.length).toBe(en.intro.length);
+  });
+
+  it("renders from parsed nodes, never raw HTML", () => {
+    const page = readFileSync(PAGE, "utf8");
+    const body = readFileSync(join(ROOT, "components", "legal", "eula-body.tsx"), "utf8");
+    for (const src of [page, body]) expect(src).not.toContain("dangerouslySetInnerHTML");
+    expect(page).toContain("parseEulaContent(");
+    // ★The version shown is the one recorded at checkout, not a second copy in messages.
+    expect(page).toContain('import { EULA_VERSION } from "@/lib/legal/eula"');
   });
 
   it("mirrors /learn staging: noindex before live and sitemap inclusion only after live", () => {

@@ -303,7 +303,9 @@
         "heading": "Contact",
         "body": "Questions about this placeholder:"
       }
-    }
+    },
+    "intro": [],
+    "articles": []
   },
   "terms": {
     "title": "Terms of Service",

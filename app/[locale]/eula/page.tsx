@@ -11,6 +11,9 @@ import { BrandHeader } from "@/components/brand/brand-header";
 import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { EULA_LIVE } from "@/lib/legal/config";
+import { EULA_VERSION } from "@/lib/legal/eula";
+import { parseEulaContent } from "@/lib/legal/eula-content";
+import { EulaArticles, EulaBlocks } from "@/components/legal/eula-body";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -42,6 +45,21 @@ export default async function EulaPage({ params }: PageProps) {
 function EulaContent({ locale }: { locale: string }) {
   const t = useTranslations("eula");
   const isJa = locale === "ja";
+  // ★Throws on a malformed message — at build time, since this page is statically generated.
+  const content = parseEulaContent({
+    intro: t.raw("intro"),
+    articles: t.raw("articles"),
+    // ★Read only when present: t.raw on a missing key would return a fallback string, not undefined.
+    effectiveDate: t.has("effectiveDate") ? t.raw("effectiveDate") : undefined,
+  });
+  // ★Empty articles = the text has not been pasted in yet → today's placeholder page, unchanged.
+  const filled = content.articles.length > 0;
+  // ★The version shown is the SAME constant recorded at checkout, so page and consent cannot disagree.
+  //   Unset values are left out rather than printed as a placeholder.
+  const meta = [
+    EULA_VERSION !== "PENDING-LAWYER-TEXT" ? `${isJa ? "版" : "Version"}: ${EULA_VERSION}` : null,
+    content.effectiveDate ? `${isJa ? "施行日" : "Effective date"}: ${content.effectiveDate}` : null,
+  ].filter((part): part is string => part !== null);
 
   return (
     <div className="dark min-h-screen bg-bg-primary">
@@ -50,27 +68,15 @@ function EulaContent({ locale }: { locale: string }) {
       <main className="pt-24 pb-16 px-6">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-4">{t("title")}</h1>
-          <p className="text-sm text-slate-500 mb-8">{t("lastUpdated")}</p>
-
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">{t("sections.status.heading")}</h2>
-            <p className="text-slate-400">{t("sections.status.body")}</p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">{t("sections.agreement.heading")}</h2>
-            <p className="text-slate-400">{t("sections.agreement.body")}</p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">{t("sections.contact.heading")}</h2>
-            <p className="text-slate-400">
-              {t("sections.contact.body")}{" "}
-              <a href="mailto:support@mued.jp" className="text-blue-400 hover:underline">
-                support@mued.jp
-              </a>
-            </p>
-          </section>
+          {filled ? (
+            <>
+              {meta.length > 0 && <p className="text-sm text-slate-500 mb-8">{meta.join(" · ")}</p>}
+              <EulaBlocks blocks={content.intro} />
+              <EulaArticles articles={content.articles} />
+            </>
+          ) : (
+            <PlaceholderSections />
+          )}
 
           <div className="mt-12 flex flex-wrap gap-6 text-sm">
             <Link href={`/${locale}/terms`} className="text-slate-400 hover:text-white">
@@ -92,5 +98,35 @@ function EulaContent({ locale }: { locale: string }) {
         </div>
       </main>
     </div>
+  );
+}
+
+/** The page as it is before any EULA text is supplied (status / agreement / contact). */
+function PlaceholderSections() {
+  const t = useTranslations("eula");
+  return (
+    <>
+      <p className="text-sm text-slate-500 mb-8">{t("lastUpdated")}</p>
+
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">{t("sections.status.heading")}</h2>
+        <p className="text-slate-400">{t("sections.status.body")}</p>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">{t("sections.agreement.heading")}</h2>
+        <p className="text-slate-400">{t("sections.agreement.body")}</p>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">{t("sections.contact.heading")}</h2>
+        <p className="text-slate-400">
+          {t("sections.contact.body")}{" "}
+          <a href="mailto:support@mued.jp" className="text-blue-400 hover:underline">
+            support@mued.jp
+          </a>
+        </p>
+      </section>
+</>
   );
 }
