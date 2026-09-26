@@ -49,7 +49,8 @@ function EulaContent({ locale }: { locale: string }) {
   const content = parseEulaContent({
     intro: t.raw("intro"),
     articles: t.raw("articles"),
-    effectiveDate: t.raw("effectiveDate"),
+    // ★Read only when present: t.raw on a missing key would return a fallback string, not undefined.
+    effectiveDate: t.has("effectiveDate") ? t.raw("effectiveDate") : undefined,
   });
   // ★Empty articles = the text has not been pasted in yet → today's placeholder page, unchanged.
   const filled = content.articles.length > 0;

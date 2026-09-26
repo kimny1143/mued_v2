@@ -48,7 +48,8 @@ describe("staged EULA page", () => {
     const ja = load("ja");
     const en = load("en");
     for (const e of [ja, en]) {
-      expect(typeof e.effectiveDate).toBe("string");
+      // ★Absent until decided — never "" (messages hold no empty strings; see translations.test.ts).
+      if ("effectiveDate" in e) expect(e.effectiveDate.trim()).not.toBe("");
       expect(Array.isArray(e.intro)).toBe(true);
       expect(Array.isArray(e.articles)).toBe(true);
       // The real messages must parse — the page does the same at build time.

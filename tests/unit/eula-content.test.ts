@@ -88,12 +88,8 @@ const sixteen = Array.from({ length: 16 }, (_, i) => ({
 }));
 
 describe("parseEulaContent", () => {
-  it("accepts the empty container (= today's state: text not supplied yet)", () => {
-    expect(parseEulaContent({ intro: [], articles: [], effectiveDate: "" })).toEqual({
-      intro: [],
-      articles: [],
-      effectiveDate: "",
-    });
+  it("accepts the empty container with no effectiveDate key (= today's state: text not supplied yet)", () => {
+    expect(parseEulaContent({ intro: [], articles: [] })).toEqual({ intro: [], articles: [] });
   });
 
   it("accepts 16 articles with every block kind", () => {
@@ -110,17 +106,20 @@ describe("parseEulaContent", () => {
   });
 
   it.each([
-    ["articles not an array", { intro: [], articles: {}, effectiveDate: "" }],
-    ["intro not an array", { intro: "x", articles: [], effectiveDate: "" }],
+    ["articles not an array", { intro: [], articles: {} }],
+    ["intro not an array", { intro: "x", articles: [] }],
     ["effectiveDate not a string", { intro: [], articles: [], effectiveDate: null }],
-    ["empty heading", { intro: [], articles: [{ heading: " ", blocks: ["x"] }], effectiveDate: "" }],
-    ["article with no blocks", { intro: [], articles: [{ heading: "1. H", blocks: [] }], effectiveDate: "" }],
-    ["unknown article key", { intro: [], articles: [{ heading: "1. H", blocks: ["x"], body: "y" }], effectiveDate: "" }],
-    ["unknown block key", { intro: [], articles: [{ heading: "1. H", blocks: [{ table: ["x"] }] }], effectiveDate: "" }],
-    ["two keys in one block", { intro: [], articles: [{ heading: "1. H", blocks: [{ ul: ["a"], ol: ["b"] }] }], effectiveDate: "" }],
-    ["empty list", { intro: [], articles: [{ heading: "1. H", blocks: [{ ul: [] }] }], effectiveDate: "" }],
-    ["non-string list item", { intro: [], articles: [{ heading: "1. H", blocks: [{ ol: [1] }] }], effectiveDate: "" }],
-    ["empty paragraph", { intro: [""], articles: [], effectiveDate: "" }],
+    // ★"Not set" is the key being absent. An empty string is rejected: messages must hold no empty
+    //   strings (tests/unit/lib/i18n/translations.test.ts), which is what broke #1132.
+    ["effectiveDate empty string", { intro: [], articles: [], effectiveDate: "" }],
+    ["empty heading", { intro: [], articles: [{ heading: " ", blocks: ["x"] }] }],
+    ["article with no blocks", { intro: [], articles: [{ heading: "1. H", blocks: [] }] }],
+    ["unknown article key", { intro: [], articles: [{ heading: "1. H", blocks: ["x"], body: "y" }] }],
+    ["unknown block key", { intro: [], articles: [{ heading: "1. H", blocks: [{ table: ["x"] }] }] }],
+    ["two keys in one block", { intro: [], articles: [{ heading: "1. H", blocks: [{ ul: ["a"], ol: ["b"] }] }] }],
+    ["empty list", { intro: [], articles: [{ heading: "1. H", blocks: [{ ul: [] }] }] }],
+    ["non-string list item", { intro: [], articles: [{ heading: "1. H", blocks: [{ ol: [1] }] }] }],
+    ["empty paragraph", { intro: [""], articles: [] }],
   ])("★throws on %s (a dropped clause must fail the build, not vanish)", (_name, raw) => {
     expect(() => parseEulaContent(raw as never)).toThrow(/\[eula\]/);
   });

@@ -1,4 +1,4 @@
-// The shape of the EULA text in messages/{en,ja}.json (`eula.intro` / `eula.articles` /
+// The shape of the EULA text in messages/{en,ja}.json (`eula.intro` / `eula.articles` / optional
 // `eula.effectiveDate`), and the parsers that turn it into something the page can render.
 //
 // ★This is a CONTAINER. It holds no legal wording: the provisional EULA or the lawyer's final text is
@@ -24,7 +24,9 @@ export interface EulaArticle {
 export interface EulaContent {
   intro: EulaBlock[];
   articles: EulaArticle[];
-  effectiveDate: string;
+  /** Absent until a date is decided. ★Never an empty string: messages must not hold empty strings
+   *  (tests/unit/lib/i18n/translations.test.ts), so "not set" is expressed by leaving the key out. */
+  effectiveDate?: string;
 }
 
 export type InlineNode =
@@ -63,9 +65,9 @@ function parseBlocks(raw: unknown, path: string): EulaBlock[] {
   return raw.map((block, i) => parseBlock(block, `${path}[${i}]`));
 }
 
-/** Validates `{ intro, articles, effectiveDate }` read from messages. Empty arrays are valid (= not filled in yet). */
-export function parseEulaContent(raw: { intro: unknown; articles: unknown; effectiveDate: unknown }): EulaContent {
-  if (typeof raw.effectiveDate !== "string") fail("effectiveDate", `expected a string, got ${JSON.stringify(raw.effectiveDate)}`);
+/** Validates `{ intro, articles, effectiveDate? }` read from messages. Empty arrays are valid (= not filled in yet). */
+export function parseEulaContent(raw: { intro: unknown; articles: unknown; effectiveDate?: unknown }): EulaContent {
+  const effectiveDate = raw.effectiveDate === undefined ? undefined : nonEmptyString(raw.effectiveDate, "effectiveDate");
   const intro = parseBlocks(raw.intro, "intro");
   if (!Array.isArray(raw.articles)) fail("articles", `expected an array, got ${JSON.stringify(raw.articles)}`);
   const articles = raw.articles.map((article, i): EulaArticle => {
@@ -77,7 +79,7 @@ export function parseEulaContent(raw: { intro: unknown; articles: unknown; effec
     if (parsedBlocks.length === 0) fail(`${path}.blocks`, "an article needs at least one block");
     return { heading: nonEmptyString(heading, `${path}.heading`), blocks: parsedBlocks };
   });
-  return { intro, articles, effectiveDate: raw.effectiveDate };
+  return effectiveDate === undefined ? { intro, articles } : { intro, articles, effectiveDate };
 }
 
 // URL: https:// up to whitespace, minus trailing sentence punctuation (so "…/refund)." links to /refund).
