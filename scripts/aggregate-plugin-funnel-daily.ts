@@ -51,6 +51,7 @@ import {
   type DownloadLinkEmails,
   type ResendEmail,
 } from "@/lib/funnel/download-link-emails";
+import { isReached, welcomeReachAnomalies, welcomeReachCheckHealthy } from "@/lib/funnel/welcome-reach";
 
 const KEY = process.env.RESEND_API_KEY;
 if (!KEY) {
@@ -92,7 +93,10 @@ const SHELF_DEFINITION =
   //   消費側へ伝える — 同じ行に並ぶ db_net_new と email_delivered は別の母集団を数えており、anomaly
   //   検査は db > email の向きにしか鳴らないので、この差は放っておくと静かなまま残る。
   '★母集団の非対称: db_net_new は source=smoke-test の合成行を除外するが、email_delivered / ' +
-  'email_bounced は Resend 側の件名分類なので除外していない（同じ行の2数は別母集団）。';
+  'email_bounced は Resend 側の件名分類なので除外していない（同じ行の2数は別母集団）。' +
+  '★email_delivered は最新状態がちょうど delivered のもの。email_reached は delivered / opened / clicked のいずれか' +
+  '（届いた分）。★2026-09-23 にクリック計測を on にして以降、開封・クリックされたメールは delivered から外れるので、' +
+  '未達の検査は email_reached で行う（2026-09-27 まで email_delivered で検査しており、届いたメールで毎日誤発火していた）。';
 
 // ★welcome_ja_delivered の定義。値と一緒に運ぶ（SHELF_DEFINITION と同じ形）— 数え方が変われば
 //   消費側が「値が動いた」と「数え方が動いた」を区別できるように。
@@ -514,10 +518,10 @@ async function main() {
   //   日に収集器ごと落ちる（product課 が #903 レビューで実測: TypeError reading 'delivered'）。
   //   ★この file は tsconfig の exclude に入っている（`scripts/**/*`）ので Record<PluginKey,…> は
   //   ★型検査を受けない＝注釈は装飾。守るのは注釈ではなく「registry から建てる」という構造の方。
-  const shelfEmail: Record<PluginKey, { delivered: number; bounced: number; other: number }> =
+  const shelfEmail: Record<PluginKey, { delivered: number; reached: number; bounced: number; other: number }> =
     Object.fromEntries(
-      PLUGIN_KEYS.map((k) => [k, { delivered: 0, bounced: 0, other: 0 }]),
-    ) as Record<PluginKey, { delivered: number; bounced: number; other: number }>;
+      PLUGIN_KEYS.map((k) => [k, { delivered: 0, reached: 0, bounced: 0, other: 0 }]),
+    ) as Record<PluginKey, { delivered: number; reached: number; bounced: number; other: number }>;
   // ★Counted over the same input as shelf(), on its own axis — a JA "MUEDriveのダウンロードリンク"
   //   lands in BOTH muedrive and here. ★Includes subjects shelf() calls "other": the question is
   //   whether the JA surface is used, and a JA welcome that does not name a product is still one.
@@ -536,12 +540,14 @@ async function main() {
   for (const e of welcomeEmails) {
     const sh = shelf(e.subject);
     if (sh === "other") continue;
+    // ★Independent of the three buckets below: an opened/clicked mail is reached AND "other".
+    if (isReached(e.last_event)) shelfEmail[sh].reached++;
     if (e.last_event === "delivered") shelfEmail[sh].delivered++;
     else if (e.last_event === "bounced") shelfEmail[sh].bounced++;
     else shelfEmail[sh].other++;
   }
 
-  // anomaly signal: DB純増(権威) > email delivered なら「DLは成立したがwelcome email失敗」を示唆。
+  // anomaly signal: DB純増(権威) > email reached なら「DLは成立したがwelcome email失敗」を示唆。
   const anomalies: string[] = [];
   // Sequential after the existing Promise.all: no additional concurrent Resend requests.
   let newsletters: Newsletter[] | null = null;
@@ -567,12 +573,18 @@ async function main() {
       "★welcome_ja_delivered: 検出器の自己検査が失敗（陽性/陰性 control）— この日は null で出す。0 ではない。",
     );
   }
-  for (const sh of PLUGIN_KEYS) {
-    if (dbNetNew[sh] > shelfEmail[sh].delivered) {
-      anomalies.push(
-        `${sh}: db_net_new(${dbNetNew[sh]}) > email_delivered(${shelfEmail[sh].delivered}) — welcome email未達の疑い`,
-      );
-    }
+  // ★Reads email_reached, not email_delivered (lib/funnel/welcome-reach.ts has why). ★Self-checked
+  //   every run: if the check could no longer fire on a real miss, say so instead of staying quiet.
+  if (welcomeReachCheckHealthy()) {
+    anomalies.push(
+      ...welcomeReachAnomalies(
+        PLUGIN_KEYS,
+        dbNetNew,
+        Object.fromEntries(PLUGIN_KEYS.map((k) => [k, shelfEmail[k].reached])) as Record<PluginKey, number>,
+      ),
+    );
+  } else {
+    anomalies.push("★welcome 未達検査: 自己検査が失敗（未達で鳴らない／クリック済みで鳴る）— この日の未達検査は無効。");
   }
 
   const report = {
@@ -583,6 +595,7 @@ async function main() {
       mued_sp_net_new_day: audience.netNewDay,
       mued_sp_unsubscribed_total: audience.unsubscribed,
       welcome_delivered_total: PLUGIN_KEYS.reduce((n, k) => n + shelfEmail[k].delivered, 0),
+      welcome_reached_total: PLUGIN_KEYS.reduce((n, k) => n + shelfEmail[k].reached, 0),
       // ★Independent axis, so this is NOT a subset of the per-product sums above — a JA welcome is
       //   counted there too, and a JA welcome shelf() cannot classify is counted only here.
       //   ★Expected to be 0 most days; the detector self-tests at import so a 0 means "not used",
@@ -594,7 +607,12 @@ async function main() {
     shelf: Object.fromEntries(
       PLUGIN_KEYS.map((k) => [
         k,
-        { db_net_new: dbNetNew[k], email_delivered: shelfEmail[k].delivered, email_bounced: shelfEmail[k].bounced },
+        {
+          db_net_new: dbNetNew[k],
+          email_delivered: shelfEmail[k].delivered,
+          email_bounced: shelfEmail[k].bounced,
+          email_reached: shelfEmail[k].reached,
+        },
       ]),
     ),
     // ★継ぎ目の印。shelf の分類規則を毎回 同梱する（他の指標が definition を同梱しているのと同じ形）。
