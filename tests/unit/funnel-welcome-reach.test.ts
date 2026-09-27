@@ -51,3 +51,18 @@ describe("welcome reach check", () => {
     expect(src).toContain("email_reached: shelfEmail[k].reached");
   });
 });
+
+describe("welcome_ja_reached (conductor 2026-09-27: same defect as email_delivered)", () => {
+  const src = readFileSync(join(process.cwd(), "scripts", "aggregate-plugin-funnel-daily.ts"), "utf8");
+
+  it("★is emitted beside welcome_ja_delivered, which keeps its meaning", () => {
+    expect(src).toContain("welcome_ja_reached: welcomeJaReached");
+    expect(src).toContain("welcome_ja_delivered: welcomeJaDelivered");
+    expect(src).toMatch(/if \(e\.last_event === "delivered"\) n\+\+/);
+    expect(src).toMatch(/if \(isReached\(e\.last_event\)\) r\+\+/);
+  });
+
+  it("★goes null with welcome_ja_delivered when the JA detector self-check fails — never 0", () => {
+    expect(src).toMatch(/welcomeJaDelivered = null;[^\n]*\n\s*welcomeJaReached = null;/);
+  });
+});

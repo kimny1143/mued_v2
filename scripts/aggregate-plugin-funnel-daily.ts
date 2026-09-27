@@ -108,7 +108,11 @@ const JA_DEFINITION =
   '★検出器は毎回 自己検査する（既知の日本語件名が一致し、ASCII のみの件名が一致しないこと）。' +
   '★自己検査が失敗した日は★この値が null になり anomalies に1行 出る。' +
   '∴ ★0 は「使われていない」／★null は「測れていない」。0 が両方を意味することはない。' +
-  '★母集団の非対称は SHELF_DEFINITION と同じ（Resend 側の件名分類なので smoke を除外していない）。';
+  '★母集団の非対称は SHELF_DEFINITION と同じ（Resend 側の件名分類なので smoke を除外していない）。' +
+  '★welcome_ja_reached は同じ母集団で last_event が delivered / opened / clicked のいずれか（届いた分）。' +
+  '★2026-09-23 のクリック計測 on 以降、開封・クリックされたメールは delivered から外れるので、' +
+  '「日本語面が使われているか」は welcome_ja_reached で読む（welcome_ja_delivered は意味を据え置き）。' +
+  '自己検査が失敗した日は両方 null。';
 
 // ★合成行（smoke test / 動作確認）を集計から外す述語。★正本は insight課 の設計 doc
 //   `reports/plugin-funnel-automation-design-20260718.md` §10（2026-08-28 合意）。
@@ -527,14 +531,21 @@ async function main() {
   //   whether the JA surface is used, and a JA welcome that does not name a product is still one.
   const jaHealthy = jaDetectorHealthy();
   let welcomeJaDelivered: number | null = 0;
+  // ★Same population, counted by reach (delivered/opened/clicked) — see lib/funnel/welcome-reach.ts.
+  let welcomeJaReached: number | null = 0;
   if (jaHealthy) {
     let n = 0;
+    let r = 0;
     for (const e of welcomeEmails) {
-      if (e.last_event === "delivered" && isJaWelcome(e.subject)) n++;
+      if (!isJaWelcome(e.subject)) continue;
+      if (e.last_event === "delivered") n++;
+      if (isReached(e.last_event)) r++;
     }
     welcomeJaDelivered = n;
+    welcomeJaReached = r;
   } else {
     welcomeJaDelivered = null; // ★null = not measured. Never 0, which would read as "not used".
+    welcomeJaReached = null;
   }
 
   for (const e of welcomeEmails) {
@@ -570,7 +581,7 @@ async function main() {
   }
   if (!jaHealthy) {
     anomalies.push(
-      "★welcome_ja_delivered: 検出器の自己検査が失敗（陽性/陰性 control）— この日は null で出す。0 ではない。",
+      "★welcome_ja_delivered / welcome_ja_reached: 検出器の自己検査が失敗（陽性/陰性 control）— この日は null で出す。0 ではない。",
     );
   }
   // ★Reads email_reached, not email_delivered (lib/funnel/welcome-reach.ts has why). ★Self-checked
@@ -601,6 +612,7 @@ async function main() {
       //   ★Expected to be 0 most days; the detector self-tests at import so a 0 means "not used",
       //   not "not measured". Definition shipped alongside, as with shelf_definition.
       welcome_ja_delivered: welcomeJaDelivered,
+      welcome_ja_reached: welcomeJaReached,
       welcome_ja_definition: JA_DEFINITION,
       broadcast: null, // v1未収集。broadcast送信日のみ別途pull（follow-up）。
     },
