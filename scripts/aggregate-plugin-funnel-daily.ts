@@ -94,7 +94,7 @@ const SHELF_DEFINITION =
   //   検査は db > email の向きにしか鳴らないので、この差は放っておくと静かなまま残る。
   '★母集団の非対称: db_net_new は source=smoke-test の合成行を除外するが、email_delivered / ' +
   'email_bounced は Resend 側の件名分類なので除外していない（同じ行の2数は別母集団）。' +
-  '★email_delivered は最新状態がちょうど delivered のもの。email_reached は delivered / opened / clicked のいずれか' +
+  '★email_delivered は最新状態がちょうど delivered のもの。email_reached は delivered / opened / clicked / complained のいずれか' +
   '（届いた分）。★2026-09-23 にクリック計測を on にして以降、開封・クリックされたメールは delivered から外れるので、' +
   '未達の検査は email_reached で行う（2026-09-27 まで email_delivered で検査しており、届いたメールで毎日誤発火していた）。';
 
@@ -109,7 +109,7 @@ const JA_DEFINITION =
   '★自己検査が失敗した日は★この値が null になり anomalies に1行 出る。' +
   '∴ ★0 は「使われていない」／★null は「測れていない」。0 が両方を意味することはない。' +
   '★母集団の非対称は SHELF_DEFINITION と同じ（Resend 側の件名分類なので smoke を除外していない）。' +
-  '★welcome_ja_reached は同じ母集団で last_event が delivered / opened / clicked のいずれか（届いた分）。' +
+  '★welcome_ja_reached は同じ母集団で last_event が delivered / opened / clicked / complained のいずれか（届いた分・download_link_emails の reached と同じ集合）。' +
   '★2026-09-23 のクリック計測 on 以降、開封・クリックされたメールは delivered から外れるので、' +
   '「日本語面が使われているか」は welcome_ja_reached で読む（welcome_ja_delivered は意味を据え置き）。' +
   '自己検査が失敗した日は両方 null。';

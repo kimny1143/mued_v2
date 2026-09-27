@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it, expect } from "vitest";
 import { isReached, welcomeReachAnomalies, welcomeReachCheckHealthy } from "@/lib/funnel/welcome-reach";
+import { stats } from "@/lib/funnel/download-link-emails";
 
 const KEYS = ["muedsat", "muedlim", "muedrive"] as const;
 const reachedOf = (events: Record<(typeof KEYS)[number], string[]>) =>
@@ -31,10 +32,17 @@ describe("welcome reach check", () => {
     ]);
   });
 
-  it("counts only delivered / opened / clicked as reached", () => {
-    for (const e of ["delivered", "opened", "clicked"]) expect(isReached(e)).toBe(true);
-    for (const e of ["bounced", "complained", "sent", "queued", "delivery_delayed", "", undefined, null]) {
+  it("counts delivered / opened / clicked / complained as reached", () => {
+    for (const e of ["delivered", "opened", "clicked", "complained"]) expect(isReached(e)).toBe(true);
+    for (const e of ["bounced", "sent", "queued", "delivery_delayed", "", undefined, null]) {
       expect(isReached(e)).toBe(false);
+    }
+  });
+
+  it("★uses the same 'reached' set as download_link_emails — one word, one population", () => {
+    for (const e of ["delivered", "opened", "clicked", "complained", "bounced", "sent", "queued"]) {
+      const inDownloadLink = stats([{ id: "x", last_event: e, to: ["a@example.com"] }]).reached === 1;
+      expect(isReached(e), e).toBe(inDownloadLink);
     }
   });
 
