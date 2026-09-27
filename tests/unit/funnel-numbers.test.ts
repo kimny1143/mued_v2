@@ -156,3 +156,31 @@ describe("optional newsletters in funnel numbers", () => {
     expect(toFunnelNumbers({ ...REPORT, newsletters: value }, META)).toEqual(toFunnelNumbers(REPORT, META));
   });
 });
+
+describe("optional download_link_emails in funnel numbers", () => {
+  const emptyStats = {
+    sent: 0, bounced: 0, reached: 0, clicked: 0, opened: 0, delivered: 0, complained: 0, other: 0,
+    unique_recipients: 0, unique_clicked_recipients: 0, unique_opened_or_clicked_recipients: 0,
+  };
+  const win = { from: "2026-09-23T06:51:00.000Z", until: "2026-09-27T12:31:00.000Z", total: emptyStats, by_product: {} };
+  const value = { since: "2026-09-23T06:51:00.000Z", all_time: win, last_24h: win };
+
+  it("passes a well-formed object through unchanged", () => {
+    expect(toFunnelNumbers({ ...REPORT, download_link_emails: value }, META).download_link_emails).toBe(value);
+  });
+
+  it("is null for an older report without the key, and the four numbers still publish", () => {
+    expect(toFunnelNumbers(REPORT, META)).toMatchObject({ reachable_contacts: 814, download_link_emails: null });
+  });
+
+  it.each([
+    { label: "null", value: null },
+    { label: "array", value: [] },
+    { label: "missing since", value: { ...value, since: undefined } },
+    { label: "missing last_24h", value: { ...value, last_24h: undefined } },
+    { label: "string sent", value: { ...value, all_time: { ...win, total: { ...emptyStats, sent: "3" } } } },
+    { label: "missing by_product", value: { ...value, all_time: { ...win, by_product: undefined } } },
+  ])("treats malformed download_link_emails ($label) as null", ({ value: v }) => {
+    expect(toFunnelNumbers({ ...REPORT, download_link_emails: v }, META)).toEqual(toFunnelNumbers(REPORT, META));
+  });
+});

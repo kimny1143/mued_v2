@@ -24,6 +24,7 @@
  *   したが未確定 — レビューで誤りなら指摘ください。
  *
  * newsletters に broadcast ごとの送信結果を収集（generated_at までの累計件数。率は算出しない）。
+ * download_link_emails に登録直後のダウンロードリンクメールの状態別件数を収集（通算＝クリック計測 on 以降／直近24時間）。
  *
  * Usage:
  *   npx tsx scripts/aggregate-plugin-funnel-daily.ts                 # 直近UTC完全1日（昨日）
@@ -42,6 +43,14 @@ import {
   type BroadcastMetricRow,
   type Newsletter,
 } from "@/lib/funnel/newsletters";
+import {
+  DOWNLOAD_LINK_EMAILS_DEFINITION,
+  DOWNLOAD_LINK_SINCE,
+  emailTime,
+  toDownloadLinkEmails,
+  type DownloadLinkEmails,
+  type ResendEmail,
+} from "@/lib/funnel/download-link-emails";
 
 const KEY = process.env.RESEND_API_KEY;
 if (!KEY) {
@@ -199,6 +208,38 @@ async function fetchNewsletters(): Promise<Newsletter[]> {
     metricRows.push(...body.data);
   }
   return toNewsletters(broadcasts, metricRows);
+}
+
+// ★Lists transactional mail newest-first until it has seen one mail OLDER than `since`. ★That mail is
+//   the proof of coverage: stopping on has_more=false or on the page cap without it means the list
+//   ended inside the window (retention, or more mail than the cap) and every count would be short —
+//   so that is an error (→ null), never a smaller number.
+async function fetchEmailsSince(sinceIso: string): Promise<ResendEmail[]> {
+  const sinceMs = Date.parse(sinceIso);
+  const all: ResendEmail[] = [];
+  const params = new URLSearchParams({ limit: "100" });
+  const MAX_PAGES = 200;
+  for (let page = 0; page < MAX_PAGES; page++) {
+    let r = await fetch(`https://api.resend.com/emails?${params}`, { method: "GET", headers: H });
+    if (r.status === 429) {
+      await new Promise((res) => setTimeout(res, 2000));
+      r = await fetch(`https://api.resend.com/emails?${params}`, { method: "GET", headers: H });
+    }
+    const text = await r.text();
+    if (!r.ok) throw new Error(`email list ${r.status}: ${text.slice(0, 160)}`);
+    const body = JSON.parse(text) as { data?: ResendEmail[]; has_more?: boolean };
+    const data = body.data ?? [];
+    all.push(...data);
+    if (data.some((e) => emailTime(e) < sinceMs)) return all;
+    const last = data[data.length - 1];
+    if (!body.has_more || !last) {
+      throw new Error(`email list ended after ${all.length} mails without reaching ${sinceIso} — counts would be short`);
+    }
+    params.set("after", last.id);
+    // Resend's default rate limit is a few requests per second; stay under it.
+    await new Promise((res) => setTimeout(res, 600));
+  }
+  throw new Error(`email list: ${MAX_PAGES}-page cap reached before ${sinceIso} — counts would be short`);
 }
 
 type Contact = { email?: string | null; unsubscribed?: boolean; created_at?: string };
@@ -510,6 +551,17 @@ async function main() {
     const message = error instanceof Error ? error.message : String(error);
     anomalies.push(`★newsletters: Resend 取得失敗 — null で出す。0 ではない。${redact(message)}`);
   }
+  // ★Same shape as newsletters: sequential, and a failure is null + an anomaly, never 0.
+  //   DOWNLOAD_LINK_UNTIL (ISO, optional) reproduces a past cut for comparison with a hand count;
+  //   the scheduled run leaves it empty = "now".
+  let downloadLinkEmails: DownloadLinkEmails | null = null;
+  try {
+    const until = process.env.DOWNLOAD_LINK_UNTIL || new Date().toISOString();
+    downloadLinkEmails = toDownloadLinkEmails(await fetchEmailsSince(DOWNLOAD_LINK_SINCE), PLUGIN_KEYS, until);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    anomalies.push(`★download_link_emails: 取得失敗 — null で出す。0 ではない。${redact(message)}`);
+  }
   if (!jaHealthy) {
     anomalies.push(
       "★welcome_ja_delivered: 検出器の自己検査が失敗（陽性/陰性 control）— この日は null で出す。0 ではない。",
@@ -564,6 +616,8 @@ async function main() {
     anomalies,
     newsletters,
     newsletters_definition: NEWSLETTERS_DEFINITION,
+    download_link_emails: downloadLinkEmails,
+    download_link_emails_definition: DOWNLOAD_LINK_EMAILS_DEFINITION,
   };
 
   mkdirSync("reports/plugin-funnel", { recursive: true });
