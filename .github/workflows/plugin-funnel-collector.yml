@@ -44,6 +44,10 @@ on:
         required: false
         default: true
         type: boolean
+      download_link_until:
+        description: 'ダウンロードリンクメール集計の終点 (ISO8601・空なら集計時刻)。手集計との照合用。照合時は publish=false で。'
+        required: false
+        type: string
       hoo_usage_snapshot:
         description: 'Hoo AI chat の使用量スナップショットを撮る (scripts/sql/hoo-usage-snapshot.sql・読み取りのみ)'
         required: false
@@ -101,6 +105,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL_READONLY }}
           # ★ inputs を run: 内へ直接展開しない (script injection 回避)。必ず env 経由で参照する。
           TARGET_DATE: ${{ inputs.date }}
+          DOWNLOAD_LINK_UNTIL: ${{ inputs.download_link_until }}
         run: |
           set -euo pipefail
           if [ -n "${TARGET_DATE:-}" ]; then

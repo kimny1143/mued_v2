@@ -28,6 +28,7 @@
 //
 
 import type { Newsletter } from "./newsletters";
+import type { DownloadLinkEmails } from "./download-link-emails";
 
 /** The shape this reads out of `reports/plugin-funnel/<date>.json`. Only these fields are used. */
 export interface FunnelReport {
@@ -36,6 +37,7 @@ export interface FunnelReport {
   portal_registrations?: { cumulative?: unknown };
   generated_at?: unknown;
   newsletters?: unknown;
+  download_link_emails?: unknown;
 }
 
 export interface FunnelNumbersMeta {
@@ -57,6 +59,7 @@ export interface FunnelNumbers {
   workflow_run: string;
   source_report: string;
   newsletters: Newsletter[] | null;
+  download_link_emails: DownloadLinkEmails | null;
 }
 
 /** The North Star target the `remaining_to_1000` difference is taken against (kimny, 2026-07-18). */
@@ -107,5 +110,18 @@ export function toFunnelNumbers(report: FunnelReport, meta: FunnelNumbersMeta): 
       item !== null && typeof item === "object" && !Array.isArray(item) &&
       typeof item.id === "string" && typeof item.name === "string" && typeof item.sent_at === "string",
     ) ? report.newsletters as Newsletter[] : null,
+    // Same rule: an older report, or a day the collector could not list back far enough, is null.
+    download_link_emails: isDownloadLinkEmails(report.download_link_emails) ? report.download_link_emails : null,
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isDownloadLinkEmails(value: unknown): value is DownloadLinkEmails {
+  if (!isRecord(value) || typeof value.since !== "string") return false;
+  return [value.all_time, value.last_24h].every((w) =>
+    isRecord(w) && isRecord(w.total) && typeof w.total.sent === "number" && isRecord(w.by_product),
+  );
 }
