@@ -84,7 +84,7 @@ function TokushohoContent({ locale }: { locale: string }) {
                           (b) 代金の settlement を受領 —— ★その両方が揃った時点
                 ★当課は当初「注文確認メールの送信をもって成立」と書いており、★これは §3.4 と真逆だった
                 （conductor lint が一次を引いて指摘・当課も一次を照合して確認）。
-                ★当製品の (a) は ★ライセンスキーのメール送信が該当する。 */}
+                ★当製品の (a) は、ポータルでのライセンスキーの取得方法を記載したメールの送信（kimny 2026-09-28・鍵はメールに載せない）。 */}
             <InfoRow label={t("contractEstablishment.title")} value={t("contractEstablishment.value")} />
           </div>
 

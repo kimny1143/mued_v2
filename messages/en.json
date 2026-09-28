@@ -309,7 +309,7 @@
   },
   "terms": {
     "title": "Terms of Service",
-    "lastUpdated": "Last updated: September 16, 2026",
+    "lastUpdated": "Last updated: September 28, 2026",
     "intro": "These terms govern your use of the MUED website and services provided by glasswerks inc., including the MUEDsp plugin line. Paid plugin orders are processed by FastSpring, Inc. as the Merchant of Record.",
     "mor": {
       "seller": "Seller (Merchant of Record): FastSpring, Inc.",
@@ -321,7 +321,7 @@
     },
     "accounts": {
       "title": "2. Accounts",
-      "body": "Some features require an account. You are responsible for the accuracy of the email address you provide, because product downloads and license keys are delivered to it. Accounts may be closed on request."
+      "body": "Some features require an account. You are responsible for the accuracy of the email address you provide: product download links are sent to it, and license keys are available in the mued.jp portal only when you sign in with that address. Accounts may be closed on request."
     },
     "purchase": {
       "title": "3. Purchases and pricing",
@@ -329,7 +329,7 @@
     },
     "license": {
       "title": "4. License and delivery",
-      "body": "Paid plugins are licensed, not sold. The license terms are supplied with the product. After a successful purchase, the download link and license key are sent to the email address given at checkout, normally immediately. License keys are verified offline by the plugin and must not be shared or published."
+      "body": "Paid plugins are licensed, not sold. The license terms are supplied with the product. After a successful purchase, we send the download link and instructions for obtaining your license key to the email address given at checkout, normally immediately. The license key itself is not sent by email; you obtain it in the mued.jp portal by signing in with that address. License keys are verified offline by the plugin and must not be shared or published."
     },
     "refund": {
       "title": "5. Refunds",
@@ -387,7 +387,7 @@
   },
   "tokushoho": {
     "title": "Specified Commercial Transactions Act",
-    "lastUpdated": "Last updated: September 16, 2026",
+    "lastUpdated": "Last updated: September 28, 2026",
     "seller": {
       "title": "Seller",
       "value": "glasswerks inc."
@@ -422,7 +422,7 @@
     },
     "contractEstablishment": {
       "title": "Contract Establishment",
-      "value": "Varies by service.\nMUEDial: upon completion of credit card payment.\nMUEDsp plugins (via FastSpring): the contract is formed when FastSpring has received payment and the email containing your license key has been sent. The order confirmation email is an acknowledgement of receipt, not an acceptance.\nMUED advisory: upon our sending an order confirmation email, or upon execution of a written agreement."
+      "value": "Varies by service.\nMUEDial: upon completion of credit card payment.\nMUEDsp plugins (via FastSpring): the contract is formed when FastSpring has received payment and we have sent the email explaining how to obtain your license key in the mued.jp portal. The order confirmation email is an acknowledgement of receipt, not an acceptance.\nMUED advisory: upon our sending an order confirmation email, or upon execution of a written agreement."
     },
     "contact": {
       "title": "Contact",
@@ -485,7 +485,7 @@
       },
       "delivery": {
         "title": "Delivery",
-        "value": "After payment completes, the download link and license key are sent immediately to the email address you registered."
+        "value": "After payment completes, the download link and instructions for obtaining your license key are sent immediately to the email address you registered. The license key is available in the mued.jp portal when you sign in with that address; it is not sent by email."
       },
       "cancellation": {
         "title": "Cancellation and Refunds",
