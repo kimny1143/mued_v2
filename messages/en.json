@@ -2406,6 +2406,7 @@
       "newsletter": "Send me plugin news by email (optional).",
       "submitting": "Getting your key…",
       "success": "Your trial key",
+      "howToUse": "Copy the key, open masterchain in your DAW, and press \"Paste license from clipboard\".",
       "keyLabel": "Trial key",
       "copy": "Copy key",
       "copied": "Copied",

@@ -13,6 +13,9 @@ export function canonicalEmail(email: string): string {
   //   decides ownership — so a rare false match costs one trial, not access. Dots stay Gmail-only:
   //   other providers treat them as significant.
   const base = local.split("+")[0];
+  // ★A local part that STARTS with "+" would fold to "" and make every such address at the domain
+  //   collide (CCO #1147). Keep the address as-is instead.
+  if (!base) return normalized;
   return domain === "gmail.com" || domain === "googlemail.com"
     ? `${base.replace(/\./g, "")}@gmail.com`
     : `${base}@${domain}`;

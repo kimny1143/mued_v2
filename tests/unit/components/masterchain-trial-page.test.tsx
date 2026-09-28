@@ -82,7 +82,10 @@ describe("trial page", () => {
       firstTouch: { utmSource: "newsletter", utmCampaign: "one", landingPath: "/en/muedsp/trial" },
     });
     expect(document.querySelector("pre")?.textContent).toBe(KEY);
-    expect(screen.getByText("Trial ends 2026-10-14 (UTC)")).toBeTruthy();
+    // Date AND time in UTC: 23:00-07:00 is 06:00 the next day (CCO #1147).
+    expect(screen.getByText("Trial ends 2026-10-14 06:00 (UTC)")).toBeTruthy();
+    // ★How to use the key, right after issuance (conductor #1147).
+    expect(screen.getByText(en.muedsp.trial.howToUse)).toBeTruthy();
     expect(screen.getByRole("link", { name: "Download masterchain" })).toHaveAttribute("href", "/downloads/masterchain.pkg");
     expect(screen.getByRole("link", { name: "Open your portal" })).toHaveAttribute("href", "/dashboard/plugins");
     expect(screen.getByText(en.muedsp.trial.emailed)).toBeTruthy();

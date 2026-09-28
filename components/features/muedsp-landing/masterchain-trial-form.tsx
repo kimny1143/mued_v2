@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { EULA_VERSION } from "@/lib/legal/eula";
 import { MASTERCHAIN_TRIAL_DAYS, MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
 import { TrialKey } from "./trial-key";
+import { formatUtcMinute } from "@/lib/masterchain/format";
 
 const errors = {
   already_purchased: 409, trial_used: 409, disposable_email: 422,
@@ -59,7 +60,8 @@ export function MasterchainTrialForm({ locale, firstTouch, downloadUrl }: {
     <section aria-label={t("success")} aria-live="polite">
       <h2 className="text-xl font-semibold">{t("success")}</h2>
       <TrialKey licenseKey={result.licenseKey} label={t("keyLabel")} copyLabel={t("copy")} copiedLabel={t("copied")} failedLabel={t("copyFailed")} />
-      <p className="mt-4 font-mono text-sm">{t("ends", { date: new Date(result.expiresAt).toISOString().slice(0, 10) })}</p>
+      <p className="mt-4 text-sm leading-relaxed text-white/85">{t("howToUse")}</p>
+      <p className="mt-4 font-mono text-sm">{t("ends", { date: formatUtcMinute(result.expiresAt) })}</p>
       <a href={downloadUrl} download className="mt-5 inline-flex rounded bg-[#f5a524] px-5 py-3 font-semibold text-black">{t("download")}</a>
       <p className="mt-4 text-sm text-white/75">{t("emailed")} <Link href="/dashboard/plugins" className="text-[#f5a524] underline">{t("portal")}</Link></p>
     </section>

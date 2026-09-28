@@ -14,6 +14,7 @@ import { MUEDSAT_DOWNLOAD_URL } from '@/lib/muedsat/config';
 import { MUEDLIM_DOWNLOAD_URL } from '@/lib/muedlim/config';
 import { MUEDRIVE_DOWNLOAD_URL } from '@/lib/muedrive/config';
 import { MASTERCHAIN_DOWNLOAD_URL } from '@/lib/masterchain/config';
+import { formatUtcMinute } from '@/lib/masterchain/format';
 // ★The keyfile's first line. Imported, never retyped: the buyer instructions below name it, and a
 // second copy of the format string would go stale silently the day the format moves to v3.
 import { LICENSE_MAGIC } from '@/lib/masterchain/license';
@@ -1022,7 +1023,7 @@ Hoo MCP経由の自動送信
   masterchainTrialDelivery(data: { locale: 'ja' | 'en'; licenseKey: string; expiresAt: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     // Date AND time: a date alone reads as "through the end of that day" in the reader's zone (CCO #1145).
-    const expiry = `${new Date(data.expiresAt).toISOString().slice(0, 16).replace('T', ' ')} UTC`;
+    const expiry = `${formatUtcMinute(data.expiresAt)} UTC`;
     const subject = isJa ? '[MUEDsp] masterchain の試用ライセンスキー' : '[MUEDsp] Your masterchain trial license key';
     const intro = isJa ? 'masterchain の試用ライセンスキーをお届けします。' : 'Here is your masterchain trial license key.';
     const download = MASTERCHAIN_DOWNLOAD_URL
