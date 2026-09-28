@@ -9,7 +9,9 @@
 // ★The rule is by PATH, never by branch name: 8 PRs on docs/* branches in 2026-09 contained code.
 //
 // ★Docs-only means EVERY changed file is one of:
-//     docs/**                      nothing under docs/ is read by the build or by any test (grep 2026-09-28)
+//     docs/** with a DOCUMENT extension (.md .txt .html .csv .pdf and images) — ★not any file: tsconfig
+//                                  includes **/*.ts / **/*.tsx and excludes only docs/archive/**, so a .ts
+//                                  under docs/ IS typechecked (CCO #1156). Everything else under docs/ is code.
 //     <root>/*.md                  EXCEPT CLAUDE.md and AGENTS.md — tests/unit/claude-md-stack-facts
 //                                  reads both
 //     <root>/*.jsonl, docs/**      (jsonl under docs/ is already covered above)
@@ -19,12 +21,17 @@
 //     content/**                   rendered into /learn pages at build time
 //     tests/**, app/**, lib/**, …  anything inside code directories
 // ★An empty or unknown file list is NOT docs-only: when in doubt, run everything.
+// ★The caller must pass BOTH sides of a rename (previous_filename too): `git mv lib/x.ts docs/x.md`
+//   deletes code, and only the old path says so (CCO #1156).
+// ★3000+ files is the files-endpoint cap — the list may be truncated, so it is treated as code.
 
 const ROOT_DOCS_EXCEPTIONS = new Set(["CLAUDE.md", "AGENTS.md"]);
+const DOC_EXTENSIONS = /\.(md|markdown|txt|html|csv|tsv|pdf|png|jpe?g|gif|svg|webp|jsonl)$/i;
+const API_FILE_CAP = 3000;
 
 /** @param {string} file */
 export function isDocFile(file) {
-  if (file.startsWith("docs/")) return true;
+  if (file.startsWith("docs/")) return DOC_EXTENSIONS.test(file);
   if (file.includes("/")) return false;
   if (ROOT_DOCS_EXCEPTIONS.has(file)) return false;
   return file.endsWith(".md") || file.endsWith(".jsonl");
@@ -33,7 +40,7 @@ export function isDocFile(file) {
 /** @param {readonly string[]} files */
 export function isDocsOnly(files) {
   const list = files.map((f) => f.trim()).filter(Boolean);
-  return list.length > 0 && list.every(isDocFile);
+  return list.length > 0 && list.length < API_FILE_CAP && list.every(isDocFile);
 }
 
 // CLI: newline-separated file list on stdin → prints `code=true|false` for $GITHUB_OUTPUT.

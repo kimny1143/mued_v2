@@ -89,6 +89,8 @@ jobs:
   #   (scripts/verify/pr-merge-gate.ts REQUIRED), and it treats a SKIPPED required check as void —
   #   so a docs-only PR could never merge. Instead the three jobs still RUN, under the same names,
   #   and only their heavy steps are skipped: a job whose steps are all skipped concludes `success`.
+  # ★Fail-CLOSED: heavy steps run unless the output is exactly 'false' — an empty or missing output
+  #   runs everything (CCO #1156).
   # ★The rule is by path (scripts/ci/docs-only.mjs, unit-tested), never by branch name.
   # ★schedule / workflow_dispatch are never docs-only: they test main as a whole.
   changes:
@@ -118,7 +120,9 @@ jobs:
             exit 0
           fi
           # ★--paginate: the files endpoint returns at most 100 per page.
-          gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename' > files.txt
+          # ★Both sides of a rename: moving lib/x.ts into docs/ deletes code, and only previous_filename
+          #   says so (CCO #1156).
+          gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)' > files.txt
           node scripts/ci/docs-only.mjs < files.txt >> "$GITHUB_OUTPUT"
 
   # ============================================
@@ -130,23 +134,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Docs-only PR — heavy steps skipped
-        if: needs.changes.outputs.code != 'true'
+        if: needs.changes.outputs.code == 'false'
         run: echo "Only docs/ or root .md changed (scripts/ci/docs-only.mjs). Validate/Test/Build steps skipped; this job reports success."
 
       - uses: actions/checkout@v4
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
 
       - uses: actions/setup-node@v4
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - run: npm ci --prefer-offline --no-audit
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
 
       - name: TypeScript check
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         run: npx tsc --noEmit
 
       # scripts/ is excluded wholesale from tsconfig.json, so the step above never sees it. On
@@ -156,7 +160,7 @@ jobs:
       # ★It plants a known type error first and asserts tsc catches it — exit 2 means the check
       # itself could not be trusted, which is NOT the same as "no errors found".
       - name: TypeScript check (scripts/)
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         run: npx tsx scripts/verify/typecheck-scripts.ts
 
       # .gitignore hides `.claude/skills/*` behind a short allowlist, so a skill that is neither a
@@ -165,15 +169,15 @@ jobs:
       # requires every real skill dir to be tracked here or named in .claude/skills/DISTRIBUTED.txt.
       # ★A new distribution turns this red until the skill is classified. That is intended.
       - name: Skill durability (.claude/skills)
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         run: npx tsx scripts/verify/skill-durability.ts
 
       - name: ESLint
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         run: npm run lint
 
       - name: Security audit (production deps)
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         # Not a plain `npm audit`: that exits 1 both when vulnerabilities are found AND when the
         # audit API is unreachable, so a registry outage is indistinguishable from a security finding
         # (npm's API failed on both endpoints 2026-07-26 and blocked every PR in this repo).
@@ -191,7 +195,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Docs-only PR — heavy steps skipped
-        if: needs.changes.outputs.code != 'true'
+        if: needs.changes.outputs.code == 'false'
         run: echo "Only docs/ or root .md changed (scripts/ci/docs-only.mjs). Validate/Test/Build steps skipped; this job reports success."
 
       # ★fetch-depth: 0 —— plugin-download-retention.test.ts が母集団を git 履歴から導く
@@ -199,27 +203,27 @@ jobs:
       #   その履歴が存在しないので、★配布物が全件そろっていても必ず RED になる。
       # ★この job だけ。validate / build は履歴を読まないので shallow のまま。
       - uses: actions/checkout@v4
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         with:
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - run: npm ci --prefer-offline --no-audit
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
 
       - name: Unit tests
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         run: npm run test:unit
         env:
           DATABASE_URL: "postgresql://test:test@localhost:5432/test"
 
       - name: Component tests
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         run: npm run test:components
         env:
           DATABASE_URL: "postgresql://test:test@localhost:5432/test"
@@ -233,23 +237,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Docs-only PR — heavy steps skipped
-        if: needs.changes.outputs.code != 'true'
+        if: needs.changes.outputs.code == 'false'
         run: echo "Only docs/ or root .md changed (scripts/ci/docs-only.mjs). Validate/Test/Build steps skipped; this job reports success."
 
       - uses: actions/checkout@v4
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
 
       - uses: actions/setup-node@v4
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - run: npm ci --prefer-offline --no-audit
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
 
       - name: Build
-        if: needs.changes.outputs.code == 'true'
+        if: needs.changes.outputs.code != 'false'
         run: npm run build
         env:
           DATABASE_URL: "postgresql://build:build@localhost:5432/build"
