@@ -2,7 +2,11 @@ name: Codex scope
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    # ★`edited` removed (conductor 2026-09-28): PR-body edits fired this job 230 times in 2026-09, and
+    #   it only checks `fix/codex-*` branches. The checker DOES read its allowlist from the PR body, so
+    #   after correcting a Codex PR's declared paths, re-run this job once (or push) — rare, and cheaper
+    #   than running on every description edit of every PR.
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
