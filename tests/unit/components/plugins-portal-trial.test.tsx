@@ -62,7 +62,7 @@ describe("portal trial card", () => {
     Object.assign(navigator, { clipboard: { writeText } });
     await page();
     expect(document.querySelector("pre")?.textContent).toBe(KEY);
-    expect(screen.getByText("Trial ends 2026-10-01 (UTC)")).toBeTruthy();
+    expect(screen.getByText("Trial ends 2026-10-01 00:00 (UTC)")).toBeTruthy();
     expect(screen.queryByText("Trial ended")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Copy key" }));
     await screen.findByRole("button", { name: "Copied" });

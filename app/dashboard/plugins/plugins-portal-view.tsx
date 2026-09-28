@@ -8,6 +8,7 @@ import { useTranslations, useLocale } from "next-intl";
 import styles from "./plugins-portal.module.css";
 import { MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
 import { TrialKey } from "@/components/features/muedsp-landing/trial-key";
+import { formatUtcMinute } from "@/lib/masterchain/format";
 
 // Serializable portal item passed from the server page (PortalItem with claimedAt as an ISO string).
 export interface PortalViewItem {
@@ -121,7 +122,7 @@ export function PluginsPortalView({
                 {purchases.length > 0 ? <p className={styles.claimed}>{t("trial.replaced")}</p> : (
                   <>
                     {trial.licenseKey && <TrialKey licenseKey={trial.licenseKey} label={t("trial.keyLabel")} copyLabel={t("trial.copy")} copiedLabel={t("trial.copied")} failedLabel={t("trial.copyFailed")} />}
-                    <p className={styles.claimed}>{t("trial.ends", { date: new Date(trial.expiresAtISO).toISOString().slice(0, 10) })}</p>
+                    <p className={styles.claimed}>{t("trial.ends", { date: formatUtcMinute(trial.expiresAtISO) })}</p>
                     {trial.expired && <p className={styles.claimed}>{t("trial.ended")}</p>}
                     <p className={styles.howto}>{t("trial.bypass")}</p>
                   </>
