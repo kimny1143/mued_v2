@@ -1021,7 +1021,7 @@
       },
         "q9": {
           "question": "I bought masterchain. Where is my license key?",
-          "answer": "License keys are not sent by email. Sign in to the mued.jp portal (mued.jp/dashboard/plugins) with the same email address you used at checkout — your key is there, with Copy key and Download license.key. If you used a different address at checkout or cannot sign in, contact support@mued.jp with your order number and we will help."
+          "answer": "Sign in to the mued.jp portal (mued.jp/dashboard/plugins) with the same email address you used at checkout — your key is there, with Copy key and Download license.key. If you used a different address at checkout or cannot sign in, contact support@mued.jp with your order number and we will help."
         }
     },
     "company": {
@@ -2418,7 +2418,7 @@
       "ends": "Trial ends {date} (UTC)",
       "download": "Download license.key",
       "downloadInstaller": "Download masterchain",
-      "emailed": "Email contains instructions only. Your key is available here and in your signed-in portal.",
+      "emailed": "Your key is on this page and in your portal (sign in with this email address).",
       "portal": "Open your portal",
       "errors": {
         "already_purchased": "You already own masterchain. Your license is in your portal.",
