@@ -1,21 +1,21 @@
 {
-  "reachable_contacts": 1014,
-  "net_new_day": 10,
-  "remaining_to_1000": -14,
-  "portal_registrations": 126,
-  "measured_at": "2026-09-27T06:59:22.075Z",
+  "reachable_contacts": 1025,
+  "net_new_day": 12,
+  "remaining_to_1000": -25,
+  "portal_registrations": 127,
+  "measured_at": "2026-09-28T07:27:50.923Z",
   "trigger": "schedule",
-  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/36301651931",
-  "source_report": "reports/plugin-funnel/2026-09-26.json",
+  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/36391677597",
+  "source_report": "reports/plugin-funnel/2026-09-27.json",
   "newsletters": [
     {
       "id": "1f07ebe9-5a78-496b-b215-30deac2d5825",
       "name": "MUEDsp NL #1 — The −0.3 dB (2026-09-16)",
       "sent_at": "2026-09-16T05:24:27.479Z",
       "delivered": 866,
-      "unique_opened": 349,
+      "unique_opened": 350,
       "unique_clicked": 0,
-      "unsubscribed": 25,
+      "unsubscribed": 26,
       "bounced": 27,
       "complained": 1,
       "open_tracked": true
@@ -44,5 +44,124 @@
       "complained": 0,
       "open_tracked": null
     }
-  ]
+  ],
+  "download_link_emails": {
+    "since": "2026-09-23T06:51:00.000Z",
+    "all_time": {
+      "from": "2026-09-23T06:51:00.000Z",
+      "until": "2026-09-28T07:27:50.841Z",
+      "total": {
+        "sent": 75,
+        "bounced": 1,
+        "reached": 74,
+        "clicked": 57,
+        "opened": 7,
+        "delivered": 10,
+        "complained": 0,
+        "other": 0,
+        "unique_recipients": 55,
+        "unique_clicked_recipients": 44,
+        "unique_opened_or_clicked_recipients": 46
+      },
+      "by_product": {
+        "muedsat": {
+          "sent": 22,
+          "bounced": 0,
+          "reached": 22,
+          "clicked": 17,
+          "opened": 2,
+          "delivered": 3,
+          "complained": 0,
+          "other": 0,
+          "unique_recipients": 22,
+          "unique_clicked_recipients": 17,
+          "unique_opened_or_clicked_recipients": 19
+        },
+        "muedlim": {
+          "sent": 41,
+          "bounced": 1,
+          "reached": 40,
+          "clicked": 31,
+          "opened": 4,
+          "delivered": 5,
+          "complained": 0,
+          "other": 0,
+          "unique_recipients": 38,
+          "unique_clicked_recipients": 30,
+          "unique_opened_or_clicked_recipients": 33
+        },
+        "muedrive": {
+          "sent": 12,
+          "bounced": 0,
+          "reached": 12,
+          "clicked": 9,
+          "opened": 1,
+          "delivered": 2,
+          "complained": 0,
+          "other": 0,
+          "unique_recipients": 12,
+          "unique_clicked_recipients": 9,
+          "unique_opened_or_clicked_recipients": 10
+        }
+      }
+    },
+    "last_24h": {
+      "from": "2026-09-27T07:27:50.841Z",
+      "until": "2026-09-28T07:27:50.841Z",
+      "total": {
+        "sent": 17,
+        "bounced": 0,
+        "reached": 17,
+        "clicked": 13,
+        "opened": 1,
+        "delivered": 3,
+        "complained": 0,
+        "other": 0,
+        "unique_recipients": 12,
+        "unique_clicked_recipients": 9,
+        "unique_opened_or_clicked_recipients": 9
+      },
+      "by_product": {
+        "muedsat": {
+          "sent": 3,
+          "bounced": 0,
+          "reached": 3,
+          "clicked": 2,
+          "opened": 0,
+          "delivered": 1,
+          "complained": 0,
+          "other": 0,
+          "unique_recipients": 3,
+          "unique_clicked_recipients": 2,
+          "unique_opened_or_clicked_recipients": 2
+        },
+        "muedlim": {
+          "sent": 13,
+          "bounced": 0,
+          "reached": 13,
+          "clicked": 10,
+          "opened": 1,
+          "delivered": 2,
+          "complained": 0,
+          "other": 0,
+          "unique_recipients": 11,
+          "unique_clicked_recipients": 9,
+          "unique_opened_or_clicked_recipients": 9
+        },
+        "muedrive": {
+          "sent": 1,
+          "bounced": 0,
+          "reached": 1,
+          "clicked": 1,
+          "opened": 0,
+          "delivered": 0,
+          "complained": 0,
+          "other": 0,
+          "unique_recipients": 1,
+          "unique_clicked_recipients": 1,
+          "unique_opened_or_clicked_recipients": 1
+        }
+      }
+    }
+  }
 }
