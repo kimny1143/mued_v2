@@ -38,7 +38,7 @@ export default async function SupportPage({ params }: PageProps) {
 
   // Get translations for structured data (server-side)
   const t = await getTranslations("support");
-  const faqKeys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"] as const;
+  const faqKeys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9"] as const;
 
   // Build FAQPage structured data for SEO
   const faqStructuredData = {
@@ -65,7 +65,7 @@ interface SupportContentProps {
 function SupportContent({ faqStructuredData, locale }: SupportContentProps) {
   const t = useTranslations("support");
 
-  const faqKeys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"] as const;
+  const faqKeys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9"] as const;
 
   return (
     <div className="dark min-h-screen bg-bg-primary">

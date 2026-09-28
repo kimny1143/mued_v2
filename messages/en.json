@@ -1018,7 +1018,11 @@
       "q8": {
         "question": "What devices and OS versions are supported?",
         "answer": "MUEDnote supports iPhone running iOS 17.0 or later. iPad is not currently supported."
-      }
+      },
+        "q9": {
+          "question": "I bought masterchain. Where is my license key?",
+          "answer": "License keys are not sent by email. Sign in to the mued.jp portal (mued.jp/dashboard/plugins) with the same email address you used at checkout — your key is there, with Copy key and Download license.key. If you used a different address at checkout or cannot sign in, contact support@mued.jp with your order number and we will help."
+        }
     },
     "company": {
       "title": "About Us",
