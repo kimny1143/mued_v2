@@ -28,6 +28,7 @@ import { type PluginKey } from "@/lib/plugins/registry";
 import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 import { MasterchainPurchaseControl } from "@/components/features/muedsp-landing/masterchain-purchase-control";
+import { MASTERCHAIN_TRIAL_DAYS, MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
 
 const FACEPLATE_HOT = "/muedsat/faceplate-hot.webp";
 const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
@@ -64,6 +65,7 @@ export function MuedspLandingContent() {
 
   const th = useTranslations("muedsp.hero");
   const tmc = useTranslations("muedsp.masterchain");
+  const tt = useTranslations("muedsp.trial");
   const tf = useTranslations("muedsp.free");
   // Saturation block reuses the shipped MUEDsat copy.
   const tsHero = useTranslations("muedsat.hero");
@@ -188,6 +190,11 @@ export function MuedspLandingContent() {
                   path is ★still a kimny decision (docs/paid-line/c1-…spec.md:25, :101). ★With either
                   missing the button renders exactly as before: disabled, same label, no script
                   loaded. ★Nothing about this change is visible to a customer until those are set. */}
+              {MASTERCHAIN_TRIAL_LIVE && (
+                <Link href={`/${locale}/muedsp/trial`} className="inline-flex shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[#f5a524] px-5 py-3 font-semibold text-black transition-colors hover:bg-[#ffb638]">
+                  {tt("cta", { days: MASTERCHAIN_TRIAL_DAYS })}
+                </Link>
+              )}
               <MasterchainPurchaseControl
                 locale={locale}
                 buyLabel={tmc("buyLabel")}

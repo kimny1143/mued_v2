@@ -4,9 +4,9 @@
 // VERIFIED emails ONLY (server-side — a client-supplied email is never trusted). Kept as a thin,
 // testable seam over the pure core (verifiedEmailsOf + buildPortalItems) so the "only my rows" and
 // "fail-closed when no verified email" guarantees are unit-tested with a mocked DB.
-import { and, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { pluginEntitlements, masterchainPurchases } from "@/db/schema";
+import { pluginEntitlements, masterchainPurchases, masterchainTrials } from "@/db/schema";
 import {
   verifiedEmailsOf,
   buildPortalItems,
@@ -16,6 +16,22 @@ import {
   type ClerkUserLike,
 } from "@/lib/plugins/portal";
 import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
+
+/** Trial ownership requires BOTH a verified email and the issuing Clerk account. */
+export async function getTrialItemForUser(user: (ClerkUserLike & { id?: string }) | null | undefined) {
+  const emails = verifiedEmailsOf(user);
+  if (!user?.id || emails.length === 0) return null;
+
+  const [row] = await db
+    .select({ licenseKey: masterchainTrials.licenseKey, expiresAt: masterchainTrials.expiresAt })
+    .from(masterchainTrials)
+    .where(and(
+      inArray(masterchainTrials.email, emails),
+      eq(masterchainTrials.clerkUserId, user.id),
+    ))
+    .limit(1);
+  return row ?? null;
+}
 
 /**
  * The free-module portal items owned by `user`, resolved by the user's VERIFIED emails only.

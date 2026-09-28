@@ -6,6 +6,8 @@ import Link from "next/link";
 import type { PluginKey } from "@/lib/plugins/registry";
 import { useTranslations, useLocale } from "next-intl";
 import styles from "./plugins-portal.module.css";
+import { MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
+import { TrialKey } from "@/components/features/muedsp-landing/trial-key";
 
 // Serializable portal item passed from the server page (PortalItem with claimedAt as an ISO string).
 export interface PortalViewItem {
@@ -62,14 +64,22 @@ export interface AvailableViewItem {
   lpPath: string;
 }
 
+export interface TrialViewItem {
+  licenseKey: string | null;
+  expiresAtISO: string;
+  expired: boolean;
+}
+
 export function PluginsPortalView({
   items,
   available = [],
   purchases = [],
+  trial = null,
 }: {
   items: PortalViewItem[];
   available?: AvailableViewItem[];
   purchases?: PurchaseViewItem[];
+  trial?: TrialViewItem | null;
 }) {
   const t = useTranslations("pluginPortal");
   const locale = useLocale();
@@ -98,6 +108,26 @@ export function PluginsPortalView({
                 <PurchaseCard key={p.licenseKey} item={p} fmtDate={fmtDate} />
               ))}
             </div>
+          </>
+        )}
+
+        {MASTERCHAIN_TRIAL_LIVE && trial && (
+          <>
+            <div className={styles.racklabel}>{t("trial.label")}</div>
+            <section className={styles.module} aria-label={t("trial.label")}>
+              <Faceplate pluginKey="masterchain" />
+              <div className={styles.meta}>
+                <div className={styles.name}><h3>masterchain</h3><span className={styles.kind}>{t("trial.label")}</span></div>
+                {purchases.length > 0 ? <p className={styles.claimed}>{t("trial.replaced")}</p> : (
+                  <>
+                    {trial.licenseKey && <TrialKey licenseKey={trial.licenseKey} label={t("trial.keyLabel")} copyLabel={t("trial.copy")} copiedLabel={t("trial.copied")} failedLabel={t("trial.copyFailed")} />}
+                    <p className={styles.claimed}>{t("trial.ends", { date: new Date(trial.expiresAtISO).toISOString().slice(0, 10) })}</p>
+                    {trial.expired && <p className={styles.claimed}>{t("trial.ended")}</p>}
+                    <p className={styles.howto}>{t("trial.bypass")}</p>
+                  </>
+                )}
+              </div>
+            </section>
           </>
         )}
 

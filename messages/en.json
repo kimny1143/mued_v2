@@ -2394,6 +2394,35 @@
         }
       }
     },
+    "trial": {
+      "title": "MUEDsp masterchain — {days}-day trial",
+      "intro": "Try masterchain on your own tracks for {days} days.",
+      "signInHint": "No password needed. Sign in with a code sent to your email.",
+      "bypass": "Without a valid key or after expiry, the plugin passes audio through unprocessed (bypass) and shows \"Demo expired\".",
+      "cta": "Try free for {days} days",
+      "start": "Start the {days}-day trial",
+      "consentPrefix": "I have read and agree to the",
+      "eulaLabel": "End User License Agreement",
+      "newsletter": "Send me plugin news by email (optional).",
+      "submitting": "Getting your key…",
+      "success": "Your trial key",
+      "keyLabel": "Trial key",
+      "copy": "Copy key",
+      "copied": "Copied",
+      "copyFailed": "Could not copy. Select the key and copy it manually.",
+      "ends": "Trial ends {date} (UTC)",
+      "download": "Download masterchain",
+      "emailed": "The key was also emailed to you and is in your portal.",
+      "portal": "Open your portal",
+      "errors": {
+        "already_purchased": "You already own masterchain. Your license is in your portal.",
+        "trial_used": "You have already used your trial.",
+        "disposable_email": "Use an email address that is not temporary.",
+        "rate_limited": "Too many requests. Try again later.",
+        "eula_required": "Agree to the EULA to start your trial.",
+        "generic": "Could not start the trial. Try again."
+      }
+    },
     "free": {
       "lead": "I'm putting out free plugins one at a time — some are stages taken from masterchain, some started outside the chain. Try them on your own music.",
       "satLabel": "The transformer-saturation stage",
@@ -2650,6 +2679,17 @@
       "title": "Your rack is empty",
       "body": "Claim a free MUEDsp module and it shows up here — with the latest build one click away, for good.",
       "cta": "Browse the MUEDsp plugins"
+    },
+    "trial": {
+      "label": "Trial",
+      "replaced": "Replaced by your license",
+      "keyLabel": "Trial key",
+      "copy": "Copy key",
+      "copied": "Copied",
+      "copyFailed": "Could not copy. Select the key and copy it manually.",
+      "ends": "Trial ends {date} (UTC)",
+      "ended": "Trial ended",
+      "bypass": "After the trial ends, the plugin passes audio through unprocessed (bypass) and shows \"Demo expired\" until you enter a license key."
     },
     "purchased": {
       "label": "Purchased",

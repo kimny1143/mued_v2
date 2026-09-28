@@ -13,11 +13,14 @@ import { logger } from "@/lib/utils/logger";
 import { MASTERCHAIN_TRIAL_LIVE, MASTERCHAIN_TRIAL_DAYS } from "./config";
 import { canonicalEmail, isDisposableEmail, issueKey, KeyIssuanceError, trialExpiry } from "./key-issuance";
 import { LICENSE_VERSION } from "./license";
+import { firstTouchInputSchema, buildFirstTouch } from "@/lib/dial/first-touch";
 
 const consentSchema = z.object({ eulaAccepted: z.literal(true), eulaVersion: z.literal(EULA_VERSION) });
 const bodySchema = consentSchema.extend({
   marketingOptIn: z.boolean().optional(),
-  firstTouch: z.record(z.unknown()).optional(),
+  // ★Same shape as dialSessions / masterchain_interest (conductor #1145): allowlisted keys, every
+  //   field clipped by buildFirstTouch, and a malformed value degrades to undefined, never a 400.
+  firstTouch: firstTouchInputSchema,
 });
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const errorResponse = (error: string, status: number) => NextResponse.json({ error }, { status });
@@ -85,7 +88,7 @@ export async function handleMasterchainTrial(request: Request) {
           licenseVersion: LICENSE_VERSION, issuedAt: now, expiresAt: new Date(expiresAt),
           eulaVersion: parsed.data.eulaVersion, eulaAcceptedAt: now,
           marketingOptIn: parsed.data.marketingOptIn ?? false,
-          firstTouch: parsed.data.firstTouch,
+          firstTouch: buildFirstTouch(request.headers, parsed.data.firstTouch) ?? undefined,
         }).returning();
         return { status: "issued" as const, row };
       });

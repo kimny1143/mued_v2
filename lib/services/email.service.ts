@@ -1021,7 +1021,8 @@ Hoo MCP経由の自動送信
   /** Transactional trial key delivery; expiry is shown explicitly in UTC. */
   masterchainTrialDelivery(data: { locale: 'ja' | 'en'; licenseKey: string; expiresAt: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
-    const expiry = new Date(data.expiresAt).toISOString().slice(0, 10);
+    // Date AND time: a date alone reads as "through the end of that day" in the reader's zone (CCO #1145).
+    const expiry = `${new Date(data.expiresAt).toISOString().slice(0, 16).replace('T', ' ')} UTC`;
     const subject = isJa ? '[MUEDsp] masterchain の試用ライセンスキー' : '[MUEDsp] Your masterchain trial license key';
     const intro = isJa ? 'masterchain の試用ライセンスキーをお届けします。' : 'Here is your masterchain trial license key.';
     const download = MASTERCHAIN_DOWNLOAD_URL
@@ -1033,7 +1034,7 @@ Hoo MCP経由の自動送信
       ? `下のブロックを（1 行目の ${LICENSE_MAGIC} から最終行の sig= まで）すべてコピーし、次の場所に license.key という名前で保存してください。`
       : `Copy the whole block below — from the first line ${LICENSE_MAGIC} to the last line beginning sig= — and save it as license.key here:`;
     const path = '~/Library/Application Support/glasswerks/MUEDsp/license.key';
-    const ends = isJa ? `試用期限（UTC）: ${expiry}` : `Trial expiry (UTC): ${expiry}`;
+    const ends = isJa ? `試用期限: ${expiry}` : `Trial expiry: ${expiry}`;
     const after = isJa
       ? '試用期間が終了すると、新しいライセンスキーを入力するまで「Demo expired」画面が表示され、音声は加工されずに通過します（バイパス）。'
       : 'When the trial ends, the plugin keeps passing audio through unprocessed (bypass) and shows "Demo expired" until you enter a license key.';
