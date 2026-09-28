@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import type { ReactElement } from "react";
 import Link from "next/link";
 import type { PluginKey } from "@/lib/plugins/registry";
 import { useTranslations, useLocale } from "next-intl";
 import styles from "./plugins-portal.module.css";
 import { MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
-import { TrialKey } from "@/components/features/muedsp-landing/trial-key";
+import { LicenseKeyActions } from "@/components/features/license/license-key-actions";
 import { formatUtcMinute } from "@/lib/masterchain/format";
 
 // Serializable portal item passed from the server page (PortalItem with claimedAt as an ISO string).
@@ -121,7 +120,8 @@ export function PluginsPortalView({
                 <div className={styles.name}><h3>masterchain</h3><span className={styles.kind}>{t("trial.label")}</span></div>
                 {purchases.length > 0 ? <p className={styles.claimed}>{t("trial.replaced")}</p> : (
                   <>
-                    {trial.licenseKey && <TrialKey licenseKey={trial.licenseKey} label={t("trial.keyLabel")} copyLabel={t("trial.copy")} copiedLabel={t("trial.copied")} failedLabel={t("trial.copyFailed")} />}
+                    {trial.licenseKey && <LicenseKeyActions licenseKey={trial.licenseKey} label={t("trial.keyLabel")} copyLabel={t("trial.copy")} copiedLabel={t("trial.copied")} failedLabel={t("trial.copyFailed")} downloadLabel={t("trial.download")} />}
+                    <p className={styles.howto}>{t("trial.howto")}</p>
                     <p className={styles.claimed}>{t("trial.ends", { date: formatUtcMinute(trial.expiresAtISO) })}</p>
                     {trial.expired && <p className={styles.claimed}>{t("trial.ended")}</p>}
                     <p className={styles.howto}>{t("trial.bypass")}</p>
@@ -293,13 +293,6 @@ const FACEPLATE: Record<PluginKey, ReactElement> = {
   ),
 };
 
-/**
- * ★The copy button reports what actually happened. `navigator.clipboard` is undefined on insecure
- * origins and can reject (permission, focus), so we AWAIT it and only then say "copied" — a button
- * that claims success without checking is the same shape as a test that passes without asserting.
- * ★The key is also rendered selectable, so manual copy works even when the API is unavailable: the
- * button is an enhancement, not the only path to the bytes.
- */
 function PurchaseCard({
   item,
   fmtDate,
@@ -308,18 +301,6 @@ function PurchaseCard({
   fmtDate: (iso: string) => string;
 }) {
   const t = useTranslations("pluginPortal");
-  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(item.licenseKey);
-      setState("copied");
-      setTimeout(() => setState("idle"), 2000);
-    } catch {
-      setState("failed"); // ★no auto-clear: the reader needs time to act on the fallback instruction
-    }
-  }
-
   return (
     <div className={styles.module}>
       <Faceplate pluginKey="masterchain" />
@@ -329,12 +310,7 @@ function PurchaseCard({
           <span className={styles.kind}>{t("purchased.kind")}</span>
         </div>
         <p className={styles.claimed}>{t("purchased.purchasedOn", { date: fmtDate(item.purchasedAtISO) })}</p>
-        <p className={styles.licenseLabel}>{t("purchased.licenseLabel")}</p>
-        <pre className={styles.licenseKey}>{item.licenseKey}</pre>
-        <button type="button" className={styles.copyBtn} onClick={copy}>
-          {state === "copied" ? t("purchased.copied") : t("purchased.copy")}
-        </button>
-        {state === "failed" && <p className={styles.copyFailed}>{t("purchased.copyFailed")}</p>}
+        <LicenseKeyActions licenseKey={item.licenseKey} label={t("purchased.licenseLabel")} copyLabel={t("purchased.copy")} copiedLabel={t("purchased.copied")} failedLabel={t("purchased.copyFailed")} downloadLabel={t("purchased.download")} />
         <p className={styles.howto}>{t("purchased.howto")}</p>
       </div>
       <div className={styles.action}>

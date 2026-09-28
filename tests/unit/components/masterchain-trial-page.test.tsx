@@ -82,6 +82,8 @@ describe("trial page", () => {
       firstTouch: { utmSource: "newsletter", utmCampaign: "one", landingPath: "/en/muedsp/trial" },
     });
     expect(document.querySelector("pre")?.textContent).toBe(KEY);
+    expect(screen.getByRole("button", { name: "Copy key" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Download license.key" })).toBeTruthy();
     // Date AND time in UTC: 23:00-07:00 is 06:00 the next day (CCO #1147).
     expect(screen.getByText("Trial ends 2026-10-14 06:00 (UTC)")).toBeTruthy();
     // ★How to use the key, right after issuance (conductor #1147).

@@ -62,6 +62,8 @@ describe("portal trial card", () => {
     Object.assign(navigator, { clipboard: { writeText } });
     await page();
     expect(document.querySelector("pre")?.textContent).toBe(KEY);
+    expect(screen.getByRole("button", { name: "Download license.key" })).toBeTruthy();
+    expect(screen.getByText(en.pluginPortal.trial.howto)).toBeTruthy();
     expect(screen.getByText("Trial ends 2026-10-01 00:00 (UTC)")).toBeTruthy();
     expect(screen.queryByText("Trial ended")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Copy key" }));
@@ -83,5 +85,7 @@ describe("portal trial card", () => {
     expect(document.body.textContent).not.toContain(KEY.trim());
     expect(document.querySelector("pre")?.textContent).toBe(PURCHASE.licenseKey);
     expect(screen.getAllByRole("button", { name: "Copy key" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Download license.key" })).toHaveLength(1);
+    expect(screen.getByRole("region", { name: "Trial" }).querySelector("button")).toBeNull();
   });
 });

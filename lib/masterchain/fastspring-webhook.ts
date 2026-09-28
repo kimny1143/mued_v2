@@ -248,7 +248,7 @@ export async function handleFastspringOrderCompleted(
   // ── issue the license, ONCE per order ───────────────────────────────────────────────────────────
   // ★Idempotency is on the STORED keyfile, not on issueLicense(): the payload carries `issuedAt`, so
   // signing the same order twice yields two different (both valid) keys. FastSpring retries webhooks,
-  // and without this read-back one retry would mail the buyer a second, different key.
+  // and without this read-back one retry would issue a second, different key.
   const [existing] = await tx
     .select({ licenseKey: masterchainPurchases.licenseKey })
     .from(masterchainPurchases)
@@ -337,7 +337,7 @@ export async function handleFastspringOrderCompleted(
       logger.error("[fastspring] buyers audience add failed", { error: String(err) }));
   }
 
-  // CRITICAL — deliver the key. ★Only when we just issued it: on a FastSpring retry `existing` is
+  // CRITICAL — deliver portal access instructions. ★Only when we just issued it: on a FastSpring retry `existing` is
   // already set, and re-sending would mail the same buyer a duplicate for one order.
   if (!existing?.licenseKey) {
     // ★locale: the order payload carries no language today (FastspringOrderParsed has no locale
@@ -357,7 +357,7 @@ export async function handleFastspringOrderCompleted(
     // go create the tag to feed it. (conductor relayed; the reasoning above is kimny's own.)
     // ★A DELIVERY WITHOUT A DOWNLOAD LINK IS NOT A FAILURE, BUT IT MUST NOT BE SILENT (conductor,
     //   2026-09-11). The email degrades honestly when MASTERCHAIN_DOWNLOAD_URL is unset — it carries
-    //   the key, the path, and "the link is coming, reply here" — so the buyer is not stranded and
+    //   the portal link and "the link is coming, reply here" — so the buyer is not stranded and
     //   nothing broken is sent. ★What was missing is that NOBODY ON OUR SIDE could tell it happened.
     //
     // ★Two states, two lines, on purpose: "not configured yet" is a pre-launch condition, while
@@ -371,7 +371,7 @@ export async function handleFastspringOrderCompleted(
     }
 
     const delivery = await emailService
-      .sendMasterchainLicenseDelivery({ email: parsed.email }, { locale: "en", licenseKey })
+      .sendMasterchainLicenseDelivery({ email: parsed.email }, { locale: "en" })
       .catch((err: unknown) => ({ success: false, error: String(err) }));
 
     if (!delivery.success) {

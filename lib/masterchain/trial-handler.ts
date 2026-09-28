@@ -111,7 +111,7 @@ export async function handleMasterchainTrial(request: Request) {
         // The body has no locale field. Use the request's preferred language, otherwise English.
         const locale = /^ja\b/i.test(request.headers.get("accept-language") ?? "") ? "ja" : "en";
         const delivery = await emailService.sendMasterchainTrialDelivery(
-          { email: row.email }, { locale, licenseKey: row.licenseKey, expiresAt },
+          { email: row.email }, { locale, expiresAt },
         );
         if (!delivery.success) logger.error("[masterchain/trial] email delivery failed", { trialId: row.id });
       } catch {

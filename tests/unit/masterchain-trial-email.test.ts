@@ -1,71 +1,52 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const KEY = "MUEDSP-LICENSE-v2\nowner=trial@gmail.com\nexpires_at=2026-10-13T00:30:00Z\nsig=test\n";
 const URL = "https://mued.jp/downloads/test.pkg";
+const PORTAL = "https://mued.jp/dashboard/plugins";
 
 async function service(url: string) {
   vi.resetModules();
+  vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://mued.jp");
   vi.doMock("@/lib/masterchain/config", () => ({ MASTERCHAIN_DOWNLOAD_URL: url }));
   return import("@/lib/services/email.service");
 }
+afterEach(() => vi.unstubAllEnvs());
 
-describe("masterchain trial delivery", () => {
-  it.each(["ja", "en"] as const)("delivers the key, instructions, UTC expiry and bypass behavior (%s)", async (locale) => {
-    const { emailTemplates } = await service(URL);
-    // Positive timezone offset crosses a UTC date boundary.
-    const mail = emailTemplates.masterchainTrialDelivery({ locale, licenseKey: KEY, expiresAt: "2026-10-14T01:30:00+09:00" });
-    for (const surface of [mail.html, mail.text]) {
-      expect(surface).toContain(URL);
-      expect(surface).toContain(KEY);
-      // Date AND time in UTC (CCO #1145): 01:30+09:00 is 16:30 the previous day in UTC.
-      expect(surface).toContain("2026-10-13 16:30 UTC");
-      expect(surface).toContain("Demo expired");
-      expect(surface).toContain(locale === "ja" ? "バイパス" : "bypass");
-      expect(surface).toContain(locale === "ja" ? "音声は加工されずに通過" : "audio through unprocessed");
-      expect(surface).toContain(locale === "ja" ? "新しいライセンスキーを入力するまで" : "until you enter a license key");
-      const instructions = surface.slice(0, surface.indexOf(KEY));
-      expect(instructions).toContain("MUEDSP-LICENSE-v2");
-      expect(instructions).toContain("sig=");
-      expect(instructions).toContain("~/Library/Application Support/glasswerks/MUEDsp/license.key");
-      expect(surface).not.toMatch(/unsubscribe|utm_|ご購入|Thank you for buying/i);
-    }
-  });
-  it.each(["ja", "en"] as const)("degrades honestly without a download URL (%s)", async (locale) => {
-    const { emailTemplates } = await service("");
-    const mail = emailTemplates.masterchainTrialDelivery({ locale, licenseKey: KEY, expiresAt: "2026-10-13T00:00:00Z" });
-    expect(mail.html).not.toContain('href=""');
-    expect(mail.text).not.toContain("https://");
-    for (const surface of [mail.html, mail.text]) {
-      expect(surface).toContain(locale === "ja" ? "返信" : "reply");
-      expect(surface).toContain(KEY);
-    }
-  });
-  it("escapes license owner markup in HTML without changing the plain-text key", async () => {
-    const { emailTemplates } = await service(URL);
-    const key = KEY.replace("trial@gmail.com", "<tag>@example.com");
-    const mail = emailTemplates.masterchainTrialDelivery({ locale: "en", licenseKey: key, expiresAt: "2026-10-13T00:00:00Z" });
-    expect(mail.html).toContain("&lt;tag&gt;@example.com");
-    expect(mail.html).not.toContain("<tag>");
-    expect(mail.text).toContain(key);
-  });
-  it("sends with the transactional trial tag", async () => {
-    const { emailService } = await service(URL);
-    const send = vi.spyOn(emailService, "send").mockResolvedValue({ success: true });
-    await emailService.sendMasterchainTrialDelivery({ email: "trial@gmail.com" }, { locale: "en", licenseKey: KEY, expiresAt: "2026-10-13T00:00:00Z" });
-    expect(send).toHaveBeenCalledWith(expect.objectContaining({
-      to: { email: "trial@gmail.com" }, tags: [{ name: "type", value: "masterchain_trial_delivery" }],
-      text: expect.stringContaining(KEY),
-    }));
-  });
-  it.each(["ja", "en"] as const)("purchase email always explains replacing a trial key (%s)", async (locale) => {
+describe("masterchain trial email — portal-only keys", () => {
+  it.each(["ja", "en"] as const)("sends routes, UTC expiry and bypass behavior without keys or attachments (%s)", async (locale) => {
     for (const url of [URL, ""]) {
-      const { emailTemplates } = await service(url);
-      const mail = emailTemplates.masterchainLicenseDelivery({ locale, licenseKey: KEY });
+      const { emailTemplates, emailService } = await service(url);
+      // Legacy runtime fields are ignored; the template/send signatures no longer accept a key.
+      const data = { locale, licenseKey: KEY, expiresAt: "2026-10-14T01:30:00+09:00" };
+      const mail = emailTemplates.masterchainTrialDelivery(data);
+      const send = vi.spyOn(emailService, "send").mockResolvedValue({ success: true });
+      await emailService.sendMasterchainTrialDelivery({ email: "trial@gmail.com" }, data);
+      expect(send).toHaveBeenCalledExactlyOnceWith({
+        to: { email: "trial@gmail.com" }, ...mail,
+        tags: [{ name: "type", value: "masterchain_trial_delivery" }],
+      });
+      expect(send.mock.calls[0][0]).not.toHaveProperty("attachments");
       for (const surface of [mail.html, mail.text]) {
-        expect(surface).toContain(locale === "ja"
-          ? "試用キーをお使いの場合は、このキーを貼り付けると置き換わります。"
-          : "If you were using a trial key, pasting this key replaces it.");
+        for (const forbidden of [KEY, "MUEDSP-LICENSE", "sig=", "Application Support", "~/Library", "<pre"])
+          expect(surface).not.toContain(forbidden);
+        expect(surface).toContain(PORTAL);
+        expect(surface).toContain("Load license file…");
+        expect(surface).toContain("Paste license from clipboard");
+        expect(surface).toContain(locale === "ja" ? "このメールアドレスでサインイン" : "sign in with this email address");
+        expect(surface).toContain("2026-10-13 16:30 UTC");
+        expect(surface).toContain("Demo expired");
+        expect(surface).toContain(locale === "ja" ? "音声は加工されずに通過" : "audio through unprocessed");
+        expect(surface).toContain(locale === "ja" ? "バイパス" : "bypass");
+        expect(surface).not.toMatch(/mute|silent|無音|unsubscribe|utm_|ご購入|Thank you for buying/i);
+        if (url) expect(surface).toContain(URL);
+        else {
+          expect(surface).not.toContain(URL);
+          expect(surface).toContain(locale === "ja" ? "返信" : "reply");
+        }
       }
+      expect(mail.html).toContain(`href="${PORTAL}"`);
+      expect(mail.html).not.toMatch(/href="\s*"/);
+      if (url) expect(mail.html).toContain(`href="${URL}"`);
     }
   });
 });
