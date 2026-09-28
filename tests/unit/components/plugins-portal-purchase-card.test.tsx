@@ -69,6 +69,8 @@ describe("purchase card — the buyer can actually get the key", () => {
     expect(pre, "the key must be rendered in a block, not a truncated span").not.toBeNull();
     // ★Byte-identical: the keyfile is signed over its exact bytes.
     expect(pre!.textContent).toBe(KEY);
+    expect(screen.getByRole("button", { name: "purchased.copy" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "purchased.download" })).toBeTruthy();
     for (const line of ["MUEDSP-LICENSE-v2", "scope=masterchain", `sig=${"A".repeat(88)}`]) {
       expect(pre!.textContent).toContain(line);
     }

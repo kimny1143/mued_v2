@@ -2406,14 +2406,15 @@
       "newsletter": "プラグインのお知らせをメールで受け取る（任意）",
       "submitting": "キーを発行しています…",
       "success": "トライアルのキー",
-      "howToUse": "キーをコピーし、DAW で masterchain を開いて「Paste license from clipboard」を押してください。",
+      "howToUse": "license.key をダウンロードし、masterchain の「Load license file…」で開いてください。または、キーをコピーし、「Paste license from clipboard」を押してください。",
       "keyLabel": "トライアルキー",
       "copy": "キーをコピー",
       "copied": "コピーしました",
       "copyFailed": "コピーできませんでした。キーを選択して手動でコピーしてください。",
       "ends": "トライアル期限: {date}（UTC）",
-      "download": "masterchain をダウンロード",
-      "emailed": "キーはメールでもお送りしました。ポータルでも確認できます。",
+      "download": "license.key をダウンロード",
+      "downloadInstaller": "masterchain をダウンロード",
+      "emailed": "メールにはご利用案内のみを記載しています。キーはこの画面と、サインイン後のポータルで確認できます。",
       "portal": "ポータルを開く",
       "errors": {
         "already_purchased": "masterchain は購入済みです。ライセンスはポータルにあります。",
@@ -2688,6 +2689,8 @@
       "copy": "キーをコピー",
       "copied": "コピーしました",
       "copyFailed": "コピーできませんでした。キーを選択して手動でコピーしてください。",
+      "download": "license.key をダウンロード",
+      "howto": "license.key をダウンロードし、masterchain の「Load license file…」で開いてください。または、キーをコピーし、「Paste license from clipboard」を押してください。",
       "ends": "トライアル期限: {date}（UTC）",
       "ended": "トライアル終了",
       "bypass": "トライアル終了後は、ライセンスキーを入れるまで音を加工せずそのまま通します（バイパス）。画面には「Demo expired」と表示されます。"
@@ -2699,7 +2702,8 @@
       "copy": "キーをコピー",
       "copied": "コピーしました",
       "copyFailed": "コピーできませんでした。キーを選択して手動でコピーしてください。",
-      "howto": "コピーしたキーを license.key というファイル名で次の場所に保存します: ~/Library/Application Support/glasswerks/MUEDsp/",
+      "download": "license.key をダウンロード",
+      "howto": "license.key をダウンロードし、masterchain の「Load license file…」で開いてください。または、キーをコピーし、「Paste license from clipboard」を押してください。",
       "purchasedOn": "{date} に購入"
     }
   }

@@ -9,7 +9,7 @@
  *    stored keyfile, and that is what these tests pin.
  *  - ★fail-CLOSED on both halves. No signing key ⇒ throw (rolls the tx back ⇒ non-2xx ⇒ FastSpring
  *    retries) rather than recording a sale with no license. Delivery email fails ⇒ same, because the
- *    email IS the deliverable: silently "succeeding" leaves a paying buyer with nothing.
+ *    buyer must receive instructions for accessing the license in the portal.
  *
  * The transaction is a stub rather than a real DB: this asserts the decision logic, not Drizzle.
  * ★A live end-to-end run was deliberately NOT done here — this repo's DATABASE_URL points at
@@ -91,7 +91,7 @@ afterEach(() => {
 });
 
 describe("handleFastspringOrderCompleted — issuance", () => {
-  it("issues a verifiable license, records it, and emails it once", async () => {
+  it("issues a verifiable license, records it, and emails portal instructions once", async () => {
     const { tx, inserted } = makeTx([]);
     await handleFastspringOrderCompleted(tx as any, event);
 
@@ -114,7 +114,8 @@ describe("handleFastspringOrderCompleted — issuance", () => {
     expect(sendMasterchainLicenseDelivery).toHaveBeenCalledTimes(1);
     const [to, data] = sendMasterchainLicenseDelivery.mock.calls[0];
     expect(to).toEqual({ email: "buyer@example.com" });
-    expect(data.licenseKey).toBe(row.licenseKey);
+    expect(data).toEqual({ locale: "en" });
+    expect(data).not.toHaveProperty("licenseKey");
   });
 
   it("★on a FastSpring retry, reuses the stored key and does NOT email again", async () => {
@@ -150,7 +151,7 @@ describe("handleFastspringOrderCompleted — fail-closed", () => {
     expect(sendMasterchainLicenseDelivery).not.toHaveBeenCalled();
   });
 
-  it("★throws when delivery fails — the email IS the deliverable", async () => {
+  it("★throws when delivery fails — portal instructions remain fail-closed", async () => {
     sendMasterchainLicenseDelivery.mockResolvedValue({ success: false, error: "resend down" });
     const { tx } = makeTx([]);
     await expect(

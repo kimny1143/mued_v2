@@ -149,11 +149,11 @@ describe("masterchain trial handler", () => {
     expect(m.issue).toHaveBeenCalledTimes(1);
     const row = m.values.mock.calls[0][0];
     expect(m.issue).toHaveBeenCalledWith({ owner: "buyer@gmail.com", order: `trial:${row.id}`, expiresAt: payload.expiresAt });
-    expect(row).toMatchObject({ clerkUserId: "user_1", email: "buyer@gmail.com", emailCanonical: "buyer@gmail.com", licenseVersion: 2, eulaVersion: EULA_VERSION, marketingOptIn: true, firstTouch: { utmSource: "test" } });
+    expect(row).toMatchObject({ licenseKey: "new-key", clerkUserId: "user_1", email: "buyer@gmail.com", emailCanonical: "buyer@gmail.com", licenseVersion: 2, eulaVersion: EULA_VERSION, marketingOptIn: true, firstTouch: { utmSource: "test" } });
     expect(row.eulaAcceptedAt).toEqual(row.issuedAt);
     expect(row.expiresAt.getTime() - row.issuedAt.getTime()).toBeGreaterThan(15 * 86400000 - 1000);
     expect(sqlParams(m.trialWhere)).toEqual(["user_1", "buyer@gmail.com"]);
-    expect(m.mail).toHaveBeenCalledExactlyOnceWith({ email: "buyer@gmail.com" }, { locale: "ja", licenseKey: "new-key", expiresAt: payload.expiresAt });
+    expect(m.mail).toHaveBeenCalledExactlyOnceWith({ email: "buyer@gmail.com" }, { locale: "ja", expiresAt: payload.expiresAt });
   });
   it.each([true, false])("chooses verified primary, else first verified (primary verified=%s)", async (verified) => {
     m.user.mockResolvedValue(user([address("fallback@outlook.com", "second"), address(" A.B+tag@GMAIL.COM ", "primary", verified ? "verified" : "unverified")]));

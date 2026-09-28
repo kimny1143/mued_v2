@@ -2406,14 +2406,15 @@
       "newsletter": "Send me plugin news by email (optional).",
       "submitting": "Getting your key…",
       "success": "Your trial key",
-      "howToUse": "Copy the key, open masterchain in your DAW, and press \"Paste license from clipboard\".",
+      "howToUse": "Download license.key and open it in masterchain with \"Load license file…\", or copy the key and press \"Paste license from clipboard\".",
       "keyLabel": "Trial key",
       "copy": "Copy key",
       "copied": "Copied",
       "copyFailed": "Could not copy. Select the key and copy it manually.",
       "ends": "Trial ends {date} (UTC)",
-      "download": "Download masterchain",
-      "emailed": "The key was also emailed to you and is in your portal.",
+      "download": "Download license.key",
+      "downloadInstaller": "Download masterchain",
+      "emailed": "Email contains instructions only. Your key is available here and in your signed-in portal.",
       "portal": "Open your portal",
       "errors": {
         "already_purchased": "You already own masterchain. Your license is in your portal.",
@@ -2688,6 +2689,8 @@
       "copy": "Copy key",
       "copied": "Copied",
       "copyFailed": "Could not copy. Select the key and copy it manually.",
+      "download": "Download license.key",
+      "howto": "Download license.key and open it in masterchain with \"Load license file…\", or copy the key and press \"Paste license from clipboard\".",
       "ends": "Trial ends {date} (UTC)",
       "ended": "Trial ended",
       "bypass": "After the trial ends, the plugin passes audio through unprocessed (bypass) and shows \"Demo expired\" until you enter a license key."
@@ -2699,7 +2702,8 @@
       "copy": "Copy key",
       "copied": "Copied",
       "copyFailed": "Could not copy. Select the key and copy it manually.",
-      "howto": "Save the copied key as a file named license.key here: ~/Library/Application Support/glasswerks/MUEDsp/",
+      "download": "Download license.key",
+      "howto": "Download license.key and open it in masterchain with \"Load license file…\", or copy the key and press \"Paste license from clipboard\".",
       "purchasedOn": "Purchased {date}"
     }
   }

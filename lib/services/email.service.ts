@@ -15,9 +15,6 @@ import { MUEDLIM_DOWNLOAD_URL } from '@/lib/muedlim/config';
 import { MUEDRIVE_DOWNLOAD_URL } from '@/lib/muedrive/config';
 import { MASTERCHAIN_DOWNLOAD_URL } from '@/lib/masterchain/config';
 import { formatUtcMinute } from '@/lib/masterchain/format';
-// ★The keyfile's first line. Imported, never retyped: the buyer instructions below name it, and a
-// second copy of the format string would go stale silently the day the format moves to v3.
-import { LICENSE_MAGIC } from '@/lib/masterchain/license';
 import { signUnsubscribeToken } from '@/lib/plugins/unsubscribe-token';
 
 // ========================================
@@ -28,6 +25,19 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = process.env.EMAIL_FROM || 'MUED <noreply@mued.jp>';
 const SUPPORT_EMAIL = process.env.EMAIL_SUPPORT || 'support@mued.jp';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
+const MASTERCHAIN_PORTAL_URL = `${APP_URL.replace(/\/$/, '')}/dashboard/plugins`;
+
+// Keys are available only in the signed-in portal and trial issuance screen (kimny, 2026-09-28).
+function masterchainPortalInstructions(isJa: boolean) {
+  return {
+    portal: isJa
+      ? 'ライセンスキーはポータルで確認できます。このメールアドレスでサインインしてください。'
+      : 'Your license key is waiting in your portal — sign in with this email address:',
+    howTo: isJa
+      ? 'ポータルで license.key をダウンロードし、masterchain の「Load license file…」で開いてください。または、キーをワンクリックでコピーし、「Paste license from clipboard」を押してください。'
+      : 'In the portal: download license.key and open it in masterchain with "Load license file…", or copy the key in one click and press "Paste license from clipboard".',
+  };
+}
 
 /**
  * Campaign tagging for links we send by email, so their traffic stops landing in GA4 as "direct".
@@ -909,33 +919,8 @@ Hoo MCP経由の自動送信
     return { subject, html, text };
   },
 
-  /**
-   * masterchain ($69) license delivery — the key itself, in the body.
-   *
-   * ★Body text, not an attachment (kimny, 2026-07-26): an attached .key is the more obvious UX, but
-   * attachments draw spam filtering and on a phone the buyer often cannot tell where the file went.
-   * A text block always arrives, is quotable in support, and can be re-copied later.
-   *
-   * The plugin reads ~/Library/Application Support/glasswerks/MUEDsp/license.key, so the copy has to
-   * say what to DO with the text — a key with no destination is not a delivery.
-   *
-   * ★AND A KEY WITH NO PLUGIN IS NOT A DELIVERY EITHER (2026-09-10). This email shipped the licence
-   * key alone: the buyer paid $69, was told where to save a key, and was never told where to get the
-   * software it unlocks. The fulfilment spec commits to both —
-   * `docs/paid-line/c1-fastspring-product-and-fulfillment-spec.md:66`, 「ライセンスキーはメールで
-   * お送りします」+ ダウンロードリンク. ★Nobody was stranded: the purchase path is fail-CLOSED on two
-   * unset kimny-gated secrets, so no order has ever completed. It is a launch blocker, found before
-   * it could become an incident.
-   *
-   * ★Same `hasLink` shape as the free three (muedsat/muedlim/muedrive) — the button appears only
-   * when the URL is configured. ★For a PAID product the empty branch says more than the free one
-   * does: a buyer who has already paid needs a way to reach a human, so it names the reply path.
-   * See lib/masterchain/config.ts for why the URL is still empty (it is a kimny decision about where
-   * the paid binary lives, and setting that constant is the whole of it).
-   *
-   * ★Deliberately no unsubscribe link and no forward hook: transactional. See the send method.
-   */
-  masterchainLicenseDelivery(data: { locale: 'ja' | 'en'; licenseKey: string }): { subject: string; html: string; text: string } {
+  /** Transactional purchase instructions. The key itself never enters email. */
+  masterchainLicenseDelivery(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MASTERCHAIN_DOWNLOAD_URL;
     // ★The subject follows the BODY's condition, not the product's name (conductor decided the
@@ -951,34 +936,21 @@ Hoo MCP経由の自動送信
     // ★No new voice: both strings already existed. Only the condition is new.
     const subject = hasLink
       ? isJa
-        ? '[MUEDsp] masterchain のダウンロードとライセンスキー'
-        : '[MUEDsp] Your masterchain download and license key'
+        ? '[MUEDsp] masterchain のダウンロードとライセンスの受け取り'
+        : '[MUEDsp] Your masterchain download and how to get your license'
       : isJa
-        ? '[MUEDsp] masterchain のライセンスキー'
-        : '[MUEDsp] Your masterchain license key';
+        ? '[MUEDsp] masterchain のライセンスはポータルで受け取れます'
+        : '[MUEDsp] Your masterchain license is ready in your portal';
 
-    const path = '~/Library/Application Support/glasswerks/MUEDsp/license.key';
     const intro = isJa
-      ? 'masterchain をご購入いただきありがとうございます。ライセンスキーをお届けします。'
-      : 'Thank you for buying masterchain. Here is your license key.';
-    const howTo = isJa
-      ? `下のブロックを（1 行目の <code>${LICENSE_MAGIC}</code> から最終行の <code>sig=</code> まで）すべてコピーし、次の場所に <strong>license.key</strong> という名前のテキストファイルとして保存してください。`
-      : `Copy the whole block below — from the first line <code>${LICENSE_MAGIC}</code> to the last line beginning <code>sig=</code> — and save it as a text file named <strong>license.key</strong> here:`;
+      ? 'masterchain をご購入いただきありがとうございます。'
+      : 'Thank you for buying masterchain.';
+    const { portal, howTo } = masterchainPortalInstructions(isJa);
     const replacesTrial = isJa
-      ? '試用キーをお使いの場合は、このキーを貼り付けると置き換わります。'
-      : 'If you were using a trial key, pasting this key replaces it.';
-    const keep = isJa
-      ? 'このメールは保管してください。キーを再取得できます。'
-      : 'Keep this email — it is how you get the key again.';
-    // ★P-4. The key stays in this mail on purpose: buying does not require an account, and a buyer who
-    // never signs up must still be able to get their key from what they were sent. This line adds a
-    // second route for the people who do sign up — it does not replace the first.
-    const portal = isJa
-      ? 'ライセンスキーは mued.jp のダッシュボード（サインアップ後、同じメールアドレスで自動的に表示されます）でもいつでも確認できます。'
-      : 'You can also find your license key any time on your mued.jp dashboard — sign up with this same email address and it appears automatically.';
+      ? '試用ライセンスをお使いの場合は、このライセンスを読み込むと置き換わります。'
+      : 'If you were using a trial, installing this license replaces it.';
 
-    // ★The plugin itself. Ordered BEFORE the key on purpose: install first, then licence — that is
-    //   the order the buyer has to do it in, and a key pasted with nothing to unlock is confusing.
+    // Install first, then open the portal to retrieve the license.
     const downloadHtml = hasLink
       ? `<p style="text-align: center;">
            <a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
@@ -1001,40 +973,31 @@ Hoo MCP経由の自動送信
       <h2 style="color: #f5a524; margin-top: 0;">${isJa ? 'MUEDsp masterchain' : 'MUEDsp masterchain'}</h2>
       <p>${intro}</p>
       ${downloadHtml}
+      <p>${portal} <a href="${MASTERCHAIN_PORTAL_URL}">${MASTERCHAIN_PORTAL_URL}</a></p>
       <p>${howTo}</p>
-      <p style="background: #f4f4f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; word-break: break-all;">${path}</p>
-      <pre style="background: #111113; color: #e5e7eb; padding: 16px; border-radius: 6px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all;">${data.licenseKey}</pre>
       <p>${replacesTrial}</p>
-      <p>${keep}</p>
-      <p>${portal}</p>
       <p style="color: #9ca3af; font-size: 12px;">glasswerks inc. — mued.jp</p>
     `;
 
-    const textHowTo = isJa
-      ? `下のブロックを（1 行目の ${LICENSE_MAGIC} から最終行の sig= まで）すべてコピーし、次の場所に license.key という名前で保存してください。`
-      : `Copy the whole block below — from the first line ${LICENSE_MAGIC} to the last line beginning sig= — and save it as license.key here:`;
-    const text = `${intro}\n\n${downloadText}\n\n${textHowTo}\n${path}\n\n${data.licenseKey}\n\n${replacesTrial}\n${keep}\n${portal}\n\nglasswerks inc. — mued.jp`;
+    const text = `${intro}\n\n${downloadText}\n\n${portal} ${MASTERCHAIN_PORTAL_URL}\n${howTo}\n\n${replacesTrial}\n\nglasswerks inc. — mued.jp`;
 
     return { subject, html, text };
   },
 
 
-  /** Transactional trial key delivery; expiry is shown explicitly in UTC. */
-  masterchainTrialDelivery(data: { locale: 'ja' | 'en'; licenseKey: string; expiresAt: string }): { subject: string; html: string; text: string } {
+  /** Transactional trial instructions; expiry is shown explicitly in UTC. */
+  masterchainTrialDelivery(data: { locale: 'ja' | 'en'; expiresAt: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     // Date AND time: a date alone reads as "through the end of that day" in the reader's zone (CCO #1145).
     const expiry = `${formatUtcMinute(data.expiresAt)} UTC`;
-    const subject = isJa ? '[MUEDsp] masterchain の試用ライセンスキー' : '[MUEDsp] Your masterchain trial license key';
-    const intro = isJa ? 'masterchain の試用ライセンスキーをお届けします。' : 'Here is your masterchain trial license key.';
+    const subject = isJa ? '[MUEDsp] masterchain のトライアルをご利用いただけます' : '[MUEDsp] Your masterchain trial is ready';
+    const intro = isJa ? 'masterchain のトライアルをご利用いただけます。' : 'Your masterchain trial is ready.';
     const download = MASTERCHAIN_DOWNLOAD_URL
       ? `${isJa ? 'ダウンロード' : 'Download'}: ${MASTERCHAIN_DOWNLOAD_URL}`
       : isJa
         ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
         : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you.";
-    const howTo = isJa
-      ? `下のブロックを（1 行目の ${LICENSE_MAGIC} から最終行の sig= まで）すべてコピーし、次の場所に license.key という名前で保存してください。`
-      : `Copy the whole block below — from the first line ${LICENSE_MAGIC} to the last line beginning sig= — and save it as license.key here:`;
-    const path = '~/Library/Application Support/glasswerks/MUEDsp/license.key';
+    const { portal, howTo } = masterchainPortalInstructions(isJa);
     const ends = isJa ? `試用期限: ${expiry}` : `Trial expiry: ${expiry}`;
     const after = isJa
       ? '試用期間が終了すると、新しいライセンスキーを入力するまで「Demo expired」画面が表示され、音声は加工されずに通過します（バイパス）。'
@@ -1045,8 +1008,8 @@ Hoo MCP経由の自動送信
       : esc(download);
     return {
       subject,
-      html: `<h2>MUEDsp masterchain</h2><p>${intro}</p><p>${downloadHtml}</p><p>${howTo}</p><p>${path}</p><pre>${esc(data.licenseKey)}</pre><p>${ends}</p><p>${after}</p>`,
-      text: `${intro}\n\n${download}\n\n${howTo}\n${path}\n\n${data.licenseKey}\n\n${ends}\n${after}`,
+      html: `<h2>MUEDsp masterchain</h2><p>${intro}</p><p>${downloadHtml}</p><p>${ends}</p><p>${portal} <a href="${MASTERCHAIN_PORTAL_URL}">${MASTERCHAIN_PORTAL_URL}</a></p><p>${howTo}</p><p>${after}</p>`,
+      text: `${intro}\n\n${download}\n\n${ends}\n\n${portal} ${MASTERCHAIN_PORTAL_URL}\n${howTo}\n\n${after}`,
     };
   },
 
@@ -1630,10 +1593,10 @@ class EmailService {
   }
 
   /**
-   * masterchain ($69) license delivery — carries the deliverable itself.
+   * masterchain ($69) delivery instructions — keys remain in the signed-in portal.
    *
    * ★The CALLER must treat a false result as fatal (fail-CLOSED). If this does not arrive the buyer
-   * has paid and cannot use the product; see handleFastspringOrderCompleted, which rolls the webhook
+   * has paid without receiving access instructions; handleFastspringOrderCompleted rolls the webhook
    * transaction back so FastSpring retries. Same doctrine as lib/plugins/subscribe-handler.ts.
    *
    * ★No List-Unsubscribe and no forwardHookBlock, unlike the free-plugin welcomes: this is
@@ -1644,7 +1607,7 @@ class EmailService {
    */
   async sendMasterchainLicenseDelivery(
     to: EmailRecipient,
-    data: { locale: 'ja' | 'en'; licenseKey: string }
+    data: { locale: 'ja' | 'en' }
   ): Promise<EmailResult> {
     const template = emailTemplates.masterchainLicenseDelivery(data);
     return this.send({
@@ -1656,7 +1619,7 @@ class EmailService {
 
   async sendMasterchainTrialDelivery(
     to: EmailRecipient,
-    data: { locale: 'ja' | 'en'; licenseKey: string; expiresAt: string }
+    data: { locale: 'ja' | 'en'; expiresAt: string }
   ): Promise<EmailResult> {
     return this.send({
       to,
