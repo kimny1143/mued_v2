@@ -174,4 +174,11 @@ export const SHORT_LINKS: readonly ShortLink[] = [
   { slug: 'vocal-level-not-numbers', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: 'cat3_seo', utmContent: 'article_vocal_level_not_numbers' },
   { slug: 'vocal-mix-ai', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: 'cat3_seo', utmContent: 'article_vocal_mix_ai' },
   { slug: 'zenn-stem-to-master', path: '', utmSource: 'zenn', utmMedium: 'article', utmCampaign: 'stem_to_master', utmContent: '' },
+
+  // ★The two buttons in the masterchain plugin UI (dsp 1.0.0, the "Demo expired" screen; conductor
+  //   2026-09-28). ★These URLs are BAKED INTO A SHIPPED BINARY, so the slug can never change — only the
+  //   row. ★mc-trial points at /en/muedsp until the trial sign-up page ships, then is repointed to it.
+  //   EN because the plugin UI is English; repointing to a locale-aware page is a one-row change.
+  { slug: 'mc-trial', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_trial', utmContent: 'demo_expired' },
+  { slug: 'mc-buy', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_buy', utmContent: 'demo_expired' },
 ] as const;
