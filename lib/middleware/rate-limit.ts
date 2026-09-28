@@ -33,6 +33,17 @@ function getRedis(): Redis | null {
 
 // Rate limiters for different use cases
 const limiters = {
+  // Trial claims: five per hour per Clerk user, independent of other plugin email sends.
+  "masterchain-trial": () => {
+    const r = getRedis();
+    if (!r) return null;
+    return new Ratelimit({
+      redis: r,
+      limiter: Ratelimit.slidingWindow(5, "1 h"),
+      prefix: "ratelimit:masterchain-trial",
+    });
+  },
+
   // AI endpoints: 10 requests per minute per user
   ai: () => {
     const r = getRedis();

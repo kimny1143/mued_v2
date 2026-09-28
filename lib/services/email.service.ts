@@ -963,6 +963,9 @@ Hoo MCP経由の自動送信
     const howTo = isJa
       ? `下のブロックを（1 行目の <code>${LICENSE_MAGIC}</code> から最終行の <code>sig=</code> まで）すべてコピーし、次の場所に <strong>license.key</strong> という名前のテキストファイルとして保存してください。`
       : `Copy the whole block below — from the first line <code>${LICENSE_MAGIC}</code> to the last line beginning <code>sig=</code> — and save it as a text file named <strong>license.key</strong> here:`;
+    const replacesTrial = isJa
+      ? '試用キーをお使いの場合は、このキーを貼り付けると置き換わります。'
+      : 'If you were using a trial key, pasting this key replaces it.';
     const keep = isJa
       ? 'このメールは保管してください。キーを再取得できます。'
       : 'Keep this email — it is how you get the key again.';
@@ -1000,6 +1003,7 @@ Hoo MCP経由の自動送信
       <p>${howTo}</p>
       <p style="background: #f4f4f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; word-break: break-all;">${path}</p>
       <pre style="background: #111113; color: #e5e7eb; padding: 16px; border-radius: 6px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all;">${data.licenseKey}</pre>
+      <p>${replacesTrial}</p>
       <p>${keep}</p>
       <p>${portal}</p>
       <p style="color: #9ca3af; font-size: 12px;">glasswerks inc. — mued.jp</p>
@@ -1008,9 +1012,40 @@ Hoo MCP経由の自動送信
     const textHowTo = isJa
       ? `下のブロックを（1 行目の ${LICENSE_MAGIC} から最終行の sig= まで）すべてコピーし、次の場所に license.key という名前で保存してください。`
       : `Copy the whole block below — from the first line ${LICENSE_MAGIC} to the last line beginning sig= — and save it as license.key here:`;
-    const text = `${intro}\n\n${downloadText}\n\n${textHowTo}\n${path}\n\n${data.licenseKey}\n\n${keep}\n${portal}\n\nglasswerks inc. — mued.jp`;
+    const text = `${intro}\n\n${downloadText}\n\n${textHowTo}\n${path}\n\n${data.licenseKey}\n\n${replacesTrial}\n${keep}\n${portal}\n\nglasswerks inc. — mued.jp`;
 
     return { subject, html, text };
+  },
+
+
+  /** Transactional trial key delivery; expiry is shown explicitly in UTC. */
+  masterchainTrialDelivery(data: { locale: 'ja' | 'en'; licenseKey: string; expiresAt: string }): { subject: string; html: string; text: string } {
+    const isJa = data.locale === 'ja';
+    const expiry = new Date(data.expiresAt).toISOString().slice(0, 10);
+    const subject = isJa ? '[MUEDsp] masterchain の試用ライセンスキー' : '[MUEDsp] Your masterchain trial license key';
+    const intro = isJa ? 'masterchain の試用ライセンスキーをお届けします。' : 'Here is your masterchain trial license key.';
+    const download = MASTERCHAIN_DOWNLOAD_URL
+      ? `${isJa ? 'ダウンロード' : 'Download'}: ${MASTERCHAIN_DOWNLOAD_URL}`
+      : isJa
+        ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
+        : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you.";
+    const howTo = isJa
+      ? `下のブロックを（1 行目の ${LICENSE_MAGIC} から最終行の sig= まで）すべてコピーし、次の場所に license.key という名前で保存してください。`
+      : `Copy the whole block below — from the first line ${LICENSE_MAGIC} to the last line beginning sig= — and save it as license.key here:`;
+    const path = '~/Library/Application Support/glasswerks/MUEDsp/license.key';
+    const ends = isJa ? `試用期限（UTC）: ${expiry}` : `Trial expiry (UTC): ${expiry}`;
+    const after = isJa
+      ? '試用期間が終了すると、新しいライセンスキーを入力するまで「Demo expired」画面が表示され、音声は加工されずに通過します（バイパス）。'
+      : 'When the trial ends, the plugin keeps passing audio through unprocessed (bypass) and shows "Demo expired" until you enter a license key.';
+    const esc = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const downloadHtml = MASTERCHAIN_DOWNLOAD_URL
+      ? `<a href="${MASTERCHAIN_DOWNLOAD_URL}">${isJa ? 'masterchain をダウンロード' : 'Download masterchain'}</a>`
+      : esc(download);
+    return {
+      subject,
+      html: `<h2>MUEDsp masterchain</h2><p>${intro}</p><p>${downloadHtml}</p><p>${howTo}</p><p>${path}</p><pre>${esc(data.licenseKey)}</pre><p>${ends}</p><p>${after}</p>`,
+      text: `${intro}\n\n${download}\n\n${howTo}\n${path}\n\n${data.licenseKey}\n\n${ends}\n${after}`,
+    };
   },
 
   /**
@@ -1614,6 +1649,17 @@ class EmailService {
       to,
       ...template,
       tags: [{ name: 'type', value: 'masterchain_license_delivery' }],
+    });
+  }
+
+  async sendMasterchainTrialDelivery(
+    to: EmailRecipient,
+    data: { locale: 'ja' | 'en'; licenseKey: string; expiresAt: string }
+  ): Promise<EmailResult> {
+    return this.send({
+      to,
+      ...emailTemplates.masterchainTrialDelivery(data),
+      tags: [{ name: 'type', value: 'masterchain_trial_delivery' }],
     });
   }
 
