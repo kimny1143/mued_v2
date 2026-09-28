@@ -68,3 +68,7 @@ export const MASTERCHAIN_INTEREST_LIVE = false;
 //
 export const MASTERCHAIN_DOWNLOAD_URL =
   "https://mued.jp/downloads/MUEDsp-masterchain-0.1.3-installer.pkg";
+
+// Trial rollout is a reviewed code change, never an environment switch.
+export const MASTERCHAIN_TRIAL_LIVE = false;
+export const MASTERCHAIN_TRIAL_DAYS = 15;

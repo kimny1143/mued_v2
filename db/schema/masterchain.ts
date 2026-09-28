@@ -13,7 +13,7 @@
  * marketing_consents (0053). first_touch jsonb mirrors dialSessions.first_touch (gaClientId + utm*).
  */
 
-import { pgTable, uuid, text, integer, timestamp, jsonb, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, integer, timestamp, jsonb, index, boolean } from 'drizzle-orm/pg-core';
 import { users } from '../schema';
 
 // ── C2: masterchain interest (pre-launch high-intent, separate from the free lists) ──────────────
@@ -74,3 +74,26 @@ export const masterchainPurchases = pgTable('masterchain_purchases', {
 
 export type MasterchainPurchase = typeof masterchainPurchases.$inferSelect;
 export type NewMasterchainPurchase = typeof masterchainPurchases.$inferInsert;
+
+// Clerk identity and canonical email each allow one trial, even after expiry.
+export const masterchainTrials = pgTable('masterchain_trials', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull(),
+  emailCanonical: text('email_canonical').notNull().unique(),
+  clerkUserId: text('clerk_user_id').notNull().unique(), // Clerk string, NOT users.id UUID
+  licenseKey: text('license_key').notNull(),
+  licenseVersion: integer('license_version').notNull(),
+  issuedAt: timestamp('issued_at', { withTimezone: true }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  eulaVersion: text('eula_version'),
+  eulaAcceptedAt: timestamp('eula_accepted_at', { withTimezone: true }),
+  marketingOptIn: boolean('marketing_opt_in').notNull().default(false),
+  firstTouch: jsonb('first_touch'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  emailIdx: index('idx_masterchain_trials_email').on(t.email),
+  createdAtIdx: index('idx_masterchain_trials_created_at').on(t.createdAt),
+}));
+
+export type MasterchainTrial = typeof masterchainTrials.$inferSelect;
+export type NewMasterchainTrial = typeof masterchainTrials.$inferInsert;
