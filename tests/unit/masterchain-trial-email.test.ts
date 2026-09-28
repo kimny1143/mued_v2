@@ -17,8 +17,8 @@ describe("masterchain trial delivery", () => {
     for (const surface of [mail.html, mail.text]) {
       expect(surface).toContain(URL);
       expect(surface).toContain(KEY);
-      expect(surface).toContain("2026-10-13");
-      expect(surface).toContain("UTC");
+      // Date AND time in UTC (CCO #1145): 01:30+09:00 is 16:30 the previous day in UTC.
+      expect(surface).toContain("2026-10-13 16:30 UTC");
       expect(surface).toContain("Demo expired");
       expect(surface).toContain(locale === "ja" ? "バイパス" : "bypass");
       expect(surface).toContain(locale === "ja" ? "音声は加工されずに通過" : "audio through unprocessed");

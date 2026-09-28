@@ -7,9 +7,15 @@ export function canonicalEmail(email: string): string {
   const at = normalized.lastIndexOf("@");
   const local = normalized.slice(0, at);
   const domain = normalized.slice(at + 1);
-  return at >= 0 && (domain === "gmail.com" || domain === "googlemail.com")
-    ? `${local.split("+")[0].replace(/\./g, "")}@gmail.com`
-    : normalized;
+  if (at < 0) return normalized;
+  // ★`+tag` is folded for EVERY domain (conductor 2026-09-28, CCO #1145 finding 1): outlook, icloud,
+  //   fastmail… all deliver user+N to one inbox. Canonical form only deduplicates trials — it never
+  //   decides ownership — so a rare false match costs one trial, not access. Dots stay Gmail-only:
+  //   other providers treat them as significant.
+  const base = local.split("+")[0];
+  return domain === "gmail.com" || domain === "googlemail.com"
+    ? `${base.replace(/\./g, "")}@gmail.com`
+    : `${base}@${domain}`;
 }
 
 let disposableDomains: ReadonlySet<string> | undefined;

@@ -77,8 +77,19 @@ describe("masterchain trial handler", () => {
     const response = await handleMasterchainTrial(new Request("http://localhost", { method: "POST", body: "{" }));
     expect(await response.json()).toEqual({ error: "eula_required" });
   });
-  it.each([{ marketingOptIn: "true" }, { firstTouch: [] }, { firstTouch: null }])("validates optional fields: %j", async (extra) => {
-    expect((await handleMasterchainTrial(request({ ...body, ...extra }))).status).toBe(400);
+  it("validates marketingOptIn", async () => {
+    expect((await handleMasterchainTrial(request({ ...body, marketingOptIn: "true" }))).status).toBe(400);
+  });
+  it.each([[], null, "x"])("★a malformed firstTouch degrades to nothing, never a 400: %j", async (firstTouch) => {
+    const response = await handleMasterchainTrial(request({ ...body, firstTouch }));
+    expect(response.status).toBe(200);
+    expect(m.values.mock.calls[0][0].firstTouch).toBeUndefined();
+  });
+  it("★firstTouch keeps only allowlisted keys, each clipped (same shape as dialSessions)", async () => {
+    await handleMasterchainTrial(request({ ...body, firstTouch: { utmSource: "s".repeat(1000), evil: "payload" } }));
+    const stored = m.values.mock.calls[0][0].firstTouch;
+    expect(stored.utmSource).toHaveLength(255);
+    expect(stored).not.toHaveProperty("evil");
   });
   it("rate limits by Clerk identity", async () => {
     m.rate.mockResolvedValue({ success: false });
@@ -120,6 +131,14 @@ describe("masterchain trial handler", () => {
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: "trial_used" });
     expect(m.issue).not.toHaveBeenCalled();
+  });
+  it("★a mixed match (own row AND another user's row) is refused without issuing (CCO #1145)", async () => {
+    m.lock.mockResolvedValue([saved(), saved({ id: "trial-2", clerkUserId: "other_user", emailCanonical: "x@gmail.com" })]);
+    const response = await handleMasterchainTrial(request());
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "trial_used" });
+    expect(m.issue).not.toHaveBeenCalled();
+    expect(m.mail).not.toHaveBeenCalled();
   });
   it("issues once, stores consent, and sends once after commit", async () => {
     const response = await handleMasterchainTrial(request({ ...body, marketingOptIn: true, firstTouch: { utmSource: "test" }, email: "evil@example.com" }));

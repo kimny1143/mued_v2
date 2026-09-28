@@ -1,7 +1,8 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { MuednoteLayout } from "@/components/layouts/muednote-layout";
-import { getPortalItemsForUser, getPurchaseItemsForUser, markPortalRegistered } from "@/lib/plugins/portal-data";
+import { getPortalItemsForUser, getPurchaseItemsForUser, getTrialItemForUser, markPortalRegistered } from "@/lib/plugins/portal-data";
+import { MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
 import { buildAvailableItems } from "@/lib/plugins/portal";
 import {
   PluginsPortalView,
@@ -36,6 +37,13 @@ export default async function PluginsPortalPage() {
   // P-4 — the paid line. Same authorization boundary (verified emails only); see
   // plugin-portal-purchases.test.ts. Returns [] for everyone who has not bought.
   const purchases = await getPurchaseItemsForUser(user);
+  const trial = MASTERCHAIN_TRIAL_LIVE ? await getTrialItemForUser(user) : null;
+  // A replaced trial's key never crosses the server/client boundary.
+  const trialViewItem = trial ? {
+    licenseKey: purchases.length > 0 ? null : trial.licenseKey,
+    expiresAtISO: trial.expiresAt.toISOString(),
+    expired: trial.expiresAt.getTime() <= Date.now(),
+  } : null;
   // North Star §③: record that this owner reached their portal (best-effort, fail-open, once). Does not
   // block or affect the render — a write error is swallowed inside markPortalRegistered.
   await markPortalRegistered(user);
@@ -65,7 +73,7 @@ export default async function PluginsPortalPage() {
 
   return (
     <MuednoteLayout>
-      <PluginsPortalView items={viewItems} available={available} purchases={purchaseViewItems} />
+      <PluginsPortalView items={viewItems} available={available} purchases={purchaseViewItems} trial={trialViewItem} />
     </MuednoteLayout>
   );
 }

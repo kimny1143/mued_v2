@@ -2394,6 +2394,35 @@
         }
       }
     },
+    "trial": {
+      "title": "MUEDsp masterchain — {days}日間トライアル",
+      "intro": "自分の曲で、masterchain を{days}日間試す。",
+      "signInHint": "パスワードは不要。メールに届くコードでサインイン。",
+      "bypass": "有効なキーがないときや期限が切れたあとは、音を加工せずそのまま通す（バイパス）。画面には「Demo expired」と表示。",
+      "cta": "{days}日間無料で試す",
+      "start": "{days}日間のトライアルを始める",
+      "consentPrefix": "内容を読み、同意する:",
+      "eulaLabel": "使用許諾契約（EULA）",
+      "newsletter": "プラグインの知らせをメールで受け取る（任意）",
+      "submitting": "キーを取得中…",
+      "success": "トライアルのキー",
+      "keyLabel": "トライアルキー",
+      "copy": "キーをコピー",
+      "copied": "コピー完了",
+      "copyFailed": "コピーできなかった。キーを選択して手動でコピー。",
+      "ends": "トライアル期限: {date}（UTC）",
+      "download": "masterchain をダウンロード",
+      "emailed": "キーはメールにも送信済み。ポータルでも確認できる。",
+      "portal": "ポータルを開く",
+      "errors": {
+        "already_purchased": "masterchain は購入済み。ライセンスはポータルに。",
+        "trial_used": "トライアルは利用済み。",
+        "disposable_email": "使い捨てではないメールアドレスで。",
+        "rate_limited": "リクエストが多すぎるので、少し待ってからもう一度。",
+        "eula_required": "EULA に同意してからトライアルを開始。",
+        "generic": "トライアルを開始できなかった。もう一度試してみて。"
+      }
+    },
     "free": {
       "lead": "無料のプラグインを、1つずつ出してます。masterchain から取り出した段もあれば、チェーンの外で別に起こしたものも。まず自分の音で試してください。",
       "satLabel": "トランス・サチュレーションの段",
@@ -2650,6 +2679,17 @@
       "title": "ラックはまだ空です",
       "body": "無料の MUEDsp モジュールを入手すると、ここに表示されます。以降は最新ビルドがワンクリックで手に入ります。",
       "cta": "MUEDsp プラグインを見る"
+    },
+    "trial": {
+      "label": "トライアル",
+      "replaced": "購入したライセンスに切り替え済み",
+      "keyLabel": "トライアルキー",
+      "copy": "キーをコピー",
+      "copied": "コピー完了",
+      "copyFailed": "コピーできなかった。キーを選択して手動でコピー。",
+      "ends": "トライアル期限: {date}（UTC）",
+      "ended": "トライアル終了",
+      "bypass": "トライアル終了後は、ライセンスキーを入力するまで音を加工せずそのまま通す（バイパス）。画面には「Demo expired」と表示。"
     },
     "purchased": {
       "label": "購入したもの",

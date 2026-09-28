@@ -11,8 +11,8 @@ describe("shared key issuance", () => {
   it.each([
     [" A.B+C@GMAIL.COM ", "ab@gmail.com"],
     ["a.b+trial@googlemail.com", "ab@gmail.com"],
-    [" A.B+tag@Example.COM ", "a.b+tag@example.com"],
-    [" A.B+tag@Yahoo.co.jp ", "a.b+tag@yahoo.co.jp"],
+    [" A.B+tag@Example.COM ", "a.b@example.com"], // +tag folded for every domain; dots kept
+    [" A.B+tag@Yahoo.co.jp ", "a.b@yahoo.co.jp"],
   ])("canonicalizes %s", (input, expected) => expect(canonicalEmail(input)).toBe(expected));
 
   it.each(["mailinator.com", "a.b.mailinator.com"])("blocks %s and parent domains", (domain) => {
