@@ -25,3 +25,13 @@
 ## blocked_by (W17) の退避（ロゴ・#1118・#1119・#1120・#1150/#1151 は済）
 
 ★★**(W17) 購入者のメール（9/24 conductor）**: ★ロゴ＝#1115 → 本番の URL 着地（sha256 一致）・conductor へ報告済。★#1118（特商法の動作環境・受付時間）＝ merge・★本番の 4 面で確認済。★#1116 は close（kimny 9/28「鍵はメールに載せない」）→ ★後継＝#1150（鍵はポータルだけ・Copy と license.key のダウンロード・conductor PASS）＋ #1151（利用規約と特商法・draft・契約の成立の定義は kimny 判断）＝★2 本を同じ deploy で merge。★連絡先はすべて support@mued.jp（kimny 9/24）＝#1119 merge・★本番 5 面で確認済。#1120（test が public/ も走査・Tier 1）→ CI 緑で merge。★content課への通知＝★置き便・★未送信（content課のセッションが無い）: ★文面は台帳 (2g)・★連絡先の変更は既に live ∴ 開店を待たず conductor 経由で渡す。★詳細＝(2f)(2g)。
+
+
+## blocked_by (W22) の退避（PWA 5,000 は着地済）
+
+★★**(W22・2026-09-29T18:41:51+09:00) PWA「5,000 まであと」＝着地済（gw-dash #137 merged 09:39:55Z・deploy 成功・deploy の URL で 3,966／18:37 JST を確認・kimny の本番の画面は未確認）。★残＝remaining_to_1000 とその test を消す PR（当課・次の funnel の PR に束ねる）。
+
+
+## blocked_by (W0c) の退避（owner＝conductor / kimny・内容は不変）
+
+★★**(W0c) 特商法の表示価格と FastSpring の商品価格を ★開店前に1回 突き合わせる**（owner＝conductor / kimny・★当課は dashboard を見られない）: ★値の正本は FastSpring 側の商品設定で、★activation 要件が「表示価格の一致」を含む。★詳細＝(1a)。
