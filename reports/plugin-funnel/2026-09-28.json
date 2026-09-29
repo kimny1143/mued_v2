@@ -1,6 +1,6 @@
 {
   "date": "2026-09-28",
-  "generated_at": "2026-09-29T07:24:05.075Z",
+  "generated_at": "2026-09-29T09:37:08.097Z",
   "resend": {
     "mued_sp_total_contacts": 1077,
     "mued_sp_net_new_day": 9,
@@ -95,7 +95,7 @@
     "since": "2026-09-23T06:51:00.000Z",
     "all_time": {
       "from": "2026-09-23T06:51:00.000Z",
-      "until": "2026-09-29T07:24:04.933Z",
+      "until": "2026-09-29T09:37:07.773Z",
       "total": {
         "sent": 85,
         "bounced": 1,
@@ -152,20 +152,20 @@
       }
     },
     "last_24h": {
-      "from": "2026-09-28T07:24:04.933Z",
-      "until": "2026-09-29T07:24:04.933Z",
+      "from": "2026-09-28T09:37:07.773Z",
+      "until": "2026-09-29T09:37:07.773Z",
       "total": {
-        "sent": 10,
+        "sent": 9,
         "bounced": 0,
-        "reached": 9,
-        "clicked": 7,
+        "reached": 8,
+        "clicked": 6,
         "opened": 0,
         "delivered": 2,
         "complained": 0,
         "other": 1,
-        "unique_recipients": 9,
-        "unique_clicked_recipients": 7,
-        "unique_opened_or_clicked_recipients": 7
+        "unique_recipients": 8,
+        "unique_clicked_recipients": 6,
+        "unique_opened_or_clicked_recipients": 6
       },
       "by_product": {
         "muedsat": {
@@ -182,17 +182,17 @@
           "unique_opened_or_clicked_recipients": 0
         },
         "muedlim": {
-          "sent": 9,
+          "sent": 8,
           "bounced": 0,
-          "reached": 8,
-          "clicked": 7,
+          "reached": 7,
+          "clicked": 6,
           "opened": 0,
           "delivered": 1,
           "complained": 0,
           "other": 1,
-          "unique_recipients": 8,
-          "unique_clicked_recipients": 7,
-          "unique_opened_or_clicked_recipients": 7
+          "unique_recipients": 7,
+          "unique_clicked_recipients": 6,
+          "unique_opened_or_clicked_recipients": 6
         },
         "muedrive": {
           "sent": 1,
