@@ -20,3 +20,8 @@
 ## blocked_by (W18) の退避（#1158 で 4 点とも済）
 
 ★★**(W18) EULA の本文を貼る PR（引き金＝conductor が仮 EULA か弁護士版の文面を確定）**: ★★9/30 の変換は conductor の main の draft（#3747 merge 後・第 3 条＝デモまたは期間限定の試用・禁止事項 2＝デモ・試用の制限の回避）を使う。★試用の条件の EULA 条項も 9/30 の確定と一緒に見る。 ★器は #1134 で main に着地（本文なし・noindex・EULA_LIVE unset）。★本文の PR で必ず同時に: ①★`EULA_VERSION`（lib/legal/eula.ts）を仮版の版文字列へ（★dsp の RTF は `2026.09`・★PENDING のままだと同意記録が本文を区別できない＝CCO 所見 A） ②★日英の比較を条ごとの blocks 数・list 項目数まで広げる（CCO 所見 B） ③★施行日は決まるまでキーを置かない（空文字列は i18n test が落とす） ④ draft の Markdown → messages は機械変換でできる（当課）。★merge は `npm run verify:pr-gate -- N --merge` のみ。
+
+
+## blocked_by (W17) の退避（ロゴ・#1118・#1119・#1120・#1150/#1151 は済）
+
+★★**(W17) 購入者のメール（9/24 conductor）**: ★ロゴ＝#1115 → 本番の URL 着地（sha256 一致）・conductor へ報告済。★#1118（特商法の動作環境・受付時間）＝ merge・★本番の 4 面で確認済。★#1116 は close（kimny 9/28「鍵はメールに載せない」）→ ★後継＝#1150（鍵はポータルだけ・Copy と license.key のダウンロード・conductor PASS）＋ #1151（利用規約と特商法・draft・契約の成立の定義は kimny 判断）＝★2 本を同じ deploy で merge。★連絡先はすべて support@mued.jp（kimny 9/24）＝#1119 merge・★本番 5 面で確認済。#1120（test が public/ も走査・Tier 1）→ CI 緑で merge。★content課への通知＝★置き便・★未送信（content課のセッションが無い）: ★文面は台帳 (2g)・★連絡先の変更は既に live ∴ 開店を待たず conductor 経由で渡す。★詳細＝(2f)(2g)。
