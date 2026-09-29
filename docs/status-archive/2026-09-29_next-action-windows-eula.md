@@ -35,3 +35,8 @@
 ## blocked_by (W0c) の退避（owner＝conductor / kimny・内容は不変）
 
 ★★**(W0c) 特商法の表示価格と FastSpring の商品価格を ★開店前に1回 突き合わせる**（owner＝conductor / kimny・★当課は dashboard を見られない）: ★値の正本は FastSpring 側の商品設定で、★activation 要件が「表示価格の一致」を含む。★詳細＝(1a)。
+
+
+## blocked_by (W23) の経緯の退避
+
+★★(W23) gw-dash の <hash>.gw-dash.pages.dev が Cloudflare Access の外で /api/conductor が 200（conductor の非公開 repo を返す）→ conductor が (c) を決定（2026-09-29T18:44）: (b)＝gw-dash #138（/api/* の middleware で hostname 完全一致以外は 403・CORS を本番 origin・Tier 3・head 603a9ea・CCO レビュー待ち・merge は conductor）／(a) Access を preview にも＝kimny（conductor から依頼）。★#138 merged（conductor・b640defb）→ 2026-09-29T18:49 測定: 新 deploy fbcf4d36 の /api＝403・過去 85750568＝200・本番＝302 → conductor へ報告済。★残＝Access を *.gw-dash.pages.dev に（kimny）→ 入ったら 85750568 の / と /api が 302 になったことを当課が curl。他の file の中身は読まない。★CCO（2026-09-29T18:48）: #138 はコード PASS（bundle した worker で hash の host は 403・本番は handler へ）。ただし ①過去の hash URL の /api は今も 200 ②hash URL の静的 JS bundle に conductor の非公開文書（src/data/conductor の ?raw import と deploy 時の取り込み）＝403 では閉じない → どちらも閉じるのは (a) Access を *.gw-dash.pages.dev に（kimny）。CCO が conductor へ報告済。
