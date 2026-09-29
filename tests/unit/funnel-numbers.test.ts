@@ -27,7 +27,8 @@ describe("funnel numbers for the PWA", () => {
     const n = toFunnelNumbers(REPORT, META);
     expect(n.reachable_contacts).toBe(814);
     expect(n.net_new_day).toBe(8);
-    expect(n.remaining_to_1000).toBe(186);
+    expect(n.target).toBe(5000);
+    expect(n.remaining_to_target).toBe(5000 - 814);
     expect(n.portal_registrations).toBe(104);
     // ★`reachable_contacts`, never `contacts`: the same report also carries
     //   resend.mued_sp_total_contacts = 832 (unsubscribed included). Two populations, one word — the
@@ -50,10 +51,23 @@ describe("funnel numbers for the PWA", () => {
     expect(JSON.stringify(n)).not.toMatch(/順調|遅れ|good|behind|on track/i);
   });
 
-  it("★remaining_to_1000 goes NEGATIVE past the target — clamping would hide the day worth seeing", () => {
-    const n = toFunnelNumbers({ ...REPORT, muedsp_reachable: { count: 1042 } }, META);
-    expect(n.remaining_to_1000).toBe(NORTH_STAR_TARGET - 1042);
-    expect(n.remaining_to_1000).toBeLessThan(0);
+  it("★remaining_to_target goes NEGATIVE past the target — clamping would hide the day worth seeing", () => {
+    const n = toFunnelNumbers({ ...REPORT, muedsp_reachable: { count: 5042 } }, META);
+    expect(n.remaining_to_target).toBe(NORTH_STAR_TARGET - 5042);
+    expect(n.remaining_to_target).toBeLessThan(0);
+  });
+
+  it("★ships the target WITH the difference, so the board's label cannot disagree with the number", () => {
+    const n = toFunnelNumbers(REPORT, META);
+    expect(n.target).toBe(NORTH_STAR_TARGET);
+    expect(n.target - n.reachable_contacts).toBe(n.remaining_to_target);
+  });
+
+  it("keeps the deprecated remaining_to_1000 against 1,000 until gw-dash switches (the board never goes blank)", () => {
+    // ★Today's gw-dash requires this key; dropping it before gw-dash reads remaining_to_target would
+    //   turn the whole numbers panel into an error. Remove together with this test after that lands.
+    const n = toFunnelNumbers({ ...REPORT, muedsp_reachable: { count: 1034 } }, META);
+    expect(n.remaining_to_1000).toBe(1000 - 1034);
   });
 
   it("★measured_at is the REPORT's generated_at — when it was measured, not when it was published", () => {
@@ -131,7 +145,7 @@ describe("optional newsletters in funnel numbers", () => {
     expect(toFunnelNumbers(REPORT, META)).toMatchObject({
       reachable_contacts: 814,
       net_new_day: 8,
-      remaining_to_1000: 186,
+      remaining_to_target: 5000 - 814,
       portal_registrations: 104,
       newsletters: null,
     });

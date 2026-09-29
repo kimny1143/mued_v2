@@ -40,5 +40,5 @@ const numbers = toFunnelNumbers(report, { trigger, workflow_run: workflowRun, so
 writeFileSync(outPath, `${JSON.stringify(numbers, null, 2)}\n`);
 console.log(`✓ funnel-numbers.json written from ${sourceReport}`);
 console.log(`  reachable_contacts=${numbers.reachable_contacts} net_new_day=${numbers.net_new_day} ` +
-  `remaining_to_1000=${numbers.remaining_to_1000} portal_registrations=${numbers.portal_registrations}`);
+  `target=${numbers.target} remaining_to_target=${numbers.remaining_to_target} portal_registrations=${numbers.portal_registrations}`);
 console.log(`  measured_at=${numbers.measured_at} trigger=${numbers.trigger}`);
