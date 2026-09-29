@@ -60,6 +60,23 @@ describe("staged EULA page", () => {
     expect(ja.intro.length).toBe(en.intro.length);
   });
 
+  it("★keeps ja/en in step inside each article: block kinds, block count and list item counts", () => {
+    // Article count alone lets a dropped bullet or a merged paragraph through in one language
+    // (CCO review of #1134, finding B). The Japanese text prevails (art. 15), so a one-sided
+    // difference is a difference in the contract, not in wording.
+    const load = (l: string) => JSON.parse(readFileSync(join(ROOT, "messages", `${l}.json`), "utf8")).eula;
+    type Block = string | { ul: string[] } | { ol: string[] };
+    const shape = (blocks: Block[]) =>
+      blocks.map((b) => (typeof b === "string" ? "p" : "ul" in b ? `ul:${b.ul.length}` : `ol:${b.ol.length}`));
+    const [ja, en] = [load("ja"), load("en")];
+    expect(shape(ja.intro)).toEqual(shape(en.intro));
+    ja.articles.forEach((article: { heading: string; blocks: Block[] }, i: number) => {
+      expect(shape(article.blocks), `${article.heading} ↔ ${en.articles[i]?.heading}`).toEqual(
+        shape(en.articles[i].blocks),
+      );
+    });
+  });
+
   it("renders from parsed nodes, never raw HTML", () => {
     const page = readFileSync(PAGE, "utf8");
     const body = readFileSync(join(ROOT, "components", "legal", "eula-body.tsx"), "utf8");

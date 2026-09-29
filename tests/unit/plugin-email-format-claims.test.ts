@@ -61,12 +61,15 @@ const WINDOWS_ONLY_VALUES = new Map(
 const isWindowsOnly = (l: { file: string; text: string }) =>
   (WINDOWS_ONLY_VALUES.get(l.file) ?? []).some((v) => l.text.includes(v));
 
-// A line that enumerates plugin formats. `VST3` appears for no other reason in these files.
+// A line that enumerates plugin formats. `VST3` appears for no other reason in these files — except
+// as the name of Steinberg's SDK ("VST3 SDK" in the EULA's third-party list, art. 8, 2026-09-29),
+// which names a component, not a format we ship. Only that exact name is set aside: a line that
+// also says "VST3" on its own is still a format claim and still checked.
 const FORMAT_LINES = FILES.flatMap((file) =>
   readFileSync(path.resolve(__dirname, '../..', file), 'utf8')
     .split('\n')
     .map((text, i) => ({ file, line: i + 1, text }))
-    .filter((l) => l.text.includes('VST3')),
+    .filter((l) => l.text.replace(/VST3 SDK/g, '').includes('VST3')),
 );
 
 describe('free-plugin emails — format claims', () => {

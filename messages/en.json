@@ -288,7 +288,7 @@
     }
   },
   "eula": {
-    "title": "End User License Agreement",
+    "title": "MUEDsp End User License Agreement",
     "lastUpdated": "Status: placeholder pending lawyer-approved text",
     "sections": {
       "status": {
@@ -304,8 +304,173 @@
         "body": "Questions about this placeholder:"
       }
     },
-    "intro": [],
-    "articles": []
+    "intro": [
+      "This End User License Agreement (\"Agreement\") is between you and glasswerks inc., a company incorporated in Japan (\"glasswerks\", \"we\", \"us\"). It covers the MUEDsp plugins. Please read it before you install or use them. By installing or using a plugin, or by accepting this Agreement at checkout, you agree to it. If you do not agree, do not install or use the plugins."
+    ],
+    "articles": [
+      {
+        "heading": "1. Definitions",
+        "blocks": [
+          {
+            "ul": [
+              "**\"Software\"** means any MUEDsp plugin covered by this Agreement: the paid MUEDsp masterchain, and the free plugins MUEDsat (MUEDsp saturation), MUEDlim (MUEDsp limiter) and MUEDrive (MUEDsp drive). It includes the plugin files in every format we supply (AAX, AU, VST3), the installer, the documentation, and any updates we provide.",
+              "**\"Paid Software\"** means MUEDsp masterchain.",
+              "**\"Free Software\"** means MUEDsat, MUEDlim and MUEDrive.",
+              "**\"License Key\"** means the license file we send you after you buy the Paid Software. It is signed by us and names the purchaser.",
+              "**\"FastSpring\"** means FastSpring, Inc., which sells the Paid Software as the Merchant of Record."
+            ]
+          }
+        ]
+      },
+      {
+        "heading": "2. License, not sale",
+        "blocks": [
+          "The Software is licensed to you, not sold. glasswerks and its licensors keep all rights not expressly granted to you in this Agreement."
+        ]
+      },
+      {
+        "heading": "3. What you may do",
+        "blocks": [
+          "Subject to this Agreement, we grant you a non-exclusive, non-transferable license to install and use the Software on computers running macOS or Windows, inside host software (a DAW) that supports a plug-in format we provide for that operating system (AAX, AU or VST3).",
+          {
+            "ul": [
+              "**Use of your audio.** You may use audio you create or process with the Software for any purpose, including commercial releases.",
+              "**Who may use it.** Both individuals and companies or other organizations may use the Software.",
+              "**Duration.** The license for the Paid Software is a one-time purchase and is perpetual. It does not expire unless it ends under Section 10."
+            ]
+          }
+        ]
+      },
+      {
+        "heading": "4. Computers and activation",
+        "blocks": [
+          {
+            "ul": [
+              "The Paid Software is unlocked with a License Key. The plugin checks the License Key on your computer, offline. There is no online activation.",
+              "You may use the Paid Software on computers that you own or control. We do not set a limit on the number of computers.",
+              "Keep your License Key private. It is linked to your order and your email address."
+            ]
+          }
+        ]
+      },
+      {
+        "heading": "5. Free Software and Paid Software",
+        "blocks": [
+          {
+            "ul": [
+              "**Free Software** is provided free of charge. It has no feature locks and no time limit.",
+              "**Paid Software** without a valid License Key runs with limitations (demo or time-limited trial). A valid License Key removes these limits.",
+              "Both are covered by this Agreement. Sections that refer to payment or the License Key apply only to the Paid Software."
+            ]
+          }
+        ]
+      },
+      {
+        "heading": "6. What you may not do",
+        "blocks": [
+          "Except where the law expressly allows it, you may not:",
+          {
+            "ol": [
+              "decompile, disassemble or reverse engineer the Software;",
+              "modify the Software, or bypass, disable or defeat the License Key check or the demo or trial limits;",
+              "copy, distribute, sell, rent, lend, sublicense or publish the Software, including the Free Software, except as allowed in this Agreement (for example, on magazine discs, download sites or file-sharing services);",
+              "share, publish, sell or transfer your License Key, or use a License Key issued to someone else;",
+              "remove or change any copyright, trademark or license notice in the Software;",
+              "use the Software to break the law or infringe the rights of others."
+            ]
+          },
+          "You may not transfer this license or the Paid Software to another person."
+        ]
+      },
+      {
+        "heading": "7. Ownership",
+        "blocks": [
+          "The Software, including its code, sound processing, design and documentation, is owned by glasswerks or its licensors and is protected by copyright and other laws. FastSpring's role as Merchant of Record does not transfer any intellectual property rights to FastSpring or to you. Rights in the audio you create belong to you and are not claimed by us."
+        ]
+      },
+      {
+        "heading": "8. Third-party software and trademarks",
+        "blocks": [
+          {
+            "ul": [
+              "The Software includes third-party components under their own licenses (such as the VST3 SDK, iPlug2, WDL, NanoVG, NanoSVG, stb, HIIR and Monocypher) and fonts (Roboto and Sora). Their notices and license terms are in the files THIRD-PARTY-LICENSES.md and FONT-LICENSES.md supplied with the Software. Where those licenses give you rights for a specific component, those rights apply to that component.",
+              "VST and VST3 are trademarks of Steinberg Media Technologies GmbH. Audio Units is a trademark of Apple Inc. AAX and Pro Tools are trademarks of Avid Technology, Inc. macOS is a trademark of Apple Inc. Windows is a trademark of Microsoft Corporation. Use of these names does not mean endorsement."
+            ]
+          }
+        ]
+      },
+      {
+        "heading": "9. Purchases and refunds",
+        "blocks": [
+          "The Paid Software is sold by FastSpring as the Merchant of Record, and FastSpring's terms apply to the payment itself. Refunds are handled under FastSpring's refund conditions, as described in our Refund Policy (https://mued.jp/en/refund). This Agreement does not add to or change the Refund Policy. Free Software involves no payment and so no refund."
+        ]
+      },
+      {
+        "heading": "10. Term and termination",
+        "blocks": [
+          {
+            "ul": [
+              "This Agreement applies from when you first install or use the Software, or accept it at checkout, until it ends.",
+              "You may end it at any time by deleting all copies of the Software and your License Key.",
+              "If you break this Agreement, your license ends automatically, without notice. When it ends, you must stop using the Software and delete all copies and your License Key.",
+              "Sections 6, 7, 11, 12 and 14 to 16 continue after this Agreement ends."
+            ]
+          }
+        ]
+      },
+      {
+        "heading": "11. No warranty",
+        "blocks": [
+          "The Software is provided \"as is\" and \"as available\". To the extent permitted by law, we make no warranties of any kind, express or implied, including fitness for a particular purpose, merchantability and non-infringement. We do not promise that the Software will be error-free, will run without interruption, or will work with every computer or host software. We recommend that you keep backups of your projects and audio.",
+          "We do not commit to providing support. For questions, you can contact us at support@mued.jp (Section 16)."
+        ]
+      },
+      {
+        "heading": "12. Limitation of liability",
+        "blocks": [
+          "To the extent permitted by law, glasswerks is not liable for any indirect, incidental, special or consequential loss, including loss of data, audio, projects, profits or business, arising from the use of or inability to use the Software.",
+          "To the extent permitted by law, our total liability for any claim relating to a product is limited to the amount you paid for that product.",
+          "The Free Software is provided free of charge. To the extent permitted by law, glasswerks is not liable for any loss arising from the use of or inability to use the Free Software, except for loss caused by our intentional misconduct or gross negligence.",
+          "Nothing in this Agreement limits or excludes liability that cannot be limited or excluded under applicable law, including the rights you have as a consumer where you live, or our liability for loss caused by our intentional misconduct or gross negligence."
+        ]
+      },
+      {
+        "heading": "13. Updates and changes to this Agreement",
+        "blocks": [
+          {
+            "ul": [
+              "We may provide updates, fixes or new versions of the Software. We are not obliged to do so. Whether an update is provided, and whether it is free or paid, is decided by us each time.",
+              "**Each update or new version of the Software comes with the version of this Agreement that is current when you install it. By installing or using that update, you agree to that version, and it replaces the earlier version for your use of the Software from then on.**",
+              "The version and effective date of this Agreement are shown at the top. The current version is published at https://mued.jp/en/eula."
+            ]
+          }
+        ]
+      },
+      {
+        "heading": "14. Governing law and jurisdiction",
+        "blocks": [
+          "This Agreement is governed by the laws of Japan. The Tokyo District Court has exclusive jurisdiction as the court of first instance for any dispute arising from this Agreement, except where the law where you live gives you the right to bring a claim in your local courts."
+        ]
+      },
+      {
+        "heading": "15. Severability and entire agreement",
+        "blocks": [
+          {
+            "ul": [
+              "If any part of this Agreement is found invalid or unenforceable, the rest remains in effect, and that part applies to the fullest extent permitted by law.",
+              "This Agreement, together with our Terms of Service, Refund Policy and Privacy Policy, is the whole agreement between you and us about the Software. If this Agreement and the Terms of Service differ on the use of the Software itself, this Agreement applies.",
+              "This Agreement is provided in English and Japanese. If the two versions differ, the Japanese version prevails."
+            ]
+          }
+        ]
+      },
+      {
+        "heading": "16. Contact",
+        "blocks": [
+          "glasswerks inc.\nEmail: support@mued.jp\nWebsite: https://mued.jp"
+        ]
+      }
+    ]
   },
   "terms": {
     "title": "Terms of Service",
