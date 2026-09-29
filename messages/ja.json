@@ -2436,6 +2436,15 @@
       "driveLabel": "チェーンの外で起こした単独のプラグイン",
       "limComingSoon": "近日公開。UI を整えています。"
     },
+    "windows": {
+      "eyebrow": "Windows",
+      "heading": "Windows 版",
+      "body": "Windows 版を準備しています。",
+      "freeLabel": "無料 3 種（MUEDsat・MUEDlim・MUEDrive）",
+      "freeStatus": "VST3 のベータ版を、数日内にこのページで公開します。",
+      "masterchainLabel": "MUEDsp masterchain",
+      "masterchainStatus": "10 月 14 日に公開予定です。ライセンスキーは Mac 版と共通なので、買い直す必要はありません。"
+    },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
       "format": "VST3 · AU · AAX（Pro Tools）· macOS（Universal — Apple Silicon / Intel）"
