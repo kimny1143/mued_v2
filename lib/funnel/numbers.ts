@@ -52,6 +52,12 @@ export interface FunnelNumbersMeta {
 export interface FunnelNumbers {
   reachable_contacts: number;
   net_new_day: number;
+  /** The North Star the difference below is taken against — shipped WITH it, so the board's label
+   *  ("5,000 まであと") is read from the data and cannot disagree with the number. */
+  target: number;
+  remaining_to_target: number;
+  /** @deprecated Kept against the OLD 1,000 target only until gw-dash reads `remaining_to_target`
+   *  (so the board never shows an empty card mid-switch). Remove after that PR lands. */
   remaining_to_1000: number;
   portal_registrations: number;
   measured_at: string;
@@ -62,8 +68,11 @@ export interface FunnelNumbers {
   download_link_emails: DownloadLinkEmails | null;
 }
 
-/** The North Star target the `remaining_to_1000` difference is taken against (kimny, 2026-07-18). */
-export const NORTH_STAR_TARGET = 1000;
+/** The North Star target `remaining_to_target` is taken against. 1,000 (kimny 2026-07-18) was passed
+ *  on 2026-09-29 (reachable 1,034); kimny set 5,000 the same day (台帳 list-5000-own-web-20260929). */
+export const NORTH_STAR_TARGET = 5000;
+/** The previous target, only for the deprecated `remaining_to_1000` field. */
+const LEGACY_TARGET_1000 = 1000;
 
 /**
  * ★Absence must not become a zero. A missing field means "this report could not tell us", and a 0 on
@@ -97,9 +106,11 @@ export function toFunnelNumbers(report: FunnelReport, meta: FunnelNumbersMeta): 
   return {
     reachable_contacts: reachable,
     net_new_day: netNew,
-    // ★A difference, not a rate — and NOT clamped at 0. Passing 1,000 is the goal; a negative here
-    //   means it was passed, and clamping would hide exactly the day worth seeing.
-    remaining_to_1000: NORTH_STAR_TARGET - reachable,
+    // ★A difference, not a rate — and NOT clamped at 0. Passing the target is the goal; a negative
+    //   here means it was passed, and clamping would hide exactly the day worth seeing.
+    target: NORTH_STAR_TARGET,
+    remaining_to_target: NORTH_STAR_TARGET - reachable,
+    remaining_to_1000: LEGACY_TARGET_1000 - reachable,
     portal_registrations: portal,
     measured_at: measuredAt,
     trigger: meta.trigger,
