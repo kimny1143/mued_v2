@@ -2436,6 +2436,15 @@
       "driveLabel": "Started outside the chain",
       "limComingSoon": "Coming soon — polishing the UI."
     },
+    "windows": {
+      "eyebrow": "Windows",
+      "heading": "Windows",
+      "body": "Windows builds are on the way.",
+      "freeLabel": "The three free plugins (MUEDsat, MUEDlim, MUEDrive)",
+      "freeStatus": "A VST3 beta will go up on this page within a few days.",
+      "masterchainLabel": "MUEDsp masterchain",
+      "masterchainStatus": "Planned for October 14. The license key is the same one you use on Mac, so there's nothing to buy again."
+    },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
       "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon & Intel)"

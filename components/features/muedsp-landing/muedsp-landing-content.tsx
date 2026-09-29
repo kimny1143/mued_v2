@@ -85,6 +85,7 @@ export function MuedspLandingContent() {
   const tdHero = useTranslations("muedrive.hero");
   const tdAbout = useTranslations("muedrive.about");
   const tdViz = useTranslations("muedrive.visuals");
+  const tw = useTranslations("muedsp.windows");
 
   return (
     <div className="brand-product dark min-h-screen bg-[var(--bg-base)] text-white">
@@ -445,6 +446,27 @@ export function MuedspLandingContent() {
                 <p className="mt-3 max-w-md text-sm italic text-white/45">{tdHero("tryLine")}</p>
               </div>
             )}
+          </div>
+        </section>
+
+        {/* ── §3 Windows. ★The 9/30 launch mail links here (`#windows`) — keep the id stable: the same
+            URL becomes the beta download block from 10/1 and masterchain's from 10/14, so the mail's
+            link stays valid without a third send (kimny 9/29: two mails a month). ──────────────── */}
+        <section id="windows" className="scroll-mt-20 border-t border-white/5 px-6 py-14">
+          <div className="mx-auto max-w-3xl">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#f5a524]/70">
+              {tw("eyebrow")}
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">{tw("heading")}</h2>
+            <p className="mt-4 text-[17px] leading-[1.8] text-white/75">{tw("body")}</p>
+            <dl className="mt-6 divide-y divide-white/5 border-y border-white/5">
+              {(["free", "masterchain"] as const).map((key) => (
+                <div key={key} className="grid gap-1 py-4 sm:grid-cols-[16rem_1fr] sm:gap-5">
+                  <dt className="text-[15px] font-semibold text-white/85">{tw(`${key}Label`)}</dt>
+                  <dd className="text-[15px] leading-relaxed text-white/70">{tw(`${key}Status`)}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
       </main>
