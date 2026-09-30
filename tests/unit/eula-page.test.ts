@@ -119,7 +119,7 @@ describe("staged EULA page", () => {
 
   it("uses a documented build-inlined public flag for the client consent gate", () => {
     const control = readFileSync(
-      join(ROOT, "components", "features", "muedsp-landing", "masterchain-buy-try.tsx"),
+      join(ROOT, "components", "features", "muedsp-landing", "masterchain-buy-button.tsx"),
       "utf8",
     );
 

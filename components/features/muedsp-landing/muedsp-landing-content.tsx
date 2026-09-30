@@ -28,7 +28,8 @@ import { type PluginKey } from "@/lib/plugins/registry";
 import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 import { WINDOWS_BETA_LIVE } from "@/lib/plugins/windows-beta";
-import { MasterchainBuyTry } from "@/components/features/muedsp-landing/masterchain-buy-try";
+import { MasterchainBuyButton } from "@/components/features/muedsp-landing/masterchain-buy-button";
+import { MasterchainTry } from "@/components/features/muedsp-landing/masterchain-try";
 import {
   MASTERCHAIN_PURCHASE_LIVE,
   MASTERCHAIN_TRIAL_DAYS,
@@ -115,13 +116,6 @@ export function MuedspLandingContent() {
             <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/55">
               {th("lead")}
             </p>
-            {/* ★To masterchain's buy row (kimny 2026-10-01). It used to go to #get = the free MUEDsat form. */}
-            <a
-              href="#buy"
-              className="mt-7 inline-flex items-center gap-2 rounded-[var(--radius-sm)] bg-[#f5a524] px-5 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
-            >
-              {th("cta")}
-            </a>
           </div>
         </section>
 
@@ -134,7 +128,7 @@ export function MuedspLandingContent() {
               {tmc("eyebrow")}
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">{tmc("heading")}</h2>
-            <p className="mt-4 text-[17px] leading-[1.8] text-white/75">{tmc("body")}</p>
+            <p className="mt-5 text-[17px] leading-[1.8] text-white/75">{tmc("body")}</p>
 
             {/* the flagship visual: an honest MOCK, captioned as such (not the shipping plugin) */}
             <figure className="mt-8">
@@ -158,6 +152,20 @@ export function MuedspLandingContent() {
               </figcaption>
             </figure>
 
+            {/* ★Buy right under the screen image, left-aligned like the text (a right-aligned one read as 「なぜボタンが右？」), always pressable (kimny 2026-10-01: first
+                beside the heading so a visitor from the plugin's "Buy masterchain" sees it without scrolling; then
+                「UI画像より先に購入ボタンが出ているのが変」 — the product first, then the button). */}
+            <div id="buy" className="mt-5 scroll-mt-20">
+              {/* ★The price on the page itself (kimny 10/1: 「ページに価格出てないの、まずくないか？」 — 「買い切り $69(USD)
+                  だけで良くない？」). The modal then shows FastSpring's figure in the buyer's currency. */}
+              {MASTERCHAIN_PURCHASE_LIVE && (
+                <p data-testid="masterchain-price" className="mb-3 text-lg font-semibold text-white">{tmc("priceLive")}</p>
+              )}
+              {/* ★The closed label says "Coming soon"; an open button says "masterchain を購入" (no price: the modal
+                  shows FastSpring's figure in the buyer's currency). */}
+              <MasterchainBuyButton buyLabel={tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")} />
+            </div>
+
             {/* the planned controls — shown as "こうなります", not editable here */}
             <p className="mt-10 text-lg font-medium leading-snug text-white/85">
               {tmc("controlsLead")}
@@ -179,7 +187,7 @@ export function MuedspLandingContent() {
                 then one short demo line. The FastSpring tag contract lives in lib/masterchain/fastspring-checkout.ts
                 (CHECKOUT_TAG_NAMES, pinned by tests/unit/fastspring-tag-contract.test.ts). NEXT_PUBLIC_* are inlined
                 at build time — check the rendered button, not just the env. */}
-            <div id="buy" className="mt-8 scroll-mt-20 space-y-4 border-t border-white/8 pt-6">
+            <div className="mt-8 space-y-4 border-t border-white/8 pt-6">
               {!MASTERCHAIN_PURCHASE_LIVE && (
                 <p className="max-w-sm text-[15px] leading-relaxed text-white/70">{tmc("priceNote")}</p>
               )}
@@ -189,8 +197,8 @@ export function MuedspLandingContent() {
                 </Link>
               )}
               <Suspense fallback={null}>
-                {/* ★The closed label says "Coming soon"; an open button says "BUY $69". */}
-                <MasterchainBuyTry buyLabel={tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")} />
+                {/* The demo stays here; the purchase is the button beside the heading. */}
+                <MasterchainTry />
               </Suspense>
             </div>
             {!MASTERCHAIN_PURCHASE_LIVE && (
