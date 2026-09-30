@@ -1026,8 +1026,8 @@ Hoo MCP経由の自動送信
     const { portal, howTo } = masterchainPortalInstructions(isJa);
     const ends = isJa ? `試用期限: ${expiry}` : `Trial expiry: ${expiry}`;
     const after = isJa
-      ? '試用期間が終了すると、新しいライセンスキーを入力するまで「Demo expired」画面が表示され、音声は加工されずに通過します（バイパス）。'
-      : 'When the trial ends, the plugin keeps passing audio through unprocessed (bypass) and shows "Demo expired" until you enter a license key.';
+      ? '試用期間が終了すると、新しいライセンスキーを入力するまで「DEMO EXPIRED」画面が表示され、音声は加工されずに通過します。'
+      : 'When the trial ends, the plugin keeps passing audio through unprocessed and shows "DEMO EXPIRED" until you enter a license key.';
     const esc = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const downloadHtml = MASTERCHAIN_DOWNLOAD_URL
       ? `<a href="${MASTERCHAIN_DOWNLOAD_URL}">${isJa ? 'masterchain をダウンロード' : 'Download masterchain'}</a>`
