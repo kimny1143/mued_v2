@@ -27,17 +27,11 @@ export default function SignUpPage() {
           </Link>
 
           {/* Tagline */}
-          <h1 className="text-3xl font-bold text-white mb-4">
-            MUED
-          </h1>
+          {/* The mark above already reads "MUED." — the visible heading duplicated it (kimny 2026-09-30).
+              Kept for screen readers so the page still has its h1. */}
+          <h1 className="sr-only">MUED</h1>
           <p className="text-xl text-amber-400 mb-6">
             Making music visible.
-          </p>
-
-          {/* Description */}
-          <p className="text-slate-400 leading-relaxed mb-8">
-            Your companion in music production.<br />
-            Rest reminders, sound reactive, voice memos.
           </p>
 
           {/* Features highlight */}

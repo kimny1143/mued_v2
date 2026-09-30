@@ -75,9 +75,11 @@ export const MASTERCHAIN_DOWNLOAD_URL =
 //   /muedsp Buy button closed until the announcement, and also keeps the first real order off a path
 //   that no live order has run end to end yet (test orders skip fulfillment). Flip to true in the PR
 //   for the announcement day.
-// ★OPENED (merge on kimny's signal) only after kimny's own live order ran end to end: webhook → key
-//   issued → portal card → keyfile → plugin LICENSED (conductor's gate, 2026-09-30). The order id is
-//   recorded in the PR, not here.
+// ★OPENED 2026-09-30 (#1178, 12:39Z) BEFORE kimny's verification order, on purpose (kimny 9/30 「1で」):
+//   the verification buys through the same path as a customer (Buy → EULA consent → popup), so the
+//   button has to be open for it. Customers can buy from this moment, which is why the launch mail
+//   waits until that order has run end to end (webhook → key → portal → keyfile → LICENSED).
+//   Rollback if it fails: branch revert/purchase-live (PURCHASE_LIVE=false only).
 export const MASTERCHAIN_PURCHASE_LIVE = true;
 
 // Trial rollout is a reviewed code change, never an environment switch.
