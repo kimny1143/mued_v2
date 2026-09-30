@@ -71,7 +71,7 @@ vi.mock("@/lib/masterchain/fastspring-webhook", () => ({
   handleFastspringReturnCreated: mockHandleReturn,
 }));
 
-import { POST, SKIPPED_TEST_MARKER } from "@/app/api/webhooks/fastspring/route";
+import { POST, RETURN_NOT_COMPLETED_NOTE, SKIPPED_TEST_MARKER } from "@/app/api/webhooks/fastspring/route";
 
 const request = (body: unknown) =>
   ({ text: async () => JSON.stringify(body) }) as never;
@@ -112,6 +112,16 @@ describe("FastSpring route — return.created (conductor 2026-09-30, f)", () => 
     expect(response.status).toBe(500);
     expect(txUpdates.at(-1)).toMatchObject({ status: "failed" });
     expect(String((txUpdates.at(-1) as { errorMessage: string }).errorMessage)).toMatch(/return\.created/);
+  });
+  it("★a return that is not completed is processed with a note (no redelivery) — the handler left the row alone (conductor 10/1)", async () => {
+    mockHandleReturn.mockResolvedValue("not_completed");
+    const response = await POST(request({ events: [ret(true)] }));
+    expect(response.status).toBe(200);
+    expect(txUpdates.at(-1)).toMatchObject({ status: "processed", errorMessage: RETURN_NOT_COMPLETED_NOTE });
+  });
+  it("a completed refund is processed without a note", async () => {
+    await POST(request({ events: [ret(true)] }));
+    expect(txUpdates.at(-1)).not.toHaveProperty("errorMessage");
   });
   it("★a refund with no purchase row yet is kept as failed + 500 for redelivery — never sealed as processed (CCO #1183 ②)", async () => {
     mockHandleReturn.mockResolvedValue("no_purchase");

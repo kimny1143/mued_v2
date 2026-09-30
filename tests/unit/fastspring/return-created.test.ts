@@ -21,6 +21,8 @@ const base = {
   original: { id: "ORD-ID", order: "ORD-ORDER", reference: "GLASSWERKSJP261001-1" },
   type: "RETURN",
   changed: 1759310000000,
+  // ★The live refund of 2026-10-01 (kimny's verification order) carried completed: true with "Full Refund".
+  completed: true,
   items: [{ product: "muedsp-masterchain", refundType: "Full Refund" }],
 };
 
@@ -83,6 +85,22 @@ describe("handleFastspringReturnCreated", () => {
     const full = fakeTx([{ id: "row" }]);
     await handleFastspringReturnCreated(full.tx, ev(base));
     expect(sqlOf(full.calls.where)).not.toMatch(/refunded_at/); // a full refund / chargeback always records
+  });
+  it.each([
+    ["completed: false", { ...base, completed: false }],
+    ["completed missing", (({ completed: _c, ...rest }) => rest)(base)],
+    ["completed: \"false\"", { ...base, completed: "false" }],
+  ])("★a full return that is not completed (%s) leaves the row alone — the key stays (conductor 10/1)", async (_label, data) => {
+    const update = vi.fn();
+    const tx = { update } as never;
+    expect(await handleFastspringReturnCreated(tx, ev(data as Record<string, unknown>))).toBe("not_completed");
+    expect(update).not.toHaveBeenCalled();
+  });
+  it("★the live payload shape (completed: true, Full Refund, type RETURN) marks the row", async () => {
+    const { tx, calls } = fakeTx([{ id: "row" }]);
+    expect(await handleFastspringReturnCreated(tx, ev({ ...base, completed: true }))).toBe("recorded");
+    expect(calls.set).toMatchObject({ refundKind: "full", refundedAt: new Date(1759310000000) });
+    expect(parseFastspringReturnCreated(ev({ ...base, completed: "true" }))!.completed).toBe(true);
   });
   it("no matching row → no_purchase (the route keeps it for redelivery)", async () => {
     const { tx } = fakeTx([]);
