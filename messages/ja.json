@@ -2662,7 +2662,7 @@
       "bypassNote": "加えて BYPASS トグル（ACTIVE / BYPASS）。素直な A/B のために。"
     },
     "visuals": {
-      "faceplateAlt": "MUEDlim のプラグイン画面（ラウドネス・メーター稼働中）。上部にタイトルと、右に ACTIVE / BYPASS トグル（ACTIVE 側）。その下、左に大きな INTEGRATED LUFS 値（−11.2・アンバー）、右に SHORT-TERM −10.8・GR −0.6 dB・RANGE 6.7 LU・TRUE-PEAK −1.0 dBTP。中央は −11 前後で安定したラウドネス履歴グラフと TARGET −14 の破線、右は true-peak 縦メーターが上限 −1.0 dBTP の下で緑に点灯、下に INPUT（+0.0 dB）と CEILING（−1.0 dBTP）のノブ。"
+      "faceplateAlt": "MUEDlim 1.0.0 のプラグイン画面（音が入った状態）。上部にタイトルと、右に ACTIVE のトグル。その下、左に大きな INTEGRATED LUFS 値（−11.7・アンバー）、右に SHORT-TERM −11.5・GR −0.95 dB・RANGE 0.7 LU・TRUE-PEAK −1.00 dBTP。中央は −12 前後で安定したラウドネス履歴グラフと TARGET −14 の破線、右は true-peak 縦メーターが上限 −1.00 dBTP を示す。下に INPUT（+0.00 dB）と CEILING（−1.00 dBTP）のノブ、右下に mued.jp のリンク。"
     },
     "whyFree": {
       "heading": "無料の理由と、メールがあなたの鍵になる理由",
@@ -2839,10 +2839,10 @@
     "visuals": {
       "idleLabel": "無信号（ドライ）",
       "hotLabel": "飽和中（ドライブ）",
-      "faceplateAlt": "MUEDsat のプラグイン画面。大きな DRIVE ノブがエンバー色に発光し、右側の黒ガラス窓に伝達カーブと THD 値が表示されている。",
-      "compareAlt": "MUEDsat の同一画面を並べた比較。左は無信号（伝達カーブがほぼ直線・THD 0.00%）、右はドライブ時（カーブが立ち上がり・DRIVE が発光・THD 7.42%）。",
+      "faceplateAlt": "MUEDsat 1.0.0 のプラグイン画面（音が入った状態・DRIVE を上げたところ）。大きな DRIVE ノブがエンバー色に発光し、右側の黒ガラス窓に伝達カーブと THD の目安（0.69 %）が表示されている。下に MIX・AIR・OUTPUT の3つのノブ、最下部の右に mued.jp のリンク。",
+      "compareAlt": "MUEDsat 1.0.0 の同じ画面を並べた比較（どちらも音が入った状態）。左は DRIVE 30（既定。伝達カーブはゆるやかに曲がり、THD の目安 0.29 %）、右は DRIVE 85（カーブが強く曲がり、DRIVE が発光、THD の目安 0.69 %）。",
       "driveAlt": "DRIVE ノブのクローズアップ。基部にエンバーの熱リングが灯っている。",
-      "meterAlt": "伝達カーブ・メーターのクローズアップ。TRANSFER ラベル、点線の基準線、エンバーのサチュレーション曲線、THD 実値。",
+      "meterAlt": "伝達カーブ・メーターのクローズアップ。TRANSFER ラベル、点線の基準線、エンバーのサチュレーション曲線、THD の目安（入力の大きさと DRIVE から計算した値）。",
       "knobsAlt": "MIX・AIR・OUTPUT の3つの小ノブ。",
       "signatureHeading": "伝達カーブ"
     },
