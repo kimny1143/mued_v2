@@ -15,17 +15,24 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import type { PluginKey } from "@/lib/plugins/registry";
 
+/**
+ * What an unsubscribe link withdraws from. A free plugin key, or "masterchain" for the masterchain demo
+ * receipt (the demo adds consented people straight to MUEDSP_AUDIENCE_ID — lib/masterchain/demo-handler.ts).
+ * ★The scope is inside the signed payload, so a token minted for one scope never verifies for another.
+ */
+export type UnsubscribeScope = PluginKey | "masterchain";
+
 function secret(): string {
   return process.env.PLUGIN_UNSUBSCRIBE_TOKEN_SECRET ?? "";
 }
 
 /** Normalize so sign/verify agree regardless of casing/whitespace (the subscribe zod lowercases too). */
-function payload(plugin: PluginKey, email: string): string {
+function payload(plugin: UnsubscribeScope, email: string): string {
   return `${plugin}:${email.trim().toLowerCase()}`;
 }
 
 /** hex HMAC-SHA256(`plugin:email`) truncated to 32 chars — a per-recipient unsubscribe capability. */
-export function signUnsubscribeToken(plugin: PluginKey, email: string): string {
+export function signUnsubscribeToken(plugin: UnsubscribeScope, email: string): string {
   return createHmac("sha256", secret()).update(payload(plugin, email)).digest("hex").slice(0, 32);
 }
 
@@ -35,7 +42,7 @@ export function signUnsubscribeToken(plugin: PluginKey, email: string): string {
  * unsubscribe works before the secret is provisioned (compliance first; forgery-resistance once set).
  */
 export function verifyUnsubscribeToken(
-  plugin: PluginKey,
+  plugin: UnsubscribeScope,
   email: string,
   token: string | null | undefined,
 ): boolean {

@@ -15,3 +15,12 @@ it.each(["ja", "en"] as const)("renders the %s receipt with the download and dem
     expect(body).not.toMatch(/45 秒ごと|every 45 seconds|一瞬抜け|fades out/);
   }
 });
+
+it.each(["ja", "en"] as const)("★%s: with consent the receipt carries a working unsubscribe link; without, none", (locale) => {
+  const url = "https://mued.jp/api/plugins/unsubscribe?plugin=masterchain&email=a%40b.com&t=x&locale=" + locale;
+  const withLink = emailTemplates.masterchainDemoDownload({ locale, unsubscribeUrl: url });
+  for (const body of [withLink.html, withLink.text]) expect(body).toContain(url);
+  expect(withLink.html).toContain(locale === "ja" ? "メール配信を解除する" : "Unsubscribe from these emails");
+  const without = emailTemplates.masterchainDemoDownload({ locale });
+  for (const body of [without.html, without.text]) expect(body).not.toMatch(/unsubscribe|配信を解除|配信の解除/i);
+});

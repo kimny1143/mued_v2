@@ -89,7 +89,7 @@ const UTM_CAMPAIGN = {
 } as const;
 
 /** One-click List-Unsubscribe URL for a plugin free-download subscriber (RFC 8058). */
-function pluginUnsubscribeUrl(plugin: 'muedsat' | 'muedlim' | 'muedrive', email: string, locale: 'ja' | 'en'): string {
+function pluginUnsubscribeUrl(plugin: 'muedsat' | 'muedlim' | 'muedrive' | 'masterchain', email: string, locale: 'ja' | 'en'): string {
   const t = signUnsubscribeToken(plugin, email);
   return `${APP_URL}/api/plugins/unsubscribe?plugin=${plugin}&email=${encodeURIComponent(email)}&t=${t}&locale=${locale}`;
 }
@@ -923,18 +923,25 @@ Hoo MCP経由の自動送信
     return { subject, html, text };
   },
 
-  /** Transactional demo receipt; marketing consent is handled separately. */
-  masterchainDemoDownload(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
+  /**
+   * Demo receipt. ★With consent (the person is now on the shared MUEDsp list) it carries an unsubscribe
+   * link, like the free three; without consent it is purely transactional and has none (conductor 2026-09-30).
+   */
+  masterchainDemoDownload(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const subject = isJa ? 'MUEDsp masterchain デモのダウンロード' : 'Your MUEDsp masterchain demo download';
     const intro = isJa ? "MUEDsp masterchain のデモをお試しいただき、ありがとうございます。" : "Thanks for trying the MUEDsp masterchain demo.";
     const limits = isJa ? "キーを入れなくても、デモとして期限なく使えます。デモでは、挿してから、音を 45 秒ぶん処理するまではすべて効き、その後はプラグインを挿し直すまで原音のまま通ります。設定は保存されず、プリセットも保存できません。ライセンスキーを入れると、これらの制限はなくなります。" : "Without a key, masterchain runs as a demo with no time limit. In the demo it processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved and presets can't be saved. Entering a license key removes these limits.";
     const label = isJa ? 'デモをダウンロード' : 'Download the demo';
     const formats = 'VST3 · AU · AAX (Pro Tools) · macOS';
+    const unsubHtml = data.unsubscribeUrl
+      ? `<p style="color: #9ca3af; font-size: 12px;"><a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a></p>`
+      : '';
+    const unsubText = data.unsubscribeUrl ? `\n\n${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}` : '';
     return {
       subject,
-      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p><p>${limits}</p><p>${formats}</p>`),
-      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}\n\n${limits}\n\n${formats}\n\nglasswerks inc. — mued.jp`,
+      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p><p>${limits}</p><p>${formats}</p>${unsubHtml}`),
+      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}\n\n${limits}\n\n${formats}${unsubText}\n\nglasswerks inc. — mued.jp`,
     };
   },
 
@@ -1568,12 +1575,18 @@ class EmailService {
 
   async sendMasterchainDemoDownload(
     to: EmailRecipient,
-    data: { locale: 'ja' | 'en' }
+    data: { locale: 'ja' | 'en'; marketingOptIn?: boolean }
   ): Promise<EmailResult> {
+    // ★Consented → on the shared MUEDsp list → a working way off it (link + one-click header). Not consented →
+    //   not on any list, so nothing to unsubscribe from (same rule as the free three).
+    const unsubscribeUrl = data.marketingOptIn === true ? pluginUnsubscribeUrl('masterchain', to.email, data.locale) : undefined;
     return this.send({
       to,
-      ...emailTemplates.masterchainDemoDownload(data),
+      ...emailTemplates.masterchainDemoDownload({ locale: data.locale, unsubscribeUrl }),
       tags: [{ name: 'type', value: 'masterchain_demo_download' }],
+      ...(unsubscribeUrl
+        ? { headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } }
+        : {}),
     });
   }
 
