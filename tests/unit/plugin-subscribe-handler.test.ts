@@ -5,7 +5,7 @@
  * send failure MUST surface (non-200), never a false "sent". Audience-add failure does NOT fail the
  * request (the user still got their download) but fires an operator alert so the lead loss is visible.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mockRateLimit = vi.fn();
 const mockCheckRateLimit = vi.fn();
@@ -32,12 +32,14 @@ vi.mock("@/lib/plugins/entitlements", () => ({
 
 const mockSendLim = vi.fn();
 const mockSendSat = vi.fn();
+const mockSendDrive = vi.fn();
 const mockAlert = vi.fn();
 vi.mock("@/lib/services/email.service", () => ({
   emailService: {
     isConfigured: () => true,
     sendMuedlimDownloadWelcome: (...a: unknown[]) => mockSendLim(...a),
     sendMuedsatDownloadWelcome: (...a: unknown[]) => mockSendSat(...a),
+    sendMuedriveDownloadWelcome: (...a: unknown[]) => mockSendDrive(...a),
     sendAdminAlert: (...a: unknown[]) => mockAlert(...a),
   },
 }));
@@ -48,12 +50,15 @@ vi.mock("@/lib/services/email.service", () => ({
 vi.mock("@/lib/plugins/registry", () => ({
   PLUGIN_DIST: {
     muedsat: { key: "muedsat", live: true, source: "muedsat_lp", downloadUrl: "", pressToken: "", i18nNamespace: "muedsat", subscribeEndpoint: "/api/muedsat/subscribe", audienceEnvName: "RESEND_MUEDSAT_AUDIENCE_ID" },
+    muedrive: { key: "muedrive", live: true, source: "muedrive_lp" },
     muedlim: { key: "muedlim", live: false, source: "muedlim_lp", downloadUrl: "", pressToken: "", i18nNamespace: "muedlim", subscribeEndpoint: "/api/muedlim/subscribe", audienceEnvName: "RESEND_MUEDLIM_AUDIENCE_ID" },
   },
   HONEYPOT_FIELD: "contact_ref",
   isHoneypotTripped: (v: unknown) => typeof v === "string" && v.trim().length > 0,
 }));
 
+import { PLUGIN_DIST } from "@/lib/plugins/registry";
+import { logger } from "@/lib/utils/logger";
 import { handlePluginSubscribe } from "@/lib/plugins/subscribe-handler";
 import type { NextRequest } from "next/server";
 
@@ -67,6 +72,7 @@ beforeEach(() => {
   mockCheckRateLimit.mockResolvedValue(null); // per-email rate-limit unconfigured (fail-open) by default
   mockEnabled.mockReturnValue(true); // audience configured
   mockAdd.mockResolvedValue(true); // lead captured
+  mockSendDrive.mockResolvedValue({ success: true, messageId: "m3" });
   mockSendLim.mockResolvedValue({ success: true, messageId: "m1" });
   mockSendSat.mockResolvedValue({ success: true, messageId: "m2" });
   mockAlert.mockResolvedValue(undefined);
@@ -78,7 +84,7 @@ describe("handlePluginSubscribe — honest delivery", () => {
   // Honest-delivery behavior is plugin-agnostic — tested with a LIVE plugin (muedsat). MUEDlim is
   // closed (registry.live=false, 2026-07-13) so it exercises the not-live gate below instead.
   it("happy path (live plugin) → 200 subscribed:true (email sent, list captured, no alert)", async () => {
-    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en", marketingOptIn: true }));
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.data.subscribed).toBe(true);
@@ -104,7 +110,7 @@ describe("handlePluginSubscribe — honest delivery", () => {
   it("audience add fails but email OK → 200 (user got their download) + operator alert fired", async () => {
     mockEnabled.mockReturnValue(true);
     mockAdd.mockResolvedValue(false); // configured but failed = lead loss
-    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en", marketingOptIn: true }));
     expect(res.status).toBe(200);
     expect(mockAlert).toHaveBeenCalledTimes(1);
   });
@@ -112,7 +118,7 @@ describe("handlePluginSubscribe — honest delivery", () => {
   it("staged (audience unconfigured) → email still delivered → 200, NO alert (expected no-op)", async () => {
     mockEnabled.mockReturnValue(false);
     mockAdd.mockResolvedValue(false); // no-op
-    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en", marketingOptIn: true }));
     expect(res.status).toBe(200);
     expect(mockAlert).not.toHaveBeenCalled();
   });
@@ -228,5 +234,46 @@ describe("handlePluginSubscribe — bot defense (honeypot + per-email rate limit
     expect(res.status).toBe(200);
     expect((await res.json()).data.subscribed).toBe(false);
     expect(mockCheckRateLimit).not.toHaveBeenCalled(); // short-circuited by honeypot
+  });
+});
+
+
+describe.each([
+  ["muedsat", mockSendSat],
+  ["muedlim", mockSendLim],
+  ["muedrive", mockSendDrive],
+] as const)("%s marketing consent", (plugin, send) => {
+  beforeEach(() => { PLUGIN_DIST.muedlim.live = true; });
+  afterEach(() => { PLUGIN_DIST.muedlim.live = false; });
+
+  it.each([undefined, false, true])("consent %s controls only audience capture and email copy", async (marketingOptIn) => {
+    const body = { email: "a@b.com", locale: "ja", ...(marketingOptIn === undefined ? {} : { marketingOptIn }) };
+    const res = await handlePluginSubscribe(plugin, req(body));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.subscribed).toBe(true);
+    expect(send).toHaveBeenCalledExactlyOnceWith({ email: "a@b.com" }, { locale: "ja", marketingOptIn: marketingOptIn === true });
+    expect(mockRecord).toHaveBeenCalledExactlyOnceWith(plugin, {
+      email: "a@b.com", source: `${plugin}_lp`, firstTouch: null, locale: "ja",
+    });
+    if (marketingOptIn === true) {
+      expect(mockAdd).toHaveBeenCalledExactlyOnceWith(plugin, { email: "a@b.com", locale: "ja" });
+      expect(mockEnabled).toHaveBeenCalledWith(plugin);
+    } else {
+      expect(mockAdd).not.toHaveBeenCalled();
+      expect(mockEnabled).not.toHaveBeenCalled();
+    }
+    expect(mockAlert).not.toHaveBeenCalled();
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it.each(["true", "false", 1, null, {}, []])("rejects non-boolean consent %j before side effects", async (marketingOptIn) => {
+    const res = await handlePluginSubscribe(plugin, req({ email: "a@b.com", marketingOptIn }));
+    expect(res.status).toBe(400);
+    expect(mockAdd).not.toHaveBeenCalled();
+    expect(mockSendSat).not.toHaveBeenCalled();
+    expect(mockSendLim).not.toHaveBeenCalled();
+    expect(mockSendDrive).not.toHaveBeenCalled();
+    expect(mockRecord).not.toHaveBeenCalled();
+    expect(mockAlert).not.toHaveBeenCalled();
   });
 });

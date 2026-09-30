@@ -505,11 +505,22 @@ describe('welcome email portal block (P-3 / C-1)', () => {
   const welcomes = [
     { name: 'muedsat', fn: emailTemplates.muedsatDownloadWelcome },
     { name: 'muedlim', fn: emailTemplates.muedlimDownloadWelcome },
+    { name: 'muedrive', fn: emailTemplates.muedriveDownloadWelcome },
   ] as const;
 
   for (const { name, fn } of welcomes) {
+    for (const locale of ['en', 'ja'] as const) {
+      it.each([undefined, false])(`${name} ${locale} omits the portal block with consent %s`, (marketingOptIn) => {
+        const output = fn({ locale, ...(marketingOptIn === undefined ? {} : { marketingOptIn }) });
+        for (const format of ['html', 'text'] as const) {
+          expect(output[format]).not.toContain('/dashboard/plugins');
+          expect(output[format]).not.toContain(locale === 'ja' ? 'あなたのプラグインの置き場所ができました。' : 'Your plugins have a home now.');
+        }
+      });
+    }
+
     it(`${name} EN welcome links to the portal with ownership + passwordless copy`, () => {
-      const { html, text } = fn({ locale: 'en' });
+      const { html, text } = fn({ locale: 'en', marketingOptIn: true });
       expect(html).toContain('/dashboard/plugins');
       expect(html).toContain('Your plugins have a home now.'); // ownership feel, not "register"
       expect(html).toContain('Open your portal'); // the portal button (C′ #3)
@@ -518,7 +529,7 @@ describe('welcome email portal block (P-3 / C-1)', () => {
     });
 
     it(`${name} JA welcome links to the portal with ownership + passwordless copy`, () => {
-      const { html, text } = fn({ locale: 'ja' });
+      const { html, text } = fn({ locale: 'ja', marketingOptIn: true });
       expect(html).toContain('/dashboard/plugins');
       expect(html).toContain('あなたのプラグインの置き場所ができました。');
       expect(html).toContain('ポータルを開く');
@@ -535,11 +546,22 @@ describe('welcome email forward hook (Road to 10k 層1 #2)', () => {
   const welcomes = [
     { name: 'muedsat', fn: emailTemplates.muedsatDownloadWelcome },
     { name: 'muedlim', fn: emailTemplates.muedlimDownloadWelcome },
+    { name: 'muedrive', fn: emailTemplates.muedriveDownloadWelcome },
   ] as const;
 
   for (const { name, fn } of welcomes) {
+    for (const locale of ['en', 'ja'] as const) {
+      it.each([undefined, false])(`${name} ${locale} omits the forward block with consent %s`, (marketingOptIn) => {
+        const output = fn({ locale, ...(marketingOptIn === undefined ? {} : { marketingOptIn }) });
+        for (const format of ['html', 'text'] as const) {
+          expect(output[format]).not.toContain('/muedsp');
+          expect(output[format]).not.toContain(locale === 'ja' ? 'このメールを転送してください' : 'Forward this along');
+        }
+      });
+    }
+
     it(`${name} EN welcome carries the forward-sharing hook to /muedsp`, () => {
-      const { html, text } = fn({ locale: 'en' });
+      const { html, text } = fn({ locale: 'en', marketingOptIn: true });
       expect(html).toContain('/muedsp'); // forward destination = DL entry (a portal link can't be forwarded)
       expect(html).toContain('Forward this along');
       expect(text).toContain('/muedsp'); // parity in the plain-text part
@@ -547,7 +569,7 @@ describe('welcome email forward hook (Road to 10k 層1 #2)', () => {
     });
 
     it(`${name} JA welcome carries the forward-sharing hook to /muedsp`, () => {
-      const { html, text } = fn({ locale: 'ja' });
+      const { html, text } = fn({ locale: 'ja', marketingOptIn: true });
       expect(html).toContain('/muedsp');
       expect(html).toContain('このメールを転送してください');
       expect(text).toContain('/muedsp');
@@ -565,19 +587,29 @@ describe('email UTM tagging', () => {
   const welcomes = [
     { name: 'muedsat', fn: emailTemplates.muedsatDownloadWelcome, campaign: 'email_welcome-muedsat' },
     { name: 'muedlim', fn: emailTemplates.muedlimDownloadWelcome, campaign: 'email_welcome-muedlim' },
+    { name: 'muedrive', fn: emailTemplates.muedriveDownloadWelcome, campaign: 'email_welcome-muedrive' },
   ] as const;
 
   for (const { name, fn, campaign } of welcomes) {
     for (const locale of ['en', 'ja'] as const) {
+      it.each([undefined, false])(`${name} ${locale} omits marketing links and UTM with consent %s`, (marketingOptIn) => {
+        const output = fn({ locale, ...(marketingOptIn === undefined ? {} : { marketingOptIn }) });
+        for (const format of ['html', 'text'] as const) {
+          expect(output[format]).not.toContain('/dashboard/plugins');
+          expect(output[format]).not.toContain('/muedsp');
+          expect(output[format]).not.toContain('utm_');
+        }
+      });
+
       it(`${name} ${locale} welcome tags the portal button with ${campaign}`, () => {
-        const { html, text } = fn({ locale });
+        const { html, text } = fn({ locale, marketingOptIn: true });
         const tagged = `/dashboard/plugins?utm_source=email&utm_medium=lifecycle&utm_campaign=${campaign}&utm_content=portal-button`;
         expect(html).toContain(tagged);
         expect(text).toContain(tagged); // text-only clients must carry the parameters too
       });
 
       it(`${name} ${locale} welcome tags the forward hook with ${campaign}`, () => {
-        const { html, text } = fn({ locale });
+        const { html, text } = fn({ locale, marketingOptIn: true });
         const tagged = `/muedsp?utm_source=email&utm_medium=lifecycle&utm_campaign=${campaign}&utm_content=forward-hook`;
         expect(html).toContain(tagged);
         expect(text).toContain(tagged);
@@ -588,8 +620,8 @@ describe('email UTM tagging', () => {
   // The shared-block trap: portalPromoBlock/forwardHookBlock serve both welcomes, so a hardcoded
   // campaign would make one of them lie. Assert each email carries ONLY its own campaign.
   it('shared blocks carry the campaign of the email that used them, not the other one', () => {
-    const sat = emailTemplates.muedsatDownloadWelcome({ locale: 'en' });
-    const lim = emailTemplates.muedlimDownloadWelcome({ locale: 'en' });
+    const sat = emailTemplates.muedsatDownloadWelcome({ locale: 'en', marketingOptIn: true });
+    const lim = emailTemplates.muedlimDownloadWelcome({ locale: 'en', marketingOptIn: true });
     expect(sat.html).toContain('email_welcome-muedsat');
     expect(sat.html).not.toContain('email_welcome-muedlim');
     expect(lim.html).toContain('email_welcome-muedlim');
@@ -608,8 +640,8 @@ describe('email UTM tagging', () => {
   // Over-tagging is harder to unwind than under-tagging: these must stay clean.
   it('does not tag the unsubscribe link', () => {
     const unsubscribeUrl = 'https://mued.jp/api/plugins/unsubscribe?plugin=muedsat&email=a%40b.c&t=sig&locale=en';
-    for (const fn of [emailTemplates.muedsatDownloadWelcome, emailTemplates.muedlimDownloadWelcome]) {
-      const { html } = fn({ locale: 'en', unsubscribeUrl });
+    for (const fn of [emailTemplates.muedsatDownloadWelcome, emailTemplates.muedlimDownloadWelcome, emailTemplates.muedriveDownloadWelcome]) {
+      const { html } = fn({ locale: 'en', unsubscribeUrl, marketingOptIn: true });
       expect(html).toContain(unsubscribeUrl);
       expect(html).not.toContain(`${unsubscribeUrl}&utm_source=email`);
     }

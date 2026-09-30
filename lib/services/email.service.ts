@@ -269,6 +269,10 @@ function baseTemplate(content: string): string {
  * password); (3) the portal button itself (this block). Links to /dashboard/plugins. Shared by both
  * welcome templates so the copy never drifts.
  */
+// ★Used in place of the promo blocks when the recipient did NOT opt in to news (kimny 2026-09-30):
+//   their download email is a transactional receipt only — no portal promo, no forward hook.
+const NO_BLOCK = { html: '', text: '' } as const;
+
 function portalPromoBlock(isJa: boolean, campaign: string): { html: string; text: string } {
   const url = withEmailUtm(`${APP_URL}/dashboard/plugins`, campaign, 'portal-button');
   const html = `
@@ -1033,12 +1037,14 @@ Hoo MCP経由の自動送信
    * Includes the download button only when MUEDSAT_DOWNLOAD_URL is configured; while the dsp
    * package isn't uploaded yet it honestly says the link is on the way.
    */
-  muedsatDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
+  muedsatDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string; marketingOptIn?: boolean }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDSAT_DOWNLOAD_URL;
     // The shared blocks carry this email's campaign — MUEDlim's welcome passes its own.
-    const portal = portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedsat);
-    const forward = forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedsat);
+    // ★Not opted in → a transactional receipt only (no promo, no forward hook, no unsubscribe footer).
+    const optedIn = data.marketingOptIn === true;
+    const portal = optedIn ? portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedsat) : NO_BLOCK;
+    const forward = optedIn ? forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedsat) : NO_BLOCK;
 
     // ★The subject follows the BODY's condition. Same defect #1007 fixed in masterchain; CCO found
     //   this sibling while reviewing it.
@@ -1057,10 +1063,10 @@ Hoo MCP経由の自動送信
         ? 'MUEDsat をありがとうございます'
         : 'Thanks for grabbing MUEDsat';
 
-    const unsubHtml = `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
+    const unsubHtml = !optedIn ? '' : `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
       ? `<a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a>`
       : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.')}</p>`;
-    const unsubText = data.unsubscribeUrl
+    const unsubText = !optedIn ? '' : data.unsubscribeUrl
       ? `${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}`
       : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.');
 
@@ -1088,8 +1094,8 @@ Hoo MCP経由の自動送信
 
       <p style="color: #6b7280; font-size: 14px;">
         ${isJa
-          ? '僕の言葉より、あなた自身の耳で決めてください。アップデートや MUEDsp masterchain の情報も、追ってお知らせします。'
-          : "I'd rather you decide with your own ears than take my word for it. I'll also let you know about updates — and when MUEDsp masterchain is ready."}
+          ? `僕の言葉より、あなた自身の耳で決めてください。${data.marketingOptIn === true ? 'アップデートや MUEDsp masterchain の情報も、追ってお知らせします。' : ''}`
+          : `I'd rather you decide with your own ears than take my word for it.${data.marketingOptIn === true ? " I'll also let you know about updates — and when MUEDsp masterchain is ready." : ''}`}
       </p>
       ${portal.html}
       ${forward.html}
@@ -1097,8 +1103,8 @@ Hoo MCP経由の自動送信
     `);
 
     const text = isJa
-      ? `MUEDsat をありがとうございます。\n\n無料のトランス・サチュレーション・プラグインです。\n${hasLink ? `ダウンロード: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX（Pro Tools）· macOS` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\nアップデートや MUEDsp masterchain の情報も追ってお知らせします。${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDsat.\n\nA free transformer-saturation plugin.\n${hasLink ? `Download: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS` : "I'll email the download link to this address shortly."}\n\nI'll also let you know about updates and when MUEDsp masterchain is ready.${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDsat をありがとうございます。\n\n無料のトランス・サチュレーション・プラグインです。\n${hasLink ? `ダウンロード: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX（Pro Tools）· macOS` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}${data.marketingOptIn === true ? `\n\nアップデートや MUEDsp masterchain の情報も追ってお知らせします。` : ''}${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDsat.\n\nA free transformer-saturation plugin.\n${hasLink ? `Download: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS` : "I'll email the download link to this address shortly."}${data.marketingOptIn === true ? `\n\nI'll also let you know about updates and when MUEDsp masterchain is ready.` : ''}${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },
@@ -1109,11 +1115,13 @@ Hoo MCP経由の自動送信
    * Claim discipline: own-value only — no competitor names / reproduction claims, and NO latency /
    * oversampling claims (dsp did not state them, so the MUEDsat ADAA line is intentionally not reused).
    */
-  muedlimDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
+  muedlimDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string; marketingOptIn?: boolean }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDLIM_DOWNLOAD_URL;
-    const portal = portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedlim);
-    const forward = forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedlim);
+    // ★Not opted in → a transactional receipt only (no promo, no forward hook, no unsubscribe footer).
+    const optedIn = data.marketingOptIn === true;
+    const portal = optedIn ? portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedlim) : NO_BLOCK;
+    const forward = optedIn ? forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedlim) : NO_BLOCK;
 
     // ★Same as MUEDsat above — subject conditional on the body, fallback reuses this email's h2.
     const subject = hasLink
@@ -1124,10 +1132,10 @@ Hoo MCP経由の自動送信
         ? 'MUEDlim をありがとうございます'
         : 'Thanks for grabbing MUEDlim';
 
-    const unsubHtml = `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
+    const unsubHtml = !optedIn ? '' : `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
       ? `<a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a>`
       : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.')}</p>`;
-    const unsubText = data.unsubscribeUrl
+    const unsubText = !optedIn ? '' : data.unsubscribeUrl
       ? `${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}`
       : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.');
 
@@ -1153,19 +1161,19 @@ Hoo MCP経由の自動送信
 
       ${linkBlockHtml}
 
-      <p style="color: #6b7280; font-size: 14px;">
+      ${data.marketingOptIn === true ? `<p style="color: #6b7280; font-size: 14px;">
         ${isJa
           ? '完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。'
           : "I'm still building the finished MUEDsp masterchain; I'll let you know when there's an update."}
-      </p>
+      </p>` : ''}
       ${portal.html}
       ${forward.html}
       ${unsubHtml}
     `);
 
     const text = isJa
-      ? `MUEDlim をありがとうございます。\n\n無料のトゥルーピーク・リミッターです。INPUT で音圧、CEILING で天井を決めるだけ。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU · AAX（Pro Tools）` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter — INPUT for loudness, CEILING for the ceiling.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU · AAX (Pro Tools)` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDlim をありがとうございます。\n\n無料のトゥルーピーク・リミッターです。INPUT で音圧、CEILING で天井を決めるだけ。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU · AAX（Pro Tools）` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}${data.marketingOptIn === true ? `\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。` : ''}${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter — INPUT for loudness, CEILING for the ceiling.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU · AAX (Pro Tools)` : "We'll email the download link to this address shortly."}${data.marketingOptIn === true ? `\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.` : ''}${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },
@@ -1175,11 +1183,13 @@ Hoo MCP経由の自動送信
    * this branch is the one that actually runs until the signed .pkg lands.
    * Copy: content canonical (drafts/inbox/muedrive-dl-lp-copy-20260821.md, email section, 方向A採用).
    */
-  muedriveDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
+  muedriveDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string; marketingOptIn?: boolean }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDRIVE_DOWNLOAD_URL;
-    const portal = portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedrive);
-    const forward = forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedrive);
+    // ★Not opted in → a transactional receipt only (no promo, no forward hook, no unsubscribe footer).
+    const optedIn = data.marketingOptIn === true;
+    const portal = optedIn ? portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedrive) : NO_BLOCK;
+    const forward = optedIn ? forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedrive) : NO_BLOCK;
 
     // ★Same as MUEDsat above — subject conditional on the body, fallback reuses this email's h2.
     const subject = hasLink
@@ -1190,10 +1200,10 @@ Hoo MCP経由の自動送信
         ? 'MUEDrive をありがとうございます'
         : 'Thanks for grabbing MUEDrive';
 
-    const unsubHtml = `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
+    const unsubHtml = !optedIn ? '' : `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
       ? `<a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a>`
       : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.')}</p>`;
-    const unsubText = data.unsubscribeUrl
+    const unsubText = !optedIn ? '' : data.unsubscribeUrl
       ? `${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}`
       : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.');
 
@@ -1219,19 +1229,19 @@ Hoo MCP経由の自動送信
 
       ${linkBlockHtml}
 
-      <p style="color: #6b7280; font-size: 14px;">
+      ${data.marketingOptIn === true ? `<p style="color: #6b7280; font-size: 14px;">
         ${isJa
           ? '完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。'
           : "I'm still building the finished MUEDsp masterchain; I'll let you know when there's an update."}
-      </p>
+      </p>` : ''}
       ${portal.html}
       ${forward.html}
       ${unsubHtml}
     `);
 
     const text = isJa
-      ? `MUEDrive をありがとうございます。\n\n無料のサチュレーターです。tube、warm、console の3つを切り替えて、バスに通してみてください。\n${hasLink ? `ダウンロード: ${MUEDRIVE_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU · AAX（Pro Tools）` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDrive.\n\nA free saturator — switch between tube, warm and console, and mix through it on a bus.\n${hasLink ? `Download: ${MUEDRIVE_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU · AAX (Pro Tools)` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDrive をありがとうございます。\n\n無料のサチュレーターです。tube、warm、console の3つを切り替えて、バスに通してみてください。\n${hasLink ? `ダウンロード: ${MUEDRIVE_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU · AAX（Pro Tools）` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}${data.marketingOptIn === true ? `\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。` : ''}${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDrive.\n\nA free saturator — switch between tube, warm and console, and mix through it on a bus.\n${hasLink ? `Download: ${MUEDRIVE_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU · AAX (Pro Tools)` : "We'll email the download link to this address shortly."}${data.marketingOptIn === true ? `\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.` : ''}${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },
@@ -1569,52 +1579,52 @@ class EmailService {
 
   async sendMuedsatDownloadWelcome(
     to: EmailRecipient,
-    data: { locale: 'ja' | 'en' }
+    data: { locale: 'ja' | 'en'; marketingOptIn?: boolean }
   ): Promise<EmailResult> {
-    const unsubscribeUrl = pluginUnsubscribeUrl('muedsat', to.email, data.locale);
+    // ★Not opted in → not on any list, so there is nothing to unsubscribe from (no link, no header).
+    const unsubscribeUrl = data.marketingOptIn === true ? pluginUnsubscribeUrl('muedsat', to.email, data.locale) : undefined;
     const template = emailTemplates.muedsatDownloadWelcome({ ...data, unsubscribeUrl });
     return this.send({
       to,
       ...template,
       tags: [{ name: 'type', value: 'muedsat_download_welcome' }],
-      headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
+      ...(unsubscribeUrl
+        ? { headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } }
+        : {}),
     });
   }
 
   async sendMuedlimDownloadWelcome(
     to: EmailRecipient,
-    data: { locale: 'ja' | 'en' }
+    data: { locale: 'ja' | 'en'; marketingOptIn?: boolean }
   ): Promise<EmailResult> {
-    const unsubscribeUrl = pluginUnsubscribeUrl('muedlim', to.email, data.locale);
+    // ★Not opted in → not on any list, so there is nothing to unsubscribe from (no link, no header).
+    const unsubscribeUrl = data.marketingOptIn === true ? pluginUnsubscribeUrl('muedlim', to.email, data.locale) : undefined;
     const template = emailTemplates.muedlimDownloadWelcome({ ...data, unsubscribeUrl });
     return this.send({
       to,
       ...template,
       tags: [{ name: 'type', value: 'muedlim_download_welcome' }],
-      headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
+      ...(unsubscribeUrl
+        ? { headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } }
+        : {}),
     });
   }
 
   async sendMuedriveDownloadWelcome(
     to: EmailRecipient,
-    data: { locale: 'ja' | 'en' }
+    data: { locale: 'ja' | 'en'; marketingOptIn?: boolean }
   ): Promise<EmailResult> {
-    const unsubscribeUrl = pluginUnsubscribeUrl('muedrive', to.email, data.locale);
+    // ★Not opted in → not on any list, so there is nothing to unsubscribe from (no link, no header).
+    const unsubscribeUrl = data.marketingOptIn === true ? pluginUnsubscribeUrl('muedrive', to.email, data.locale) : undefined;
     const template = emailTemplates.muedriveDownloadWelcome({ ...data, unsubscribeUrl });
     return this.send({
       to,
       ...template,
       tags: [{ name: 'type', value: 'muedrive_download_welcome' }],
-      headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
+      ...(unsubscribeUrl
+        ? { headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } }
+        : {}),
     });
   }
 

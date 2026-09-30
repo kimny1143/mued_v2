@@ -1,15 +1,12 @@
 //
 // Shared email-gate subscribe handler for the MUEDsp free-download plugin family (案A / registry).
-// Extracted from app/api/muedsat/subscribe/route.ts — for plugin="muedsat" it is byte-for-byte
-// equivalent to the old route (same rate-limit bucket, same zod schema incl. source default, same
-// Resend audience env, same welcome email, same fail-open after()). The per-plugin subscribe routes
-// (/api/muedsat, /api/muedlim) are thin wrappers around this. Regression 0 for MUEDsat is proven in
-// tests/unit/plugin-subscribe.test.ts.
+// Per-plugin routes share validation, rate limits, transactional delivery, and entitlement recording.
+// Marketing audience capture requires explicit opt-in; requesting a download alone is not consent.
 //
 // Delivery is HONEST, not fake-open: the welcome email carries the download link (= the deliverable),
 // so it is sent synchronously and its failure returns a non-200 (the UI shows a retry path instead of
 // a false "sent"). The audience add (lead capture) is best-effort and does NOT fail the request — but
-// a configured-but-failed add is logged + operator-alerted so a lead loss is visible, never silent.
+// an opted-in, configured-but-failed add is logged + operator-alerted so a lead loss is visible.
 // While staged (audience id unset) the audience add is a legitimate no-op (not treated as a failure).
 import { NextRequest } from "next/server";
 import { z } from "zod";
@@ -25,6 +22,7 @@ function schemaFor(plugin: PluginKey) {
   return z.object({
     email: z.string().email().transform((e) => e.toLowerCase().trim()),
     locale: z.enum(["ja", "en"]).default("en"),
+    marketingOptIn: z.boolean().default(false),
     source: z.string().max(64).default(PLUGIN_DIST[plugin].source),
     utm_source: z.string().max(128).nullable().optional(),
     utm_medium: z.string().max(128).nullable().optional(),
@@ -44,15 +42,15 @@ function schemaFor(plugin: PluginKey) {
 // この形なら、キーを足し忘れた時点で tsc が止まる。
 const WELCOME_SENDER: Record<
   PluginKey,
-  (email: string, locale: "ja" | "en") => Promise<EmailResult>
+  (email: string, locale: "ja" | "en", marketingOptIn: boolean) => Promise<EmailResult>
 > = {
-  muedsat: (email, locale) => emailService.sendMuedsatDownloadWelcome({ email }, { locale }),
-  muedlim: (email, locale) => emailService.sendMuedlimDownloadWelcome({ email }, { locale }),
-  muedrive: (email, locale) => emailService.sendMuedriveDownloadWelcome({ email }, { locale }),
+  muedsat: (email, locale, marketingOptIn) => emailService.sendMuedsatDownloadWelcome({ email }, { locale, marketingOptIn }),
+  muedlim: (email, locale, marketingOptIn) => emailService.sendMuedlimDownloadWelcome({ email }, { locale, marketingOptIn }),
+  muedrive: (email, locale, marketingOptIn) => emailService.sendMuedriveDownloadWelcome({ email }, { locale, marketingOptIn }),
 };
 
-async function sendWelcome(plugin: PluginKey, email: string, locale: "ja" | "en") {
-  return WELCOME_SENDER[plugin](email, locale);
+async function sendWelcome(plugin: PluginKey, email: string, locale: "ja" | "en", marketingOptIn: boolean) {
+  return WELCOME_SENDER[plugin](email, locale, marketingOptIn);
 }
 
 /** POST handler for a plugin's free-download email gate. Used by the per-plugin route wrappers. */
@@ -83,7 +81,7 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
   }
 
   // `source` is kept here (from P-1) for the portal entitlement record below.
-  const { email, locale, source } = parsed.data;
+  const { email, locale, source, marketingOptIn } = parsed.data;
 
   // Per-EMAIL rate limit (complements the IP-keyed bucket above). Caps welcome sends for a single
   // address so a retry-storm or single-address abuser can't burn the shared Resend send quota one
@@ -111,26 +109,28 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
     return apiSuccess({ subscribed: false });
   }
 
-  // 1) Lead capture — add to the plugin's Resend audience. Best-effort + no-op-safe while staged, but
-  //    capture the outcome: a configured-but-failed add is a lead loss that must be VISIBLE (logged +
+  // 1) Lead capture — add to the plugin's Resend audience only with explicit marketing opt-in.
+  //    Best-effort + no-op-safe while staged. A configured-but-failed add must be VISIBLE (logged +
   //    operator-alerted), never silent. It does NOT fail the request — the user still gets their
   //    download below, which is the honest thing to report.
-  const audienceConfigured = isPluginAudienceEnabled(plugin);
-  const listCaptured = await addPluginSubscriber(plugin, { email, locale }).catch((err) => {
-    logger.error(`[${plugin}/subscribe] audience add threw`, { error: String(err) });
-    return false;
-  });
-  if (audienceConfigured && !listCaptured) {
-    logger.error(`[${plugin}/subscribe] audience add failed — lead not captured to Resend`, { plugin });
-    const alertEmail = process.env.OPERATOR_ALERT_EMAIL;
-    if (alertEmail && emailService.isConfigured()) {
-      // Best-effort operator alert — never blocks the response.
-      void emailService
-        .sendAdminAlert(
-          alertEmail,
-          `[${plugin}/subscribe] Resend audience add failed for a subscriber — lead not captured. Check Resend / audience config.`,
-        )
-        .catch((err) => logger.error(`[${plugin}/subscribe] operator alert failed`, { error: String(err) }));
+  if (marketingOptIn === true) {
+    const audienceConfigured = isPluginAudienceEnabled(plugin);
+    const listCaptured = await addPluginSubscriber(plugin, { email, locale }).catch((err) => {
+      logger.error(`[${plugin}/subscribe] audience add threw`, { error: String(err) });
+      return false;
+    });
+    if (audienceConfigured && !listCaptured) {
+      logger.error(`[${plugin}/subscribe] audience add failed — lead not captured to Resend`, { plugin });
+      const alertEmail = process.env.OPERATOR_ALERT_EMAIL;
+      if (alertEmail && emailService.isConfigured()) {
+        // Best-effort operator alert — never blocks the response.
+        void emailService
+          .sendAdminAlert(
+            alertEmail,
+            `[${plugin}/subscribe] Resend audience add failed for a subscriber — lead not captured. Check Resend / audience config.`,
+          )
+          .catch((err) => logger.error(`[${plugin}/subscribe] operator alert failed`, { error: String(err) }));
+      }
     }
   }
 
@@ -144,7 +144,7 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
       status: 502,
     });
   }
-  const emailResult: EmailResult = await sendWelcome(plugin, email, locale).catch((err) => {
+  const emailResult: EmailResult = await sendWelcome(plugin, email, locale, marketingOptIn).catch((err) => {
     logger.error(`[${plugin}/subscribe] welcome email threw`, { error: String(err) });
     return { success: false, error: String(err) };
   });
