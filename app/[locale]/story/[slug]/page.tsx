@@ -1,3 +1,4 @@
+import { SHARE_IMAGES } from "@/lib/seo/share-image";
 import { BrandHeader } from "@/components/brand/brand-header";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
@@ -36,11 +37,19 @@ export async function generateMetadata({ params }: PageProps) {
       canonical: `${baseUrl}/${locale}/story/${slug}`,
     },
     openGraph: {
+      images: SHARE_IMAGES,
       title: t(`articles.${slug}.title`),
       description: t(`articles.${slug}.description`),
       url: `${baseUrl}/${locale}/story/${slug}`,
       type: "article",
       siteName: "MUED",
+    },
+    // ★Same title/description as og — without it twitter:* fell back to the site default (conductor 2026-10-01).
+    twitter: {
+      images: SHARE_IMAGES,
+      card: "summary_large_image",
+      title: t(`articles.${slug}.title`),
+      description: t(`articles.${slug}.description`),
     },
   };
 }

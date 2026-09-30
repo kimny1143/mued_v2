@@ -84,7 +84,7 @@
     "inversify": "^7.10.3",
     "isomorphic-dompurify": "^2.31.0",
     "lucide-react": "^0.544.0",
-    "next": "^16.3.4",
+    "next": "^16.3.6",
     "next-intl": "^4.7.0",
     "openai": "^6.0.0",
     "puppeteer": "^25.6.0",

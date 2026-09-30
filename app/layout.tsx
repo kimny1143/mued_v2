@@ -1,3 +1,4 @@
+import { SHARE_IMAGES } from "@/lib/seo/share-image";
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
@@ -38,34 +39,29 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+// ★Site-wide defaults = the home page's own og/twitter (app/[locale]/page.tsx). Pages that set no twitter:* fell
+//   back to the old MUED tagline here (conductor 2026-10-01); keep these in step with the home page.
 export const metadata: Metadata = {
-  title: "MUED — ミューズの教え。神秘ではなく、方法論。",
+  title: "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
   description:
-    "音楽制作を前に進めるための AI プロダクトスイート。耳を鍛え、制作を記録し、ミックスを AI に任せる。",
+    "現役の作編曲家／ミックスエンジニアが作る、音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。",
   metadataBase: new URL("https://mued.jp"),
   openGraph: {
-    title: "MUED — ミューズの教え。神秘ではなく、方法論。",
+    title: "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
     description:
-      "音楽制作を前に進めるための AI プロダクトスイート。耳を鍛え、制作を記録し、ミックスを AI に任せる。",
+      "現役の作編曲家／ミックスエンジニアが作る、音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。",
     url: "https://mued.jp",
     siteName: "MUED",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "MUED — 音楽制作のための AI プロダクトスイート",
-      },
-    ],
+    images: SHARE_IMAGES,
     locale: "ja_JP",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "MUED — ミューズの教え。神秘ではなく、方法論。",
+    title: "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
     description:
-      "音楽制作を前に進めるための AI プロダクトスイート。耳を鍛え、制作を記録し、ミックスを AI に任せる。",
-    images: ["/og-image.jpg"],
+      "現役の作編曲家／ミックスエンジニアが作る、音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。",
+    images: SHARE_IMAGES,
   },
 };
 

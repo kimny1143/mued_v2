@@ -1,3 +1,4 @@
+import { DIAL_SHARE_IMAGES } from "@/lib/seo/share-image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -23,6 +24,14 @@ export const metadata: Metadata = {
       "MUEDial利用前のWAVステム準備確認。宅録・DTM向けAIミキシングを始めるためのステム書き出し方法を確認できます。",
     url: "https://dial.mued.jp/readiness",
     siteName: "MUEDial",
+    images: DIAL_SHARE_IMAGES,
+  },
+  // ★A layout/page og or twitter REPLACES its parent's (no merge): images and twitter are set here too.
+  twitter: {
+    card: "summary_large_image",
+    title: "スタート準備確認 — WAVステム準備ガイド | MUEDial",
+    description: "MUEDial利用前のWAVステム準備確認。宅録・DTM向けAIミキシングを始めるためのステム書き出し方法を確認できます。",
+    images: DIAL_SHARE_IMAGES,
   },
 };
 
