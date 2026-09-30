@@ -1166,7 +1166,7 @@
       },
         "q9": {
           "question": "masterchain を購入しました。ライセンスキーはどこにありますか？",
-          "answer": "ご購入時と同じメールアドレスで mued.jp のポータル（mued.jp/dashboard/plugins）にサインインすると、キーが表示されます（「キーをコピー」と「license.key をダウンロード」）。ご購入時に別のメールアドレスを使った場合や、サインインできない場合は、注文番号を添えて support@mued.jp までご連絡ください。"
+          "answer": "ご購入時と同じメールアドレスで mued.jp のポータル（mued.jp/dashboard/plugins）にサインインすると、キーが表示されます（「キーをコピー」と「license.key をダウンロード」）。ご購入時に別のメールアドレスを使った場合や、サインインできない場合は、注文番号を添えて support@mued.jp までご連絡ください。license.key は、masterchain の画面にドラッグ&ドロップすると入ります（うまくいかない DAW では「Load license file…」か「Paste license key」）。"
         },
         "q10": {
           "question": "買う前に試せますか？",
@@ -2599,7 +2599,7 @@
       "newsletter": "プラグインのお知らせをメールで受け取る（任意）",
       "submitting": "キーを発行しています…",
       "success": "トライアルのキー",
-      "howToUse": "license.key をダウンロードし、masterchain の「Load license file…」で開いてください。または、キーをコピーし、「Paste license from clipboard」を押してください。",
+      "howToUse": "license.key をダウンロードし、masterchain の画面（「Drop license.key here」）にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをコピーして「Paste license key」を押してください。",
       "keyLabel": "トライアルキー",
       "copy": "キーをコピー",
       "copied": "コピーしました",
@@ -2910,7 +2910,7 @@
       "copied": "コピーしました",
       "copyFailed": "コピーできませんでした。キーを選択して手動でコピーしてください。",
       "download": "license.key をダウンロード",
-      "howto": "license.key をダウンロードし、masterchain の「Load license file…」で開いてください。または、キーをコピーし、「Paste license from clipboard」を押してください。",
+      "howto": "license.key をダウンロードし、masterchain の画面（「Drop license.key here」）にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをコピーして「Paste license key」を押してください。",
       "ends": "トライアル期限: {date}（UTC）",
       "ended": "トライアル終了",
       "bypass": "トライアル終了後は、ライセンスキーを入れるまで音を加工せずそのまま通します。画面には「DEMO EXPIRED」と表示されます。"
@@ -2924,7 +2924,7 @@
       "copyFailed": "コピーできませんでした。キーを選択して手動でコピーしてください。",
       "download": "license.key をダウンロード",
       "refunded": "返金済み（{date}）。ライセンスキーは表示しません。",
-      "howto": "license.key をダウンロードし、masterchain の「Load license file…」で開いてください。または、キーをコピーし、「Paste license from clipboard」を押してください。",
+      "howto": "license.key をダウンロードし、masterchain の画面（「Drop license.key here」）にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをコピーして「Paste license key」を押してください。",
       "purchasedOn": "{date} に購入"
     }
   }

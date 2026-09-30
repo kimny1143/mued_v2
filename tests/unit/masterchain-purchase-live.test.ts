@@ -35,12 +35,15 @@ it("★an open Buy button never says \"Coming soon\" — the label and price not
   }
 });
 
-it("★the plugin's button names are quoted exactly — 'Load license file…' with U+2026, never three dots (dsp 2026-09-30)", () => {
+it("★the plugin's names are quoted exactly — the rebuilt key screen (kimny v3・conductor 2026-10-01): 'Drop license.key here' first, then 'Load license file…' (U+2026) and 'Paste license key'", () => {
   for (const f of ["messages/ja.json", "messages/en.json", "lib/services/email.service.ts"]) {
     const src = readFileSync(f, "utf8");
     expect(src, f).not.toMatch(/Load license file\.\.\./);
+    expect(src, f).toContain("Drop license.key here");
     expect(src, f).toContain("Load license file…");
-    expect(src, f).toContain("Paste license from clipboard");
+    expect(src, f).toContain("Paste license key");
+    // ★The old button name must be gone everywhere — it no longer exists on the plug-in's screen.
+    expect(src, f).not.toContain("Paste license from clipboard");
   }
 });
 
