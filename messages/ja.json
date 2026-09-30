@@ -2557,7 +2557,12 @@
       "demoNote": "デモは期限なし。挿すたびに最初の 45 秒だけ効きます。設定は保存されません。「masterchain を試す」でダウンロードが始まり、控えのメールを 1 通お送りします。",
       "signInNote": "購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。",
       "thanks": "購入ありがとうございます。購入時のメールアドレスに、まもなく案内が届きます。ダウンロードと鍵は、ポータル（mued.jp/dashboard/plugins）でも受け取れます。",
-      "thanksPortal": "ポータルを開く"
+      "thanksPortal": "ポータルを開く",
+      "agreeAndBuy": "同意して購入へ進む",
+      "readToEnd": "最後までお読みいただくと、同意できます。",
+      "checkoutLoading": "購入画面を準備しています…",
+      "modalClose": "閉じる",
+      "modalEnglishLink": "英語版（正文）を開く"
     },
     "demo": {
       "emailLabel": "メールアドレス",

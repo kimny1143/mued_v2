@@ -2557,7 +2557,12 @@
       "demoNote": "The demo has no time limit. Each insert runs for the first 45 seconds. Settings aren't saved. \"Try masterchain\" starts the download and sends one receipt email.",
       "signInNote": "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
       "thanks": "Thank you for your purchase. Instructions will arrive shortly at the email you used at checkout. You can also get the download and your license key in your portal (mued.jp/dashboard/plugins).",
-      "thanksPortal": "Open your portal"
+      "thanksPortal": "Open your portal",
+      "agreeAndBuy": "Agree and continue to purchase",
+      "readToEnd": "Scroll to the end to agree.",
+      "checkoutLoading": "Preparing checkout…",
+      "modalClose": "Close",
+      "modalEnglishLink": "Open the English (governing) text"
     },
     "demo": {
       "emailLabel": "Email",
