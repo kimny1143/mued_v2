@@ -113,3 +113,14 @@ it("★no release date for masterchain on Windows anywhere on the site (kimny 20
   }
   expect(ja.muedsp.windows.masterchainStatus).toBe("近日公開予定。ライセンスキーはMac版と共通です");
 });
+
+it("★FAQ q11: the macOS Installer's 'can't be moved to the Trash' at the end of an install (conductor 10/1 — seen on kimny's Mac, not stoppable from the pkg)", () => {
+  const support = readFileSync("app/[locale]/support/page.tsx", "utf8");
+  // Always shown (not behind a flag), in the visible list and in the FAQ structured data.
+  expect(support.match(/: \[\]\), "q11"\] as const;/g)).toHaveLength(2);
+  expect(ja.support.faq.q11.question).toContain("ゴミ箱に入れることはできません");
+  expect(ja.support.faq.q11.answer).toContain("インストールは完了しています");
+  expect(en.support.faq.q11.question).toContain("can’t be moved to the Trash");
+  expect(en.support.faq.q11.answer).toContain("The installation is complete");
+  for (const m of [ja, en]) expect(m.support.faq.q11.answer).toContain(".pkg");
+});

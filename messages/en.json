@@ -1171,6 +1171,10 @@
         "q10": {
           "question": "Can I try it before I buy?",
           "answer": "Yes. Without a key, masterchain runs as a demo with no time limit. In the demo it processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved and presets can't be saved. Entering a license key removes these limits."
+        },
+        "q11": {
+          "question": "At the end of the installation, macOS said the installer “can’t be moved to the Trash”",
+          "answer": "The installation is complete. The message means the macOS Installer could not move the used installer (.pkg) to the Trash. Please move the .pkg to the Trash yourself in Finder."
         }
     },
     "company": {
