@@ -61,6 +61,17 @@ export interface FastspringOrderParsed {
   eulaVersion?: string;
   /** FastSpring order completion time; persisted only when eulaVersion is present. */
   eulaAcceptedAt?: Date;
+  /** The order's language as FastSpring reports it (`data.language`, e.g. "ja") — picks the email's language. */
+  language?: string;
+}
+
+/**
+ * The language of the purchase email: Japanese when the order's language is Japanese, English otherwise
+ * (absent included). ★Measured, not guessed: the live order of 2026-10-01 carried `data.language: "ja"`
+ * (bought from the ja page, JP). ★Never inferred from the country — a JP address is not a reading language.
+ */
+export function licenseEmailLocale(language: string | undefined): "ja" | "en" {
+  return typeof language === "string" && /^ja(\b|[-_])/i.test(language.trim()) ? "ja" : "en";
 }
 
 /**
@@ -150,6 +161,7 @@ export function parseFastspringOrderCompleted(event: unknown): FastspringOrderPa
     marketingConsent: tags.marketingConsent === true || tags.marketingConsent === "true",
     eulaVersion,
     eulaAcceptedAt: eulaVersion ? validAcceptedAt : undefined,
+    language: asStr(data.language),
   };
 }
 
@@ -340,21 +352,12 @@ export async function handleFastspringOrderCompleted(
   // CRITICAL — deliver portal access instructions. ★Only when we just issued it: on a FastSpring retry `existing` is
   // already set, and re-sending would mail the same buyer a duplicate for one order.
   if (!existing?.licenseKey) {
-    // ★locale: the order payload carries no language today (FastspringOrderParsed has no locale
-    // field), so this is 'en'. Guessing from buyerCountry would be a proxy for the buyer's reading
-    // language, not a measurement of it.
-    //
-    // ★★DECIDED, NOT PENDING — kimny, 2026-09-10: 「英語メールで問題ない。なぜなら最近は Gmail でも
-    // 翻訳が入ることが多いからだ」. ★So the FastSpring popup custom tag is NOT being added, and this
-    // line is the finished state, not a placeholder. ★The sentence this replaces said 'en' held
-    // "until a popup custom tag supplies one", which now reads as work someone should pick up — and
-    // it was declined. (Same distinction as TODO(unattended) in scripts/verify/unlanded-work.ts: a
-    // note saying what to do and a decision not to do it are indistinguishable months later unless
-    // one of them says so.)
-    //
-    // ★The MECHANISM stays worth having: if a language ever does arrive in the payload, using it is
-    // still right, and that is why TODO(C1) below is untouched. ★What changed is that nobody should
-    // go create the tag to feed it. (conductor relayed; the reasoning above is kimny's own.)
+    // ★locale = the order's language (kimny, 2026-10-01, conductor's window: 「言語に合わせる」).
+    //   `data.language` "ja" → Japanese; anything else, or none → English. Not inferred from the country.
+    //   ★This REPLACES kimny's 2026-09-10 decision 「英語メールで問題ない。なぜなら最近は Gmail でも翻訳が入る
+    //   ことが多いからだ」, which rested on the order payload carrying no language. The first live order
+    //   (2026-10-01, bought from the ja page, JP) carried `data.language: "ja"` and received the English email.
+    //   The FastSpring popup custom tag for language is still not needed — the order already says it.
     // ★A DELIVERY WITHOUT A DOWNLOAD LINK IS NOT A FAILURE, BUT IT MUST NOT BE SILENT (conductor,
     //   2026-09-11). The email degrades honestly when MASTERCHAIN_DOWNLOAD_URL is unset — it carries
     //   the portal link and "the link is coming, reply here" — so the buyer is not stranded and
@@ -371,7 +374,7 @@ export async function handleFastspringOrderCompleted(
     }
 
     const delivery = await emailService
-      .sendMasterchainLicenseDelivery({ email: parsed.email }, { locale: "en" })
+      .sendMasterchainLicenseDelivery({ email: parsed.email }, { locale: licenseEmailLocale(parsed.language) })
       .catch((err: unknown) => ({ success: false, error: String(err) }));
 
     if (!delivery.success) {

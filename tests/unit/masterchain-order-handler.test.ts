@@ -39,7 +39,7 @@ vi.mock("@/lib/services/email.service", () => ({
   emailService: { sendMasterchainLicenseDelivery },
 }));
 
-import { handleFastspringOrderCompleted } from "@/lib/masterchain/fastspring-webhook";
+import { handleFastspringOrderCompleted, licenseEmailLocale } from "@/lib/masterchain/fastspring-webhook";
 import { verifyLicense } from "@/lib/masterchain/license";
 
 const { publicKey, privateKey } = generateKeyPairSync("ed25519");
@@ -118,6 +118,19 @@ describe("handleFastspringOrderCompleted — issuance", () => {
     expect(data).not.toHaveProperty("licenseKey");
   });
 
+  it("★the email is in the order's language — data.language \"ja\" gets Japanese (kimny 10/1 「言語に合わせる」)", async () => {
+    // The live order of 2026-10-01 (ja page, JP) carried language "ja" and was sent the English email.
+    const ja = { ...event, data: { ...event.data, order: "ORDER-JA", language: "ja", address: { country: "JP" } } };
+    await handleFastspringOrderCompleted(makeTx([]).tx as any, ja);
+    expect(sendMasterchainLicenseDelivery.mock.calls[0][1]).toEqual({ locale: "ja" });
+  });
+
+  it("no language → English, and a JP country alone does not make it Japanese (the country is not a reading language)", async () => {
+    const jp = { ...event, data: { ...event.data, order: "ORDER-JP", address: { country: "JP" } } };
+    await handleFastspringOrderCompleted(makeTx([]).tx as any, jp);
+    expect(sendMasterchainLicenseDelivery.mock.calls[0][1]).toEqual({ locale: "en" });
+  });
+
   it("★on a FastSpring retry, reuses the stored key and does NOT email again", async () => {
     const alreadyIssued = "-----BEGIN MUEDSP LICENSE-----\nalready.issued\n-----END MUEDSP LICENSE-----";
     const { tx, inserted } = makeTx([{ licenseKey: alreadyIssued }]);
@@ -190,5 +203,12 @@ describe("handleFastspringOrderCompleted — fail-closed", () => {
     const err = await handleFastspringOrderCompleted(tx as any, event).catch((e: Error) => e);
     expect((err as Error).message).not.toContain("PRIVATE KEY");
     expect((err as Error).message).not.toContain("BEGIN");
+  });
+});
+
+describe("licenseEmailLocale", () => {
+  it("ja / ja-JP / JA → ja; en, de, empty, undefined → en; 'jam' is not ja", () => {
+    for (const v of ["ja", "ja-JP", "ja_JP", "JA", " ja "]) expect(licenseEmailLocale(v), v).toBe("ja");
+    for (const v of ["en", "de", "", undefined, "jam"]) expect(licenseEmailLocale(v), String(v)).toBe("en");
   });
 });
