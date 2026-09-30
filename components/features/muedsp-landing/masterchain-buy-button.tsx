@@ -13,7 +13,7 @@ import {
   requestQuote,
   type CheckoutQuote,
 } from "@/lib/masterchain/fastspring-checkout";
-import { MASTERCHAIN_PURCHASE_LIVE, MASTERCHAIN_VERSION } from "@/lib/masterchain/config";
+import { MASTERCHAIN_PURCHASE_LIVE } from "@/lib/masterchain/config";
 import { EULA_VERSION } from "@/lib/legal/eula";
 import { parseEulaContent } from "@/lib/legal/eula-content";
 import { EulaArticles, EulaBlocks } from "@/components/legal/eula-body";
@@ -252,7 +252,7 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
         <section data-testid="order-panel" className="flex shrink-0 flex-col gap-4 border-b border-[#eeeeee] p-5 md:w-[340px] md:border-b-0 md:border-l md:p-6">
           <div className="flex items-start justify-between gap-3">
             <h2 id={titleId} className="text-lg font-semibold leading-snug text-[#222]">
-              {tb("orderProduct", { version: MASTERCHAIN_VERSION })}
+              {tb("orderProduct")}
             </h2>
             <button
               type="button"

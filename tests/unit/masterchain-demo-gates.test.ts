@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
-import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_VERSION } from "@/lib/masterchain/config";
+import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 import en from "@/messages/en.json";
 import ja from "@/messages/ja.json";
 
@@ -12,8 +12,6 @@ it("★the demo is open only on a build that has the demo (≥ 1.0.1 — 1.0.0 h
   const v = versionIn(MASTERCHAIN_DOWNLOAD_URL);
   // ★Positive control: the parser reads a version at all (null would make the check below vacuous).
   expect(v).not.toBeNull();
-  // The purchase modal shows MASTERCHAIN_VERSION — the same version the buyer downloads.
-  expect(MASTERCHAIN_VERSION).toBe(v);
   expect(versionIn("https://mued.jp/downloads/MUEDsp-masterchain-1.0.0-installer.pkg")).toBe("1.0.0");
   // ★At least 1.0.1, not merely "not 1.0.0" (CCO #1177): a 0.1.x URL has no demo mode either.
   const atLeast = (a: string, b: string) => {

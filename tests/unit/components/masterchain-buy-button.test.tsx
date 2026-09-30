@@ -16,7 +16,7 @@ const { loadCheckoutScript, openCheckout, requestQuote, m } = vi.hoisted(() => (
   m: { purchaseLive: true, locale: "en", quote: null as Record<string, string> | null },
 }));
 
-vi.mock("@/lib/masterchain/config", () => ({ get MASTERCHAIN_PURCHASE_LIVE() { return m.purchaseLive; }, MASTERCHAIN_VERSION: "1.0.1" }));
+vi.mock("@/lib/masterchain/config", () => ({ get MASTERCHAIN_PURCHASE_LIVE() { return m.purchaseLive; } }));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: AnchorHTMLAttributes<HTMLAnchorElement>) => <a href={String(href)} {...props}>{children}</a>,
 }));
@@ -45,7 +45,7 @@ const US_QUOTE = { total: "$69.00", currency: "USD", taxPriceType: "added", tax:
 async function renderButton(eulaLive = true) {
   vi.stubEnv("NEXT_PUBLIC_EULA_LIVE", eulaLive ? "1" : "");
   const { MasterchainBuyButton } = await import("@/components/features/muedsp-landing/masterchain-buy-button");
-  return render(<MasterchainBuyButton buyLabel="Buy masterchain $69" />);
+  return render(<MasterchainBuyButton buyLabel="Buy masterchain" />);
 }
 
 beforeEach(() => {
@@ -60,7 +60,7 @@ afterEach(() => vi.unstubAllEnvs());
 describe("the Buy button", () => {
   it("★is pressable straight away while purchase is open (no consent box in front of it) and shows the sign-in note", async () => {
     await renderButton();
-    expect(screen.getByRole("button", { name: "Buy masterchain $69" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Buy masterchain" })).toBeEnabled();
     expect(screen.getByTestId("masterchain-signin-note")).toHaveTextContent("signInNote");
     await waitFor(() => expect(loadCheckoutScript).toHaveBeenCalledTimes(1));
   });
@@ -68,7 +68,7 @@ describe("the Buy button", () => {
   it("closed (code flag off or EULA not live): disabled, no script, no modal", async () => {
     m.purchaseLive = false;
     await renderButton();
-    const b = screen.getByRole("button", { name: "Buy masterchain $69" });
+    const b = screen.getByRole("button", { name: "Buy masterchain" });
     expect(b).toBeDisabled();
     fireEvent.click(b);
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -87,7 +87,7 @@ describe("the EULA modal", () => {
   it("★opens on Buy; 「購入へ進む」 waits for the consent check (no scroll condition), then opens checkout with consent", async () => {
     await renderButton();
     await waitFor(() => expect(loadCheckoutScript).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(screen.getByText("Body text.")).toBeInTheDocument(); // the EULA text itself
@@ -113,31 +113,31 @@ describe("the EULA modal", () => {
 
   it("the check is fresh every time the modal opens", async () => {
     await renderButton();
-    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.keyDown(document, { key: "Escape" });
-    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     expect(screen.getByRole("checkbox")).not.toBeChecked();
   });
 
-  it("the order panel says what you get — version from the installer, formats, where the key is", async () => {
+  it("the order panel says what you get — product (no version: kimny 10/1), formats, where the key is", async () => {
     await renderButton();
-    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     const order = screen.getByTestId("order-panel");
-    expect(screen.getByRole("dialog")).toHaveAccessibleName('orderProduct:{"version":"1.0.1"}');
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("orderProduct");
     for (const key of ["orderFormats", "orderKeyNote"]) expect(order).toHaveTextContent(key);
     expect(screen.getByTestId("eula-modal-body")).not.toContainElement(order);
   });
   it("while the checkout script loads, the button says so and waits", async () => {
     loadCheckoutScript.mockImplementationOnce(() => new Promise(() => {}));
     await renderButton();
-    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     expect(screen.getByRole("button", { name: "checkoutLoading" })).toBeDisabled();
   });
 
   it.each(["close button", "Escape", "backdrop"])("%s closes it without opening checkout", async (how) => {
     await renderButton();
-    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     if (how === "close button") fireEvent.click(screen.getByRole("button", { name: "modalClose" }));
     if (how === "Escape") fireEvent.keyDown(document, { key: "Escape" });
@@ -149,7 +149,7 @@ describe("the EULA modal", () => {
   it("★ja: no separate reference-translation box — the EULA title (（参考訳）) says it; no link to /en/eula (kimny 10/1)", async () => {
     m.locale = "ja";
     await renderButton();
-    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveTextContent("title"); // the EULA's own title (ja: 「…使用許諾契約（参考訳）」)
     expect(dialog).not.toHaveTextContent("referenceNote");
@@ -158,7 +158,7 @@ describe("the EULA modal", () => {
 
   it("★every link inside the modal opens in a new tab — same-site ones too — so the purchase flow stays", async () => {
     await renderButton();
-    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     const links = [...screen.getByRole("dialog").querySelectorAll("a")];
     // ★Positive control: both a mued.jp link and an external one are there.
     expect(links.map((a) => a.getAttribute("href"))).toEqual(
@@ -169,7 +169,7 @@ describe("the EULA modal", () => {
 
   it("the first focus lands inside the dialog (on the close button)", async () => {
     await renderButton();
-    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "modalClose" }));
   });
 });
@@ -178,7 +178,7 @@ describe("★the price — FastSpring's own figure for this session (kimny 10/1:
   const open = async () => {
     await renderButton();
     await waitFor(() => expect(loadCheckoutScript).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
   };
 
   it("asks FastSpring to price masterchain when the modal opens, and shows a placeholder — not $69 — meanwhile", async () => {
