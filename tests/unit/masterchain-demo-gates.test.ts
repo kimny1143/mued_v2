@@ -64,3 +64,17 @@ it("★with the demo open, no user-facing copy still calls masterchain \"in deve
   // ★Positive control: the pattern does match the old wording.
   expect(DEV.test("全段の masterchain は開発中。")).toBe(true);
 });
+
+it("★the masterchain image is the real 1.0.1 screen everywhere, never the old mock (kimny: no dummies)", () => {
+  for (const f of [
+    "components/features/muedsp-landing/muedsp-landing-content.tsx",
+    "components/features/landing/integrated-landing-content-v2.tsx",
+    "components/features/landing/studio-showroom.tsx",
+  ]) {
+    const src = readFileSync(f, "utf8");
+    expect(src, f).toContain("/muedsp/masterchain-1.0.1-demo.webp");
+    expect(src, f).not.toMatch(/"\/muedsp\/masterchain-mock\.webp"/);
+  }
+  // ★The captions say what it is — not "illustrative".
+  for (const m of [ja, en]) expect(m.muedsp.masterchain.mockLabel).toContain("1.0.1");
+});

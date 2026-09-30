@@ -34,9 +34,9 @@
     "explore": "Explore the instruments",
     "hooAlt": "Hoo, the amber-eyed owl, sitting at a studio mixing console",
     "pluginCollection": "Mastering plug-in collection",
-    "masterAlt": "An illustrative MUEDsp masterchain screen with Hoo in the background",
+    "masterAlt": "The MUEDsp masterchain 1.0.1 screen (demo), with Hoo in the background",
     "inDevelopment": "Demo available",
-    "mockNote": "Illustrative screen — the actual plugin differs in detail. See the product page for current availability.",
+    "mockNote": "The masterchain 1.0.1 screen (demo). See the product page for current availability.",
     "modulesTitle": "Start with a little character.",
     "modulesBody": "Free plug-ins for your own sessions. From stages of masterchain to standalone effects.",
     "freeAlpha": "FREE",
@@ -2526,7 +2526,7 @@
       "buyLabel": "Coming soon",
       "eulaConsentPrefix": "I have read and agree to the",
       "eulaLabel": "EULA",
-      "mockLabel": "Illustrative screen — the actual plugin differs in detail.",
+      "mockLabel": "The masterchain 1.0.1 screen (demo).",
       "controlsLead": "Here's how it works.",
       "controls": {
         "ceiling": {

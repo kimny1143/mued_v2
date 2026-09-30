@@ -34,9 +34,9 @@
     "explore": "制作の道具を見る",
     "hooAlt": "琥珀色の目をしたHooが、スタジオのミキシングコンソールに座っている",
     "pluginCollection": "マスタリング・プラグイン コレクション",
-    "masterAlt": "Hooを背景にしたMUEDsp masterchainの画面のイメージ",
+    "masterAlt": "Hooを背景にしたMUEDsp masterchain 1.0.1 の画面（デモ）",
     "inDevelopment": "デモあり",
-    "mockNote": "画面のイメージです（実際の画面とは細部が違います）。製品の提供状況は詳細ページをご覧ください。",
+    "mockNote": "masterchain 1.0.1 の画面（デモ）。製品の提供状況は詳細ページをご覧ください。",
     "modulesTitle": "まずは、ひとつの音から。",
     "modulesBody": "無料のプラグインを、あなたのセッションで。masterchainの段から、独立したエフェクトまで。",
     "freeAlpha": "無料",
@@ -2526,7 +2526,7 @@
       "buyLabel": "近日発売",
       "eulaConsentPrefix": "EULA を読み、内容に同意します:",
       "eulaLabel": "使用許諾契約",
-      "mockLabel": "画面のイメージです（実際の画面とは細部が違います）",
+      "mockLabel": "masterchain 1.0.1 の画面（デモ）",
       "controlsLead": "こんなふうに使います。",
       "controls": {
         "ceiling": {
