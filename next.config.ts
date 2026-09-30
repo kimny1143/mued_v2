@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/learn": ["./content/learn/**/*.md"],
     "/learn/[slug]": ["./content/learn/**/*.md"],
+    // lib/licenses/third-party.ts reads these at request time (same reason as /learn).
+    "/[locale]/licenses": ["./content/licenses/**/*.md"],
   },
   experimental: {
     // The design preview restored pre-rollout globals.css from the build cache despite
@@ -102,6 +104,8 @@ const nextConfig: NextConfig = {
       // there is the filesystem, so a new locale page enters it without anyone remembering to add it).
       { source: '/terms', destination: '/en/terms', permanent: false },
       { source: '/refund', destination: '/en/refund', permanent: false },
+      // Third-party licenses (EULA Section 9 links here). Same 307 treatment as the legal set above.
+      { source: '/licenses', destination: '/en/licenses', permanent: false },
       // Convenience redirects for short paths → canonical /dial/* paths
       {
         source: '/waitlist',

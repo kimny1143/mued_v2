@@ -287,6 +287,19 @@
       }
     }
   },
+  "licenses": {
+    "title": "第三者のライセンス",
+    "intro": "MUEDsp のプラグインに含まれる、第三者のソフトウェアと書体のライセンスです。",
+    "note": "ライセンスの本文は英語です。各プラグインのインストーラーに同梱の THIRD-PARTY-LICENSES.md と FONT-LICENSES.md と同じ内容です（1.0.0）。",
+    "thirdParty": "第三者のソフトウェア",
+    "fonts": "書体",
+    "plugins": {
+      "MUEDsp": "MUEDsp masterchain",
+      "MUEDsat": "MUEDsat",
+      "MUEDlim": "MUEDlim",
+      "MUEDrive": "MUEDrive"
+    }
+  },
   "eula": {
     "title": "MUEDsp エンドユーザー使用許諾契約",
     "effectiveDate": "2026年9月30日",

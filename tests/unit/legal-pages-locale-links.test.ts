@@ -58,6 +58,7 @@ const LEGAL_PAGES = ["privacy", "support", "tokushoho", "terms", "refund"] as co
 const NON_LEGAL_LOCALE_PAGES: Record<string, string> = {
   advisory: "サービス紹介（storefront）。法定表記は /tokushoho が担う",
   eula: "EULA_LIVE=false so not published; move to LEGAL_PAGES when going live",
+  licenses: "第三者のソフトウェアと書体のライセンス表示（EULA 第 9 条のリンク先）。販売・MoR の表記は持たない",
   muedial: "製品 LP。法定表記は /tokushoho が担う",
   muedlim: "製品 LP（無料プラグイン）",
   muedrive: "製品 LP（無料プラグイン）",
