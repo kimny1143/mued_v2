@@ -919,6 +919,21 @@ Hoo MCP経由の自動送信
     return { subject, html, text };
   },
 
+  /** Transactional demo receipt; marketing consent is handled separately. */
+  masterchainDemoDownload(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
+    const isJa = data.locale === 'ja';
+    const subject = isJa ? 'MUEDsp masterchain デモのダウンロード' : 'Your MUEDsp masterchain demo download';
+    const intro = isJa ? "MUEDsp masterchain のデモをお試しいただき、ありがとうございます。" : "Thanks for trying the MUEDsp masterchain demo.";
+    const limits = isJa ? "キーを入れなくても、デモとして期限なく使えます。デモの間は 45 秒ごとにエフェクトが一瞬抜け、開くたびに設定が既定に戻り、プリセットは保存できません。ライセンスキーを入れると、これらの制限はなくなります。" : "Without a key, masterchain runs as a demo with no time limit. In the demo the effect fades out every 45 seconds, settings return to their defaults each time you open it, and presets can't be saved. Entering a license key removes these limits.";
+    const label = isJa ? 'デモをダウンロード' : 'Download the demo';
+    const formats = 'VST3 · AU · AAX (Pro Tools) · macOS';
+    return {
+      subject,
+      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p><p>${limits}</p><p>${formats}</p>`),
+      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}\n\n${limits}\n\n${formats}\n\nglasswerks inc. — mued.jp`,
+    };
+  },
+
   /** Transactional purchase instructions. The key itself never enters email. */
   masterchainLicenseDelivery(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
@@ -1538,6 +1553,17 @@ class EmailService {
       to,
       ...template,
       tags: [{ name: 'type', value: 'research_waitlist_welcome' }],
+    });
+  }
+
+  async sendMasterchainDemoDownload(
+    to: EmailRecipient,
+    data: { locale: 'ja' | 'en' }
+  ): Promise<EmailResult> {
+    return this.send({
+      to,
+      ...emailTemplates.masterchainDemoDownload(data),
+      tags: [{ name: 'type', value: 'masterchain_demo_download' }],
     });
   }
 
