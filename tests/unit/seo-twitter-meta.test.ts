@@ -13,7 +13,7 @@ function pages(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const p = join(dir, name);
     if (statSync(p).isDirectory()) return pages(p);
-    return name === "page.tsx" ? [p] : [];
+    return name === "page.tsx" || name === "layout.tsx" ? [p] : [];
   });
 }
 
@@ -29,7 +29,7 @@ function block(src: string, key: string): string | null {
   return null;
 }
 
-it("every page with openGraph also sets twitter, and both carry the share image", () => {
+it("every page / layout with openGraph also sets twitter, and both carry a share image", () => {
   const withOg = pages("app").filter((p) => readFileSync(p, "utf8").includes("openGraph:"));
   // ★Positive control: the walk finds the pages at all.
   expect(withOg.length).toBeGreaterThan(5);
@@ -39,8 +39,8 @@ it("every page with openGraph also sets twitter, and both carry the share image"
     const og = block(src, "openGraph");
     const tw = block(src, "twitter");
     if (!tw) problems.push(`${p}: no twitter`);
-    if (og && !og.includes("images: SHARE_IMAGES")) problems.push(`${p}: openGraph without images`);
-    if (tw && !tw.includes("images: SHARE_IMAGES")) problems.push(`${p}: twitter without images`);
+    if (og && !/images: (DIAL_)?SHARE_IMAGES/.test(og)) problems.push(`${p}: openGraph without images`);
+    if (tw && !/images: (DIAL_)?SHARE_IMAGES/.test(tw)) problems.push(`${p}: twitter without images`);
   }
   expect(problems).toEqual([]);
 });

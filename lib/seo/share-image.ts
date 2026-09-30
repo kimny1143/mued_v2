@@ -13,3 +13,13 @@ export const SHARE_IMAGE = {
 } as const;
 
 export const SHARE_IMAGES = [SHARE_IMAGE];
+
+/** MUEDial's share card (dial.mued.jp) — the dial layout and every dial page that sets og/twitter use it. */
+export const DIAL_SHARE_IMAGE = {
+  url: "/muedial-hoo-mixing-console.webp",
+  width: 1200,
+  height: 630,
+  alt: "MUEDial — 宅録・DTM向けAIミキシング",
+} as const;
+
+export const DIAL_SHARE_IMAGES = [DIAL_SHARE_IMAGE];
