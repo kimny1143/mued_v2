@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { DEMO_SUBJECTS, LAUNCH_AT, PURCHASE_SUBJECTS, toLaunchNumbers } from "@/lib/funnel/launch";
 import { toFunnelNumbers, type FunnelReport } from "@/lib/funnel/numbers";
+import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_PURCHASE_LIVE } from "@/lib/masterchain/config";
 import { emailTemplates } from "@/lib/services/email.service";
 import type { Newsletter } from "@/lib/funnel/newsletters";
 import type { ResendEmail } from "@/lib/funnel/download-link-emails";
@@ -30,6 +31,30 @@ describe("launch numbers", () => {
     for (const locale of ["ja", "en"] as const) {
       expect(DEMO_SUBJECTS).toContain(emailTemplates.masterchainDemoDownload({ locale }).subject);
       expect(PURCHASE_SUBJECTS).toContain(emailTemplates.masterchainLicenseDelivery({ locale }).subject);
+    }
+  });
+
+  it("★the purchase subjects are EXACTLY the template's four (with and without a download URL)", async () => {
+    const subjects = new Set<string>();
+    for (const url of ["https://mued.jp/downloads/x.pkg", ""]) {
+      vi.resetModules();
+      vi.doMock("@/lib/masterchain/config", async (orig) => ({
+        ...(await orig<typeof import("@/lib/masterchain/config")>()),
+        MASTERCHAIN_DOWNLOAD_URL: url,
+      }));
+      const { emailTemplates: t } = await import("@/lib/services/email.service");
+      for (const locale of ["ja", "en"] as const) subjects.add(t.masterchainLicenseDelivery({ locale }).subject);
+      vi.doUnmock("@/lib/masterchain/config");
+    }
+    expect([...subjects].sort()).toEqual([...PURCHASE_SUBJECTS].sort());
+  });
+
+  it("★LAUNCH_AT may be set only once the demo AND purchase are both open (else both counts are 0 by construction)", () => {
+    // CCO #1168: with either gate closed, demo downloads / purchases cannot happen, so the fixed guide
+    // line "デモ DL < 30 → 伝え方" would point at the wrong cause. Set LAUNCH_AT after both flips.
+    if (LAUNCH_AT !== null) {
+      expect(MASTERCHAIN_DEMO_LIVE, "LAUNCH_AT is set but the demo entry is closed").toBe(true);
+      expect(MASTERCHAIN_PURCHASE_LIVE, "LAUNCH_AT is set but purchase is closed").toBe(true);
     }
   });
 
