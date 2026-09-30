@@ -2520,6 +2520,7 @@
     },
     "masterchain": {
       "eyebrow": "Demo available",
+      "eyebrowLive": "Out now",
       "heading": "MUEDsp masterchain",
       "body": "I've bundled the chain I always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details.",
       "priceNote": "One-time $69. Available at launch.",

@@ -129,7 +129,7 @@ export function MuedspLandingContent() {
         <section className="border-t border-white/5 px-6 py-14">
           <div className="mx-auto max-w-3xl">
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#f5a524]/70">
-              {tmc("eyebrow")}
+              {tmc(MASTERCHAIN_PURCHASE_LIVE ? "eyebrowLive" : "eyebrow")}
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">{tmc("heading")}</h2>
             <p className="mt-4 text-[17px] leading-[1.8] text-white/75">{tmc("body")}</p>
