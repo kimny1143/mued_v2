@@ -21,7 +21,10 @@ import type { Newsletter } from "./newsletters";
 import { emailTime, type ResendEmail } from "./download-link-emails";
 
 /** Send time of the launch newsletter (ISO, UTC). null = not sent yet → nothing is counted. */
-export const LAUNCH_AT: string | null = null;
+// ★Set 2026-10-01: the launch newsletter (Resend broadcast a615f3f2-4bd5-4e52-9e74-32a2ec67cbef, MUEDsp, 1,044
+//   recipients) — `sent_at` as Resend records it (2026-09-30 22:13:13.198Z = 2026-10-01 07:13:13 JST), measured
+//   with GET /broadcasts/{id} after conductor relayed it. kimny's confirmation purchase (20:01:23Z) is before it.
+export const LAUNCH_AT: string | null = "2026-09-30T22:13:13.198Z";
 
 /**
  * Exact subjects, copied from lib/services/email.service.ts (masterchainDemoDownload /
