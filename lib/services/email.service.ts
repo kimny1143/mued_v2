@@ -45,11 +45,10 @@ function masterchainPortalInstructions(isJa: boolean) {
  * ★Where this actually takes effect today (measured against prod, not assumed):
  *   - `/muedsp` (forward hook) — the next.config redirect keeps the query, so gtag reads it. ✓
  *   - `dial.mued.jp` (waitlist beta) — served 200 directly. ✓
- *   - `/dashboard/plugins` (portal button) — ✗ **only for recipients who are already signed in.**
- *     A signed-out visit is bounced to `/sign-in?redirect_url=%2Fdashboard%2Fplugins`, which keeps the
- *     pathname and DROPS the query, and the post-auth landing has no parameters either. So the campaign
- *     never reaches gtag for exactly the cohort the welcome email is aimed at. Fixing that means making
- *     the auth redirect carry the original query — an auth-path change, tracked separately.
+ *   - `/dashboard/plugins` (portal button) — ✓ ★re-measured 2026-09-30: a signed-out visit now goes to
+ *     `/sign-in?redirect_url=%2Fdashboard%2Fplugins%3Futm_source%3D…` — the query is carried through the
+ *     auth redirect (lib/middleware/sign-in-redirect.ts). The older note here said it was dropped; that
+ *     was fixed since and this line had not been updated.
  * Tagging is still correct here: the parameters are right, the delivery path is what's lossy.
  *
  * Taxonomy owned by content/data (data課 PR #177 is canonical); this file only applies it.
