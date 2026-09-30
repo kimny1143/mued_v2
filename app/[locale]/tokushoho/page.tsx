@@ -120,7 +120,7 @@ function TokushohoContent({ locale }: { locale: string }) {
             />
 
             {/* ★動作環境の値は ★実物の installer から採った（site copy から写していない）:
-                MUEDsp-masterchain-0.1.3-installer.pkg を 2026-09-16 に取得し、
+                MUEDsp-masterchain-1.0.0-installer.pkg で 2026-09-30 に再測（初回は 0.1.3・2026-09-16）。pkgutil --expand-full → VST3 / AU / AAX、
                   xar -tf   → VST3 / AU / AAX の3 sub-package（install-location もそれぞれ確認）
                   lipo      → x86_64 + arm64（∴ Universal）
                   otool -l  → LC_BUILD_VERSION minos 11.0（∴ macOS 11.0 以降）
