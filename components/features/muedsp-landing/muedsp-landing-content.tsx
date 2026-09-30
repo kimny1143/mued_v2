@@ -127,17 +127,8 @@ export function MuedspLandingContent() {
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#f5a524]/70">
               {tmc("eyebrow")}
             </p>
-            {/* ★Buy beside the heading, always pressable (kimny 2026-10-01): a visitor from the plugin's
-                "Buy masterchain" lands here and must see it without scrolling past a greyed-out button. */}
-            {/* Phones: heading → Buy → text (Buy stays in the first screen). sm+: text left, Buy right. */}
-            <div className="mt-3 grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-[1fr_auto]">
-              <h2 className="text-3xl font-bold tracking-tight text-white sm:col-start-1 sm:row-start-1">{tmc("heading")}</h2>
-              <div id="buy" className="scroll-mt-20 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:pt-1">
-                {/* ★The closed label says "Coming soon"; an open button says "masterchain を購入 $69". */}
-                <MasterchainBuyButton buyLabel={tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")} />
-              </div>
-              <p className="text-[17px] leading-[1.8] text-white/75 sm:col-start-1 sm:row-start-2">{tmc("body")}</p>
-            </div>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">{tmc("heading")}</h2>
+            <p className="mt-5 text-[17px] leading-[1.8] text-white/75">{tmc("body")}</p>
 
             {/* the flagship visual: an honest MOCK, captioned as such (not the shipping plugin) */}
             <figure className="mt-8">
@@ -160,6 +151,15 @@ export function MuedspLandingContent() {
                 {tmc("mockLabel")}
               </figcaption>
             </figure>
+
+            {/* ★Buy right under the screen image, left-aligned like the text (a right-aligned one read as 「なぜボタンが右？」), always pressable (kimny 2026-10-01: first
+                beside the heading so a visitor from the plugin's "Buy masterchain" sees it without scrolling; then
+                「UI画像より先に購入ボタンが出ているのが変」 — the product first, then the button). */}
+            <div id="buy" className="mt-5 scroll-mt-20">
+              {/* ★The closed label says "Coming soon"; an open button says "masterchain を購入" (no price: the modal
+                  shows FastSpring's figure in the buyer's currency). */}
+              <MasterchainBuyButton buyLabel={tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")} />
+            </div>
 
             {/* the planned controls — shown as "こうなります", not editable here */}
             <p className="mt-10 text-lg font-medium leading-snug text-white/85">

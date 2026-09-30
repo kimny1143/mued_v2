@@ -29,7 +29,7 @@ const PURCHASE_OPEN = MASTERCHAIN_PURCHASE_LIVE && EULA_CONSENT_LIVE;
  * masterchain's Buy (kimny 2026-10-01, verbatim: 「このエリアにもうmasterchainの購入ボタンが見えてないとダメだよね。
  * スクロールしてさ、しかもEULA押すまで暗転してるボタンなんて誰も押さないわ」).
  *
- * The button sits beside masterchain's heading and is always pressable while purchase is open. Pressing it
+ * The button sits right under masterchain's screen image and is always pressable while purchase is open. Pressing it
  * opens a two-column modal (kimny 10/1 「やってみよう」): the order on the right — what you get, $69, the EULA
  * consent check and 「購入へ進む」 (pressable once checked) straight to the FastSpring popup, passing the EULA version as before (the tag contract in
  * fastspring-checkout.ts) — and the EULA (2026.10) on the left, scrolling in its own column. On a phone the
