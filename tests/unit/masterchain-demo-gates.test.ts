@@ -93,3 +93,12 @@ it("★the demo is not a selling point: no 'demo available' badge / eyebrow anyw
   expect(ja.muedsp.masterchain.eyebrow).toBe("作曲家のためのマスターチェーン");
   expect(en.muedsp.masterchain.eyebrow).toBe("A master chain for composers");
 });
+
+it("★no release date for masterchain on Windows anywhere on the site (kimny 2026-09-30)", () => {
+  const DATE = /10 ?月 ?14|October 14|Oct\.? 14|10\/14/;
+  expect(JSON.stringify([ja, en])).not.toMatch(DATE);
+  for (const f of ["app/llms.txt/route.ts", "components/features/muedsp-landing/muedsp-landing-content.tsx"]) {
+    expect(readFileSync(f, "utf8"), f).not.toMatch(DATE);
+  }
+  expect(ja.muedsp.windows.masterchainStatus).toBe("近日公開予定。ライセンスキーはMac版と共通です");
+});
