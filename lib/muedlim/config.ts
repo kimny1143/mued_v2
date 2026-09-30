@@ -22,8 +22,22 @@ export const MUEDLIM_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Served from the mued.jp
 // static path (public/downloads/). NOT a secret.
-// Package: MUEDlim 1.0.0 (2026-09-30) — the 1.0.0 release; all four MUEDsp plugins ship 1.0.0 together
-//   (kimny 9/23). Built by dsp with the provisional EULA 2026.09 in the installer.
+// Package: MUEDlim 1.0.0 — EULA 2026.10 rebuild (2026-09-30). Same plug-in as the first 1.0.0: dsp §5
+//   compared VST3 + AU on copies with the signature stripped (identical; only re-signed) and AAX
+//   byte-for-byte (identical; mued re-checked AAX with diff -r on the expanded payloads). What changed
+//   is the installer's EULA: Resources/MUED-EULA-2026.10.rtf (sha256 44f5b54f7f48f4a6…).
+//   ★Served from /downloads/eula-2026.10/ under the SAME file name (conductor 2026-09-30): the name
+//   stays name-version-installer.pkg, the directory separates the build. The first 1.0.0 stays at
+//   /downloads/MUEDlim-1.0.0-installer.pkg — sent mail links to it — and is still pinned in
+//   tests/unit/plugin-download-artifact-integrity.test.ts. A different URL also means no stale cache.
+//   sha256: 123bb9994e7ea85099778603484576200cddf017c82802b92935c4d8758bb7c7
+//   size:   3,269,395 B
+//   ★Verified 2026-09-30 on the copy under public/downloads/eula-2026.10/: sha256 + bytes matched
+//   conductor's relay, `cmp` byte-identical to dsp's plugin/dist/, magic `xar!`, pkgutil = Developer
+//   ID Installer: glasswerks inc. (F529L4WT3V), stapler validate OK, spctl -t install = Notarized.
+//   Verify after any swap: shasum -a 256 public/downloads/eula-2026.10/MUEDlim-1.0.0-installer.pkg
+//
+// Previous — MUEDlim 1.0.0, first build (2026-09-30), provisional EULA 2026.09 in the installer:
 //   sha256: e71952251543959bb156f81611b1a5c40834699add4a5a2b687c35dce5600ad3
 //   size:   3,272,834 B
 //   ★Verified 2026-09-30 on the copy under public/downloads/ (not the relayed values): shasum -a 256
@@ -53,7 +67,7 @@ export const MUEDLIM_LIVE = true;
 //   edited. Publishing only under a new name would leave every one of them on the crashing build.
 //   So the old name survives as a compatibility alias (its filename now understates its contents),
 //   and this constant points at the honest new name. Both files are byte-identical.
-export const MUEDLIM_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDlim-1.0.0-installer.pkg";
+export const MUEDLIM_DOWNLOAD_URL = "https://mued.jp/downloads/eula-2026.10/MUEDlim-1.0.0-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Bumped when a new build ships. NOT a secret.

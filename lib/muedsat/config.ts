@@ -28,8 +28,22 @@ export const MUEDSAT_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Served from mued.jp static
 // hosting (public/downloads/, #598). NOT a secret (public CDN URL).
-// Package: MUEDsat 1.0.0 (2026-09-30) — the 1.0.0 release; all four MUEDsp plugins ship 1.0.0 together
-//   (kimny 9/23). Built by dsp with the provisional EULA 2026.09 in the installer.
+// Package: MUEDsat 1.0.0 — EULA 2026.10 rebuild (2026-09-30). Same plug-in as the first 1.0.0: dsp §5
+//   compared VST3 + AU on copies with the signature stripped (identical; only re-signed) and AAX
+//   byte-for-byte (identical; mued re-checked AAX with diff -r on the expanded payloads). What changed
+//   is the installer's EULA: Resources/MUED-EULA-2026.10.rtf (sha256 44f5b54f7f48f4a6…).
+//   ★Served from /downloads/eula-2026.10/ under the SAME file name (conductor 2026-09-30): the name
+//   stays name-version-installer.pkg, the directory separates the build. The first 1.0.0 stays at
+//   /downloads/MUEDsat-1.0.0-installer.pkg — sent mail links to it — and is still pinned in
+//   tests/unit/plugin-download-artifact-integrity.test.ts. A different URL also means no stale cache.
+//   sha256: 9871b6071ddb7b522162000bcd28d1b6993c5ccfcb88a04744c1d0d27b8b4dc8
+//   size:   3,417,085 B
+//   ★Verified 2026-09-30 on the copy under public/downloads/eula-2026.10/: sha256 + bytes matched
+//   conductor's relay, `cmp` byte-identical to dsp's plugin/dist/, magic `xar!`, pkgutil = Developer
+//   ID Installer: glasswerks inc. (F529L4WT3V), stapler validate OK, spctl -t install = Notarized.
+//   Verify after any swap: shasum -a 256 public/downloads/eula-2026.10/MUEDsat-1.0.0-installer.pkg
+//
+// Previous — MUEDsat 1.0.0, first build (2026-09-30), provisional EULA 2026.09 in the installer:
 //   sha256: e36fd15220290c7d9b8faf51574711263df73321a26360533b8a6a7e876c89ff
 //   size:   3,420,493 B
 //   ★Verified 2026-09-30 on the copy under public/downloads/ (not the relayed values): shasum -a 256
@@ -53,7 +67,7 @@ export const MUEDSAT_LIVE = true;
 // ★2026-08-27 (A'): the 0.1.0 FILENAME was ALSO overwritten with this same 0.1.1 payload, on purpose —
 //   same reason as MUEDlim (already-sent emails carry the literal 0.1.0 URL and cannot be edited).
 //   The old name is a compatibility alias; this constant points at the honest new name.
-export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDsat-1.0.0-installer.pkg";
+export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/eula-2026.10/MUEDsat-1.0.0-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Bumped when a new build ships. NOT a secret.

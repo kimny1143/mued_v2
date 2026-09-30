@@ -63,14 +63,16 @@ const ARTIFACTS = [
   {
     name: "MUEDlim",
     url: MUEDLIM_DOWNLOAD_URL,
-    sha256: "e71952251543959bb156f81611b1a5c40834699add4a5a2b687c35dce5600ad3",
-    bytes: 3_272_834,
+    // 1.0.0, EULA 2026.10 rebuild (/downloads/eula-2026.10/). The first 1.0.0 is pinned as a shelf entry below.
+    sha256: "123bb9994e7ea85099778603484576200cddf017c82802b92935c4d8758bb7c7",
+    bytes: 3_269_395,
   },
   {
     name: "MUEDsat",
     url: MUEDSAT_DOWNLOAD_URL,
-    sha256: "e36fd15220290c7d9b8faf51574711263df73321a26360533b8a6a7e876c89ff",
-    bytes: 3_420_493,
+    // 1.0.0, EULA 2026.10 rebuild (/downloads/eula-2026.10/). The first 1.0.0 is pinned as a shelf entry below.
+    sha256: "9871b6071ddb7b522162000bcd28d1b6993c5ccfcb88a04744c1d0d27b8b4dc8",
+    bytes: 3_417_085,
   },
   {
     name: "MUEDrive",
@@ -80,6 +82,21 @@ const ARTIFACTS = [
   },
   // ★Present only once BOTH the URL and the pin exist — so the same two tests below start covering
   //   the paid artifact the moment it is published, with no separate wiring to remember.
+  // ★Shelf: the first 1.0.0 builds (EULA 2026.09). No constant points here any more, but the launch
+  //   mail of 2026-09-30 does — so the bytes behind these URLs must not change (kimny 9/30: published
+  //   versions stay available).
+  {
+    name: "MUEDlim 1.0.0 (first build, shelf)",
+    url: "https://mued.jp/downloads/MUEDlim-1.0.0-installer.pkg",
+    sha256: "e71952251543959bb156f81611b1a5c40834699add4a5a2b687c35dce5600ad3",
+    bytes: 3_272_834,
+  },
+  {
+    name: "MUEDsat 1.0.0 (first build, shelf)",
+    url: "https://mued.jp/downloads/MUEDsat-1.0.0-installer.pkg",
+    sha256: "e36fd15220290c7d9b8faf51574711263df73321a26360533b8a6a7e876c89ff",
+    bytes: 3_420_493,
+  },
   ...(MASTERCHAIN_DOWNLOAD_URL && MASTERCHAIN_PIN
     ? [{ name: "masterchain", url: MASTERCHAIN_DOWNLOAD_URL, ...MASTERCHAIN_PIN }]
     : []),
