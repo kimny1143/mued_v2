@@ -283,7 +283,7 @@ async function processFastspringEvent(event: unknown): Promise<void> {
         .set({
           status: "failed",
           errorMessage: noPurchase
-            ? "return.created: no masterchain purchase row for this order (yet) — left for redelivery"
+            ? "return.created: no unrefunded masterchain purchase row matched (order not written yet, or a partial return on an already refunded row) — left for redelivery"
             : type === "return.created"
               ? "return.created missing return id / original order — envelope not the shape we assumed"
               : "order.completed missing orderId/email — envelope not the shape we assumed",
@@ -326,7 +326,13 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     // ★tx は commit 済（行は `failed` で残っている）∴ ★ここで throw しても行は消えない。
     // ★throw は POST handler の catch に落ちて 500 になり、★FastSpring が再配達する。
     throw new Error(
-      `[fastspring] event ${eventId}: ${type === "return.created" ? "return.created missing return id / original order" : "order.completed missing orderId/email"} — refusing to report success`,
+      `[fastspring] event ${eventId}: ${
+        noPurchase
+          ? "return.created matched no unrefunded purchase row (not written yet, or partial on a refunded row)"
+          : type === "return.created"
+            ? "return.created missing return id / original order"
+            : "order.completed missing orderId/email"
+      } — refusing to report success`,
     );
   }
 }

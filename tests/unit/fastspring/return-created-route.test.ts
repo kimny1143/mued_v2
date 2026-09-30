@@ -118,6 +118,6 @@ describe("FastSpring route — return.created (conductor 2026-09-30, f)", () => 
     const response = await POST(request({ events: [ret(true)] }));
     expect(response.status).toBe(500);
     expect(txUpdates.at(-1)).toMatchObject({ status: "failed" });
-    expect(String((txUpdates.at(-1) as { errorMessage: string }).errorMessage)).toMatch(/no masterchain purchase row/);
+    expect(String((txUpdates.at(-1) as { errorMessage: string }).errorMessage)).toMatch(/no unrefunded masterchain purchase row matched/);
   });
 });
