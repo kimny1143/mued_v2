@@ -14,6 +14,8 @@ vi.mock("@/lib/masterchain/config", () => ({
   get MASTERCHAIN_TRIAL_LIVE() { return m.live; }, MASTERCHAIN_TRIAL_DAYS: 15,
   // The product page now also imports the (closed) demo flag; this test is about the trial CTA only.
   MASTERCHAIN_DEMO_LIVE: false,
+  // …and the purchase flag (closed here: this test pins the closed-state purchase copy).
+  MASTERCHAIN_PURCHASE_LIVE: false,
 }));
 vi.mock("@/components/brand/brand-header", () => ({ BrandHeader: () => null }));
 vi.mock("@/components/features/muedsat-landing/muedsat-signup-form", () => ({

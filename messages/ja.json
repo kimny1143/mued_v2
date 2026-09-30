@@ -2524,6 +2524,8 @@
       "body": "僕がいつもマスタリングで使ってるチェーンを、1つのプラグインにまとめました。コンプ、EQ、リミッター。細かい調整に潜り込まなくても曲を仕上げられるように、ノブは少なく。",
       "priceNote": "買い切り $69。発売と同時にご案内します。",
       "buyLabel": "近日発売",
+      "priceNoteLive": "買い切り $69。",
+      "buyLabelLive": "購入する",
       "eulaConsentPrefix": "EULA を読み、内容に同意します:",
       "eulaLabel": "使用許諾契約",
       "mockLabel": "masterchain 1.0.1 の画面（デモ）",

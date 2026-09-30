@@ -2524,6 +2524,8 @@
       "body": "I've bundled the chain I always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details.",
       "priceNote": "One-time $69. Available at launch.",
       "buyLabel": "Coming soon",
+      "priceNoteLive": "One-time $69.",
+      "buyLabelLive": "Buy",
       "eulaConsentPrefix": "I have read and agree to the",
       "eulaLabel": "EULA",
       "mockLabel": "The masterchain 1.0.1 screen (demo).",
