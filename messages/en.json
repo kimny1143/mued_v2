@@ -510,15 +510,15 @@
     },
     "who": {
       "title": "1. Who handles refunds",
-      "body": "Paid plugin orders are sold by FastSpring, Inc. as the Merchant of Record. Payments and refunds for those orders are therefore handled by FastSpring under its refund conditions. glasswerks inc. develops and supports the software and will help you with a request, but does not process the payment itself."
+      "body": "Paid plugin orders are sold by FastSpring, Inc. as the Merchant of Record. FastSpring handles payments and refunds for those orders and applies this refund policy when it does. glasswerks inc. develops and supports the software and will help you with a request, but does not process the payment itself."
     },
     "digital": {
       "title": "2. Digital products",
-      "body": "Our paid products are digital and are delivered immediately by email after purchase. Where a refund is available, it is issued to the original payment method."
+      "body": "Our paid products are digital. As soon as payment completes, your license key is ready in your portal on mued.jp (we email you how to get it). Because these are downloadable digital products, purchases are generally non-refundable once the license key has been delivered, except in cases of a billing error or a confirmed technical problem that prevents you from using the software. You can check that the software runs in your setup with the demo before you buy. Where a refund is available, it is issued to the original payment method. If the law of your country gives you a right to withdraw from or cancel a purchase of digital content, nothing in this policy limits that right."
     },
     "howTo": {
       "title": "3. How to request a refund",
-      "body": "Use the order confirmation email from FastSpring, which contains a link to manage the order, or contact us and we will point you to the right place. Please include the order reference."
+      "body": "Use the order confirmation email from FastSpring, which contains a link to manage the order, or FastSpring's consumer support at https://fastspring.com/consumer-support/, or contact us and we will point you to the right place. Please include the order reference."
     },
     "plugins": {
       "title": "4. Plugins",
@@ -637,7 +637,7 @@
       },
       "cancellation": {
         "title": "Cancellation and Refunds",
-        "description": "FastSpring, Inc. is the Merchant of Record for this product, so refunds are handled by FastSpring under its refund terms. See the Refund Policy for the procedure.\n\nIf the plugin does not run on a supported environment, please contact our support (support@mued.jp) first. Most such reports turn out to be configuration issues, and getting it running is usually the better outcome than a refund.\n\nFree modules involve no payment and are therefore not subject to refunds.",
+        "description": "FastSpring, Inc. is the Merchant of Record for this product and handles refunds under our Refund Policy. Purchases are generally non-refundable once the license key has been delivered (except for a billing error or a confirmed technical problem that prevents use). See the Refund Policy for the procedure and details.\n\nIf the plugin does not run on a supported environment, please contact our support (support@mued.jp) first. Most such reports turn out to be configuration issues, and getting it running is usually the better outcome than a refund.\n\nFree modules involve no payment and are therefore not subject to refunds.",
         "demo": "Before you buy, you can check that it runs in your setup with the demo."
       },
       "environment": {
