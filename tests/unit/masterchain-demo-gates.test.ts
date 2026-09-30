@@ -25,12 +25,15 @@ it("★the demo is open only on a build that has the demo (≥ 1.0.1 — 1.0.0 h
 
 it("gates the demo in product UI, FAQ UI and FAQ structured data on the one flag", () => {
   const product = readFileSync("components/features/muedsp-landing/muedsp-landing-content.tsx", "utf8");
-  expect(product).toMatch(/MASTERCHAIN_DEMO_LIVE && \([\s\S]*?id="demo"[\s\S]*?tmc\("demoToggle"\)[\s\S]*?tmc\("demoNote"\)[\s\S]*?<MasterchainDemoForm \/>[\s\S]*?\)}/);
+  // ★Buy + demo live in one block (kimny 10/1): the demo parts are gated inside MasterchainBuyTry on the flag.
+  const block = readFileSync("components/features/muedsp-landing/masterchain-buy-try.tsx", "utf8");
+  expect(block).toMatch(/MASTERCHAIN_DEMO_LIVE && \(\s*<button\s+type="submit"/);
+  expect(block).toMatch(/MASTERCHAIN_DEMO_LIVE && \([\s\S]*?id="masterchain-demo-email"/);
+  expect(product).toContain("<MasterchainBuyTry");
   // ★Purchase leads (kimny 10/1): the demo sits after the buy row, always visible; the hero CTA goes to #buy.
-  expect(product.indexOf('id="buy"')).toBeLessThan(product.indexOf('id="demo"'));
+  expect(block).toContain('id="demo"'); // #demo still lands on the block (demo mail / old links)
   expect(product).not.toMatch(/<details/); // ★always visible, never folded (kimny 10/1)
   expect(product).toContain('href="#buy"');
-  expect(product.indexOf("{MASTERCHAIN_DEMO_LIVE &&")).toBeGreaterThan(product.indexOf("<MasterchainPurchaseControl"));
   const support = readFileSync("app/[locale]/support/page.tsx", "utf8");
   expect(support.match(/\.\.\.\(MASTERCHAIN_DEMO_LIVE \? \["q10" as const\] : \[\]\)/g)).toHaveLength(2);
   const legal = readFileSync("app/[locale]/tokushoho/page.tsx", "utf8");
@@ -40,7 +43,7 @@ it("keeps all new translation keys paired", () => {
   expect(Object.keys(ja.muedsp.demo)).toEqual(Object.keys(en.muedsp.demo));
   expect(Object.keys(ja.muedsp.demo.errors)).toEqual(Object.keys(en.muedsp.demo.errors));
   for (const messages of [ja, en]) {
-    expect(messages.muedsp.masterchain.demoNote).toBeTruthy();
+    expect(messages.muedsp.buyTry.demoNote).toMatch(/45/);
     expect(messages.support.faq.q10.question).toBeTruthy();
     expect(messages.support.faq.q10.answer).toBeTruthy();
     expect(messages.tokushoho.muedsp.cancellation.demo).toBeTruthy();

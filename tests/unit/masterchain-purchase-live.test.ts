@@ -14,15 +14,15 @@ it("purchase is open only with the demo already open", () => {
 it("★an open Buy button never says \"Coming soon\" — the label and price note switch on the same flag", () => {
   const landing = readFileSync("components/features/muedsp-landing/muedsp-landing-content.tsx", "utf8");
   expect(landing).toContain('tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")');
-  expect(landing).toContain('tmc(MASTERCHAIN_PURCHASE_LIVE ? "priceNoteLive" : "priceNote")');
+  // ★The closed-state price line ("Available at launch") shows only while closed; open, the price is on the button.
+  expect(landing).toMatch(/\{!MASTERCHAIN_PURCHASE_LIVE && \(\s*<p[^>]*>\{tmc\("priceNote"\)\}<\/p>/);
   // The "notify me at launch" link is for the closed state only.
   expect(landing).toMatch(/\{!MASTERCHAIN_PURCHASE_LIVE && \(\s*<a\s+href="#get"[\s\S]*?発売時に知らせる/);
   for (const m of [ja, en]) {
     const mc = m.muedsp.masterchain;
     expect(mc.buyLabelLive).toBeTruthy();
     expect(mc.buyLabelLive).not.toBe(mc.buyLabel);
-    expect(mc.priceNoteLive).toContain("$69");
-    expect(mc.priceNoteLive).not.toMatch(/発売と同時|Available at launch/);
+    expect(mc.buyLabelLive).toBe("BUY $69"); // kimny 10/1: the same letters in ja and en
   }
 });
 

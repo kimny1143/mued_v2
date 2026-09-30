@@ -2520,13 +2520,9 @@
       "body": "I've bundled the chain I always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details.",
       "priceNote": "One-time $69. Available at launch.",
       "buyLabel": "Coming soon",
-      "priceNoteLive": "One-time $69.",
-      "buyLabelLive": "Buy",
+      "buyLabelLive": "BUY $69",
       "eulaConsentPrefix": "I have read and agree to the",
       "eulaLabel": "EULA",
-      "signInNote": "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
-      "thanks": "Thank you for your purchase. We've sent instructions to the email you used at checkout. You can also get the download and your license key in your portal (mued.jp/dashboard/plugins).",
-      "thanksPortal": "Open your portal",
       "mockLabel": "The masterchain 1.0.1 screen (demo).",
       "controlsLead": "Here's how it works.",
       "controls": {
@@ -2550,9 +2546,18 @@
           "name": "Bypass",
           "desc": "The whole plugin on/off."
         }
-      },
-      "demoToggle": "Try it before you buy (demo, no time limit)",
-      "demoNote": "After processing the first 45 seconds of audio, it passes audio through unprocessed until you reinsert it, and settings aren't saved."
+      }
+    },
+    "buyTry": {
+      "eulaConsentPrefix": "I have read and agree to the",
+      "eulaLabel": "EULA",
+      "try": "TRY",
+      "emailLabel": "Email (for TRY)",
+      "emailPlaceholder": "you@example.com",
+      "demoNote": "The demo has no time limit. Each insert runs for the first 45 seconds. Settings aren't saved. TRY starts the download and sends one receipt email.",
+      "signInNote": "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
+      "thanks": "Thank you for your purchase. We've sent instructions to the email you used at checkout. You can also get the download and your license key in your portal (mued.jp/dashboard/plugins).",
+      "thanksPortal": "Open your portal"
     },
     "demo": {
       "emailLabel": "Email",

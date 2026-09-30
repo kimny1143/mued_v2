@@ -2520,13 +2520,9 @@
       "body": "僕がいつもマスタリングで使ってるチェーンを、1つのプラグインにまとめました。コンプ、EQ、リミッター。細かい調整に潜り込まなくても曲を仕上げられるように、ノブは少なく。",
       "priceNote": "買い切り $69。発売と同時にご案内します。",
       "buyLabel": "近日発売",
-      "priceNoteLive": "買い切り $69。",
-      "buyLabelLive": "購入する",
+      "buyLabelLive": "BUY $69",
       "eulaConsentPrefix": "EULA を読み、内容に同意します:",
       "eulaLabel": "使用許諾契約",
-      "signInNote": "購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。",
-      "thanks": "購入ありがとうございます。購入時のメールアドレスに案内をお送りしました。ダウンロードと鍵は、ポータル（mued.jp/dashboard/plugins）でも受け取れます。",
-      "thanksPortal": "ポータルを開く",
       "mockLabel": "masterchain 1.0.1 の画面（デモ）",
       "controlsLead": "こんなふうに使います。",
       "controls": {
@@ -2550,9 +2546,18 @@
           "name": "Bypass",
           "desc": "プラグイン全体のオン/オフ。"
         }
-      },
-      "demoToggle": "購入前に試す（デモ・期限なし）",
-      "demoNote": "挿してから音を 45 秒ぶん処理した後は、挿し直すまで原音のまま通り、設定は保存されません。"
+      }
+    },
+    "buyTry": {
+      "eulaConsentPrefix": "EULA を読み、内容に同意します:",
+      "eulaLabel": "使用許諾契約",
+      "try": "TRY",
+      "emailLabel": "メールアドレス（TRY 用）",
+      "emailPlaceholder": "you@example.com",
+      "demoNote": "デモは期限なし。挿すたびに最初の 45 秒だけ効きます。設定は保存されません。TRY でダウンロードが始まり、控えのメールを 1 通お送りします。",
+      "signInNote": "購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。",
+      "thanks": "購入ありがとうございます。購入時のメールアドレスに案内をお送りしました。ダウンロードと鍵は、ポータル（mued.jp/dashboard/plugins）でも受け取れます。",
+      "thanksPortal": "ポータルを開く"
     },
     "demo": {
       "emailLabel": "メールアドレス",
