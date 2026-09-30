@@ -4,7 +4,9 @@
 import type { ReactNode } from "react";
 import { isExternalHref, parseInline, type EulaArticle, type EulaBlock } from "@/lib/legal/eula-content";
 
-function Inline({ text }: { text: string }) {
+/** `newTab`: every link opens in a new tab — used inside the purchase modal, so no link can take the buyer
+ *  away from it (conductor/kimny 2026-10-01). On the /eula page itself, same-site links open in place. */
+function Inline({ text, newTab = false }: { text: string; newTab?: boolean }) {
   return (
     <>
       {parseInline(text).map((node, i): ReactNode => {
@@ -18,7 +20,7 @@ function Inline({ text }: { text: string }) {
               </strong>
             );
           case "link":
-            return isExternalHref(node.href) ? (
+            return newTab || isExternalHref(node.href) ? (
               <a key={i} href={node.href} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
                 {node.value}
               </a>
@@ -35,14 +37,14 @@ function Inline({ text }: { text: string }) {
   );
 }
 
-export function EulaBlocks({ blocks }: { blocks: EulaBlock[] }) {
+export function EulaBlocks({ blocks, newTab = false }: { blocks: EulaBlock[]; newTab?: boolean }) {
   return (
     <>
       {blocks.map((block, i) => {
         if (typeof block === "string") {
           return (
             <p key={i} className="text-slate-400 mb-4">
-              <Inline text={block} />
+              <Inline text={block} newTab={newTab} />
             </p>
           );
         }
@@ -52,7 +54,7 @@ export function EulaBlocks({ blocks }: { blocks: EulaBlock[] }) {
           <ListTag key={i} className={`${"ul" in block ? "list-disc" : "list-decimal"} pl-6 space-y-2 text-slate-400 mb-4`}>
             {items.map((item, j) => (
               <li key={j}>
-                <Inline text={item} />
+                <Inline text={item} newTab={newTab} />
               </li>
             ))}
           </ListTag>
@@ -62,13 +64,13 @@ export function EulaBlocks({ blocks }: { blocks: EulaBlock[] }) {
   );
 }
 
-export function EulaArticles({ articles }: { articles: EulaArticle[] }) {
+export function EulaArticles({ articles, newTab = false }: { articles: EulaArticle[]; newTab?: boolean }) {
   return (
     <>
       {articles.map((article, i) => (
         <section key={i} className="mb-8">
           <h2 className="text-xl font-semibold text-white mb-4">{article.heading}</h2>
-          <EulaBlocks blocks={article.blocks} />
+          <EulaBlocks blocks={article.blocks} newTab={newTab} />
         </section>
       ))}
     </>

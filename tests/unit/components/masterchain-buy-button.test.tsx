@@ -21,7 +21,7 @@ vi.mock("next-intl", () => {
   const t = (key: string) => key;
   const eula = Object.assign((key: string) => key, {
     raw: (key: string) =>
-      key === "intro" ? ["Intro text."] : key === "articles" ? [{ heading: "1. Grant", blocks: ["Body text."] }] : key === "effectiveDate" ? "October 1, 2026" : "Last updated",
+      key === "intro" ? ["Intro text. See https://mued.jp/ja/refund and https://fastspring.com/privacy/ ."] : key === "articles" ? [{ heading: "1. Grant", blocks: ["Body text."] }] : key === "effectiveDate" ? "October 1, 2026" : "Last updated",
     has: () => true,
   });
   return { useLocale: () => m.locale, useTranslations: (ns?: string) => (ns === "eula" ? eula : t) };
@@ -102,12 +102,25 @@ describe("the EULA modal", () => {
     expect(openCheckout).not.toHaveBeenCalled();
   });
 
-  it("ja shows the reference-translation note with a link to the English text; en does not", async () => {
+  it("★ja shows the reference-translation note with NO link out; en shows none (kimny 10/1: a link out is an exit)", async () => {
     m.locale = "ja";
     await renderButton();
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
-    expect(screen.getByTestId("eula-modal-reference-note")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "modalEnglishLink" })).toHaveAttribute("href", "/en/eula");
+    const note = screen.getByTestId("eula-modal-reference-note");
+    expect(note).toHaveTextContent("referenceNote");
+    expect(note.querySelector("a")).toBeNull();
+    expect(screen.getByRole("dialog").querySelector('a[href="/en/eula"]')).toBeNull();
+  });
+
+  it("★every link inside the modal opens in a new tab — same-site ones too — so the purchase flow stays", async () => {
+    await renderButton();
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    const links = [...screen.getByRole("dialog").querySelectorAll("a")];
+    // ★Positive control: both a mued.jp link and an external one are there.
+    expect(links.map((a) => a.getAttribute("href"))).toEqual(
+      expect.arrayContaining(["https://mued.jp/ja/refund", "https://fastspring.com/privacy/"]),
+    );
+    for (const a of links) expect(a).toHaveAttribute("target", "_blank");
   });
 
   it("the first focus lands inside the dialog (on the close button)", async () => {

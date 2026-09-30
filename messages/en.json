@@ -2561,8 +2561,7 @@
       "agreeAndBuy": "Agree and continue to purchase",
       "agreeNote": "By continuing you agree to the EULA above.",
       "checkoutLoading": "Preparing checkout…",
-      "modalClose": "Close",
-      "modalEnglishLink": "Open the English (governing) text"
+      "modalClose": "Close"
     },
     "demo": {
       "emailLabel": "Email",

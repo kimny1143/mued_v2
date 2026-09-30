@@ -189,14 +189,13 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
         <div className="flex-1 overflow-y-auto px-5 py-4 text-sm" data-testid="eula-modal-body">
           {isJa && (
             <p data-testid="eula-modal-reference-note" className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-200">
-              {t("referenceNote")}{" "}
-              <Link href="/en/eula" target="_blank" rel="noopener" className="underline">
-                {tb("modalEnglishLink")}
-              </Link>
+              {/* ★No link out of the modal (kimny 10/1: 「リンクつけちゃったらそれは離脱の扉」). The note stays: the
+                  English text governs (EULA §16). */}
+              {t("referenceNote")}
             </p>
           )}
-          <EulaBlocks blocks={content.intro} />
-          <EulaArticles articles={content.articles} />
+          <EulaBlocks blocks={content.intro} newTab />
+          <EulaArticles articles={content.articles} newTab />
         </div>
         {/* ★Always visible under the text and pressable at once (kimny 10/1: 「全部読まないとボタン押せない、に
             しちゃうと絶対離脱する…ボタンは常時下に表示しておいて押せるようにした方がいい」). The text stays

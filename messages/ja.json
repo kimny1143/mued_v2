@@ -2561,8 +2561,7 @@
       "agreeAndBuy": "同意して購入へ進む",
       "agreeNote": "内容に同意のうえ、購入へ進みます。",
       "checkoutLoading": "購入画面を準備しています…",
-      "modalClose": "閉じる",
-      "modalEnglishLink": "英語版（正文）を開く"
+      "modalClose": "閉じる"
     },
     "demo": {
       "emailLabel": "メールアドレス",
