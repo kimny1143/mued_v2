@@ -640,7 +640,8 @@
       },
       "cancellation": {
         "title": "Cancellation and Refunds",
-        "description": "FastSpring, Inc. is the Merchant of Record for this product, so refunds are handled by FastSpring under its refund terms. See the Refund Policy for the procedure.\n\nIf the plugin does not run on a supported environment, please contact our support (support@mued.jp) first. Most such reports turn out to be configuration issues, and getting it running is usually the better outcome than a refund.\n\nFree modules involve no payment and are therefore not subject to refunds."
+        "description": "FastSpring, Inc. is the Merchant of Record for this product, so refunds are handled by FastSpring under its refund terms. See the Refund Policy for the procedure.\n\nIf the plugin does not run on a supported environment, please contact our support (support@mued.jp) first. Most such reports turn out to be configuration issues, and getting it running is usually the better outcome than a refund.\n\nFree modules involve no payment and are therefore not subject to refunds.",
+        "demo": "Before you buy, you can check that it runs in your setup with the demo."
       },
       "environment": {
         "title": "System Requirements",
@@ -1173,6 +1174,10 @@
         "q9": {
           "question": "I bought masterchain. Where is my license key?",
           "answer": "Sign in to the mued.jp portal (mued.jp/dashboard/plugins) with the same email address you used at checkout — your key is there, with Copy key and Download license.key. If you used a different address at checkout or cannot sign in, contact support@mued.jp with your order number and we will help."
+        },
+        "q10": {
+          "question": "Can I try it before I buy?",
+          "answer": "Yes. Without a key, masterchain runs as a demo with no time limit. In the demo the effect fades out every 45 seconds, settings return to their defaults each time you open it, and presets can't be saved. Entering a license key removes these limits."
         }
     },
     "company": {
@@ -2547,6 +2552,21 @@
           "name": "Bypass",
           "desc": "The whole plugin on/off."
         }
+      },
+      "demoNote": "Before you buy, masterchain runs as a demo with no time limit: the effect fades out every 45 seconds and settings aren't saved."
+    },
+    "demo": {
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "consent": "Email me news about MUEDsp plugins and updates (unsubscribe anytime)",
+      "note": "The download starts right away. I'll send one email with the download link to this address as a receipt.",
+      "submit": "Download the demo",
+      "success": "Your download has started. If it didn't, use the link in the email.",
+      "errors": {
+        "invalid_email": "Please check your email address.",
+        "disposable_email": "Please use an email address that isn't disposable.",
+        "rate_limited": "Please wait a moment and try again.",
+        "generic": "Couldn't start the download. Please try again."
       }
     },
     "trial": {

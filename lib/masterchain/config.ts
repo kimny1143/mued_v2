@@ -80,3 +80,7 @@ export const MASTERCHAIN_PURCHASE_LIVE = false;
 // Trial rollout is a reviewed code change, never an environment switch.
 export const MASTERCHAIN_TRIAL_LIVE = false;
 export const MASTERCHAIN_TRIAL_DAYS = 15;
+
+// Demo download entry (Valhalla-style demo, kimny 2026-09-30). A reviewed code change, never an env switch.
+// Flipped true in the announcement PR together with MASTERCHAIN_DOWNLOAD_URL → masterchain 1.0.1.
+export const MASTERCHAIN_DEMO_LIVE = false;

@@ -1,3 +1,4 @@
+import { MASTERCHAIN_DEMO_LIVE } from "@/lib/masterchain/config";
 import { BrandHeader } from "@/components/brand/brand-header";
 import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
@@ -147,6 +148,7 @@ function TokushohoContent({ locale }: { locale: string }) {
                 deliveryValue={t("muedsp.delivery.value")}
                 cancellationTitle={t("muedsp.cancellation.title")}
                 cancellationDescription={t("muedsp.cancellation.description")}
+                cancellationDemo={MASTERCHAIN_DEMO_LIVE ? t("muedsp.cancellation.demo") : undefined}
                 environmentTitle={t("muedsp.environment.title")}
                 environmentItems={[
                   t("muedsp.environment.os"),
@@ -252,6 +254,7 @@ function ServiceSection({
   deliveryValue,
   cancellationTitle,
   cancellationDescription,
+  cancellationDemo,
   environmentTitle,
   environmentItems,
   contactTitle,
@@ -270,6 +273,7 @@ function ServiceSection({
   deliveryValue: string;
   cancellationTitle: string;
   cancellationDescription: string;
+  cancellationDemo?: string;
   environmentTitle: string;
   environmentItems: string[];
   contactTitle?: string;
@@ -323,6 +327,7 @@ function ServiceSection({
         <div>
           <h4 className="font-semibold text-white mb-1 text-sm">{cancellationTitle}</h4>
           <p className="text-slate-300 text-sm whitespace-pre-line">{cancellationDescription}</p>
+          {cancellationDemo && <p className="mt-2 text-slate-300 text-sm">{cancellationDemo}</p>}
         </div>
 
         {/* Environment */}

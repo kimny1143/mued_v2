@@ -28,7 +28,8 @@ import { type PluginKey } from "@/lib/plugins/registry";
 import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 import { MasterchainPurchaseControl } from "@/components/features/muedsp-landing/masterchain-purchase-control";
-import { MASTERCHAIN_TRIAL_DAYS, MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
+import { MasterchainDemoForm } from "@/components/features/muedsp-landing/masterchain-demo-form";
+import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_TRIAL_DAYS, MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
 
 const FACEPLATE_HOT = "/muedsat/faceplate-hot.webp";
 const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
@@ -203,6 +204,16 @@ export function MuedspLandingContent() {
                 eulaLabel={tmc("eulaLabel")}
               />
             </div>
+            {MASTERCHAIN_DEMO_LIVE && (
+              <>
+                <p className="mt-5 text-sm leading-relaxed text-white/70">{tmc("demoNote")}</p>
+                <div id="demo" className="mt-4 scroll-mt-20">
+                  <Suspense fallback={null}>
+                    <MasterchainDemoForm />
+                  </Suspense>
+                </div>
+              </>
+            )}
             <a
               href="#get"
               className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]"
