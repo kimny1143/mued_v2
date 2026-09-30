@@ -75,7 +75,10 @@ export const MASTERCHAIN_DOWNLOAD_URL =
 //   /muedsp Buy button closed until the announcement, and also keeps the first real order off a path
 //   that no live order has run end to end yet (test orders skip fulfillment). Flip to true in the PR
 //   for the announcement day.
-export const MASTERCHAIN_PURCHASE_LIVE = false;
+// ★OPENED (merge on kimny's signal) only after kimny's own live order ran end to end: webhook → key
+//   issued → portal card → keyfile → plugin LICENSED (conductor's gate, 2026-09-30). The order id is
+//   recorded in the PR, not here.
+export const MASTERCHAIN_PURCHASE_LIVE = true;
 
 // Trial rollout is a reviewed code change, never an environment switch.
 export const MASTERCHAIN_TRIAL_LIVE = false;
