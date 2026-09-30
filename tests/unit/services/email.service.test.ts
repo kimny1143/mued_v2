@@ -519,21 +519,24 @@ describe('welcome email portal block (P-3 / C-1)', () => {
       });
     }
 
-    it(`${name} EN welcome links to the portal with ownership + passwordless copy`, () => {
+    it(`${name} EN welcome links to the portal with ownership + code-sign-in copy`, () => {
       const { html, text } = fn({ locale: 'en', marketingOptIn: true });
       expect(html).toContain('/dashboard/plugins');
       expect(html).toContain('Your plugins have a home now.'); // ownership feel, not "register"
       expect(html).toContain('Open your portal'); // the portal button (C′ #3)
-      expect(html).toContain('no password to remember'); // permanent passwordless door (C′ #2)
+      // ★No "no password" claim (kimny 2026-09-30: Google/Apple sign-in keeps a password behind it — say only facts).
+      expect(html).toContain('we email you a code');
+      expect(`${html}${text}`).not.toMatch(/no password/i);
       expect(text).toContain('/dashboard/plugins'); // parity in the plain-text part
     });
 
-    it(`${name} JA welcome links to the portal with ownership + passwordless copy`, () => {
+    it(`${name} JA welcome links to the portal with ownership + code-sign-in copy`, () => {
       const { html, text } = fn({ locale: 'ja', marketingOptIn: true });
       expect(html).toContain('/dashboard/plugins');
       expect(html).toContain('あなたのプラグインの置き場所ができました。');
       expect(html).toContain('ポータルを開く');
-      expect(html).toContain('パスワードは要りません');
+      expect(html).toContain('ボタンを押すとコードが届きます');
+      expect(`${html}${text}`).not.toMatch(/パスワード/);
       expect(text).toContain('/dashboard/plugins');
     });
   }
