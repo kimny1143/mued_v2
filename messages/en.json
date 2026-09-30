@@ -2659,14 +2659,15 @@
     },
     "whyFree": {
       "heading": "Free — and your email gives it a home",
-      "lead": "MUEDlim is completely free — no feature locks, no expiry, no paywall. The email you give me is your key: your plugins get a home in your portal, always the latest build, one click away — no password, and no old email link to dig up next time. You'll also hear about updates, and when MUEDsp masterchain is ready. Unsubscribe anytime."
+      "lead": "MUEDlim is completely free — no feature locks, no expiry, no paywall. The email you give me is your key: your plugins get a home in your portal, always the latest build, one click away — no password, and no old email link to dig up next time. Tick the box and you'll also hear about updates, and when MUEDsp masterchain is ready. Unsubscribe anytime."
     },
     "form": {
       "emailLabel": "Email",
       "emailPlaceholder": "your@email",
       "submit": "Download MUEDlim",
       "submitting": "Sending…",
-      "note": "I'll use your email to send the download link and occasional updates about MUEDsp plugins and tools. Unsubscribe anytime.",
+      "note": "I'll email you the download link. If you tick the box, I'll also send occasional updates about MUEDsp plugins and tools. Unsubscribe anytime.",
+      "consent": "Email me news about MUEDsp plugins and updates (unsubscribe anytime)",
       "successTitle": "Check your email.",
       "successBody": "I've emailed you the download link. If it doesn't arrive, check your spam folder.",
       "errorEmail": "Please enter a valid email address.",
@@ -2740,14 +2741,15 @@
     },
     "whyFree": {
       "heading": "Why it's free, and why I ask for your email",
-      "lead": "MUEDrive is completely free — no feature locks, no expiry, no paywall. I ask for your email only to send the download link and to let you know about updates (and MUEDsp masterchain). Your email is the price of the download, not the plugin. No spam, and you can unsubscribe anytime."
+      "lead": "MUEDrive is completely free — no feature locks, no expiry, no paywall. I ask for your email to send the download link — and, if you tick the box, to let you know about updates (and MUEDsp masterchain). Your email is the price of the download, not the plugin. No spam, and you can unsubscribe anytime."
     },
     "form": {
       "emailLabel": "Email",
       "emailPlaceholder": "your@email",
       "submit": "Download MUEDrive",
       "submitting": "Sending…",
-      "note": "I'll email you the download link. Unsubscribe anytime.",
+      "note": "I'll email you the download link. If you tick the box, I'll also send occasional updates about MUEDsp plugins and tools. Unsubscribe anytime.",
+      "consent": "Email me news about MUEDsp plugins and updates (unsubscribe anytime)",
       "successTitle": "Check your email.",
       "successBody": "I've emailed you the download link. If it doesn't arrive, check your spam folder.",
       "errorEmail": "Please enter a valid email address.",
@@ -2805,9 +2807,9 @@
     },
     "whyFree": {
       "heading": "Free — and your email gives it a home",
-      "lead": "MUEDsat is completely free — nothing locked, timed, or paywalled. The email you give me is your key: your plugins get a home in your portal, always the latest build, one click away — no password, and no old email link to dig up next time. You'll also hear when I update it, or when MUEDsp masterchain is ready. Unsubscribe anytime.",
+      "lead": "MUEDsat is completely free — nothing locked, timed, or paywalled. The email you give me is your key: your plugins get a home in your portal, always the latest build, one click away — no password, and no old email link to dig up next time. Tick the box and you'll also hear when I update it, or when MUEDsp masterchain is ready. Unsubscribe anytime.",
       "body1": "MUEDsat is completely free. Nothing in the plugin is locked, time-limited, or paywalled.",
-      "body2": "I ask for your email for two reasons: to send you the download link, and to let you know when I update MUEDsat — or when MUEDsp masterchain is ready. That's all it's for.",
+      "body2": "I ask for your email to send you the download link. If you tick the box, I'll also let you know when I update MUEDsat — or when MUEDsp masterchain is ready. That's all it's for.",
       "body3": "No spam, unsubscribe anytime."
     },
     "form": {
@@ -2815,7 +2817,8 @@
       "emailPlaceholder": "your@email",
       "submit": "Download MUEDsat",
       "submitting": "Sending…",
-      "note": "We'll use your email to send the download link and occasional updates about MUEDsp plugins and tools. Unsubscribe anytime.",
+      "note": "I'll email you the download link. If you tick the box, I'll also send occasional updates about MUEDsp plugins and tools. Unsubscribe anytime.",
+      "consent": "Email me news about MUEDsp plugins and updates (unsubscribe anytime)",
       "successTitle": "Check your inbox.",
       "successBody": "We've sent your download link. If it's not there, check your spam folder.",
       "errorEmail": "Please enter a valid email address.",
