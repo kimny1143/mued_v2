@@ -34,8 +34,8 @@ function masterchainPortalInstructions(isJa: boolean) {
       ? 'ライセンスキーはポータルで確認できます。このメールアドレスでサインインしてください。'
       : 'Your license key is waiting in your portal — sign in with this email address:',
     howTo: isJa
-      ? 'ポータルで license.key をダウンロードし、masterchain の「Load license file…」で開いてください。または、キーをワンクリックでコピーし、「Paste license from clipboard」を押してください。'
-      : 'In the portal: download license.key and open it in masterchain with "Load license file…", or copy the key in one click and press "Paste license from clipboard".',
+      ? 'ポータルで license.key をダウンロードし、masterchain の画面（「Drop license.key here」）にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをワンクリックでコピーして「Paste license key」を押してください。'
+      : 'In the portal: download license.key and drag it onto masterchain ("Drop license.key here"). If drop doesn\'t work in your DAW, use "Load license file…", or copy the key in one click and press "Paste license key".',
   };
 }
 
@@ -984,9 +984,11 @@ Hoo MCP経由の自動送信
       ? 'masterchain をご購入いただきありがとうございます。'
       : 'Thank you for buying masterchain.';
     const { portal, howTo } = masterchainPortalInstructions(isJa);
+    // The demo is the same plug-in without a key (the 15-day trial was dropped for the demo — kimny 9/30);
+    // wording by conductor 2026-10-01.
     const replacesTrial = isJa
-      ? '試用ライセンスをお使いの場合は、このライセンスを読み込むと置き換わります。'
-      : 'If you were using a trial, installing this license replaces it.';
+      ? 'デモ版をお使いの場合は、入れ直しは要りません。今のプラグインに鍵を入れると、制限がなくなります。'
+      : "If you've been using the demo, there's no need to reinstall. Load this license into the plug-in you already have and the limits are removed.";
 
     // Install first, then open the portal to retrieve the license.
     const downloadHtml = hasLink

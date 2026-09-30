@@ -31,7 +31,9 @@ describe("masterchain trial email — portal-only keys", () => {
           expect(surface).not.toContain(forbidden);
         expect(surface).toContain(PORTAL);
         expect(surface).toContain("Load license file…");
-        expect(surface).toContain("Paste license from clipboard");
+        expect(surface).toContain("Drop license.key here");
+        expect(surface).toContain("Paste license key");
+        expect(surface).not.toContain("Paste license from clipboard");
         expect(surface).toContain(locale === "ja" ? "このメールアドレスでサインイン" : "sign in with this email address");
         expect(surface).toContain("2026-10-13 16:30 UTC");
         expect(surface).toContain("DEMO EXPIRED");

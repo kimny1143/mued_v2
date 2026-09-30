@@ -1166,7 +1166,7 @@
       },
         "q9": {
           "question": "I bought masterchain. Where is my license key?",
-          "answer": "Sign in to the mued.jp portal (mued.jp/dashboard/plugins) with the same email address you used at checkout — your key is there, with Copy key and Download license.key. If you used a different address at checkout or cannot sign in, contact support@mued.jp with your order number and we will help."
+          "answer": "Sign in to the mued.jp portal (mued.jp/dashboard/plugins) with the same email address you used at checkout — your key is there, with Copy key and Download license.key. If you used a different address at checkout or cannot sign in, contact support@mued.jp with your order number and we will help. To install the key, drag license.key onto masterchain (if drop doesn't work in your DAW, use \"Load license file…\" or \"Paste license key\")."
         },
         "q10": {
           "question": "Can I try it before I buy?",
@@ -2599,7 +2599,7 @@
       "newsletter": "Send me plugin news by email (optional).",
       "submitting": "Getting your key…",
       "success": "Your trial key",
-      "howToUse": "Download license.key and open it in masterchain with \"Load license file…\", or copy the key and press \"Paste license from clipboard\".",
+      "howToUse": "Download license.key and drag it onto masterchain (\"Drop license.key here\"). If drop doesn't work in your DAW, use \"Load license file…\", or copy the key and press \"Paste license key\".",
       "keyLabel": "Trial key",
       "copy": "Copy key",
       "copied": "Copied",
@@ -2910,7 +2910,7 @@
       "copied": "Copied",
       "copyFailed": "Could not copy. Select the key and copy it manually.",
       "download": "Download license.key",
-      "howto": "Download license.key and open it in masterchain with \"Load license file…\", or copy the key and press \"Paste license from clipboard\".",
+      "howto": "Download license.key and drag it onto masterchain (\"Drop license.key here\"). If drop doesn't work in your DAW, use \"Load license file…\", or copy the key and press \"Paste license key\".",
       "ends": "Trial ends {date} (UTC)",
       "ended": "Trial ended",
       "bypass": "After the trial ends, the plugin passes audio through unprocessed and shows \"DEMO EXPIRED\" until you enter a license key."
@@ -2924,7 +2924,7 @@
       "copyFailed": "Could not copy. Select the key and copy it manually.",
       "download": "Download license.key",
       "refunded": "Refunded ({date}). The license key is no longer shown.",
-      "howto": "Download license.key and open it in masterchain with \"Load license file…\", or copy the key and press \"Paste license from clipboard\".",
+      "howto": "Download license.key and drag it onto masterchain (\"Drop license.key here\"). If drop doesn't work in your DAW, use \"Load license file…\", or copy the key and press \"Paste license key\".",
       "purchasedOn": "Purchased {date}"
     }
   }

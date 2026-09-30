@@ -17,16 +17,26 @@ describe("trial translations", () => {
       expect(JSON.stringify(block)).not.toMatch(/Application Support|~\/Library/);
     }
   });
-  it.each([en, ja])("explains both plugin buttons on every key surface", (messages) => {
+  it.each([en, ja])("explains drag & drop first, then the two buttons, on every key surface (conductor 2026-10-01)", (messages) => {
     for (const copy of [messages.pluginPortal.purchased.howto, messages.pluginPortal.trial.howto, messages.muedsp.trial.howToUse]) {
       expect(copy).toContain("license.key");
+      expect(copy).toContain("Drop license.key here");
       expect(copy).toContain("Load license file…");
-      expect(copy).toContain("Paste license from clipboard");
+      expect(copy).toContain("Paste license key");
+      expect(copy.indexOf("Drop license.key here")).toBeLessThan(copy.indexOf("Load license file…"));
+      expect(copy.indexOf("Load license file…")).toBeLessThan(copy.indexOf("Paste license key"));
       if (messages === ja) {
+        expect(copy).toContain("ドラッグ&ドロップ");
         expect(copy).toContain("「Load license file…」");
-        expect(copy).toContain("「Paste license from clipboard」");
+        expect(copy).toContain("「Paste license key」");
       }
     }
+  });
+  it.each([en, ja])("FAQ q9 says how to put the key in (drag & drop, else the two buttons)", (messages) => {
+    const a = messages.support.faq.q9.answer;
+    expect(a).toContain("license.key");
+    expect(a).toContain("Load license file…");
+    expect(a).toContain("Paste license key");
   });
   it.each([en, ja])("never describes the bypass as lost audio", (messages) => {
     for (const block of [messages.muedsp.trial, messages.pluginPortal.trial]) {

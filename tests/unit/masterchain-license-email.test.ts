@@ -32,11 +32,13 @@ describe("masterchain purchase email — portal-only keys", () => {
           expect(surface).not.toContain(forbidden);
         expect(surface).toContain(PORTAL);
         expect(surface).toContain("Load license file…");
-        expect(surface).toContain("Paste license from clipboard");
+        expect(surface).toContain("Drop license.key here");
+        expect(surface).toContain("Paste license key");
+        expect(surface).not.toContain("Paste license from clipboard");
         expect(surface).toContain(locale === "ja" ? "このメールアドレスでサインイン" : "sign in with this email address");
         expect(surface).toContain(locale === "ja"
-          ? "試用ライセンスをお使いの場合は、このライセンスを読み込むと置き換わります。"
-          : "If you were using a trial, installing this license replaces it.");
+          ? "デモ版をお使いの場合は、入れ直しは要りません。今のプラグインに鍵を入れると、制限がなくなります。"
+          : "If you've been using the demo, there's no need to reinstall. Load this license into the plug-in you already have and the limits are removed.");
         expect(surface).not.toMatch(/unsubscribe|utm_/i);
         if (url) {
           expect(surface).toContain(URL);

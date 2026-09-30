@@ -71,7 +71,10 @@ export const MASTERCHAIN_DOWNLOAD_URL =
   //   screen, short links mc-buy / mc-buy-panel / mc-plugin / mc-portal baked in), EULA 2026.10, notarised.
   //   Same version and file name, so it is served from its own directory (the MUEDlim/MUEDsat pattern);
   //   the first 1.0.1 stays at /downloads/MUEDsp-masterchain-1.0.1-installer.pkg and is pinned as a shelf entry.
-  "https://mued.jp/downloads/ui-2026.10/MUEDsp-masterchain-1.0.1-installer.pkg";
+  // ★1.0.1 key-entry rebuild 2026-10-01 (dsp §5 passed・dsp #854): the key screen is drop-first
+  //   ("Drop license.key here", then "Load license file…" / "Paste license key") and the open-time scale fix;
+  //   EULA 2026.10, notarised. Served from its own directory again; the ui-2026.10 build stays pinned on the shelf.
+  "https://mued.jp/downloads/keyentry-2026.10/MUEDsp-masterchain-1.0.1-installer.pkg";
 
 // Purchase rollout — same rule as the trial below: a reviewed code change, never an environment switch.
 // ★CLOSED 2026-09-30 (launch day), kimny 逐語「今日の販売はそもそも間に合わない。最短のルートで進めて
