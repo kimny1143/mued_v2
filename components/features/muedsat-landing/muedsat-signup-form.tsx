@@ -1,8 +1,7 @@
 "use client";
 
-// Plugin email-gate form (MUEDsat + MUEDlim + future MUEDsp free modules). Submitting IS the opt-in
-// ("your email is the price of the download"). POSTs to the plugin's subscribe endpoint (no-op-safe
-// while staged) and shows an honest success state.
+// Plugin email-gate form. Download delivery is transactional; marketing requires a separate opt-in.
+// POSTs to the plugin's subscribe endpoint and shows an honest success state.
 //
 // Parameterized by `plugin` (default "muedsat" → 100% unchanged for the existing MUEDsat usages =
 // regression 0). All plugin-specific config (endpoint, download URL, press token, i18n namespace,
@@ -48,6 +47,7 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
   const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   // Honeypot decoy — a hidden field real users never see/fill. A non-empty value on submit is a bot;
   // the server silently no-ops it (protects the shared Resend send quota). See lib/plugins/registry.
   const [honeypot, setHoneypot] = useState("");
@@ -102,6 +102,7 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: value,
+          marketingOptIn,
           locale,
           source: dist.source,
           utm_source: searchParams.get("utm_source"),
@@ -184,6 +185,18 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
           {submitting ? t("submitting") : t("submit")}
         </button>
       </div>
+
+      <label className="mt-3 flex items-start gap-2 text-sm text-white/70">
+        <input
+          type="checkbox"
+          name="marketingOptIn"
+          checked={marketingOptIn}
+          onChange={(e) => setMarketingOptIn(e.target.checked)}
+          disabled={submitting}
+          className="mt-0.5 accent-[#f5a524]"
+        />
+        <span>{t("consent")}</span>
+      </label>
 
       {status === "error" ? (
         <p id={`${inputId}-error`} role="alert" className="mt-2.5 text-sm text-red-400">

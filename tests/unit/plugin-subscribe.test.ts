@@ -1,11 +1,7 @@
 /**
- * Regression proof for the 案A registry migration (2026-07-11): the live MUEDsat email-gate funnel
- * must be byte-for-byte unchanged after moving MUEDsat onto the shared plugin subscribe pipeline
- * (lib/plugins/{registry,audience,subscribe-handler}). The runtime path is now:
- *   route → handlePluginSubscribe("muedsat") → addPluginSubscriber("muedsat") → sendMuedsatDownloadWelcome
- * Because the handler is driven entirely by PLUGIN_DIST[plugin], proving PLUGIN_DIST.muedsat equals
- * the current MUEDsat constants (source, endpoint, audience env, download URL, press token, live)
- * proves the MUEDsat runtime is unchanged. (conductor merge gate: "回帰0 を test で証明", not asserted.)
+ * Registry migration contracts remain stable (source, endpoint, audience env, download URL, live).
+ * Marketing consent now gates audience capture; handler behavior is covered in
+ * plugin-subscribe-handler.test.ts for all three plugins.
  */
 import { describe, it, expect } from "vitest";
 import { PLUGIN_DIST, HONEYPOT_FIELD, isHoneypotTripped } from "@/lib/plugins/registry";
