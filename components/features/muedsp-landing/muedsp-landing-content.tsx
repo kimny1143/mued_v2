@@ -464,7 +464,8 @@ export function MuedspLandingContent() {
         </section>
 
         {/* ── §3 Windows. ★The 9/30 launch mail links here (`#windows`) — keep the id stable: the same
-            URL becomes the beta download block from 10/1 and masterchain's from 10/14, so the mail's
+            URL becomes the beta download block from 10/1 and masterchain's later (no date on the site —
+            kimny 2026-09-30), so the mail's
             link stays valid without a third send (kimny 9/29: two mails a month). ──────────────── */}
         <section id="windows" className="scroll-mt-20 border-t border-white/5 px-6 py-14">
           <div className="mx-auto max-w-3xl">
