@@ -187,6 +187,10 @@ export const SHORT_LINKS: readonly ShortLink[] = [
   //   mc-portal = "mued.jp portal" in the License window: where a buyer goes to get the key. The portal is
   //   /dashboard/plugins (no locale segment); signed out, the auth gate sends them to /sign-in and back here
   //   with the query intact (lib/middleware/sign-in-redirect.ts).
+  // mc-buy-panel = "Buy masterchain ↗" in the License window opened from the DEMO badge (conductor 2026-09-30):
+  //   same destination and campaign as mc-buy, a different utm_content so launch numbers can tell where a
+  //   purchase started (mc-buy stays the DEMO EXPIRED screen's Buy = demo_expired).
+  { slug: 'mc-buy-panel', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_buy', utmContent: 'license_panel', localeFromBrowser: true },
   { slug: 'mc-plugin', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_header', utmContent: 'header_link', localeFromBrowser: true },
   // mc-demo-mail = the product-page link in the masterchain demo receipt (conductor 2026-09-30, d).
   { slug: 'mc-demo-mail', host: 'mued.jp', path: '/en/muedsp', utmSource: 'email', utmMedium: 'lifecycle', utmCampaign: 'masterchain_demo_mail', utmContent: 'product_link', localeFromBrowser: true },
