@@ -52,11 +52,12 @@ import { MUEDSAT_DOWNLOAD_URL } from "@/lib/muedsat/config";
  * as they cover the free three.
  */
 const MASTERCHAIN_PIN: { sha256: string; bytes: number } | null = {
-  // ★1.0.0 (2026-09-30). Measured on the COPY under public/downloads/, not on dsp's source and not
-  //   from the relayed message — `shasum -a 256` / `stat -f%z`. dsp's and conductor's declared sha256
-  //   matched, and `cmp` against dsp's plugin/dist/ was byte-identical. (0.1.3 was d9c21c25…/4_133_469.)
-  sha256: "07607ba9a378e2054c0b3fa2bbf01ff7dc7492b9951746826bf8d1659683761d",
-  bytes: 4_280_176,
+  // ★1.0.1 (2026-09-30, EULA 2026.10 inside). Measured on the COPY under public/downloads/, not on
+  //   dsp's source and not from the relayed message — `shasum -a 256` / `stat -f%z`. conductor's
+  //   declared sha256/bytes matched, and `cmp` against dsp's plugin/dist/ was byte-identical.
+  //   (1.0.0 was 07607ba9…/4_280_176; 0.1.3 was d9c21c25…/4_133_469 — both stay on the shelf.)
+  sha256: "e484688613197dc26d40cca3ca1c6c2e69608e575600254c1bb47c7bc8fa3fb0",
+  bytes: 4_276_006,
 };
 
 const ARTIFACTS = [
@@ -75,8 +76,9 @@ const ARTIFACTS = [
   {
     name: "MUEDrive",
     url: MUEDRIVE_DOWNLOAD_URL,
-    sha256: "1f3fc0918ccbbb9551c4d217594c043f2f9e0b808023576b640d9e08f6ce8d49",
-    bytes: 3_620_155,
+    // 1.0.1 (2026-09-30, EULA 2026.10 inside). 1.0.0 was 1f3fc091…/3_620_155 (stays on the shelf).
+    sha256: "75bf0dcc1457559a35fbda9b55ae74c318f51dca754767863d0c080481a40fd4",
+    bytes: 3_616_696,
   },
   // ★Present only once BOTH the URL and the pin exist — so the same two tests below start covering
   //   the paid artifact the moment it is published, with no separate wiring to remember.

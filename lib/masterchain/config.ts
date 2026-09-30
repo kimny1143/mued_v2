@@ -67,7 +67,7 @@ export const MASTERCHAIN_INTEREST_LIVE = false;
 // ★repo のコメントを読んで「unset だから安全」と読まないこと（それがこの訂正の理由）。
 //
 export const MASTERCHAIN_DOWNLOAD_URL =
-  "https://mued.jp/downloads/MUEDsp-masterchain-1.0.0-installer.pkg";
+  "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-installer.pkg";
 
 // Purchase rollout — same rule as the trial below: a reviewed code change, never an environment switch.
 // ★CLOSED 2026-09-30 (launch day), kimny 逐語「今日の販売はそもそも間に合わない。最短のルートで進めて
