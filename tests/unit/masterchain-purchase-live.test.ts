@@ -15,6 +15,8 @@ it("★an open Buy button never says \"Coming soon\" — the label and price not
   const landing = readFileSync("components/features/muedsp-landing/muedsp-landing-content.tsx", "utf8");
   expect(landing).toContain('tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")');
   expect(landing).toContain('tmc(MASTERCHAIN_PURCHASE_LIVE ? "priceNoteLive" : "priceNote")');
+  // The "notify me at launch" link is for the closed state only.
+  expect(landing).toMatch(/\{!MASTERCHAIN_PURCHASE_LIVE && \(\s*<a\s+href="#get"[\s\S]*?発売時に知らせる/);
   for (const m of [ja, en]) {
     const mc = m.muedsp.masterchain;
     expect(mc.buyLabelLive).toBeTruthy();

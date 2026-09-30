@@ -225,12 +225,15 @@ export function MuedspLandingContent() {
                 </div>
               </>
             )}
-            <a
-              href="#get"
-              className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]"
-            >
-              {isJa ? "発売時に知らせる（MUEDsat の登録でお知らせにチェック） ↓" : "Get notified at launch (sign up for MUEDsat and tick the updates box) ↓"}
-            </a>
+            {/* ★Only while purchase is closed — once it is open there is no "launch" to be notified of. */}
+            {!MASTERCHAIN_PURCHASE_LIVE && (
+              <a
+                href="#get"
+                className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]"
+              >
+                {isJa ? "発売時に知らせる（MUEDsat の登録でお知らせにチェック） ↓" : "Get notified at launch (sign up for MUEDsat and tick the updates box) ↓"}
+              </a>
+            )}
           </div>
         </section>
 
