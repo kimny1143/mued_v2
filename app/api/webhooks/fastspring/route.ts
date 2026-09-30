@@ -193,6 +193,7 @@ async function processFastspringEvent(event: unknown): Promise<void> {
 
   // ★tx の外で throw するためのフラグ（★中で throw すると行が消える）。
   let unparseable = false;
+  let noPurchase = false;
 
   await db.transaction(async (tx) => {
     if (existing) {
@@ -258,7 +259,14 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     if (type === "return.created" && !skippedTest) {
       // ★A refund marks the purchase row (never deletes it). "unparseable" is recorded as failed like
       //   order.completed, so a redelivery can still land once the shape is understood.
-      if ((await handleFastspringReturnCreated(tx, event)) === "unparseable") {
+      const result = await handleFastspringReturnCreated(tx, event);
+      if (result === "no_purchase") {
+        // ★Kept as failed + 500 so FastSpring redelivers: a refund that beats order.completed must not be
+        //   sealed as processed (CCO #1183 ②). A partial return on an already-refunded row lands here too;
+        //   redelivery then finds the same state and FastSpring eventually stops — nothing is lost.
+        unparseable = true;
+        noPurchase = true;
+      } else if (result === "unparseable") {
         unparseable = true;
         logger.error("[fastspring] return.created missing return id / original order — recording as failed", {
           eventId,
@@ -274,8 +282,9 @@ async function processFastspringEvent(event: unknown): Promise<void> {
         .update(webhookEvents)
         .set({
           status: "failed",
-          errorMessage:
-            type === "return.created"
+          errorMessage: noPurchase
+            ? "return.created: no masterchain purchase row for this order (yet) — left for redelivery"
+            : type === "return.created"
               ? "return.created missing return id / original order — envelope not the shape we assumed"
               : "order.completed missing orderId/email — envelope not the shape we assumed",
           completedAt: new Date(),

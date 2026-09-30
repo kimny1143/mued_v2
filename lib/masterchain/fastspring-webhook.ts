@@ -31,7 +31,7 @@ import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 import { issueLicense, LICENSE_VERSION } from "@/lib/masterchain/license";
 import { emailService } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 
 // ── safe JSON access (lint-clean, no `any`) for the untyped external payload ───────────────────────
@@ -439,7 +439,9 @@ export function parseFastspringReturnCreated(event: unknown): FastspringReturnPa
 /**
  * Record a verified, deduped, LIVE `return.created` on the purchase row. Never deletes the row.
  *   "unparseable" — no return id / original order id (the route records the event as failed)
- *   "no_purchase" — not one of our masterchain orders (logged; the event is still processed)
+ *   "no_purchase" — no purchase row matches (yet). ★The route records it as FAILED so FastSpring redelivers:
+ *                   this store sells masterchain only, so the likely cause is the refund arriving before
+ *                   order.completed wrote the row — processing it would lose the refund (CCO #1183 ②).
  *   "recorded"
  */
 export async function handleFastspringReturnCreated(
@@ -457,7 +459,13 @@ export async function handleFastspringReturnCreated(
       // ★A partial refund does not clear an earlier full refund, and does not set one.
       ...(refunded ? { refundedAt: parsed.refundedAt ?? new Date() } : {}),
     })
-    .where(inArray(masterchainPurchases.orderId, parsed.orderIds))
+    // ★A partial return must not overwrite an earlier FULL refund / chargeback (CCO #1183 ①): partial only
+    //   touches rows that are not refunded yet.
+    .where(
+      refunded
+        ? inArray(masterchainPurchases.orderId, parsed.orderIds)
+        : and(inArray(masterchainPurchases.orderId, parsed.orderIds), isNull(masterchainPurchases.refundedAt)),
+    )
     .returning({ id: masterchainPurchases.id });
   if (rows.length === 0) {
     logger.warn("[fastspring] return.created for an order with no masterchain purchase row", {

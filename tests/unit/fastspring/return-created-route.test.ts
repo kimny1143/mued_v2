@@ -113,10 +113,11 @@ describe("FastSpring route — return.created (conductor 2026-09-30, f)", () => 
     expect(txUpdates.at(-1)).toMatchObject({ status: "failed" });
     expect(String((txUpdates.at(-1) as { errorMessage: string }).errorMessage)).toMatch(/return\.created/);
   });
-  it("a refund for an order that is not ours is still processed (no redelivery loop)", async () => {
+  it("★a refund with no purchase row yet is kept as failed + 500 for redelivery — never sealed as processed (CCO #1183 ②)", async () => {
     mockHandleReturn.mockResolvedValue("no_purchase");
     const response = await POST(request({ events: [ret(true)] }));
-    expect(response.status).toBe(200);
-    expect(txUpdates.at(-1)).toMatchObject({ status: "processed" });
+    expect(response.status).toBe(500);
+    expect(txUpdates.at(-1)).toMatchObject({ status: "failed" });
+    expect(String((txUpdates.at(-1) as { errorMessage: string }).errorMessage)).toMatch(/no masterchain purchase row/);
   });
 });

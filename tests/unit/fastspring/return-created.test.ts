@@ -3,6 +3,8 @@
  * stops handing out the key (conductor 2026-09-30, f). Shape: developer.fastspring.com/reference/returncreated.
  */
 import { describe, expect, it, vi } from "vitest";
+import { PgDialect } from "drizzle-orm/pg-core";
+import type { SQL } from "drizzle-orm";
 
 vi.mock("@/db", () => ({ db: {} }));
 vi.mock("@/lib/utils/logger", () => ({ logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() } }));
@@ -73,7 +75,16 @@ describe("handleFastspringReturnCreated", () => {
     await handleFastspringReturnCreated(tx, ev({ ...base, items: [{ refundType: "Partial Refund" }] }));
     expect(calls.set).toEqual({ refundReturnId: "RET-1", refundKind: "partial" });
   });
-  it("not one of our orders → no_purchase (processed, logged)", async () => {
+  it("★a partial return never overwrites an earlier full refund: it only touches rows not yet refunded (CCO #1183 ①)", async () => {
+    const sqlOf = (w: unknown) => new PgDialect().sqlToQuery(w as SQL).sql;
+    const partial = fakeTx([{ id: "row" }]);
+    await handleFastspringReturnCreated(partial.tx, ev({ ...base, items: [{ refundType: "Partial Refund" }] }));
+    expect(sqlOf(partial.calls.where)).toMatch(/"refunded_at" is null/);
+    const full = fakeTx([{ id: "row" }]);
+    await handleFastspringReturnCreated(full.tx, ev(base));
+    expect(sqlOf(full.calls.where)).not.toMatch(/refunded_at/); // a full refund / chargeback always records
+  });
+  it("no matching row → no_purchase (the route keeps it for redelivery)", async () => {
     const { tx } = fakeTx([]);
     expect(await handleFastspringReturnCreated(tx, ev(base))).toBe("no_purchase");
   });
