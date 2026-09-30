@@ -940,14 +940,19 @@ Hoo MCP経由の自動送信
       ? '気に入ったら、製品ページから購入できます（プラグインの中の Buy masterchain からも開けます）。購入後は、購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。'
       : 'If you like it, you can buy it from the product page (Buy masterchain inside the plugin opens it too). After buying, sign in to mued.jp with the email you used at checkout to get your license key in your portal.';
     const buyLabel = isJa ? '製品ページを開く' : 'Open the product page';
+    // ★Only with consent (kimny 9/30 rule, NO_BLOCK: no consent → the transactional receipt only, nothing
+    //   promotional — CCO #1182). The consent signal here is the unsubscribe URL, which exists only then.
+    const optedIn = !!data.unsubscribeUrl;
+    const buyHtml = optedIn ? `<p>${buy}</p><p><a href="${buyUrl}">${buyLabel}</a></p>` : '';
+    const buyText = optedIn ? `\n\n${buy}\n${buyLabel}: ${buyUrl}` : '';
     const unsubHtml = data.unsubscribeUrl
       ? `<p style="color: #9ca3af; font-size: 12px;"><a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a></p>`
       : '';
     const unsubText = data.unsubscribeUrl ? `\n\n${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}` : '';
     return {
       subject,
-      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p><p>${limits}</p><p>${formats}</p><p>${buy}</p><p><a href="${buyUrl}">${buyLabel}</a></p>${unsubHtml}`),
-      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}\n\n${limits}\n\n${formats}\n\n${buy}\n${buyLabel}: ${buyUrl}${unsubText}\n\nglasswerks inc. — mued.jp`,
+      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p><p>${limits}</p><p>${formats}</p>${buyHtml}${unsubHtml}`),
+      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}\n\n${limits}\n\n${formats}${buyText}${unsubText}\n\nglasswerks inc. — mued.jp`,
     };
   },
 
