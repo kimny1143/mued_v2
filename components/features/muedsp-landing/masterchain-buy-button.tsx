@@ -108,6 +108,10 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
   );
 }
 
+// The popup's own stack (FastSpring renders in system fonts), so the two screens read as one flow.
+const FASTSPRING_LIKE_FONT =
+  '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif';
+
 function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; onAgree: () => void; checkoutReady: boolean }) {
   const t = useTranslations("eula");
   const tb = useTranslations("muedsp.buyTry");
@@ -169,18 +173,23 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
       }}
       data-testid="eula-modal-backdrop"
     >
-      {/* DOM order = the phone order (the order on top, the EULA below) and the focus order (× → purchase →
+      {/* ★Light, in FastSpring's colours (kimny 10/1: 「購入ページのカラグレがこっち系だと違和感ある」): the next
+          screen is FastSpring's white popup with a blue button, so this one hands over to it without a jump. The
+          values are measured from the live popup (mued.jp, 2026-10-01): white panel, button #286090, total
+          #356eec, secondary text #767676, input border #cccccc, divider #eeeeee; system fonts like the popup's.
+          DOM order = the phone order (the order on top, the EULA below) and the focus order (× → purchase →
           the EULA's links); md:flex-row-reverse puts the EULA on the left on a wide screen. */}
       <div
         ref={dialog}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-white/10 bg-[#141414] shadow-2xl md:h-[min(88vh,720px)] md:flex-row-reverse"
+        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-md bg-white text-[#222] shadow-2xl md:h-[min(88vh,720px)] md:flex-row-reverse"
+        style={{ fontFamily: FASTSPRING_LIKE_FONT }}
       >
-        <section data-testid="order-panel" className="flex shrink-0 flex-col gap-4 border-b border-white/10 p-5 md:w-[340px] md:border-b-0 md:border-l md:p-6">
+        <section data-testid="order-panel" className="flex shrink-0 flex-col gap-4 border-b border-[#eeeeee] p-5 md:w-[340px] md:border-b-0 md:border-l md:p-6">
           <div className="flex items-start justify-between gap-3">
-            <h2 id={titleId} className="text-lg font-semibold leading-snug text-white">
+            <h2 id={titleId} className="text-lg font-semibold leading-snug text-[#222]">
               {tb("orderProduct", { version: MASTERCHAIN_VERSION })}
             </h2>
             <button
@@ -188,26 +197,26 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
               data-autofocus
               onClick={onClose}
               aria-label={tb("modalClose")}
-              className="-mr-1 -mt-1 rounded p-1 text-2xl leading-none text-white/60 hover:text-white"
+              className="-mr-1 -mt-1 rounded p-1 text-2xl leading-none text-[#181818]/70 hover:text-[#181818]"
             >
               ×
             </button>
           </div>
-          <p className="-mt-2 text-sm text-white/60">{tb("orderFormats")}</p>
+          <p className="-mt-2 text-sm text-[#767676]">{tb("orderFormats")}</p>
           <div>
-            <p className="text-3xl font-semibold tabular-nums text-white">{tb("orderPrice")}</p>
-            <p className="mt-1 text-xs text-white/50">{tb("orderTaxNote")}</p>
+            <p className="text-3xl font-semibold tabular-nums text-[#356eec]">{tb("orderPrice")}</p>
+            <p className="mt-1 text-xs text-[#767676]">{tb("orderTaxNote")}</p>
           </div>
-          <p className="text-sm leading-relaxed text-white/75">{tb("orderKeyNote")}</p>
+          <p className="text-sm leading-relaxed text-[#444]">{tb("orderKeyNote")}</p>
           <div className="flex flex-col gap-3 md:mt-auto">
             {/* Where the EULA is depends on the layout: left on a wide screen, below on a phone. */}
-            <label htmlFor={checkId} className="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-white/85">
+            <label htmlFor={checkId} className="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-[#222]">
               <input
                 id={checkId}
                 type="checkbox"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[#286090]"
               />
               <span>
                 <span className="md:hidden">{tb("agreeCheckBelow")}</span>
@@ -219,20 +228,20 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
               onClick={onAgree}
               disabled={!checkoutReady || !agreed}
               aria-disabled={!checkoutReady || !agreed}
-              className="w-full rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 py-3.5 text-base font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+              className="w-full rounded bg-[#286090] px-5 py-3.5 text-base font-semibold text-white transition hover:bg-[#1f4d73] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {checkoutReady ? tb("continueToCheckout") : tb("checkoutLoading")}
             </button>
           </div>
         </section>
         <section className="flex min-h-0 flex-1 flex-col" aria-label={t("title")}>
-          <div className="border-b border-white/10 px-5 py-3">
-            <h3 className="text-sm font-semibold text-white/85">{t("title")}</h3>
-            <p className="mt-0.5 text-xs text-white/45">{meta.join(" · ")}</p>
+          <div className="border-b border-[#eeeeee] bg-[#fafafa] px-5 py-3">
+            <h3 className="text-sm font-semibold text-[#222]">{t("title")}</h3>
+            <p className="mt-0.5 text-xs text-[#767676]">{meta.join(" · ")}</p>
           </div>
           {/* The EULA scrolls in its own column, in smaller type. The consent check sits with the order. ja: the
               title itself says （参考訳）; the English text governs (EULA §16) — no separate note box (kimny 10/1). */}
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 text-[13px] leading-relaxed [&_h2]:mb-2 [&_h2]:text-sm [&_p]:mb-3 [&_section]:mb-5" data-testid="eula-modal-body">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-[#fafafa] px-5 py-4 text-[13px] leading-relaxed [&_a]:text-[#356eec] [&_h2]:mb-2 [&_h2]:text-sm [&_h2]:text-[#222] [&_ol]:text-[#555] [&_p]:mb-3 [&_p]:text-[#555] [&_section]:mb-5 [&_strong]:text-[#222] [&_ul]:text-[#555]" data-testid="eula-modal-body">
             <EulaBlocks blocks={content.intro} newTab />
             <EulaArticles articles={content.articles} newTab />
           </div>
