@@ -2569,7 +2569,7 @@
     "trial": {
       "title": "MUEDsp masterchain — {days}-day trial",
       "intro": "Try masterchain on your own tracks for {days} days.",
-      "signInHint": "No password needed. Sign in with a code sent to your email.",
+      "signInHint": "You can sign in with a code sent to your email.",
       "bypass": "Without a valid key or after expiry, the plugin passes audio through unprocessed (bypass) and shows \"Demo expired\".",
       "cta": "Try free for {days} days",
       "start": "Start the {days}-day trial",
@@ -2656,7 +2656,7 @@
     },
     "whyFree": {
       "heading": "Free — and your email gives it a home",
-      "lead": "MUEDlim is completely free — no feature locks, no expiry, no paywall. The email you give me is your key: your plugins get a home in your portal, always the latest build, one click away — no password, and no old email link to dig up next time. Tick the box and you'll also hear about updates, and when MUEDsp masterchain is ready. Unsubscribe anytime."
+      "lead": "MUEDlim is completely free — no feature locks, no expiry, no paywall. The email you give me is your key: your plugins get a home in your portal, always the latest build, one click away, and no old email link to dig up next time. Tick the box and you'll also hear about updates, and when MUEDsp masterchain is ready. Unsubscribe anytime."
     },
     "form": {
       "emailLabel": "Email",
@@ -2804,7 +2804,7 @@
     },
     "whyFree": {
       "heading": "Free — and your email gives it a home",
-      "lead": "MUEDsat is completely free — nothing locked, timed, or paywalled. The email you give me is your key: your plugins get a home in your portal, always the latest build, one click away — no password, and no old email link to dig up next time. Tick the box and you'll also hear when I update it, or when MUEDsp masterchain is ready. Unsubscribe anytime.",
+      "lead": "MUEDsat is completely free — nothing locked, timed, or paywalled. The email you give me is your key: your plugins get a home in your portal, always the latest build, one click away, and no old email link to dig up next time. Tick the box and you'll also hear when I update it, or when MUEDsp masterchain is ready. Unsubscribe anytime.",
       "body1": "MUEDsat is completely free. Nothing in the plugin is locked, time-limited, or paywalled.",
       "body2": "I ask for your email to send you the download link. If you tick the box, I'll also let you know when I update MUEDsat — or when MUEDsp masterchain is ready. That's all it's for.",
       "body3": "No spam, unsubscribe anytime."

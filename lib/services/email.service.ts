@@ -287,12 +287,12 @@ function portalPromoBlock(isJa: boolean, campaign: string): { html: string; text
           </a>
         </p>
         <p style="margin: 0; color: #6b7280; font-size: 12px;">${isJa
-          ? 'メールアドレスが鍵です。ボタンを押すとコードが届き、それだけで入れます。パスワードは要りません。'
-          : "Your email is the key: tap the button, we email you a code, and you're in — no password to remember."}</p>
+          ? 'メールアドレスが鍵です。ボタンを押すとコードが届きます。'
+          : "Your email is the key: tap the button and we email you a code."}</p>
       </div>`;
   const text = isJa
-    ? `\n\nあなたのプラグインの置き場所ができました。\n入手したプラグインはあなたのポータルにまとまっています（いつでも最新版がワンクリック）。\nポータルを開く: ${url}\nメールアドレスが鍵です。ボタンからコードが届き、それだけで入れます（パスワード不要）。`
-    : `\n\nYour plugins have a home now.\nEverything you've grabbed lives in your portal — always the latest build, one click away.\nOpen your portal: ${url}\nYour email is the key: tap the link, we email you a code, and you're in — no password to remember.`;
+    ? `\n\nあなたのプラグインの置き場所ができました。\n入手したプラグインはあなたのポータルにまとまっています（いつでも最新版がワンクリック）。\nポータルを開く: ${url}\nメールアドレスが鍵です。ボタンからコードが届きます。`
+    : `\n\nYour plugins have a home now.\nEverything you've grabbed lives in your portal — always the latest build, one click away.\nOpen your portal: ${url}\nYour email is the key: tap the link and we email you a code.`;
   return { html, text };
 }
 
