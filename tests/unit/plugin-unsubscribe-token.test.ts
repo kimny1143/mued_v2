@@ -46,4 +46,11 @@ describe("plugin unsubscribe token", () => {
     expect(verifyUnsubscribeToken("muedlim", "a@b.com", t)).toBe(true);
     process.env.PLUGIN_UNSUBSCRIBE_TOKEN_SECRET = prev;
   });
+
+  it("★a masterchain-scope token never verifies for a plugin scope (and vice versa)", () => {
+    const t = signUnsubscribeToken("masterchain", "a@b.com");
+    expect(verifyUnsubscribeToken("masterchain", "a@b.com", t)).toBe(true);
+    expect(verifyUnsubscribeToken("muedsat", "a@b.com", t)).toBe(false);
+    expect(verifyUnsubscribeToken("masterchain", "a@b.com", signUnsubscribeToken("muedsat", "a@b.com"))).toBe(false);
+  });
 });

@@ -21,7 +21,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const unsubscribePluginContact = vi.fn();
-vi.mock("@/lib/plugins/audience", () => ({ unsubscribePluginContact }));
+const unsubscribeMuedspContact = vi.fn();
+vi.mock("@/lib/plugins/audience", () => ({ unsubscribePluginContact, unsubscribeMuedspContact }));
 vi.mock("@/lib/utils/logger", () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
@@ -118,5 +119,32 @@ describe("unsubscribe page — invalid token", () => {
   it("POST is 400 for a bad token", async () => {
     verifyUnsubscribeToken.mockReturnValue(false);
     expect(await post()).toBe(400);
+  });
+});
+
+describe("the masterchain demo scope (conductor 2026-09-30)", () => {
+  const MC = "https://mued.jp/api/plugins/unsubscribe?plugin=masterchain&email=a%40b.com&t=tok";
+  it("withdraws from the shared MUEDsp audience, not a plugin audience", async () => {
+    unsubscribeMuedspContact.mockResolvedValue(true);
+    const { GET } = await import("@/app/api/plugins/unsubscribe/route");
+    const res = await GET(new Request(MC) as never);
+    expect(res.status).toBe(200);
+    expect(await res.text()).toMatch(/配信を解除しました/);
+    expect(unsubscribeMuedspContact).toHaveBeenCalledExactlyOnceWith("a@b.com");
+    expect(unsubscribePluginContact).not.toHaveBeenCalled();
+    expect(verifyUnsubscribeToken).toHaveBeenCalledWith("masterchain", "a@b.com", "tok");
+  });
+  it("a rejected suppression is reported as failed, never as done", async () => {
+    unsubscribeMuedspContact.mockResolvedValue(false);
+    const { GET } = await import("@/app/api/plugins/unsubscribe/route");
+    const html = await (await GET(new Request(MC) as never)).text();
+    for (const re of CLAIMS_DONE) expect(html).not.toMatch(re);
+  });
+  it("an unknown scope is invalid and touches nothing", async () => {
+    const { GET } = await import("@/app/api/plugins/unsubscribe/route");
+    const res = await GET(new Request(MC.replace("masterchain", "masterchainx")) as never);
+    expect(res.status).toBe(400);
+    expect(unsubscribeMuedspContact).not.toHaveBeenCalled();
+    expect(unsubscribePluginContact).not.toHaveBeenCalled();
   });
 });

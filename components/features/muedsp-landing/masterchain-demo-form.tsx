@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { MASTERCHAIN_DEMO_LIVE } from "@/lib/masterchain/config";
+import { trackCtaClick } from "@/lib/analytics/gtag";
 
 export function MasterchainDemoForm() {
   if (!MASTERCHAIN_DEMO_LIVE) return null;
@@ -24,6 +25,9 @@ function DemoForm() {
     event.preventDefault();
     if (status === "submitting") return;
     setStatus("submitting");
+    // ★Same GA4 event as the free three's forms (cta_click / download_form). GA4 attributes it to the
+    //   session's utm, which is how the demo entry's utm is measured — the demo writes no DB row by design.
+    trackCtaClick("masterchain", "demo_form", "download_form");
     try {
       const attribution = Object.fromEntries(
         ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]

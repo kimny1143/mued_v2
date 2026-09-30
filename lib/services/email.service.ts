@@ -45,11 +45,10 @@ function masterchainPortalInstructions(isJa: boolean) {
  * ★Where this actually takes effect today (measured against prod, not assumed):
  *   - `/muedsp` (forward hook) — the next.config redirect keeps the query, so gtag reads it. ✓
  *   - `dial.mued.jp` (waitlist beta) — served 200 directly. ✓
- *   - `/dashboard/plugins` (portal button) — ✗ **only for recipients who are already signed in.**
- *     A signed-out visit is bounced to `/sign-in?redirect_url=%2Fdashboard%2Fplugins`, which keeps the
- *     pathname and DROPS the query, and the post-auth landing has no parameters either. So the campaign
- *     never reaches gtag for exactly the cohort the welcome email is aimed at. Fixing that means making
- *     the auth redirect carry the original query — an auth-path change, tracked separately.
+ *   - `/dashboard/plugins` (portal button) — ✓ ★re-measured 2026-09-30: a signed-out visit now goes to
+ *     `/sign-in?redirect_url=%2Fdashboard%2Fplugins%3Futm_source%3D…` — the query is carried through the
+ *     auth redirect (lib/middleware/sign-in-redirect.ts). The older note here said it was dropped; that
+ *     was fixed since and this line had not been updated.
  * Tagging is still correct here: the parameters are right, the delivery path is what's lossy.
  *
  * Taxonomy owned by content/data (data課 PR #177 is canonical); this file only applies it.
@@ -89,7 +88,7 @@ const UTM_CAMPAIGN = {
 } as const;
 
 /** One-click List-Unsubscribe URL for a plugin free-download subscriber (RFC 8058). */
-function pluginUnsubscribeUrl(plugin: 'muedsat' | 'muedlim' | 'muedrive', email: string, locale: 'ja' | 'en'): string {
+function pluginUnsubscribeUrl(plugin: 'muedsat' | 'muedlim' | 'muedrive' | 'masterchain', email: string, locale: 'ja' | 'en'): string {
   const t = signUnsubscribeToken(plugin, email);
   return `${APP_URL}/api/plugins/unsubscribe?plugin=${plugin}&email=${encodeURIComponent(email)}&t=${t}&locale=${locale}`;
 }
@@ -924,18 +923,37 @@ Hoo MCP経由の自動送信
     return { subject, html, text };
   },
 
-  /** Transactional demo receipt; marketing consent is handled separately. */
-  masterchainDemoDownload(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
+  /**
+   * Demo receipt. ★With consent (the person is now on the shared MUEDsp list) it carries an unsubscribe
+   * link, like the free three; without consent it is purely transactional and has none (conductor 2026-09-30).
+   */
+  masterchainDemoDownload(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const subject = isJa ? 'MUEDsp masterchain デモのダウンロード' : 'Your MUEDsp masterchain demo download';
     const intro = isJa ? "MUEDsp masterchain のデモをお試しいただき、ありがとうございます。" : "Thanks for trying the MUEDsp masterchain demo.";
     const limits = isJa ? "キーを入れなくても、デモとして期限なく使えます。デモでは、挿してから、音を 45 秒ぶん処理するまではすべて効き、その後はプラグインを挿し直すまで原音のまま通ります。設定は保存されず、プリセットも保存できません。ライセンスキーを入れると、これらの制限はなくなります。" : "Without a key, masterchain runs as a demo with no time limit. In the demo it processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved and presets can't be saved. Entering a license key removes these limits.";
     const label = isJa ? 'デモをダウンロード' : 'Download the demo';
     const formats = 'VST3 · AU · AAX (Pro Tools) · macOS';
+    // ★How to buy and where the key goes (conductor 2026-09-30, d). Short link, so the utm lives in one table
+    //   (lib/short-links/table.ts: mc-demo-mail) and the browser's language picks /ja or /en.
+    const buyUrl = `${APP_URL}/l/mc-demo-mail`;
+    const buy = isJa
+      ? '気に入ったら、製品ページから購入できます（プラグインの中の Buy masterchain からも開けます）。購入後は、購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。'
+      : 'If you like it, you can buy it from the product page (Buy masterchain inside the plugin opens it too). After buying, sign in to mued.jp with the email you used at checkout to get your license key in your portal.';
+    const buyLabel = isJa ? '製品ページを開く' : 'Open the product page';
+    // ★Only with consent (kimny 9/30 rule, NO_BLOCK: no consent → the transactional receipt only, nothing
+    //   promotional — CCO #1182). The consent signal here is the unsubscribe URL, which exists only then.
+    const optedIn = !!data.unsubscribeUrl;
+    const buyHtml = optedIn ? `<p>${buy}</p><p><a href="${buyUrl}">${buyLabel}</a></p>` : '';
+    const buyText = optedIn ? `\n\n${buy}\n${buyLabel}: ${buyUrl}` : '';
+    const unsubHtml = data.unsubscribeUrl
+      ? `<p style="color: #9ca3af; font-size: 12px;"><a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a></p>`
+      : '';
+    const unsubText = data.unsubscribeUrl ? `\n\n${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}` : '';
     return {
       subject,
-      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p><p>${limits}</p><p>${formats}</p>`),
-      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}\n\n${limits}\n\n${formats}\n\nglasswerks inc. — mued.jp`,
+      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p><p>${limits}</p><p>${formats}</p>${buyHtml}${unsubHtml}`),
+      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}\n\n${limits}\n\n${formats}${buyText}${unsubText}\n\nglasswerks inc. — mued.jp`,
     };
   },
 
@@ -1020,8 +1038,8 @@ Hoo MCP経由の自動送信
     const { portal, howTo } = masterchainPortalInstructions(isJa);
     const ends = isJa ? `試用期限: ${expiry}` : `Trial expiry: ${expiry}`;
     const after = isJa
-      ? '試用期間が終了すると、新しいライセンスキーを入力するまで「Demo expired」画面が表示され、音声は加工されずに通過します（バイパス）。'
-      : 'When the trial ends, the plugin keeps passing audio through unprocessed (bypass) and shows "Demo expired" until you enter a license key.';
+      ? '試用期間が終了すると、新しいライセンスキーを入力するまで「DEMO EXPIRED」画面が表示され、音声は加工されずに通過します。'
+      : 'When the trial ends, the plugin keeps passing audio through unprocessed and shows "DEMO EXPIRED" until you enter a license key.';
     const esc = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const downloadHtml = MASTERCHAIN_DOWNLOAD_URL
       ? `<a href="${MASTERCHAIN_DOWNLOAD_URL}">${isJa ? 'masterchain をダウンロード' : 'Download masterchain'}</a>`
@@ -1569,12 +1587,18 @@ class EmailService {
 
   async sendMasterchainDemoDownload(
     to: EmailRecipient,
-    data: { locale: 'ja' | 'en' }
+    data: { locale: 'ja' | 'en'; marketingOptIn?: boolean }
   ): Promise<EmailResult> {
+    // ★Consented → on the shared MUEDsp list → a working way off it (link + one-click header). Not consented →
+    //   not on any list, so nothing to unsubscribe from (same rule as the free three).
+    const unsubscribeUrl = data.marketingOptIn === true ? pluginUnsubscribeUrl('masterchain', to.email, data.locale) : undefined;
     return this.send({
       to,
-      ...emailTemplates.masterchainDemoDownload(data),
+      ...emailTemplates.masterchainDemoDownload({ locale: data.locale, unsubscribeUrl }),
       tags: [{ name: 'type', value: 'masterchain_demo_download' }],
+      ...(unsubscribeUrl
+        ? { headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } }
+        : {}),
     });
   }
 

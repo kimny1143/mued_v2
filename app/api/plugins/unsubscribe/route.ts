@@ -11,12 +11,17 @@
 // contact update — a Resend hiccup still returns 200 on a valid token so the sender doesn't retry-loop.
 import { NextRequest } from "next/server";
 import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
-import { unsubscribePluginContact } from "@/lib/plugins/audience";
-import { verifyUnsubscribeToken } from "@/lib/plugins/unsubscribe-token";
+import { unsubscribeMuedspContact, unsubscribePluginContact } from "@/lib/plugins/audience";
+import { verifyUnsubscribeToken, type UnsubscribeScope } from "@/lib/plugins/unsubscribe-token";
 import { logger } from "@/lib/utils/logger";
 
 function isPluginKey(v: string | null | undefined): v is PluginKey {
   return !!v && Object.prototype.hasOwnProperty.call(PLUGIN_DIST, v);
+}
+
+/** A free plugin key, or "masterchain" = the masterchain demo receipt (shared MUEDsp audience). */
+function isScope(v: string | null | undefined): v is UnsubscribeScope {
+  return v === "masterchain" || isPluginKey(v);
 }
 
 /**
@@ -50,7 +55,7 @@ type UnsubscribeOutcome = "invalid" | "done" | "failed";
 
 async function processUnsubscribe(
   req: NextRequest,
-): Promise<{ outcome: UnsubscribeOutcome; plugin?: PluginKey }> {
+): Promise<{ outcome: UnsubscribeOutcome; plugin?: UnsubscribeScope }> {
   const url = new URL(req.url);
   let plugin: string | null = url.searchParams.get("plugin");
   let email: string | null = url.searchParams.get("email");
@@ -68,14 +73,18 @@ async function processUnsubscribe(
     }
   }
 
-  if (!isPluginKey(plugin) || !email || !verifyUnsubscribeToken(plugin, email, token)) {
+  if (!isScope(plugin) || !email || !verifyUnsubscribeToken(plugin, email, token)) {
     return { outcome: "invalid" };
   }
 
   // ★The return value is the point. A `.catch()` alone cannot see this failure — the SDK resolves
   //   `{data, error}` rather than throwing (see lib/plugins/audience.ts). The catch is kept for a
   //   genuine transport throw, and both paths land on "failed" rather than on silence.
-  const suppressed = await unsubscribePluginContact(plugin, email).catch((err) => {
+  const scope = plugin;
+  const suppressed = await (scope === "masterchain"
+    ? unsubscribeMuedspContact(email)
+    : unsubscribePluginContact(scope, email)
+  ).catch((err) => {
     logger.error("[plugins/unsubscribe] contact update threw", { plugin, error: String(err) });
     return false;
   });

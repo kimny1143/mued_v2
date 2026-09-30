@@ -151,3 +151,30 @@ export async function unsubscribePluginContact(plugin: PluginKey, email: string)
     return false;
   }
 }
+
+/**
+ * Withdraw consent for the masterchain demo list = the shared MUEDsp audience itself (MUEDSP_AUDIENCE_ID),
+ * which is where lib/masterchain/demo-handler.ts adds consented people. ★Same honesty rule as
+ * unsubscribePluginContact: false on any rejection, never a silent success.
+ */
+export async function unsubscribeMuedspContact(email: string): Promise<boolean> {
+  const resend = getClient();
+  if (!resend || !email) return false;
+  try {
+    const { error } = await resend.contacts.update({
+      audienceId: MUEDSP_AUDIENCE_ID,
+      email: email.trim().toLowerCase(),
+      unsubscribed: true,
+    });
+    if (error) {
+      logger.error("[plugins/audience] Resend REJECTED the unsubscribe (masterchain demo)", {
+        error: error.message ?? String(error),
+      });
+      return false;
+    }
+    return true;
+  } catch (err) {
+    logger.error("[plugins/audience] could not reach Resend to unsubscribe (masterchain demo)", { err: String(err) });
+    return false;
+  }
+}
