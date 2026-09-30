@@ -29,7 +29,12 @@ import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 import { MasterchainPurchaseControl } from "@/components/features/muedsp-landing/masterchain-purchase-control";
 import { MasterchainDemoForm } from "@/components/features/muedsp-landing/masterchain-demo-form";
-import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_TRIAL_DAYS, MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
+import {
+  MASTERCHAIN_DEMO_LIVE,
+  MASTERCHAIN_PURCHASE_LIVE,
+  MASTERCHAIN_TRIAL_DAYS,
+  MASTERCHAIN_TRIAL_LIVE,
+} from "@/lib/masterchain/config";
 
 const FACEPLATE_HOT = "/muedsat/faceplate-hot.webp";
 const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
@@ -170,7 +175,9 @@ export function MuedspLandingContent() {
             <div className="mt-8 flex flex-col gap-4 border-t border-white/8 pt-6 sm:flex-row sm:items-center sm:justify-between">
               {/* Price statement lives entirely in copy (priceNote) — single source, no hardcoded
                   number (keeps price/no-discount wording under content課's control). */}
-              <p className="max-w-sm text-[15px] leading-relaxed text-white/70">{tmc("priceNote")}</p>
+              <p className="max-w-sm text-[15px] leading-relaxed text-white/70">
+                {tmc(MASTERCHAIN_PURCHASE_LIVE ? "priceNoteLive" : "priceNote")}
+              </p>
               {/* Valhalla-type structural Buy slot — LIVE only when the storefront is configured.
 
                   ★★THE TAG CONTRACT HAS MOVED INTO CODE (2026-09-13). It is now
@@ -199,7 +206,8 @@ export function MuedspLandingContent() {
               )}
               <MasterchainPurchaseControl
                 locale={locale}
-                buyLabel={tmc("buyLabel")}
+                // ★The closed label says "Coming soon"; an enabled button must not.
+                buyLabel={tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")}
                 consentPrefix={tmc("eulaConsentPrefix")}
                 eulaLabel={tmc("eulaLabel")}
               />
