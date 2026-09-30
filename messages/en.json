@@ -2528,6 +2528,7 @@
       "buyLabelLive": "Buy",
       "eulaConsentPrefix": "I have read and agree to the",
       "eulaLabel": "EULA",
+      "signInNote": "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
       "mockLabel": "The masterchain 1.0.1 screen (demo).",
       "controlsLead": "Here's how it works.",
       "controls": {
@@ -2572,7 +2573,7 @@
       "title": "MUEDsp masterchain — {days}-day trial",
       "intro": "Try masterchain on your own tracks for {days} days.",
       "signInHint": "You can sign in with a code sent to your email.",
-      "bypass": "Without a valid key or after expiry, the plugin passes audio through unprocessed (bypass) and shows \"Demo expired\".",
+      "bypass": "Without a valid key or after expiry, the plugin passes audio through unprocessed and shows \"DEMO EXPIRED\".",
       "cta": "Try free for {days} days",
       "start": "Start the {days}-day trial",
       "consentPrefix": "I have read and agree to the",
@@ -2894,7 +2895,7 @@
       "howto": "Download license.key and open it in masterchain with \"Load license file…\", or copy the key and press \"Paste license from clipboard\".",
       "ends": "Trial ends {date} (UTC)",
       "ended": "Trial ended",
-      "bypass": "After the trial ends, the plugin passes audio through unprocessed (bypass) and shows \"Demo expired\" until you enter a license key."
+      "bypass": "After the trial ends, the plugin passes audio through unprocessed and shows \"DEMO EXPIRED\" until you enter a license key."
     },
     "purchased": {
       "label": "Purchased",

@@ -48,6 +48,12 @@ export interface ShortLink {
   /** ★Copied verbatim from the article link this row replaces. Never re-numbered. */
   utmContent: string;
   utmTerm?: string;
+  /**
+   * ★For links baked into a binary whose UI has no language (the masterchain plugin): the row's path
+   * starts with `/en/`, and a visitor whose browser prefers Japanese is sent to `/ja/` instead
+   * (Accept-Language, first preference only). Everyone else keeps the row's path.
+   */
+  localeFromBrowser?: true;
 }
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,63}$/;
@@ -181,10 +187,17 @@ export function assertNonVacuous(rows: readonly ShortLink[]): void {
  * utm_* values overwrite any the visitor supplied, so attribution is what the table says and cannot
  * be spoofed through the short link.
  */
+/** The browser's FIRST language preference is Japanese (`ja`, `ja-JP`, …). Anything else — or no header — is not. */
+export function prefersJapanese(acceptLanguage: string | null | undefined): boolean {
+  const first = (acceptLanguage ?? '').split(',')[0]?.split(';')[0]?.trim().toLowerCase() ?? '';
+  return first === 'ja' || first.startsWith('ja-');
+}
+
 export function resolveShortLink(
   rows: readonly ShortLink[],
   slug: string,
   incoming?: URLSearchParams,
+  acceptLanguage?: string | null,
 ): string | null {
   const row = rows.find((r) => r.slug === slug);
   if (!row) return null;
@@ -194,7 +207,10 @@ export function resolveShortLink(
   if (!pathIsSafe(row.path)) return null;
 
   const url = new URL(`https://${host}`);
-  url.pathname = row.path === '' ? '/' : row.path;
+  const path = row.localeFromBrowser && row.path.startsWith('/en/') && prefersJapanese(acceptLanguage)
+    ? `/ja/${row.path.slice('/en/'.length)}`
+    : row.path;
+  url.pathname = path === '' ? '/' : path;
 
   // ★Re-assert the host AFTER building. The path checks above should make this unreachable; it is
   //   here because "the input looked relative" and "the result is on our host" are different claims,

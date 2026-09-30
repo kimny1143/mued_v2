@@ -2528,6 +2528,7 @@
       "buyLabelLive": "購入する",
       "eulaConsentPrefix": "EULA を読み、内容に同意します:",
       "eulaLabel": "使用許諾契約",
+      "signInNote": "購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。",
       "mockLabel": "masterchain 1.0.1 の画面（デモ）",
       "controlsLead": "こんなふうに使います。",
       "controls": {
@@ -2572,7 +2573,7 @@
       "title": "MUEDsp masterchain — {days}日間トライアル",
       "intro": "自分の曲で、masterchain を{days}日間すべての機能のまま試せます。",
       "signInHint": "メールに届くコードでサインインできます。",
-      "bypass": "有効なキーがないときや期限が切れたあとは、音を加工せずそのまま通します（バイパス）。画面には「Demo expired」と表示されます。",
+      "bypass": "有効なキーがないときや期限が切れたあとは、音を加工せずそのまま通します。画面には「DEMO EXPIRED」と表示されます。",
       "cta": "{days}日間無料で試す",
       "start": "{days}日間のトライアルを始める",
       "consentPrefix": "EULA を読み、内容に同意します:",
@@ -2894,7 +2895,7 @@
       "howto": "license.key をダウンロードし、masterchain の「Load license file…」で開いてください。または、キーをコピーし、「Paste license from clipboard」を押してください。",
       "ends": "トライアル期限: {date}（UTC）",
       "ended": "トライアル終了",
-      "bypass": "トライアル終了後は、ライセンスキーを入れるまで音を加工せずそのまま通します（バイパス）。画面には「Demo expired」と表示されます。"
+      "bypass": "トライアル終了後は、ライセンスキーを入れるまで音を加工せずそのまま通します。画面には「DEMO EXPIRED」と表示されます。"
     },
     "purchased": {
       "label": "購入したもの",

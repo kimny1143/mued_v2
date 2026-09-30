@@ -27,7 +27,12 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const target = resolveShortLink(SHORT_LINKS, slug, request.nextUrl.searchParams);
+  const target = resolveShortLink(
+    SHORT_LINKS,
+    slug,
+    request.nextUrl.searchParams,
+    request.headers.get('accept-language'),
+  );
 
   if (!target) {
     return new NextResponse('Not Found', {

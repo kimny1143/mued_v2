@@ -18,6 +18,7 @@ import {
   assertNonVacuous,
   ALLOWED_HOSTS,
   type ShortLink,
+  prefersJapanese,
 } from '@/lib/short-links/resolve';
 import { SHORT_LINKS } from '@/lib/short-links/table';
 
@@ -253,5 +254,44 @@ describe('the shipped table', () => {
       expect(out).not.toBeNull();
       expect(ALLOWED_HOSTS).toContain(new URL(out!).host as (typeof ALLOWED_HOSTS)[number]);
     }
+  });
+});
+
+describe("localeFromBrowser (masterchain plugin links, conductor 2026-09-30)", () => {
+  const mc = row({ slug: "mc-buy", host: "mued.jp", path: "/en/muedsp", localeFromBrowser: true });
+  it.each([
+    ["ja,en-US;q=0.9", "/ja/muedsp"],
+    ["ja-JP", "/ja/muedsp"],
+    ["en-US,ja;q=0.8", "/en/muedsp"], // ★first preference only
+    ["", "/en/muedsp"],
+    [null, "/en/muedsp"],
+  ])("Accept-Language %j → %s", (al, path) => {
+    expect(new URL(resolveShortLink([mc], "mc-buy", undefined, al)!).pathname).toBe(path);
+  });
+  it("a row without the flag never changes path", () => {
+    expect(new URL(resolveShortLink([row({ path: "/en/muedsp" })], "demo", undefined, "ja")!).pathname).toBe("/en/muedsp");
+  });
+  it("prefersJapanese reads only the first preference", () => {
+    expect(prefersJapanese("ja")).toBe(true);
+    expect(prefersJapanese("jax")).toBe(false);
+    expect(prefersJapanese("en,ja")).toBe(false);
+  });
+});
+
+describe("the four masterchain plugin links in the shipped table", () => {
+  it("resolve to the agreed places and utm (baked into the binary — never change)", () => {
+    const get = (slug: string, al?: string) => new URL(resolveShortLink(SHORT_LINKS, slug, undefined, al)!);
+    expect(get("mc-plugin").pathname).toBe("/en/muedsp");
+    expect(get("mc-plugin", "ja").pathname).toBe("/ja/muedsp");
+    expect(get("mc-plugin").searchParams.get("utm_campaign")).toBe("masterchain_header");
+    expect(get("mc-plugin").searchParams.get("utm_source")).toBe("muedsp_plugin");
+    expect(get("mc-plugin").searchParams.get("utm_medium")).toBe("inapp");
+    expect(get("mc-portal").pathname).toBe("/dashboard/plugins");
+    expect(get("mc-portal", "ja").pathname).toBe("/dashboard/plugins");
+    expect(get("mc-portal").searchParams.get("utm_campaign")).toBe("masterchain_portal");
+    expect(get("mc-buy", "ja").pathname).toBe("/ja/muedsp");
+    expect(get("mc-trial", "ja").pathname).toBe("/ja/muedsp");
+    expect(get("mc-demo-mail", "ja").pathname).toBe("/ja/muedsp");
+    expect(get("mc-demo-mail").searchParams.get("utm_campaign")).toBe("masterchain_demo_mail");
   });
 });

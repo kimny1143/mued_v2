@@ -5,13 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MUEDSP_AUDIENCE_ID } from "@/lib/plugins/registry";
 import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 
-const m = vi.hoisted(() => ({ live: true, create: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn() }));
+const m = vi.hoisted(() => ({ live: true, create: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn(), alert: vi.fn() }));
 vi.mock("@/lib/masterchain/config", async (original) => ({
   ...await original<typeof import("@/lib/masterchain/config")>(),
   get MASTERCHAIN_DEMO_LIVE() { return m.live; },
 }));
 vi.mock("resend", () => ({ Resend: class { contacts = { create: m.create }; } }));
-vi.mock("@/lib/services/email.service", () => ({ emailService: { sendMasterchainDemoDownload: m.send } }));
+vi.mock("@/lib/services/email.service", () => ({ emailService: { sendMasterchainDemoDownload: m.send, isConfigured: () => true, sendAdminAlert: m.alert } }));
 vi.mock("@/lib/middleware/rate-limit", () => ({ rateLimit: m.ip, checkRateLimit: m.emailLimit }));
 vi.mock("@/lib/utils/logger", () => ({ logger: { error: m.error } }));
 vi.mock("@/db", () => { throw new Error("Demo must not import DB"); });
@@ -29,6 +29,8 @@ beforeEach(() => {
   m.emailLimit.mockResolvedValue(null);
   m.create.mockResolvedValue({ data: { id: "contact" }, error: null });
   m.send.mockResolvedValue({ success: true });
+  m.alert.mockResolvedValue({ success: true });
+  vi.stubEnv("OPERATOR_ALERT_EMAIL", "ops@example.com");
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -62,14 +64,15 @@ describe("masterchain demo", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(success);
     expect(m.create).not.toHaveBeenCalled();
-    expect(m.send).toHaveBeenCalledExactlyOnceWith({ email: "person@example.com" }, { locale: "en" });
+    expect(m.send).toHaveBeenCalledExactlyOnceWith({ email: "person@example.com" }, { locale: "en", marketingOptIn: false });
     expect(m.emailLimit).toHaveBeenCalledWith("plugin-email", "plugin-email:person@example.com");
     expect(m.ip).toHaveBeenCalledWith(expect.any(NextRequest), "research");
   });
   it("adds consented contacts only to the shared MUEDsp audience", async () => {
     await handleMasterchainDemo(request({ email: "person@example.com", locale: "ja", marketingOptIn: true }));
     expect(m.create).toHaveBeenCalledExactlyOnceWith({ audienceId: MUEDSP_AUDIENCE_ID, email: "person@example.com", unsubscribed: false });
-    expect(m.send).toHaveBeenCalledExactlyOnceWith({ email: "person@example.com" }, { locale: "ja" });
+    // ★Consent reaches the receipt, which then carries the unsubscribe link (conductor 2026-09-30).
+    expect(m.send).toHaveBeenCalledExactlyOnceWith({ email: "person@example.com" }, { locale: "ja", marketingOptIn: true });
   });
   it.each(["rejection", "throw", "unset"])("list failure %s is best-effort", async (mode) => {
     if (mode === "rejection") m.create.mockResolvedValue({ error: { message: "rejected" } });
@@ -80,6 +83,9 @@ describe("masterchain demo", () => {
     expect(m.send).toHaveBeenCalledTimes(1);
     if (mode === "unset") expect(m.create).not.toHaveBeenCalled();
     else expect(m.error).toHaveBeenCalled();
+    // ★(2) conductor 2026-09-30: a consenting person who did not reach the list alerts the operator (configured only).
+    if (mode === "unset") expect(m.alert).not.toHaveBeenCalled();
+    else expect(m.alert).toHaveBeenCalledTimes(1);
   });
   it.each(["ip", "email"])("returns 429 for %s rate limiting", async (kind) => {
     if (kind === "ip") m.ip.mockResolvedValue(NextResponse.json({}, { status: 429 }));
@@ -113,4 +119,10 @@ describe("masterchain demo", () => {
     const imports = source.match(/^import .*$/gm)?.join("\n");
     expect(imports).not.toMatch(/(?:@\/db|database|entitlement|trial|purchase|repository)/i);
   });
+});
+
+it("does not alert when the consenting person reached the list", async () => {
+  m.create.mockResolvedValue({ data: { id: "contact" }, error: null });
+  await handleMasterchainDemo(request({ email: "person@example.com", marketingOptIn: true }));
+  expect(m.alert).not.toHaveBeenCalled();
 });
