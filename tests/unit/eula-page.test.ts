@@ -24,7 +24,9 @@ describe("staged EULA page", () => {
     // ★Exactly the four keys the page reads. The staging placeholder (lastUpdated / sections) was
     //   removed with the provisional text (2026-09-30); it was not rendered, but it still shipped in
     //   the page payload, and a legal page should not carry "this is a placeholder" in any form.
-    expect(Object.keys(messages.eula).sort()).toEqual(["articles", "effectiveDate", "intro", "title"]);
+    // 2026.10 (lawyer draft, 2026-09-30): the English text governs and /ja carries a reference note.
+    //   effectiveDate is absent until the launch date is decided — it is added in the release PR.
+    expect(Object.keys(messages.eula).sort()).toEqual(["articles", "intro", "referenceNote", "title"]);
     expect(messages.eula.articles.length).toBeGreaterThan(0);
     expect(JSON.stringify(messages.eula).toLowerCase()).not.toMatch(/プレースホルダー|placeholder/);
     // ★Empty text fails the static build instead of rendering a fallback.
@@ -32,13 +34,16 @@ describe("staged EULA page", () => {
     expect(page).not.toContain("PlaceholderSections");
   });
 
-  it("★the effective date is the launch day, written exactly as in dsp's installer RTF", () => {
-    // ★Same version (2026.09) must mean the same text on the web and in the installer. dsp filled the
-    //   RTF's [発売日] as below and baked it into the 1.0.0 builds (conductor 2026-09-30), so the web
-    //   copies the strings verbatim instead of formatting a date (a formatter could drift from them).
+  it("★2026.10: the English text governs; /ja shows the reference note; the effective date is not set yet", () => {
+    // Version 2026.10 is the lawyer's draft (2026-09-30) staged for the release PR. The same version
+    //   string must mean the same text as dsp's installer RTF, so EULA_VERSION moves with dsp.
     const load = (l: string) => JSON.parse(readFileSync(join(ROOT, "messages", `${l}.json`), "utf8")).eula;
-    expect(load("ja").effectiveDate).toBe("2026年9月30日");
-    expect(load("en").effectiveDate).toBe("September 30, 2026");
+    expect(load("ja").effectiveDate).toBeUndefined();
+    expect(load("en").effectiveDate).toBeUndefined();
+    expect(load("ja").referenceNote).toContain("英語版が優先します");
+    const page = readFileSync(PAGE, "utf8");
+    expect(page).toContain('data-testid="eula-reference-note"');
+    expect(page).toMatch(/\{isJa && \(\s*<p data-testid="eula-reference-note"/);
   });
 
   it("keeps the Japanese and English EULA key sets identical", () => {
