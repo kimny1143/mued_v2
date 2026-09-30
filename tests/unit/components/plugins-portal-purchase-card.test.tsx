@@ -115,4 +115,15 @@ describe("purchase card — the buyer can actually get the key", () => {
     expect(dl.getAttribute("href")).toBe(purchase.downloadUrl);
     expect(document.body.textContent).toContain("0.1.3");
   });
+
+  it("★a refunded purchase: marked, no key text, no Copy / Download of the key (conductor 2026-09-30)", () => {
+    const refunded = { ...purchase, licenseKey: null, refundedAtISO: "2026-10-02T00:00:00.000Z" };
+    const { container } = render(<PluginsPortalView items={[]} purchases={[refunded]} />);
+    expect(screen.getByTestId("purchase-refunded")).toBeTruthy();
+    expect(container.textContent).not.toContain("MUEDSP-LICENSE");
+    expect(screen.queryByRole("button", { name: /copy/i })).toBeNull();
+    // ★Positive control: the same card unrefunded does render the key.
+    const again = render(<PluginsPortalView items={[]} purchases={[purchase]} />);
+    expect(again.container.textContent).toContain("MUEDSP-LICENSE");
+  });
 });
