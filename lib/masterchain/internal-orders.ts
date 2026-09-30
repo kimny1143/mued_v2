@@ -1,7 +1,10 @@
 // masterchain orders placed by us, not by customers.
 //
-// ★Any count of masterchain orders or sales built from `masterchain_purchases` (or from the purchase emails)
-// must leave these out. The rows themselves stay as they are — this list is how they are recognised.
+// ★Today nothing counts orders or sales from `masterchain_purchases`, so nothing uses this list yet (the launch
+// numbers count purchase emails from LAUNCH_AT, which is after these orders — LAST_INTERNAL_ORDER_AT pins that).
+// It is here for the count that comes later: that count must leave these out (tests/unit/masterchain-internal-
+// orders.test.ts fails the day one is added under lib/funnel). The rows themselves stay as they are. The reconcile
+// script matches fulfilment, not sales, so it keeps every order.
 // (conductor 2026-10-01; the GA4 purchase event for the order below cannot be removed — conductor keeps a note
 // in its ledger and subtracts it when reading GA4.)
 

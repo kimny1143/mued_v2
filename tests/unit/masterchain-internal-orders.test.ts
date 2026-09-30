@@ -15,7 +15,7 @@ it("lists kimny's confirmation purchase by the ids FastSpring gave it", () => {
   expect(new Set(INTERNAL_ORDER_IDS).size).toBe(INTERNAL_ORDER_IDS.length);
 });
 
-it("★any count under lib/funnel that reads masterchain purchases must leave the internal orders out", () => {
+it("★today no count under lib/funnel reads masterchain purchases — one that does must leave the internal orders out (CCO #1195)", () => {
   const files: string[] = [];
   const walk = (d: string) => {
     for (const f of readdirSync(d)) {
@@ -28,5 +28,10 @@ it("★any count under lib/funnel that reads masterchain purchases must leave th
   // Positive control: the walk reaches the files (launch.ts is there).
   expect(files.some((f) => f.endsWith("launch.ts"))).toBe(true);
   const readsPurchases = files.filter((f) => /masterchain_purchases|masterchainPurchases/.test(readFileSync(f, "utf8")));
+  // ★Zero today, stated as such (the loop below alone would pass on an empty list and check nothing). The day a
+  //   count of orders or sales from masterchain_purchases is added here, this fails: update the expected list AND
+  //   make that file leave INTERNAL_ORDER_IDS out (the loop then checks it). The reconcile script
+  //   (scripts/ops/reconcile-fastspring-orders.ts) matches fulfilment, not sales, so it rightly keeps every order.
+  expect(readsPurchases).toEqual([]);
   for (const f of readsPurchases) expect(readFileSync(f, "utf8"), f).toMatch(/INTERNAL_ORDER_IDS|LAST_INTERNAL_ORDER_AT/);
 });
