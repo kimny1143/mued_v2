@@ -78,3 +78,18 @@ it("★the masterchain image is the real 1.0.1 screen everywhere, never the old 
   // ★The captions say what it is — not "illustrative".
   for (const m of [ja, en]) expect(m.muedsp.masterchain.mockLabel).toContain("1.0.1");
 });
+
+it("★llms.txt: the price leads and the demo is a footnote; while purchase is closed it still says sales have not started (kimny / CCO 2026-09-30)", () => {
+  const src = readFileSync("app/llms.txt/route.ts", "utf8");
+  const line = src.split("\n").find((l) => l.startsWith("- **MUEDsp masterchain**:")) ?? "";
+  expect(line).toContain('MASTERCHAIN_PURCHASE_LIVE ? "買い切り $69・販売中');
+  expect(line).toContain('"買い切り $69（販売の開始は近日・現在 live 販売なし）。"');
+  expect(line.indexOf("買い切り $69")).toBeLessThan(line.indexOf("デモで確かめられる"));
+  expect(line).not.toContain("デモあり");
+});
+
+it("★the demo is not a selling point: no 'demo available' badge / eyebrow anywhere (kimny 2026-09-30)", () => {
+  expect(JSON.stringify([ja, en])).not.toMatch(/デモあり|Demo available/);
+  expect(ja.muedsp.masterchain.eyebrow).toBe("作曲家のためのマスターチェーン");
+  expect(en.muedsp.masterchain.eyebrow).toBe("A master chain for composers");
+});

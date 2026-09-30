@@ -15,13 +15,11 @@ it("★an open Buy button never says \"Coming soon\" — the label and price not
   const landing = readFileSync("components/features/muedsp-landing/muedsp-landing-content.tsx", "utf8");
   expect(landing).toContain('tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")');
   expect(landing).toContain('tmc(MASTERCHAIN_PURCHASE_LIVE ? "priceNoteLive" : "priceNote")');
-  expect(landing).toContain('tmc(MASTERCHAIN_PURCHASE_LIVE ? "eyebrowLive" : "eyebrow")');
   for (const m of [ja, en]) {
     const mc = m.muedsp.masterchain;
     expect(mc.buyLabelLive).toBeTruthy();
     expect(mc.buyLabelLive).not.toBe(mc.buyLabel);
     expect(mc.priceNoteLive).toContain("$69");
-    expect(mc.eyebrowLive).toMatch(/^(発売中|Out now)$/); // conductor 2026-09-30
     expect(mc.priceNoteLive).not.toMatch(/発売と同時|Available at launch/);
   }
 });
