@@ -53,34 +53,36 @@ import { WINDOWS_BETA } from "@/lib/plugins/windows-beta";
  * as they cover the free three.
  */
 const MASTERCHAIN_PIN: { sha256: string; bytes: number } | null = {
-  // ★1.0.0 (2026-09-30). Measured on the COPY under public/downloads/, not on dsp's source and not
-  //   from the relayed message — `shasum -a 256` / `stat -f%z`. dsp's and conductor's declared sha256
-  //   matched, and `cmp` against dsp's plugin/dist/ was byte-identical. (0.1.3 was d9c21c25…/4_133_469.)
-  sha256: "07607ba9a378e2054c0b3fa2bbf01ff7dc7492b9951746826bf8d1659683761d",
-  bytes: 4_280_176,
+  // ★1.0.1 (2026-09-30, EULA 2026.10 inside). Measured on the COPY under public/downloads/, not on
+  //   dsp's source and not from the relayed message — `shasum -a 256` / `stat -f%z`. conductor's
+  //   declared sha256/bytes matched, and `cmp` against dsp's plugin/dist/ was byte-identical.
+  //   (1.0.0 was 07607ba9…/4_280_176; 0.1.3 was d9c21c25…/4_133_469 — both stay on the shelf.)
+  sha256: "e484688613197dc26d40cca3ca1c6c2e69608e575600254c1bb47c7bc8fa3fb0",
+  bytes: 4_276_006,
 };
 
 const ARTIFACTS = [
   {
     name: "MUEDlim",
     url: MUEDLIM_DOWNLOAD_URL,
-    sha256: "e71952251543959bb156f81611b1a5c40834699add4a5a2b687c35dce5600ad3",
-    bytes: 3_272_834,
+    // 1.0.0, EULA 2026.10 rebuild (/downloads/eula-2026.10/). The first 1.0.0 is pinned as a shelf entry below.
+    sha256: "123bb9994e7ea85099778603484576200cddf017c82802b92935c4d8758bb7c7",
+    bytes: 3_269_395,
   },
   {
     name: "MUEDsat",
     url: MUEDSAT_DOWNLOAD_URL,
-    sha256: "e36fd15220290c7d9b8faf51574711263df73321a26360533b8a6a7e876c89ff",
-    bytes: 3_420_493,
+    // 1.0.0, EULA 2026.10 rebuild (/downloads/eula-2026.10/). The first 1.0.0 is pinned as a shelf entry below.
+    sha256: "9871b6071ddb7b522162000bcd28d1b6993c5ccfcb88a04744c1d0d27b8b4dc8",
+    bytes: 3_417_085,
   },
   {
     name: "MUEDrive",
     url: MUEDRIVE_DOWNLOAD_URL,
-    sha256: "1f3fc0918ccbbb9551c4d217594c043f2f9e0b808023576b640d9e08f6ce8d49",
-    bytes: 3_620_155,
+    // 1.0.1 (2026-09-30, EULA 2026.10 inside). 1.0.0 was 1f3fc091…/3_620_155 (stays on the shelf).
+    sha256: "75bf0dcc1457559a35fbda9b55ae74c318f51dca754767863d0c080481a40fd4",
+    bytes: 3_616_696,
   },
-  // ★Present only once BOTH the URL and the pin exist — so the same two tests below start covering
-  //   the paid artifact the moment it is published, with no separate wiring to remember.
   // ★Windows VST3 beta (dsp build/win-beta-20260930b). Pinned from the moment the files are on the
   //   shelf, not from the day WINDOWS_BETA_LIVE flips: the zip URL is static like every .pkg.
   //   Measured on the copies under public/downloads/ (2026-09-30): matched conductor's relay + cmp to dsp.
@@ -102,6 +104,23 @@ const ARTIFACTS = [
     sha256: "4c691c4ecf17d3d81769acbda633ca08bcc4d40c91a13aec2b3ffc6f074ac4ec",
     bytes: 1_225_353,
   },
+  // ★Shelf: the first 1.0.0 builds (EULA 2026.09). No constant points here any more, but the launch
+  //   mail of 2026-09-30 does — so the bytes behind these URLs must not change (kimny 9/30: published
+  //   versions stay available).
+  {
+    name: "MUEDlim 1.0.0 (first build, shelf)",
+    url: "https://mued.jp/downloads/MUEDlim-1.0.0-installer.pkg",
+    sha256: "e71952251543959bb156f81611b1a5c40834699add4a5a2b687c35dce5600ad3",
+    bytes: 3_272_834,
+  },
+  {
+    name: "MUEDsat 1.0.0 (first build, shelf)",
+    url: "https://mued.jp/downloads/MUEDsat-1.0.0-installer.pkg",
+    sha256: "e36fd15220290c7d9b8faf51574711263df73321a26360533b8a6a7e876c89ff",
+    bytes: 3_420_493,
+  },
+  // ★Present only once BOTH the URL and the pin exist — so the same two tests below start covering
+  //   the paid artifact the moment it is published, with no separate wiring to remember.
   ...(MASTERCHAIN_DOWNLOAD_URL && MASTERCHAIN_PIN
     ? [{ name: "masterchain", url: MASTERCHAIN_DOWNLOAD_URL, ...MASTERCHAIN_PIN }]
     : []),

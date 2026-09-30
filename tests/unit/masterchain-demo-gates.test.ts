@@ -1,11 +1,29 @@
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
-import { MASTERCHAIN_DEMO_LIVE } from "@/lib/masterchain/config";
+import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 import en from "@/messages/en.json";
 import ja from "@/messages/ja.json";
 
-it("keeps the demo closed in product UI, FAQ UI and FAQ structured data", () => {
-  expect(MASTERCHAIN_DEMO_LIVE).toBe(false);
+/** The version in a masterchain download URL (…-1.0.1-installer.pkg → "1.0.1"). */
+const versionIn = (url: string) => new URL(url).pathname.match(/-(\d+\.\d+\.\d+)-installer\.pkg$/)?.[1] ?? null;
+
+it("★the demo is open only on a build that has the demo (≥ 1.0.1 — 1.0.0 had DemoFade=0, CCO)", () => {
+  expect(MASTERCHAIN_DEMO_LIVE).toBe(true);
+  const v = versionIn(MASTERCHAIN_DOWNLOAD_URL);
+  // ★Positive control: the parser reads a version at all (null would make the check below vacuous).
+  expect(v).not.toBeNull();
+  expect(versionIn("https://mued.jp/downloads/MUEDsp-masterchain-1.0.0-installer.pkg")).toBe("1.0.0");
+  // ★At least 1.0.1, not merely "not 1.0.0" (CCO #1177): a 0.1.x URL has no demo mode either.
+  const atLeast = (a: string, b: string) => {
+    const [x, y] = [a, b].map((s) => s.split(".").map(Number));
+    for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i];
+    return true;
+  };
+  expect(atLeast("1.0.1", "1.0.1") && atLeast("1.1.0", "1.0.1") && !atLeast("1.0.0", "1.0.1") && !atLeast("0.1.3", "1.0.1")).toBe(true);
+  if (MASTERCHAIN_DEMO_LIVE) expect(atLeast(v ?? "0.0.0", "1.0.1"), `DEMO_LIVE on ${v}: the demo copy describes behaviour that build does not have`).toBe(true);
+});
+
+it("gates the demo in product UI, FAQ UI and FAQ structured data on the one flag", () => {
   const product = readFileSync("components/features/muedsp-landing/muedsp-landing-content.tsx", "utf8");
   expect(product).toMatch(/MASTERCHAIN_DEMO_LIVE && \([\s\S]*?tmc\("demoNote"\)[\s\S]*?id="demo"[\s\S]*?<MasterchainDemoForm \/>[\s\S]*?\)}/);
   expect(product.indexOf("{MASTERCHAIN_DEMO_LIVE &&")).toBeGreaterThan(product.indexOf("<MasterchainPurchaseControl"));
@@ -23,4 +41,64 @@ it("keeps all new translation keys paired", () => {
     expect(messages.support.faq.q10.answer).toBeTruthy();
     expect(messages.tokushoho.muedsp.cancellation.demo).toBeTruthy();
   }
+});
+
+it("★with the demo open, no user-facing copy still calls masterchain \"in development\" (conductor 2026-09-30)", () => {
+  const DEV = /開発中|in development|in-development|Still building|作ってる途中|not the real thing|まだ実物/i;
+  const hits: string[] = [];
+  const walk = (o: unknown, p: string) => {
+    if (typeof o === "string") { if (DEV.test(o)) hits.push(p); }
+    else if (o && typeof o === "object") for (const [k, v] of Object.entries(o)) walk(v, `${p}.${k}`);
+  };
+  walk(ja, "ja");
+  walk(en, "en");
+  for (const f of [
+    "app/llms.txt/route.ts",
+    "components/features/landing/integrated-landing-content-v2.tsx",
+    "components/features/muedsp-landing/muedsp-landing-content.tsx",
+  ]) {
+    // String literals only (comments may describe history).
+    for (const lit of readFileSync(f, "utf8").match(/"[^"\n]*"|`[^`]*`/g) ?? []) if (DEV.test(lit)) hits.push(`${f}: ${lit.slice(0, 60)}`);
+  }
+  if (MASTERCHAIN_DEMO_LIVE) expect(hits).toEqual([]);
+  // ★Positive control: the pattern does match the old wording.
+  expect(DEV.test("全段の masterchain は開発中。")).toBe(true);
+});
+
+it("★the masterchain image is the real 1.0.1 screen everywhere, never the old mock (kimny: no dummies)", () => {
+  for (const f of [
+    "components/features/muedsp-landing/muedsp-landing-content.tsx",
+    "components/features/landing/integrated-landing-content-v2.tsx",
+    "components/features/landing/studio-showroom.tsx",
+  ]) {
+    const src = readFileSync(f, "utf8");
+    expect(src, f).toContain("/muedsp/masterchain-1.0.1-demo.webp");
+    expect(src, f).not.toMatch(/"\/muedsp\/masterchain-mock\.webp"/);
+  }
+  // ★The captions say what it is — not "illustrative".
+  for (const m of [ja, en]) expect(m.muedsp.masterchain.mockLabel).toContain("1.0.1");
+});
+
+it("★llms.txt: the price leads and the demo is a footnote; while purchase is closed it still says sales have not started (kimny / CCO 2026-09-30)", () => {
+  const src = readFileSync("app/llms.txt/route.ts", "utf8");
+  const line = src.split("\n").find((l) => l.startsWith("- **MUEDsp masterchain**:")) ?? "";
+  expect(line).toContain('MASTERCHAIN_PURCHASE_LIVE ? "買い切り $69・販売中');
+  expect(line).toContain('"買い切り $69（販売の開始は近日・現在 live 販売なし）。"');
+  expect(line.indexOf("買い切り $69")).toBeLessThan(line.indexOf("デモで確かめられる"));
+  expect(line).not.toContain("デモあり");
+});
+
+it("★the demo is not a selling point: no 'demo available' badge / eyebrow anywhere (kimny 2026-09-30)", () => {
+  expect(JSON.stringify([ja, en])).not.toMatch(/デモあり|Demo available/);
+  expect(ja.muedsp.masterchain.eyebrow).toBe("作曲家のためのマスターチェーン");
+  expect(en.muedsp.masterchain.eyebrow).toBe("A master chain for composers");
+});
+
+it("★no release date for masterchain on Windows anywhere on the site (kimny 2026-09-30)", () => {
+  const DATE = /10 ?月 ?14|October 14|Oct\.? 14|10\/14/;
+  expect(JSON.stringify([ja, en])).not.toMatch(DATE);
+  for (const f of ["app/llms.txt/route.ts", "components/features/muedsp-landing/muedsp-landing-content.tsx"]) {
+    expect(readFileSync(f, "utf8"), f).not.toMatch(DATE);
+  }
+  expect(ja.muedsp.windows.masterchainStatus).toBe("近日公開予定。ライセンスキーはMac版と共通です");
 });

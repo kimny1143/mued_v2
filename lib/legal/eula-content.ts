@@ -27,6 +27,8 @@ export interface EulaContent {
   /** Absent until a date is decided. ★Never an empty string: messages must not hold empty strings
    *  (tests/unit/lib/i18n/translations.test.ts), so "not set" is expressed by leaving the key out. */
   effectiveDate?: string;
+  /** The source's own label for that date ("Last updated" / 「最終更新日」). Absent → the page's default. */
+  dateLabel?: string;
 }
 
 export type InlineNode =
@@ -66,8 +68,9 @@ function parseBlocks(raw: unknown, path: string): EulaBlock[] {
 }
 
 /** Validates `{ intro, articles, effectiveDate? }` read from messages. Empty arrays are valid (= not filled in yet). */
-export function parseEulaContent(raw: { intro: unknown; articles: unknown; effectiveDate?: unknown }): EulaContent {
+export function parseEulaContent(raw: { intro: unknown; articles: unknown; effectiveDate?: unknown; dateLabel?: unknown }): EulaContent {
   const effectiveDate = raw.effectiveDate === undefined ? undefined : nonEmptyString(raw.effectiveDate, "effectiveDate");
+  const dateLabel = raw.dateLabel === undefined ? undefined : nonEmptyString(raw.dateLabel, "dateLabel");
   const intro = parseBlocks(raw.intro, "intro");
   if (!Array.isArray(raw.articles)) fail("articles", `expected an array, got ${JSON.stringify(raw.articles)}`);
   const articles = raw.articles.map((article, i): EulaArticle => {
@@ -79,7 +82,12 @@ export function parseEulaContent(raw: { intro: unknown; articles: unknown; effec
     if (parsedBlocks.length === 0) fail(`${path}.blocks`, "an article needs at least one block");
     return { heading: nonEmptyString(heading, `${path}.heading`), blocks: parsedBlocks };
   });
-  return effectiveDate === undefined ? { intro, articles } : { intro, articles, effectiveDate };
+  return {
+    intro,
+    articles,
+    ...(effectiveDate === undefined ? {} : { effectiveDate }),
+    ...(dateLabel === undefined ? {} : { dateLabel }),
+  };
 }
 
 // URL: https:// up to whitespace, minus trailing sentence punctuation (so "…/refund)." links to /refund).

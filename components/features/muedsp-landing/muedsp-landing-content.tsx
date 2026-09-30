@@ -38,9 +38,12 @@ const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
 // mock (dsp-captured, dev version-string cropped out). One clean shot, 1000×700 (= MUEDsat parity).
 const FACEPLATE_MUEDLIM = "/muedlim/faceplate.webp";
 const FACEPLATE_MUEDRIVE = "/muedrive/faceplate.png";
-// masterchain flagship render — an honest MOCK (minimal.html → webp, conductor-rendered). NOT the
-// shipping plugin; always shown with the "開発中のUI（予定）" caption (mockLabel).
-const MASTERCHAIN_MOCK = "/muedsp/masterchain-mock.webp";
+// masterchain flagship image — the REAL 1.0.1 screen (kimny: no dummies). dsp 2026-09-30: built from
+// 1.0.1 source (main c5b601b2) as a capture-only standalone that opens no audio device, no key (DEMO
+// badge, before the fade), audio stopped so meters read "--". Source PNG
+// _mued-dsp/build/screens/masterchain-1.0.1-demo-ui.png sha256 17618b70…aa81b (2186×912) → cwebp -q 86.
+// The old mock (/muedsp/masterchain-mock.webp) stays on disk but is no longer referenced.
+const MASTERCHAIN_MOCK = "/muedsp/masterchain-1.0.1-demo.webp";
 
 // MUEDsat saturation: four knobs; Bypass is a header toggle (bypassNote, not counted).
 const KNOBS = ["drive", "mix", "air", "output"] as const;
@@ -136,11 +139,11 @@ export function MuedspLandingContent() {
                   src={MASTERCHAIN_MOCK}
                   alt={
                     isJa
-                      ? "MUEDsp masterchain の開発中UIモック（予定・実機ではありません）"
-                      : "A mock of the in-development MUEDsp masterchain UI (planned — not the shipping product)"
+                      ? "MUEDsp masterchain 1.0.1 の画面（デモ）"
+                      : "The MUEDsp masterchain 1.0.1 screen (demo)"
                   }
-                  width={1640}
-                  height={740}
+                  width={2186}
+                  height={912}
                   priority
                   sizes="(min-width: 768px) 720px, 90vw"
                   className="h-auto w-full rounded-lg"
@@ -462,7 +465,8 @@ export function MuedspLandingContent() {
         </section>
 
         {/* ── §3 Windows. ★The 9/30 launch mail links here (`#windows`) — keep the id stable: the same
-            URL becomes the beta download block from 10/1 and masterchain's from 10/14, so the mail's
+            URL becomes the beta download block from 10/1 and masterchain's later (no date on the site —
+            kimny 2026-09-30), so the mail's
             link stays valid without a third send (kimny 9/29: two mails a month). ──────────────── */}
         <section id="windows" className="scroll-mt-20 border-t border-white/5 px-6 py-14">
           <div className="mx-auto max-w-3xl">

@@ -67,7 +67,7 @@ export const MASTERCHAIN_INTEREST_LIVE = false;
 // ★repo のコメントを読んで「unset だから安全」と読まないこと（それがこの訂正の理由）。
 //
 export const MASTERCHAIN_DOWNLOAD_URL =
-  "https://mued.jp/downloads/MUEDsp-masterchain-1.0.0-installer.pkg";
+  "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-installer.pkg";
 
 // Purchase rollout — same rule as the trial below: a reviewed code change, never an environment switch.
 // ★CLOSED 2026-09-30 (launch day), kimny 逐語「今日の販売はそもそも間に合わない。最短のルートで進めて
@@ -83,4 +83,7 @@ export const MASTERCHAIN_TRIAL_DAYS = 15;
 
 // Demo download entry (Valhalla-style demo, kimny 2026-09-30). A reviewed code change, never an env switch.
 // Flipped true in the announcement PR together with MASTERCHAIN_DOWNLOAD_URL → masterchain 1.0.1.
-export const MASTERCHAIN_DEMO_LIVE = false;
+// ★OPENED (merge on conductor's signal after kimny's word): MASTERCHAIN_DOWNLOAD_URL has served 1.0.1
+//   since #1174 (2026-09-30, sha256 e4846886… on prod). 1.0.0 had DemoFade=0 — its behaviour does not
+//   match the demo copy — so tests/unit/masterchain-demo-gates.test.ts refuses DEMO_LIVE on a 1.0.0 URL.
+export const MASTERCHAIN_DEMO_LIVE = true;

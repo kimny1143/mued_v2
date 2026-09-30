@@ -1,3 +1,4 @@
+import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_PURCHASE_LIVE } from "@/lib/masterchain/config";
 import { NextRequest, NextResponse } from "next/server";
 import { ADVISORY_LIVE } from "@/lib/advisory/config";
 import { MUEDSAT_LIVE } from "@/lib/muedsat/config";
@@ -18,7 +19,7 @@ MUED は、音楽制作を前に進めるための AI プロダクト群です�
 - **MUEDial**: ステムをアップロードして AI と話すだけでプロ品質のミックス・マスタリングを得る、日本語対応の AI ミキシングサービス（https://dial.mued.jp）。
 - **MUED advisory**: 小規模事業者向けのAI業務改善・自走化支援サービス（https://mued.jp/ja/advisory）。
 - **MUEDsp saturation（通称 MUEDsat）**: マスタリングのためのプラグイン・スイート MUEDsp のマスターバス・チェーンから、トランスの色付けの1段だけを取り出した無料のサチュレーション・プラグイン（https://mued.jp/ja/muedsat）。
-- **MUEDsp**: マスタリングのためのプラグイン・スイート（署名 DSP スイート）。完成形＝MUEDsp masterchain（開発中）。無料で公開しているプラグインは下の「MUEDsp」節に一覧。
+- **MUEDsp**: マスタリングのためのプラグイン・スイート（署名 DSP スイート）。完成形＝MUEDsp masterchain。無料で公開しているプラグインは下の「MUEDsp」節に一覧。
 
 ## Hoo について
 
@@ -124,7 +125,7 @@ const MUEDSAT_CONTENT = `
 
 ## MUEDsp saturation（通称 MUEDsat）— 無料のトランス・サチュレーション・プラグイン
 
-> MUEDsp（マスタリングのためのプラグイン・スイート）のマスターバス・チェーンから、トランスの色付けの1段だけを取り出した単体の無料サチュレーション・プラグイン。削ぎ落とした体験版ではなく、チェーンの実際の1段。スイートの完成形＝MUEDsp masterchain（開発中）。機能ロック・期限・課金の壁なし。
+> MUEDsp（マスタリングのためのプラグイン・スイート）のマスターバス・チェーンから、トランスの色付けの1段だけを取り出した単体の無料サチュレーション・プラグイン。削ぎ落とした体験版ではなく、チェーンの実際の1段。スイートの完成形＝MUEDsp masterchain。機能ロック・期限・課金の壁なし。
 
 - **URL**: https://mued.jp/ja/muedsat
 - **運営**: glasswerks inc.（株式会社グラスワークス）
@@ -138,11 +139,11 @@ const MUEDSP_CONTENT = `
 
 ## MUEDsp — マスタリングのためのプラグイン・スイート（署名 DSP スイート）
 
-> 作編曲家である代表が、実際にマスタリングで使っているマスターバスのチェーンを、そのまま1つのプラグインに。完成形＝MUEDsp masterchain（開発中）。無料のプラグインを1つずつ公開している——masterchain から取り出した段もあれば、チェーンの外で別に起こした単独のものもある。まず自分の音で試せる。
+> 作編曲家である代表が、実際にマスタリングで使っているマスターバスのチェーンを、そのまま1つのプラグインに。完成形＝MUEDsp masterchain。無料のプラグインを1つずつ公開している——masterchain から取り出した段もあれば、チェーンの外で別に起こした単独のものもある。まず自分の音で試せる。
 
 - **URL**: https://mued.jp/ja/muedsp
 - **運営**: glasswerks inc.（株式会社グラスワークス）
-- **MUEDsp masterchain**: 完成形・開発中。コンプ→EQ→リミッターの署名チェーンを1つのプラグインに。買い切り $69（発売と同時に案内・現在 live 販売なし）。
+- **MUEDsp masterchain**: 完成形。コンプ→EQ→リミッターの署名チェーンを1つのプラグインに。${MASTERCHAIN_PURCHASE_LIVE ? "買い切り $69・販売中（https://mued.jp/ja/muedsp）。" : "買い切り $69（販売の開始は近日・現在 live 販売なし）。"}${MASTERCHAIN_DEMO_LIVE ? "購入前に、自分の環境で動くかをデモで確かめられる（期限なし・挿すたびに最初の 45 秒を処理し、その後は原音のまま通す・設定は保存されない）。" : ""}
 - **無料モジュール**:
   - **MUEDsp saturation（通称 MUEDsat）**: トランス・サチュレーションの段。公開中・無料（https://mued.jp/ja/muedsat）${MUEDLIM_LIVE ? "\n  - **MUEDsp limiter（通称 MUEDlim）**: ピークを抑える最後の段（トゥルーピーク・リミッター）。公開中・無料（macOS・VST3 · AU · AAX・https://mued.jp/ja/muedlim）" : "\n  - **MUEDsp limiter（通称 MUEDlim）**: ピークを抑える最後の段（トゥルーピーク・リミッター）。近日公開（UI 整備中・DL 準備中）"}${MUEDRIVE_LIVE ? "\n  - **MUEDsp drive（通称 MUEDrive）**: tube / warm / console の3キャラクターを1つに。masterchain の段ではなく、チェーンの外で別に起こした単独のプラグイン。公開中・無料（https://mued.jp/ja/muedrive）" : ""}
 `;

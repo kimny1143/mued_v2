@@ -5,8 +5,10 @@
 //
 // ★Only the `"eula": { … }` block is rewritten, by line range — the rest of each messages file is
 //   left byte-for-byte (this repo has no formatter; see CLAUDE.md "messages/*.json に formatter を当てない").
-// ★Refuses to write when the draft's "Version" line differs from EULA_VERSION: the page shows
-//   EULA_VERSION and checkout records it, so the text and the version must move together.
+// ★Refuses to write when the draft HAS a "Version" line that differs from EULA_VERSION (the page shows
+//   EULA_VERSION and checkout records it). dsp's English text carries no version line — then the
+//   version is EULA_VERSION alone, which must equal dsp's RTF generator VERSION (checked by hand).
+// ★effectiveDate and dateLabel are written from the draft's date line, verbatim; no date line → both removed.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { eulaFromMarkdown } from "../../lib/legal/eula-markdown";
@@ -21,7 +23,7 @@ if (!jaPath || !enPath) {
 
 for (const [locale, mdPath] of [["ja", jaPath], ["en", enPath]] as const) {
   const draft = eulaFromMarkdown(readFileSync(mdPath, "utf8"));
-  if (draft.version !== EULA_VERSION) {
+  if (draft.version !== undefined && draft.version !== EULA_VERSION) {
     console.error(`${locale}: draft Version "${draft.version}" ≠ EULA_VERSION "${EULA_VERSION}" (lib/legal/eula.ts) — change both together`);
     process.exit(1);
   }
@@ -36,7 +38,17 @@ for (const [locale, mdPath] of [["ja", jaPath], ["en", enPath]] as const) {
   }
 
   const current = JSON.parse(readFileSync(file, "utf8")).eula;
-  const next = { ...current, title: draft.title, intro: draft.intro, articles: draft.articles };
+  const { effectiveDate: _old, dateLabel: _oldLabel, ...rest } = current as Record<string, unknown>;
+  void _old;
+  void _oldLabel;
+  const next = {
+    ...rest,
+    title: draft.title,
+    ...(draft.effectiveDate === undefined ? {} : { effectiveDate: draft.effectiveDate }),
+    ...(draft.dateLabel === undefined ? {} : { dateLabel: draft.dateLabel }),
+    intro: draft.intro,
+    articles: draft.articles,
+  };
   parseEulaContent(next); // ★same strict parse the page runs at build time
   const body = JSON.stringify(next, null, 2).split("\n").slice(1, -1).map((l) => `  ${l}`);
   const trailing = lines[end].endsWith(",") ? "," : "";

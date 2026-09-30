@@ -30,8 +30,18 @@ export const MUEDRIVE_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Served from mued.jp static
 // hosting (public/downloads/). NOT a secret (public CDN URL).
-// Package: MUEDrive 1.0.0 (2026-09-30) — the 1.0.0 release; all four MUEDsp plugins ship 1.0.0 together
-//   (kimny 9/23). Built by dsp with the provisional EULA 2026.09 in the installer.
+// Package: MUEDrive 1.0.1 (2026-09-30) — dsp §5 passed; ships EULA 2026.10 (lawyer draft, English
+//   governs) in the installer: Resources/MUED-EULA-2026.10.rtf, sha256 44f5b54f7f48f4a6….
+//   sha256: 75bf0dcc1457559a35fbda9b55ae74c318f51dca754767863d0c080481a40fd4
+//   size:   3,616,696 B
+//   ★Verified 2026-09-30 on the copy under public/downloads/: sha256 + bytes matched conductor's relay,
+//   `cmp` byte-identical to dsp's plugin/dist/, magic `xar!`, pkgutil = Developer ID Installer:
+//   glasswerks inc. (F529L4WT3V), stapler validate OK, spctl -t install = Notarized Developer ID,
+//   VST3/AU/AAX bundles all 1.0.1, x86_64 + arm64.
+//   Verify after any swap: shasum -a 256 public/downloads/MUEDrive-1.0.1-installer.pkg
+//
+// Previous — MUEDrive 1.0.0 (2026-09-30, same day) — all four MUEDsp plugins shipped 1.0.0 together
+//   (kimny 9/23). Built by dsp with the provisional EULA 2026.09 in the installer. Stays on the shelf.
 //   sha256: 1f3fc0918ccbbb9551c4d217594c043f2f9e0b808023576b640d9e08f6ce8d49
 //   size:   3,620,155 B
 //   ★Verified 2026-09-30 on the copy under public/downloads/ (not the relayed values): shasum -a 256
@@ -56,7 +66,7 @@ export const MUEDRIVE_LIVE = true;
 //
 // No 0.1.0-alias problem here (unlike MUEDsat/MUEDlim): MUEDrive has never been emailed under an
 // older filename, so this URL is the only one that has ever existed for it.
-export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-1.0.0-installer.pkg";
+export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-1.0.1-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Bumped when a new build ships. NOT a secret.
@@ -70,7 +80,7 @@ export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-1.0.0-i
 // ★URL and VERSION now carry the same semver, and tests/unit/plugin-version-matches-download.test.ts
 //   fails if they part again. (The on-screen label is still pinned separately by
 //   tests/unit/components/plugin-version-display.test.tsx — plain semver, never the filename.)
-export const MUEDRIVE_VERSION = "1.0.0";
+export const MUEDRIVE_VERSION = "1.0.1";
 
 // Press / reviewer bypass — DESIGN ROOM ONLY (dormant until a token is set; not a public feature).
 // When non-empty, `?press=<token>` reveals MUEDRIVE_DOWNLOAD_URL directly, skipping the email gate.
