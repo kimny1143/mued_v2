@@ -179,6 +179,14 @@ export const SHORT_LINKS: readonly ShortLink[] = [
   //   2026-09-28). ★These URLs are BAKED INTO A SHIPPED BINARY, so the slug can never change — only the
   //   row. ★mc-trial points at /en/muedsp until the trial sign-up page ships, then is repointed to it.
   //   EN because the plugin UI is English; repointing to a locale-aware page is a one-row change.
-  { slug: 'mc-trial', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_trial', utmContent: 'demo_expired' },
-  { slug: 'mc-buy', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_buy', utmContent: 'demo_expired' },
+  //   ★2026-09-30: localeFromBrowser — a browser that prefers Japanese lands on /ja/muedsp (conductor).
+  { slug: 'mc-trial', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_trial', utmContent: 'demo_expired', localeFromBrowser: true },
+  { slug: 'mc-buy', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_buy', utmContent: 'demo_expired', localeFromBrowser: true },
+  // ★Two more baked into masterchain 1.0.1 (dsp, conductor 2026-09-30) — same rule: the slug never changes.
+  //   mc-plugin = the "mued.jp ↗" link at the top right (demo and licensed alike).
+  //   mc-portal = "mued.jp portal" in the License window: where a buyer goes to get the key. The portal is
+  //   /dashboard/plugins (no locale segment); signed out, the auth gate sends them to /sign-in and back here
+  //   with the query intact (lib/middleware/sign-in-redirect.ts).
+  { slug: 'mc-plugin', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_header', utmContent: 'header_link', localeFromBrowser: true },
+  { slug: 'mc-portal', host: 'mued.jp', path: '/dashboard/plugins', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_portal', utmContent: 'license_window' },
 ] as const;
