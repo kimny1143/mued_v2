@@ -287,6 +287,19 @@
       }
     }
   },
+  "licenses": {
+    "title": "Third-party licenses",
+    "intro": "The third-party software and font licenses included in the MUEDsp plugins.",
+    "note": "These are the same THIRD-PARTY-LICENSES.md and FONT-LICENSES.md files that ship inside each plugin installer (1.0.0).",
+    "thirdParty": "Third-party software",
+    "fonts": "Fonts",
+    "plugins": {
+      "MUEDsp": "MUEDsp masterchain",
+      "MUEDsat": "MUEDsat",
+      "MUEDlim": "MUEDlim",
+      "MUEDrive": "MUEDrive"
+    }
+  },
   "eula": {
     "title": "MUEDsp End User License Agreement",
     "effectiveDate": "September 30, 2026",
