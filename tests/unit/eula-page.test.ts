@@ -14,26 +14,28 @@ function leafKeyPaths(value: unknown, prefix = ""): string[] {
 }
 
 describe("staged EULA page", () => {
-  it.each(["ja", "en"] as const)("exists for %s and renders the message-backed placeholder", (locale) => {
+  it.each(["ja", "en"] as const)("exists for %s and carries the EULA text — no placeholder copy left", (locale) => {
     expect(existsSync(PAGE)).toBe(true);
     const page = readFileSync(PAGE, "utf8");
     const messages = JSON.parse(readFileSync(join(ROOT, "messages", `${locale}.json`), "utf8"));
 
     expect(page).toContain('useTranslations("eula")');
     expect(page).toContain("locales.map((locale) => ({ locale }))");
-    expect(messages.eula).toEqual(expect.objectContaining({
-      title: expect.any(String),
-      lastUpdated: expect.any(String),
-      sections: {
-        status: { heading: expect.any(String), body: expect.any(String) },
-        agreement: { heading: expect.any(String), body: expect.any(String) },
-        contact: { heading: expect.any(String), body: expect.any(String) },
-      },
-    }));
-    expect(messages.eula).not.toHaveProperty("body");
-    expect(JSON.stringify(messages.eula).toLowerCase()).toMatch(
-      locale === "ja" ? /プレースホルダー/ : /placeholder/,
-    );
+    // ★Exactly the four keys the page reads. The staging placeholder (lastUpdated / sections) was
+    //   removed with the provisional text (2026-09-30); it was not rendered, but it still shipped in
+    //   the page payload, and a legal page should not carry "this is a placeholder" in any form.
+    expect(Object.keys(messages.eula).sort()).toEqual(["articles", "effectiveDate", "intro", "title"]);
+    expect(messages.eula.articles.length).toBeGreaterThan(0);
+    expect(JSON.stringify(messages.eula).toLowerCase()).not.toMatch(/プレースホルダー|placeholder/);
+    // ★Empty text fails the static build instead of rendering a fallback.
+    expect(page).toContain("the EULA page must not render without its text");
+    expect(page).not.toContain("PlaceholderSections");
+  });
+
+  it("★the effective date is the launch day, the same string in both locales (and in dsp's RTF)", () => {
+    const load = (l: string) => JSON.parse(readFileSync(join(ROOT, "messages", `${l}.json`), "utf8")).eula;
+    expect(load("ja").effectiveDate).toBe("2026-09-30");
+    expect(load("en").effectiveDate).toBe("2026-09-30");
   });
 
   it("keeps the Japanese and English EULA key sets identical", () => {
