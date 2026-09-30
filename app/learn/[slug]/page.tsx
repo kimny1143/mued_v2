@@ -41,6 +41,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       locale: "en_US",
       siteName: "MUED",
     },
+    // ★Same title/description as og — without it twitter:* fell back to the site default (conductor 2026-10-01).
+    twitter: {
+      card: "summary_large_image",
+      title: article.seoTitle,
+      description: article.description,
+    },
   };
 }
 

@@ -45,6 +45,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: "website",
       url: `https://mued.jp/${locale}/muedsp`,
     },
+    // ★Without this, twitter:* fell back to the site default instead of this page's own title/description.
+    twitter: {
+      card: "summary_large_image",
+      title: t("title"),
+      description: t("description"),
+    },
   };
 }
 

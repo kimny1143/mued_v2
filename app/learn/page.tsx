@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   alternates: { canonical: `${BASE}/learn` },
   robots: { index: LEARN_LIVE, follow: LEARN_LIVE }, // staged until go-live (kimny)
   openGraph: { title: TITLE, description: DESC, url: `${BASE}/learn`, type: "website", locale: "en_US", siteName: "MUED" },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESC },
 };
 
 export default function LearnIndexPage() {
