@@ -290,7 +290,7 @@
   "licenses": {
     "title": "Third-party licenses",
     "intro": "The third-party software and font licenses included in the MUEDsp plugins.",
-    "note": "These are the same THIRD-PARTY-LICENSES.md and FONT-LICENSES.md files that ship inside each plugin installer (1.0.0).",
+    "note": "These are the THIRD-PARTY-LICENSES.md and FONT-LICENSES.md files that ship inside each plugin installer, including the sections marked “Windows only” for parts used only in the Windows version.",
     "thirdParty": "Third-party software",
     "fonts": "Fonts",
     "plugins": {
