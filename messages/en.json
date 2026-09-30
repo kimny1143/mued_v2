@@ -2564,8 +2564,8 @@
       "orderTaxNote": "Tax and currency are confirmed on the next screen",
       "orderKeyNote": "Get your license key from your mued.jp portal, using the email you buy with.",
       "continueToCheckout": "Continue to checkout",
-      "agreeNoteLeft": "By continuing, you agree to the End-User License Agreement (EULA) on the left.",
-      "agreeNoteBelow": "By continuing, you agree to the End-User License Agreement (EULA) below.",
+      "agreeCheckLeft": "I agree to the End-User License Agreement (EULA) on the left",
+      "agreeCheckBelow": "I agree to the End-User License Agreement (EULA) below",
       "checkoutLoading": "Preparing checkout…",
       "modalClose": "Close"
     },

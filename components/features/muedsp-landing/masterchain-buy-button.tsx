@@ -26,8 +26,8 @@ const PURCHASE_OPEN = MASTERCHAIN_PURCHASE_LIVE && EULA_CONSENT_LIVE;
  * スクロールしてさ、しかもEULA押すまで暗転してるボタンなんて誰も押さないわ」).
  *
  * The button sits beside masterchain's heading and is always pressable while purchase is open. Pressing it
- * opens a two-column modal (kimny 10/1 「やってみよう」): the order on the right — what you get, $69, and
- * 「購入へ進む」 straight to the FastSpring popup, passing the EULA version as before (the tag contract in
+ * opens a two-column modal (kimny 10/1 「やってみよう」): the order on the right — what you get, $69, the EULA
+ * consent check and 「購入へ進む」 (pressable once checked) straight to the FastSpring popup, passing the EULA version as before (the tag contract in
  * fastspring-checkout.ts) — and the EULA (2026.10) on the left, scrolling in its own column. On a phone the
  * order is on top and the EULA below it. No totals: FastSpring's popup is where tax and currency are fixed.
  * Closing the modal (×, Esc, the backdrop) does nothing. After FastSpring reports a COMPLETED order, the
@@ -114,7 +114,9 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
   const locale = useLocale();
   const isJa = locale === "ja";
   const titleId = useId();
-  const noteId = useId();
+  const checkId = useId();
+  // ★Consent is an explicit check (kimny 10/1: 「同意チェックありで」) — unchecked every time the modal opens.
+  const [agreed, setAgreed] = useState(false);
   const dialog = useRef<HTMLDivElement>(null);
   const content = parseEulaContent({
     intro: t.raw("intro"),
@@ -138,7 +140,7 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
         return;
       }
       if (e.key !== "Tab" || !root) return;
-      const focusables = [...root.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+      const focusables = [...root.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')];
       if (focusables.length === 0) return;
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
@@ -197,22 +199,30 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
             <p className="mt-1 text-xs text-white/50">{tb("orderTaxNote")}</p>
           </div>
           <p className="text-sm leading-relaxed text-white/75">{tb("orderKeyNote")}</p>
-          <div className="flex flex-col gap-2 md:mt-auto">
+          <div className="flex flex-col gap-3 md:mt-auto">
+            {/* Where the EULA is depends on the layout: left on a wide screen, below on a phone. */}
+            <label htmlFor={checkId} className="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-white/85">
+              <input
+                id={checkId}
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+              />
+              <span>
+                <span className="md:hidden">{tb("agreeCheckBelow")}</span>
+                <span className="hidden md:inline">{tb("agreeCheckLeft")}</span>
+              </span>
+            </label>
             <button
               type="button"
               onClick={onAgree}
-              disabled={!checkoutReady}
-              aria-disabled={!checkoutReady}
-              aria-describedby={noteId}
-              className="w-full rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 py-3.5 text-base font-semibold text-black transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
+              disabled={!checkoutReady || !agreed}
+              aria-disabled={!checkoutReady || !agreed}
+              className="w-full rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 py-3.5 text-base font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {checkoutReady ? tb("continueToCheckout") : tb("checkoutLoading")}
             </button>
-            {/* Where the EULA is depends on the layout: left on a wide screen, below on a phone. */}
-            <p id={noteId} className="text-xs leading-relaxed text-white/50">
-              <span className="md:hidden">{tb("agreeNoteBelow")}</span>
-              <span className="hidden md:inline">{tb("agreeNoteLeft")}</span>
-            </p>
           </div>
         </section>
         <section className="flex min-h-0 flex-1 flex-col" aria-label={t("title")}>
@@ -220,16 +230,9 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
             <h3 className="text-sm font-semibold text-white/85">{t("title")}</h3>
             <p className="mt-0.5 text-xs text-white/45">{meta.join(" · ")}</p>
           </div>
-          {/* The EULA scrolls in its own column, in smaller type. No consent control here — pressing 「購入へ進む」
-              is the consent (the note under the button says so). */}
+          {/* The EULA scrolls in its own column, in smaller type. The consent check sits with the order. ja: the
+              title itself says （参考訳）; the English text governs (EULA §16) — no separate note box (kimny 10/1). */}
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 text-[13px] leading-relaxed [&_h2]:mb-2 [&_h2]:text-sm [&_p]:mb-3 [&_section]:mb-5" data-testid="eula-modal-body">
-            {isJa && (
-              <p data-testid="eula-modal-reference-note" className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
-                {/* ★No link out of the modal (kimny 10/1: 「リンクつけちゃったらそれは離脱の扉」). The note stays: the
-                    English text governs (EULA §16). */}
-                {t("referenceNote")}
-              </p>
-            )}
             <EulaBlocks blocks={content.intro} newTab />
             <EulaArticles articles={content.articles} newTab />
           </div>

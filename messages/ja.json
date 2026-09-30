@@ -2564,8 +2564,8 @@
       "orderTaxNote": "税・通貨は次の画面で確定します",
       "orderKeyNote": "鍵は、購入時のメールアドレスで mued.jp のポータルから受け取れます。",
       "continueToCheckout": "購入へ進む",
-      "agreeNoteLeft": "購入へ進むと、左の使用許諾契約（EULA）に同意したことになります。",
-      "agreeNoteBelow": "購入へ進むと、下の使用許諾契約（EULA）に同意したことになります。",
+      "agreeCheckLeft": "左の使用許諾契約（EULA）に同意します",
+      "agreeCheckBelow": "下の使用許諾契約（EULA）に同意します",
       "checkoutLoading": "購入画面を準備しています…",
       "modalClose": "閉じる"
     },

@@ -1,8 +1,9 @@
 /**
  * masterchain's Buy beside the heading (kimny 2026-10-01): always pressable while purchase is open; opens a
- * two-column modal — the order (version, formats, $69, 「購入へ進む」) and the EULA scrolling in its own column.
- * 「購入へ進む」 is pressable at once (kimny: forcing a full read loses buyers) and goes straight to the FastSpring
- * popup with the EULA consent. No totals. ×, Esc and the backdrop close it.
+ * two-column modal — the order (version, formats, $69, the EULA consent check, 「購入へ進む」) and the EULA
+ * scrolling in its own column. No scroll condition (kimny: forcing a full read loses buyers); the check is the
+ * consent (kimny 10/1 「同意チェックありで」) and 「購入へ進む」 goes straight to the FastSpring popup. No totals.
+ * ×, Esc and the backdrop close it.
  */
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { AnchorHTMLAttributes } from "react";
@@ -75,7 +76,7 @@ describe("the Buy button", () => {
 });
 
 describe("the EULA modal", () => {
-  it("★opens on Buy; 「購入へ進む」 is pressable at once, sits OUTSIDE the scrolling EULA, and opens checkout with consent", async () => {
+  it("★opens on Buy; 「購入へ進む」 waits for the consent check (no scroll condition), then opens checkout with consent", async () => {
     await renderButton();
     await waitFor(() => expect(loadCheckoutScript).toHaveBeenCalled());
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
@@ -83,17 +84,32 @@ describe("the EULA modal", () => {
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(screen.getByText("Body text.")).toBeInTheDocument(); // the EULA text itself
     const go = await screen.findByRole("button", { name: "continueToCheckout" });
-    // ★kimny 10/1: no "read to the end first" — no checkbox, no scroll condition.
-    expect(go).toBeEnabled();
-    expect(dialog.querySelector('input[type="checkbox"]')).toBeNull();
+    // The check is labelled for both layouts (left on a wide screen, below on a phone) and starts unchecked.
+    const check = screen.getByRole("checkbox");
+    // (jsdom has no CSS, so both spans count; in a browser one of them is display:none.)
+    expect(check).toHaveAccessibleName(/agreeCheckBelow/);
+    expect(check).toHaveAccessibleName(/agreeCheckLeft/);
+    expect(check).not.toBeChecked();
+    expect(go).toBeDisabled();
+    fireEvent.click(go);
+    expect(openCheckout).not.toHaveBeenCalled();
+    // ★Both controls sit outside the scrolling EULA — nothing has to be scrolled to reach them.
     expect(screen.getByTestId("eula-modal-body")).not.toContainElement(go);
-    // The consent note is tied to the button, in both layouts (left on a wide screen, below on a phone).
-    const note = document.getElementById(go.getAttribute("aria-describedby") ?? "");
-    expect(note).toHaveTextContent("agreeNoteBelow");
-    expect(note).toHaveTextContent("agreeNoteLeft");
+    expect(screen.getByTestId("eula-modal-body")).not.toContainElement(check);
+    fireEvent.click(check);
+    expect(go).toBeEnabled();
     fireEvent.click(go);
     expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true });
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("the check is fresh every time the modal opens", async () => {
+    await renderButton();
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
   });
 
   it("★the order panel says what you get — version from the installer, formats, $69, tax note, where the key is — and no total", async () => {
@@ -125,14 +141,14 @@ describe("the EULA modal", () => {
     expect(openCheckout).not.toHaveBeenCalled();
   });
 
-  it("★ja shows the reference-translation note with NO link out; en shows none (kimny 10/1: a link out is an exit)", async () => {
+  it("★ja: no separate reference-translation box — the EULA title (（参考訳）) says it; no link to /en/eula (kimny 10/1)", async () => {
     m.locale = "ja";
     await renderButton();
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
-    const note = screen.getByTestId("eula-modal-reference-note");
-    expect(note).toHaveTextContent("referenceNote");
-    expect(note.querySelector("a")).toBeNull();
-    expect(screen.getByRole("dialog").querySelector('a[href="/en/eula"]')).toBeNull();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent("title"); // the EULA's own title (ja: 「…使用許諾契約（参考訳）」)
+    expect(dialog).not.toHaveTextContent("referenceNote");
+    expect(dialog.querySelector('a[href="/en/eula"]')).toBeNull();
   });
 
   it("★every link inside the modal opens in a new tab — same-site ones too — so the purchase flow stays", async () => {
