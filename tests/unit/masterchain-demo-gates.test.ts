@@ -25,7 +25,11 @@ it("★the demo is open only on a build that has the demo (≥ 1.0.1 — 1.0.0 h
 
 it("gates the demo in product UI, FAQ UI and FAQ structured data on the one flag", () => {
   const product = readFileSync("components/features/muedsp-landing/muedsp-landing-content.tsx", "utf8");
-  expect(product).toMatch(/MASTERCHAIN_DEMO_LIVE && \([\s\S]*?tmc\("demoNote"\)[\s\S]*?id="demo"[\s\S]*?<MasterchainDemoForm \/>[\s\S]*?\)}/);
+  expect(product).toMatch(/MASTERCHAIN_DEMO_LIVE && \([\s\S]*?id="demo"[\s\S]*?tmc\("demoToggle"\)[\s\S]*?tmc\("demoNote"\)[\s\S]*?<MasterchainDemoForm \/>[\s\S]*?\)}/);
+  // ★Purchase leads (kimny 10/1): the demo sits in a closed <details> after the buy row, and the hero CTA goes to #buy.
+  expect(product.indexOf('id="buy"')).toBeLessThan(product.indexOf('id="demo"'));
+  expect(product).toMatch(/<details id="demo"/);
+  expect(product).toContain('href="#buy"');
   expect(product.indexOf("{MASTERCHAIN_DEMO_LIVE &&")).toBeGreaterThan(product.indexOf("<MasterchainPurchaseControl"));
   const support = readFileSync("app/[locale]/support/page.tsx", "utf8");
   expect(support.match(/\.\.\.\(MASTERCHAIN_DEMO_LIVE \? \["q10" as const\] : \[\]\)/g)).toHaveLength(2);

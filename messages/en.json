@@ -2512,7 +2512,7 @@
       "title": "MUEDsp",
       "tagline": "Finish the record.",
       "lead": "The chain I master with, folded into one plugin — a master chain for finishing a track while you stay in the music. That's MUEDsp masterchain.",
-      "cta": "Try one, free"
+      "cta": "Try masterchain"
     },
     "masterchain": {
       "eyebrow": "A master chain for composers",
@@ -2549,7 +2549,8 @@
           "desc": "The whole plugin on/off."
         }
       },
-      "demoNote": "Before you buy, masterchain runs as a demo with no time limit: it processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved."
+      "demoToggle": "Try it before you buy (demo, no time limit)",
+      "demoNote": "It processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved."
     },
     "demo": {
       "emailLabel": "Email",

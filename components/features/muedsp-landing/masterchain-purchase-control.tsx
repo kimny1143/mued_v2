@@ -84,7 +84,11 @@ export function MasterchainPurchaseControl({
         className={
           canPurchase
             ? "shrink-0 rounded-[var(--radius-sm)] border border-[var(--accent)]/40 bg-[var(--accent)] px-5 py-3 font-semibold text-black transition hover:brightness-110"
-            : "shrink-0 cursor-not-allowed rounded-[var(--radius-sm)] border border-white/15 bg-white/[0.04] px-5 py-3 font-semibold text-white/40"
+            : PURCHASE_OPEN
+              ? // ★Open but not yet consented: still reads as THE primary action (amber, muted) — a grey box
+                //   lost to the demo's button (kimny 10/1). Enabled the moment the EULA box is ticked.
+                "shrink-0 cursor-not-allowed rounded-[var(--radius-sm)] border border-transparent bg-[var(--accent)]/45 px-5 py-3 font-semibold text-black/60"
+              : "shrink-0 cursor-not-allowed rounded-[var(--radius-sm)] border border-white/15 bg-white/[0.04] px-5 py-3 font-semibold text-white/40"
         }
       >
         {buyLabel}

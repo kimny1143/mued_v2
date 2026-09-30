@@ -117,8 +117,9 @@ export function MuedspLandingContent() {
             <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/55">
               {th("lead")}
             </p>
+            {/* ★To masterchain's buy row (kimny 2026-10-01). It used to go to #get = the free MUEDsat form. */}
             <a
-              href="#get"
+              href="#buy"
               className="mt-7 inline-flex items-center gap-2 rounded-[var(--radius-sm)] bg-[#f5a524] px-5 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
             >
               {th("cta")}
@@ -176,7 +177,7 @@ export function MuedspLandingContent() {
               ))}
             </dl>
 
-            <div className="mt-8 flex flex-col gap-4 border-t border-white/8 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div id="buy" className="mt-8 flex scroll-mt-20 flex-col gap-4 border-t border-white/8 pt-6 sm:flex-row sm:items-center sm:justify-between">
               {/* Price statement lives entirely in copy (priceNote) — single source, no hardcoded
                   number (keeps price/no-discount wording under content課's control). */}
               <p className="max-w-sm text-[15px] leading-relaxed text-white/70">
@@ -217,15 +218,20 @@ export function MuedspLandingContent() {
                 signInNote={tmc("signInNote")}
               />
             </div>
+            {/* ★Purchase leads, the demo follows (kimny 9/30「デモを前に出さない」, 10/1): one quiet line that
+                opens the explanation and the email field only when asked for. */}
             {MASTERCHAIN_DEMO_LIVE && (
-              <>
-                <p className="mt-5 text-sm leading-relaxed text-white/70">{tmc("demoNote")}</p>
-                <div id="demo" className="mt-4 scroll-mt-20">
+              <details id="demo" className="group mt-6 scroll-mt-20 border-t border-white/5 pt-4">
+                <summary className="cursor-pointer list-none text-sm text-white/60 transition-colors hover:text-white/85">
+                  {tmc("demoToggle")} <span aria-hidden="true" className="inline-block transition-transform group-open:rotate-90">›</span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-white/60">{tmc("demoNote")}</p>
+                <div className="mt-4">
                   <Suspense fallback={null}>
                     <MasterchainDemoForm />
                   </Suspense>
                 </div>
-              </>
+              </details>
             )}
             {/* ★Only while purchase is closed — once it is open there is no "launch" to be notified of. */}
             {!MASTERCHAIN_PURCHASE_LIVE && (
