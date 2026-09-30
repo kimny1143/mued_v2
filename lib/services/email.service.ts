@@ -275,6 +275,7 @@ const NO_BLOCK = { html: '', text: '' } as const;
 
 function portalPromoBlock(isJa: boolean, campaign: string): { html: string; text: string } {
   const url = withEmailUtm(`${APP_URL}/dashboard/plugins`, campaign, 'portal-button');
+  // ★"we email you a code" is true only while Clerk's email first factor is email_code (CCO #1180, 2026-09-30).
   const html = `
       <div style="margin: 28px 0 8px; padding: 18px 20px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fafafa;">
         <p style="margin: 0 0 6px; font-weight: 600;">${isJa ? 'あなたのプラグインの置き場所ができました。' : 'Your plugins have a home now.'}</p>

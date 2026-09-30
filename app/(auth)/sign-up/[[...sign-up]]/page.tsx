@@ -88,6 +88,9 @@ export default function SignUpPage() {
               headerSubtitle: "!text-slate-400",
               socialButtonsBlockButton: "!bg-white/5 !border-white/10 !text-white hover:!bg-white/10",
               socialButtonsBlockButtonText: "!text-white",
+              // Apple's mark ships black; on this dark card it disappears. Apple's guidelines allow the white
+              // logo on dark backgrounds. Google's multicolour "G" stays as it is (its dark-theme button keeps it).
+              socialButtonsProviderIcon__apple: "!invert",
               dividerLine: "!bg-white/10",
               dividerText: "!text-slate-500",
               formFieldLabel: "!text-slate-300",
