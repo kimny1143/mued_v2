@@ -2556,7 +2556,7 @@
       "emailPlaceholder": "you@example.com",
       "demoNote": "デモは期限なし。挿すたびに最初の 45 秒だけ効きます。設定は保存されません。「masterchain を試す」でダウンロードが始まり、控えのメールを 1 通お送りします。",
       "signInNote": "購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。",
-      "thanks": "購入ありがとうございます。購入時のメールアドレスに案内をお送りしました。ダウンロードと鍵は、ポータル（mued.jp/dashboard/plugins）でも受け取れます。",
+      "thanks": "購入ありがとうございます。購入時のメールアドレスに、まもなく案内が届きます。ダウンロードと鍵は、ポータル（mued.jp/dashboard/plugins）でも受け取れます。",
       "thanksPortal": "ポータルを開く"
     },
     "demo": {

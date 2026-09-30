@@ -72,7 +72,8 @@ export function MasterchainBuyTry({ buyLabel }: { buyLabel: string }) {
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [error, setError] = useState<DemoError>("generic");
   const emailOk = EMAIL_RE.test(email.trim());
-  const canTry = MASTERCHAIN_DEMO_LIVE && emailOk && status !== "submitting";
+  // ★Once the demo has been sent, TRY stays done (CCO #1187): a second press would send a second receipt.
+  const canTry = MASTERCHAIN_DEMO_LIVE && emailOk && status !== "submitting" && status !== "success";
 
   async function tryDemo(event: React.FormEvent) {
     event.preventDefault();

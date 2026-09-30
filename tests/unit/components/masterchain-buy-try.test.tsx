@@ -128,6 +128,7 @@ describe("TRY — works only with a well-formed email", () => {
     });
     expect(screen.getByRole("status")).toHaveTextContent("success");
     expect(openCheckout).not.toHaveBeenCalled(); // TRY never opens checkout
+    expect(screen.getByRole("button", { name: "try" })).toBeDisabled(); // ★no second send after success
   });
 
   it.each(["invalid_email", "disposable_email", "rate_limited", "unexpected"])("maps API error %s", async (error) => {
