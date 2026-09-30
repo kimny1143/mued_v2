@@ -80,6 +80,9 @@ describe("★env unset — the page must behave exactly as it did before this fe
     const el = document.getElementById("fsc-api");
     expect(el).not.toBeNull();
     expect(el?.getAttribute("data-storefront")).toBe(CONFIGURED[STOREFRONT]);
+    // ★The popup-closed callback is named on the tag and exists before the builder reads it.
+    expect(el?.getAttribute("data-popup-closed")).toBe("__muedspFsPopupClosed");
+    expect(typeof (window as unknown as Record<string, unknown>).__muedspFsPopupClosed).toBe("function");
   });
 });
 
@@ -171,5 +174,20 @@ describe("★openCheckout never throws its way out", () => {
       },
     };
     expect(m.openCheckout({ eulaAccepted: true })).toBe(false);
+  });
+});
+
+describe("popup closed → completed order only (conductor 2026-10-01)", () => {
+  it("dispatches the event only when FastSpring passes an order reference", async () => {
+    const { handlePopupClosed, ORDER_COMPLETED_EVENT } = await import("@/lib/masterchain/fastspring-checkout");
+    const seen = vi.fn();
+    window.addEventListener(ORDER_COMPLETED_EVENT, seen);
+    expect(handlePopupClosed(null)).toBe(false); // closed without paying
+    expect(handlePopupClosed({ id: null, reference: null })).toBe(false);
+    expect(handlePopupClosed({})).toBe(false);
+    expect(seen).not.toHaveBeenCalled();
+    expect(handlePopupClosed({ id: "ORD-1", reference: "GLASSWERKSJP261001-1" })).toBe(true);
+    expect(seen).toHaveBeenCalledTimes(1);
+    window.removeEventListener(ORDER_COMPLETED_EVENT, seen);
   });
 });
