@@ -933,14 +933,21 @@ Hoo MCP経由の自動送信
     const limits = isJa ? "キーを入れなくても、デモとして期限なく使えます。デモでは、挿してから、音を 45 秒ぶん処理するまではすべて効き、その後はプラグインを挿し直すまで原音のまま通ります。設定は保存されず、プリセットも保存できません。ライセンスキーを入れると、これらの制限はなくなります。" : "Without a key, masterchain runs as a demo with no time limit. In the demo it processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved and presets can't be saved. Entering a license key removes these limits.";
     const label = isJa ? 'デモをダウンロード' : 'Download the demo';
     const formats = 'VST3 · AU · AAX (Pro Tools) · macOS';
+    // ★How to buy and where the key goes (conductor 2026-09-30, d). Short link, so the utm lives in one table
+    //   (lib/short-links/table.ts: mc-demo-mail) and the browser's language picks /ja or /en.
+    const buyUrl = `${APP_URL}/l/mc-demo-mail`;
+    const buy = isJa
+      ? '気に入ったら、製品ページから購入できます（プラグインの中の Buy masterchain からも開けます）。購入後は、購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。'
+      : 'If you like it, you can buy it from the product page (Buy masterchain inside the plugin opens it too). After buying, sign in to mued.jp with the email you used at checkout to get your license key in your portal.';
+    const buyLabel = isJa ? '製品ページを開く' : 'Open the product page';
     const unsubHtml = data.unsubscribeUrl
       ? `<p style="color: #9ca3af; font-size: 12px;"><a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a></p>`
       : '';
     const unsubText = data.unsubscribeUrl ? `\n\n${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}` : '';
     return {
       subject,
-      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p><p>${limits}</p><p>${formats}</p>${unsubHtml}`),
-      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}\n\n${limits}\n\n${formats}${unsubText}\n\nglasswerks inc. — mued.jp`,
+      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p><p>${limits}</p><p>${formats}</p><p>${buy}</p><p><a href="${buyUrl}">${buyLabel}</a></p>${unsubHtml}`),
+      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}\n\n${limits}\n\n${formats}\n\n${buy}\n${buyLabel}: ${buyUrl}${unsubText}\n\nglasswerks inc. — mued.jp`,
     };
   },
 

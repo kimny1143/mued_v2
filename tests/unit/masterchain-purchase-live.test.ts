@@ -25,3 +25,12 @@ it("★an open Buy button never says \"Coming soon\" — the label and price not
     expect(mc.priceNoteLive).not.toMatch(/発売と同時|Available at launch/);
   }
 });
+
+it("★the plugin's button names are quoted exactly — 'Load license file…' with U+2026, never three dots (dsp 2026-09-30)", () => {
+  for (const f of ["messages/ja.json", "messages/en.json", "lib/services/email.service.ts"]) {
+    const src = readFileSync(f, "utf8");
+    expect(src, f).not.toMatch(/Load license file\.\.\./);
+    expect(src, f).toContain("Load license file…");
+    expect(src, f).toContain("Paste license from clipboard");
+  }
+});

@@ -2528,6 +2528,7 @@
       "buyLabelLive": "Buy",
       "eulaConsentPrefix": "I have read and agree to the",
       "eulaLabel": "EULA",
+      "signInNote": "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
       "mockLabel": "The masterchain 1.0.1 screen (demo).",
       "controlsLead": "Here's how it works.",
       "controls": {

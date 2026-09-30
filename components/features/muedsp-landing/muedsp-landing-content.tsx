@@ -213,6 +213,7 @@ export function MuedspLandingContent() {
                 buyLabel={tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")}
                 consentPrefix={tmc("eulaConsentPrefix")}
                 eulaLabel={tmc("eulaLabel")}
+                signInNote={tmc("signInNote")}
               />
             </div>
             {MASTERCHAIN_DEMO_LIVE && (

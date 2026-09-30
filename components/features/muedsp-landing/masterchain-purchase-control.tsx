@@ -21,6 +21,8 @@ interface MasterchainPurchaseControlProps {
   buyLabel: string;
   consentPrefix: string;
   eulaLabel: string;
+  /** Shown under the consent while purchase is open: the portal finds the order by the checkout email. */
+  signInNote?: string;
 }
 
 export function MasterchainPurchaseControl({
@@ -28,6 +30,7 @@ export function MasterchainPurchaseControl({
   buyLabel,
   consentPrefix,
   eulaLabel,
+  signInNote,
 }: MasterchainPurchaseControlProps) {
   const [checkoutReady, setCheckoutReady] = useState(false);
   const [eulaAccepted, setEulaAccepted] = useState(false);
@@ -66,6 +69,11 @@ export function MasterchainPurchaseControl({
             .
           </span>
         </label>
+      )}
+      {/* ★The portal finds the order by the email typed at checkout; a buyer who signs in with another one
+          sees no key (conductor 2026-09-30, a). Said BEFORE the purchase, not only in the mail after. */}
+      {PURCHASE_OPEN && signInNote && (
+        <p data-testid="masterchain-signin-note" className="max-w-sm text-xs leading-relaxed text-white/55 sm:max-w-xs sm:text-right">{signInNote}</p>
       )}
 
       <button

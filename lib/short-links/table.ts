@@ -188,5 +188,7 @@ export const SHORT_LINKS: readonly ShortLink[] = [
   //   /dashboard/plugins (no locale segment); signed out, the auth gate sends them to /sign-in and back here
   //   with the query intact (lib/middleware/sign-in-redirect.ts).
   { slug: 'mc-plugin', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_header', utmContent: 'header_link', localeFromBrowser: true },
+  // mc-demo-mail = the product-page link in the masterchain demo receipt (conductor 2026-09-30, d).
+  { slug: 'mc-demo-mail', host: 'mued.jp', path: '/en/muedsp', utmSource: 'email', utmMedium: 'lifecycle', utmCampaign: 'masterchain_demo_mail', utmContent: 'product_link', localeFromBrowser: true },
   { slug: 'mc-portal', host: 'mued.jp', path: '/dashboard/plugins', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_portal', utmContent: 'license_window' },
 ] as const;

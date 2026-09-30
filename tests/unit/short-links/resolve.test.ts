@@ -291,5 +291,7 @@ describe("the four masterchain plugin links in the shipped table", () => {
     expect(get("mc-portal").searchParams.get("utm_campaign")).toBe("masterchain_portal");
     expect(get("mc-buy", "ja").pathname).toBe("/ja/muedsp");
     expect(get("mc-trial", "ja").pathname).toBe("/ja/muedsp");
+    expect(get("mc-demo-mail", "ja").pathname).toBe("/ja/muedsp");
+    expect(get("mc-demo-mail").searchParams.get("utm_campaign")).toBe("masterchain_demo_mail");
   });
 });

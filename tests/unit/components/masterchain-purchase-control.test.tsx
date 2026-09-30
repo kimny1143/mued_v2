@@ -29,6 +29,7 @@ const props = {
   buyLabel: "Buy",
   consentPrefix: "I have read and agree to the",
   eulaLabel: "EULA",
+  signInNote: "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
 };
 
 describe("masterchain EULA consent gate", () => {
@@ -86,5 +87,15 @@ describe("masterchain EULA consent gate", () => {
     expect(screen.getByRole("button", { name: "Buy" })).toBeDisabled();
     expect(loadCheckoutScript).not.toHaveBeenCalled();
     expect(openCheckout).not.toHaveBeenCalled();
+  });
+
+  it("★(a) the sign-in note is shown with the consent while purchase is open, and not while closed", async () => {
+    await renderControl(true);
+    expect(screen.getByTestId("masterchain-signin-note")).toHaveTextContent("with the email you use at checkout");
+    vi.resetModules();
+    m.purchaseLive = false;
+    document.body.innerHTML = "";
+    await renderControl(true);
+    expect(screen.queryByTestId("masterchain-signin-note")).toBeNull();
   });
 });
