@@ -7,7 +7,8 @@
 //   # Title
 //   Version …            ← optional (dsp's English text has none: the version lives in dsp's RTF
 //                          generator). When present it must equal EULA_VERSION (checked by the caller).
-//   Last updated / Effective date / 施行日: <date>  ← becomes effectiveDate, verbatim — the same string
+//   Last updated / Effective date / 施行日 / 最終更新日: <date>  ← effectiveDate (the date) and dateLabel
+//                          (the label AS WRITTEN), both verbatim — the same line
 //                          dsp puts in the installer RTF (2026.10: "October 1, 2026" / 「2026年10月1日」).
 //                          A placeholder like [DATE] is an error, never a date.
 //   施行日 / Effective date: …   ← dropped: effectiveDate is set only once decided (never "[発売日]")
@@ -27,12 +28,15 @@ export interface EulaMarkdown {
   version?: string;
   /** From the date line ("Last updated:" / "Effective date:" / 「施行日:」), verbatim. */
   effectiveDate?: string;
+  /** The date line's own label, verbatim ("Last updated" / 「最終更新日」…). ★The page shows THIS, so the
+   *  web cannot call the governing text's "Last updated" an "Effective date" (CCO #1171 A). */
+  dateLabel?: string;
   intro: EulaBlock[];
   articles: EulaArticle[];
 }
 
 const META_LINE = /^(Version |施行日[:：]|最終更新日[:：]|Effective date:|Last updated:)/;
-const DATE_LINE = /^(?:施行日|最終更新日|Effective date|Last updated)[:：]\s*(.+)$/;
+const DATE_LINE = /^(施行日|最終更新日|Effective date|Last updated)[:：]\s*(.+)$/;
 const BULLET = /^- (.+)$/;
 const NUMBERED = /^(\d+)\. (.+)$/;
 
@@ -52,6 +56,7 @@ export function eulaFromMarkdown(md: string): EulaMarkdown {
   let title: string | undefined;
   let version: string | undefined;
   let effectiveDate: string | undefined;
+  let dateLabel: string | undefined;
   const intro: EulaBlock[] = [];
   const articles: EulaArticle[] = [];
   const target = () => (articles.length ? articles[articles.length - 1].blocks : intro);
@@ -94,7 +99,8 @@ export function eulaFromMarkdown(md: string): EulaMarkdown {
       const date = text.match(DATE_LINE);
       if (!date) fail(n, "unrecognised metadata line");
       if (effectiveDate !== undefined) fail(n, "a second date line");
-      effectiveDate = checkInline(date[1].trim(), n); // ★[DATE] fails here — never a date
+      dateLabel = date[1];
+      effectiveDate = checkInline(date[2].trim(), n); // ★[DATE] fails here — never a date
       return;
     }
 
@@ -122,6 +128,7 @@ export function eulaFromMarkdown(md: string): EulaMarkdown {
     title,
     ...(version === undefined ? {} : { version }),
     ...(effectiveDate === undefined ? {} : { effectiveDate }),
+    ...(dateLabel === undefined ? {} : { dateLabel }),
     intro,
     articles,
   };

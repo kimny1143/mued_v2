@@ -452,7 +452,8 @@
         ]
       }
     ],
-    "effectiveDate": "October 1, 2026"
+    "effectiveDate": "October 1, 2026",
+    "dateLabel": "Last updated"
   },
   "terms": {
     "title": "Terms of Service",

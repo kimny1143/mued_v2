@@ -98,11 +98,12 @@ describe("parseEulaContent", () => {
         : i === 5 ? { ...a, blocks: ["Article 6 body", { ol: ["one", "two"] }] }
           : a,
     );
-    const parsed = parseEulaContent({ intro: ["Intro body"], articles, effectiveDate: "2026-10-01" });
+    const parsed = parseEulaContent({ intro: ["Intro body"], articles, effectiveDate: "2026-10-01", dateLabel: "Last updated" });
     expect(parsed.articles).toHaveLength(16);
     expect(parsed.articles[2].blocks[1]).toEqual({ ul: ["**Item.** one", "two"] });
     expect(parsed.articles[5].blocks[1]).toEqual({ ol: ["one", "two"] });
     expect(parsed.effectiveDate).toBe("2026-10-01");
+    expect(parsed.dateLabel).toBe("Last updated");
   });
 
   it.each([
@@ -112,6 +113,7 @@ describe("parseEulaContent", () => {
     // ★"Not set" is the key being absent. An empty string is rejected: messages must hold no empty
     //   strings (tests/unit/lib/i18n/translations.test.ts), which is what broke #1132.
     ["effectiveDate empty string", { intro: [], articles: [], effectiveDate: "" }],
+    ["dateLabel empty string", { intro: [], articles: [], dateLabel: "" }],
     ["empty heading", { intro: [], articles: [{ heading: " ", blocks: ["x"] }] }],
     ["article with no blocks", { intro: [], articles: [{ heading: "1. H", blocks: [] }] }],
     ["unknown article key", { intro: [], articles: [{ heading: "1. H", blocks: ["x"], body: "y" }] }],

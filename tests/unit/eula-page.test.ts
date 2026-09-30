@@ -27,8 +27,8 @@ describe("staged EULA page", () => {
     //   removed with the provisional text (2026-09-30); it was not rendered, but it still shipped in
     //   the page payload, and a legal page should not carry "this is a placeholder" in any form.
     // 2026.10 (lawyer draft, 2026-09-30): the English text governs and /ja carries a reference note.
-    //   effectiveDate is the date line of the source text (dsp's "Last updated:" = 2026-10-01).
-    expect(Object.keys(messages.eula).sort()).toEqual(["articles", "effectiveDate", "intro", "referenceNote", "title"]);
+    //   effectiveDate + dateLabel are the date line of the source text (dsp's "Last updated:" = 2026-10-01).
+    expect(Object.keys(messages.eula).sort()).toEqual(["articles", "dateLabel", "effectiveDate", "intro", "referenceNote", "title"]);
     expect(messages.eula.articles.length).toBeGreaterThan(0);
     expect(JSON.stringify(messages.eula).toLowerCase()).not.toMatch(/プレースホルダー|placeholder/);
     // ★Empty text fails the static build instead of rendering a fallback.
@@ -43,6 +43,12 @@ describe("staged EULA page", () => {
     // kimny 2026-09-30: effective 2026-10-01. The EN string is what dsp puts in the RTF's [DATE].
     expect(load("en").effectiveDate).toBe("October 1, 2026");
     expect(load("ja").effectiveDate).toBe("2026年10月1日");
+    // ★CCO #1171 A / conductor (a): the governing text says "Last updated", so the page says it too —
+    //   the label comes from the source line, never the page's own "Effective date" / 「施行日」.
+    expect(load("en").dateLabel).toBe("Last updated");
+    expect(load("ja").dateLabel).toBe("最終更新日");
+    const pageSrc = readFileSync(PAGE, "utf8");
+    expect(pageSrc).toContain("content.dateLabel ??");
     expect(load("ja").referenceNote).toContain("英語版が優先します");
     const page = readFileSync(PAGE, "utf8");
     expect(page).toContain('data-testid="eula-reference-note"');
@@ -140,6 +146,7 @@ describe("★EULA 2026.10 — the web text IS dsp's installer text", () => {
     const eula = JSON.parse(readFileSync(join(ROOT, "messages", `${locale}.json`), "utf8")).eula;
     expect(eula.title).toBe(draft.title);
     expect(eula.effectiveDate).toBe(draft.effectiveDate);
+    expect(eula.dateLabel).toBe(draft.dateLabel);
     expect(eula.intro).toEqual(draft.intro);
     expect(eula.articles).toEqual(draft.articles);
   });

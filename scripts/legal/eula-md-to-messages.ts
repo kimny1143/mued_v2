@@ -8,7 +8,7 @@
 // ★Refuses to write when the draft HAS a "Version" line that differs from EULA_VERSION (the page shows
 //   EULA_VERSION and checkout records it). dsp's English text carries no version line — then the
 //   version is EULA_VERSION alone, which must equal dsp's RTF generator VERSION (checked by hand).
-// ★effectiveDate is written from the draft's date line, verbatim; no date line → the key is removed.
+// ★effectiveDate and dateLabel are written from the draft's date line, verbatim; no date line → both removed.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { eulaFromMarkdown } from "../../lib/legal/eula-markdown";
@@ -38,12 +38,14 @@ for (const [locale, mdPath] of [["ja", jaPath], ["en", enPath]] as const) {
   }
 
   const current = JSON.parse(readFileSync(file, "utf8")).eula;
-  const { effectiveDate: _old, ...rest } = current as Record<string, unknown>;
+  const { effectiveDate: _old, dateLabel: _oldLabel, ...rest } = current as Record<string, unknown>;
   void _old;
+  void _oldLabel;
   const next = {
     ...rest,
     title: draft.title,
     ...(draft.effectiveDate === undefined ? {} : { effectiveDate: draft.effectiveDate }),
+    ...(draft.dateLabel === undefined ? {} : { dateLabel: draft.dateLabel }),
     intro: draft.intro,
     articles: draft.articles,
   };

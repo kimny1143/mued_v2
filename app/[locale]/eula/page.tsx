@@ -51,6 +51,7 @@ function EulaContent({ locale }: { locale: string }) {
     articles: t.raw("articles"),
     // ★Read only when present: t.raw on a missing key would return a fallback string, not undefined.
     effectiveDate: t.has("effectiveDate") ? t.raw("effectiveDate") : undefined,
+    dateLabel: t.has("dateLabel") ? t.raw("dateLabel") : undefined,
   });
   // ★The text is required now (provisional EULA 2026.09 since 2026-09-30). Empty articles would mean
   //   the contract silently vanished from the page, so fail the (static) build instead of rendering
@@ -62,7 +63,11 @@ function EulaContent({ locale }: { locale: string }) {
   //   Unset values are left out rather than printed as a placeholder.
   const meta = [
     EULA_VERSION !== "PENDING-LAWYER-TEXT" ? `${isJa ? "版" : "Version"}: ${EULA_VERSION}` : null,
-    content.effectiveDate ? `${isJa ? "施行日" : "Effective date"}: ${content.effectiveDate}` : null,
+    // ★The label comes from the source text's own date line (2026.10: "Last updated" / 「最終更新日」), so the
+    //   page never renames what the governing text calls it. Default only for a source without one.
+    content.effectiveDate
+      ? `${content.dateLabel ?? (isJa ? "施行日" : "Effective date")}: ${content.effectiveDate}`
+      : null,
   ].filter((part): part is string => part !== null);
 
   return (

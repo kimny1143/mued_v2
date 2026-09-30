@@ -74,11 +74,13 @@ describe("eulaFromMarkdown", () => {
   });
 
   it.each([
-    ["Last updated: October 1, 2026", "October 1, 2026"],
-    ["Effective date: October 1, 2026", "October 1, 2026"],
-    ["施行日: 2026年10月1日", "2026年10月1日"],
-  ])("★the date line becomes effectiveDate verbatim: %s", (line, date) => {
+    ["Last updated: October 1, 2026", "Last updated", "October 1, 2026"],
+    ["Effective date: October 1, 2026", "Effective date", "October 1, 2026"],
+    ["施行日: 2026年10月1日", "施行日", "2026年10月1日"],
+    ["最終更新日: 2026年10月1日", "最終更新日", "2026年10月1日"],
+  ])("★the date line becomes dateLabel + effectiveDate verbatim: %s", (line, label, date) => {
     const out = eulaFromMarkdown(`# T\n\n${line}\n\n## 1. A\n\ntext\n`);
+    expect(out.dateLabel).toBe(label);
     expect(out.effectiveDate).toBe(date);
     expect(JSON.stringify(out.articles)).not.toContain(date); // dropped from the body
   });

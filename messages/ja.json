@@ -452,7 +452,8 @@
         ]
       }
     ],
-    "effectiveDate": "2026年10月1日"
+    "effectiveDate": "2026年10月1日",
+    "dateLabel": "最終更新日"
   },
   "terms": {
     "title": "利用規約",
