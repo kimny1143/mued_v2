@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const KEY = "MUEDSP-LICENSE-v2\nowner=buyer@example.com\nsig=purchase-fixture\n";
-const URL = "https://mued.jp/downloads/MUEDsp-masterchain-1.0.0-installer.pkg";
+const URL = "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-installer.pkg";
 const PORTAL = "https://mued.jp/dashboard/plugins";
 
 async function service(downloadUrl: string, appUrl: string | undefined = "https://mued.jp") {
