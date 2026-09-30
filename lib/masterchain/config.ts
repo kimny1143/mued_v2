@@ -69,6 +69,14 @@ export const MASTERCHAIN_INTEREST_LIVE = false;
 export const MASTERCHAIN_DOWNLOAD_URL =
   "https://mued.jp/downloads/MUEDsp-masterchain-1.0.0-installer.pkg";
 
+// Purchase rollout — same rule as the trial below: a reviewed code change, never an environment switch.
+// ★CLOSED 2026-09-30 (launch day), kimny 逐語「今日の販売はそもそも間に合わない。最短のルートで進めて
+//   準備整い次第告知」. The FastSpring env was already live (button enabled 11:09 JST); this keeps the
+//   /muedsp Buy button closed until the announcement, and also keeps the first real order off a path
+//   that no live order has run end to end yet (test orders skip fulfillment). Flip to true in the PR
+//   for the announcement day.
+export const MASTERCHAIN_PURCHASE_LIVE = false;
+
 // Trial rollout is a reviewed code change, never an environment switch.
 export const MASTERCHAIN_TRIAL_LIVE = false;
 export const MASTERCHAIN_TRIAL_DAYS = 15;

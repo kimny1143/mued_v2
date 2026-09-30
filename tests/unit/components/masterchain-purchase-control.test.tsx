@@ -2,9 +2,14 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { AnchorHTMLAttributes } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { loadCheckoutScript, openCheckout } = vi.hoisted(() => ({
+const { loadCheckoutScript, openCheckout, m } = vi.hoisted(() => ({
   loadCheckoutScript: vi.fn(() => Promise.resolve(true)),
   openCheckout: vi.fn(() => true),
+  m: { purchaseLive: true },
+}));
+
+vi.mock("@/lib/masterchain/config", () => ({
+  get MASTERCHAIN_PURCHASE_LIVE() { return m.purchaseLive; },
 }));
 
 vi.mock("next/link", () => ({
@@ -30,6 +35,19 @@ describe("masterchain EULA consent gate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
+    m.purchaseLive = true;
+  });
+
+  it("★purchase closed by the code flag: no consent box, no FastSpring script, Buy disabled — even with the EULA live", async () => {
+    m.purchaseLive = false;
+    await renderControl(true);
+
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.getByRole("button", { name: "Buy" })).toBeDisabled();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(loadCheckoutScript).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Buy" }));
+    expect(openCheckout).not.toHaveBeenCalled();
   });
 
   afterEach(() => {

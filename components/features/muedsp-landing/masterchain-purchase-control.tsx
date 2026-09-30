@@ -7,10 +7,14 @@ import {
   loadCheckoutScript,
   openCheckout,
 } from "@/lib/masterchain/fastspring-checkout";
+import { MASTERCHAIN_PURCHASE_LIVE } from "@/lib/masterchain/config";
 
 // Client gate: NEXT_PUBLIC_EULA_LIVE is read directly so Next.js inlines it at build time. Do not
 // replace this with the server-only EULA_LIVE flag; both flags must be enabled for publication.
 const EULA_CONSENT_LIVE = process.env.NEXT_PUBLIC_EULA_LIVE === "1";
+// ★Purchase is open only when the code flag says so (lib/masterchain/config.ts) AND the EULA is live.
+//   While closed: no consent checkbox, no FastSpring script, Buy stays disabled.
+const PURCHASE_OPEN = MASTERCHAIN_PURCHASE_LIVE && EULA_CONSENT_LIVE;
 
 interface MasterchainPurchaseControlProps {
   locale: string;
@@ -29,7 +33,7 @@ export function MasterchainPurchaseControl({
   const [eulaAccepted, setEulaAccepted] = useState(false);
 
   useEffect(() => {
-    if (!MASTERCHAIN_CHECKOUT_ENABLED || !EULA_CONSENT_LIVE) return;
+    if (!MASTERCHAIN_CHECKOUT_ENABLED || !PURCHASE_OPEN) return;
     let alive = true;
     void loadCheckoutScript().then((ok) => {
       if (alive) setCheckoutReady(ok);
@@ -39,11 +43,11 @@ export function MasterchainPurchaseControl({
     };
   }, []);
 
-  const canPurchase = checkoutReady && EULA_CONSENT_LIVE && eulaAccepted;
+  const canPurchase = checkoutReady && PURCHASE_OPEN && eulaAccepted;
 
   return (
     <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
-      {EULA_CONSENT_LIVE && (
+      {PURCHASE_OPEN && (
         <label className="flex max-w-sm items-start gap-2 text-sm leading-relaxed text-white/65 sm:max-w-xs">
           <input
             type="checkbox"
