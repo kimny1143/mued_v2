@@ -17,6 +17,11 @@ it("★an open Buy button never says \"Coming soon\" — the label and price not
   // ★The closed-state price line ("Available at launch") shows only while closed; open, the price is in the
   //   purchase modal (FastSpring's own figure), not on the button (kimny 10/1).
   expect(landing).toMatch(/\{!MASTERCHAIN_PURCHASE_LIVE && \(\s*<p[^>]*>\{tmc\("priceNote"\)\}<\/p>/);
+  // ★Open, the price is still on the page (kimny 10/1): 「買い切り $69（USD）」 right above the button.
+  expect(landing).toMatch(/\{MASTERCHAIN_PURCHASE_LIVE && \(\s*<p[^>]*>\{tmc\("priceLive"\)\}<\/p>/);
+  expect(landing.indexOf('tmc("priceLive")')).toBeLessThan(landing.indexOf("<MasterchainBuyButton"));
+  expect(ja.muedsp.masterchain.priceLive).toBe("買い切り $69（USD）");
+  expect(en.muedsp.masterchain.priceLive).toBe("One-time $69 (USD)");
   // The "notify me at launch" link is for the closed state only.
   expect(landing).toMatch(/\{!MASTERCHAIN_PURCHASE_LIVE && \(\s*<a\s+href="#get"[\s\S]*?発売時に知らせる/);
   for (const m of [ja, en]) {

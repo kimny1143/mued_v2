@@ -156,6 +156,11 @@ export function MuedspLandingContent() {
                 beside the heading so a visitor from the plugin's "Buy masterchain" sees it without scrolling; then
                 「UI画像より先に購入ボタンが出ているのが変」 — the product first, then the button). */}
             <div id="buy" className="mt-5 scroll-mt-20">
+              {/* ★The price on the page itself (kimny 10/1: 「ページに価格出てないの、まずくないか？」 — 「買い切り $69(USD)
+                  だけで良くない？」). The modal then shows FastSpring's figure in the buyer's currency. */}
+              {MASTERCHAIN_PURCHASE_LIVE && (
+                <p data-testid="masterchain-price" className="mb-3 text-lg font-semibold text-white">{tmc("priceLive")}</p>
+              )}
               {/* ★The closed label says "Coming soon"; an open button says "masterchain を購入" (no price: the modal
                   shows FastSpring's figure in the buyer's currency). */}
               <MasterchainBuyButton buyLabel={tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")} />
