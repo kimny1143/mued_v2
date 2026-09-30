@@ -19,7 +19,7 @@ import {
   verifyFastspringSignature,
   FASTSPRING_SIGNATURE_HEADER,
 } from "@/lib/masterchain/fastspring-signature";
-import { handleFastspringOrderCompleted } from "@/lib/masterchain/fastspring-webhook";
+import { handleFastspringOrderCompleted, handleFastspringReturnCreated } from "@/lib/masterchain/fastspring-webhook";
 
 export async function GET() {
   return NextResponse.json({
@@ -178,7 +178,8 @@ async function processFastspringEvent(event: unknown): Promise<void> {
 
   // ★live/test の判定は ★fulfillment と ★終端の書き方の両方に効くので、ここで1度だけ決める。
   // ★`=== true` に倒す（`!== false` ではない）理由は下の分岐のコメントに書いた。
-  const skippedTest = type === "order.completed" && e.live !== true;
+  // ★return.created follows the same rule: a test refund must not mark a real purchase refunded.
+  const skippedTest = (type === "order.completed" || type === "return.created") && e.live !== true;
 
   const [existing] = await db
     .select()
@@ -254,6 +255,18 @@ async function processFastspringEvent(event: unknown): Promise<void> {
       }
     }
 
+    if (type === "return.created" && !skippedTest) {
+      // ★A refund marks the purchase row (never deletes it). "unparseable" is recorded as failed like
+      //   order.completed, so a redelivery can still land once the shape is understood.
+      if ((await handleFastspringReturnCreated(tx, event)) === "unparseable") {
+        unparseable = true;
+        logger.error("[fastspring] return.created missing return id / original order — recording as failed", {
+          eventId,
+          shape: envelopeShape(e),
+        });
+      }
+    }
+
     if (unparseable) {
       // ★`failed` で確定 —— ★`processed` ではないので ★冪等 guard は弾かない ＝ 再配達で履行に
       // 到達できる。★かつ ★行（payload 付き）が残るので ★実 shape を後から読める。
@@ -261,7 +274,10 @@ async function processFastspringEvent(event: unknown): Promise<void> {
         .update(webhookEvents)
         .set({
           status: "failed",
-          errorMessage: "order.completed missing orderId/email — envelope not the shape we assumed",
+          errorMessage:
+            type === "return.created"
+              ? "return.created missing return id / original order — envelope not the shape we assumed"
+              : "order.completed missing orderId/email — envelope not the shape we assumed",
           completedAt: new Date(),
         })
         .where(eq(webhookEvents.eventId, eventId));
@@ -301,7 +317,7 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     // ★tx は commit 済（行は `failed` で残っている）∴ ★ここで throw しても行は消えない。
     // ★throw は POST handler の catch に落ちて 500 になり、★FastSpring が再配達する。
     throw new Error(
-      `[fastspring] event ${eventId}: order.completed missing orderId/email — refusing to report success`,
+      `[fastspring] event ${eventId}: ${type === "return.created" ? "return.created missing return id / original order" : "order.completed missing orderId/email"} — refusing to report success`,
     );
   }
 }

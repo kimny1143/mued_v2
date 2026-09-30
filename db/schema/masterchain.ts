@@ -66,6 +66,13 @@ export const masterchainPurchases = pgTable('masterchain_purchases', {
   firstTouch: jsonb('first_touch'),                   // inherited gaClientId + utm* (attribution)
   fastspringSubscriptionId: text('fastspring_subscription_id'), // null for buy-once; reserved for future subs
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }), // nullable (guest)
+  // ★Refund (FastSpring return.created · migration 0063). The row is NEVER deleted — it is the record that
+  //   the purchase happened and the re-issue trail. refundedAt is set for a FULL refund or a chargeback
+  //   only; the portal then stops showing the key. The key itself is an offline signature and cannot be
+  //   revoked (EULA). refundKind = 'full' | 'partial' | 'chargeback'.
+  refundedAt: timestamp('refunded_at', { withTimezone: true }),
+  refundReturnId: text('refund_return_id'),
+  refundKind: text('refund_kind'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (t) => ({
   emailIdx: index('idx_masterchain_purchases_email').on(t.email),

@@ -2889,6 +2889,7 @@
       "copied": "コピーしました",
       "copyFailed": "コピーできませんでした。キーを選択して手動でコピーしてください。",
       "download": "license.key をダウンロード",
+      "refunded": "返金済み（{date}）。ライセンスキーは表示しません。",
       "howto": "license.key をダウンロードし、masterchain の「Load license file…」で開いてください。または、キーをコピーし、「Paste license from clipboard」を押してください。",
       "purchasedOn": "{date} に購入"
     }

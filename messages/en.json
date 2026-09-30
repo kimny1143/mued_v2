@@ -2889,6 +2889,7 @@
       "copied": "Copied",
       "copyFailed": "Could not copy. Select the key and copy it manually.",
       "download": "Download license.key",
+      "refunded": "Refunded ({date}). The license key is no longer shown.",
       "howto": "Download license.key and open it in masterchain with \"Load license file…\", or copy the key and press \"Paste license from clipboard\".",
       "purchasedOn": "Purchased {date}"
     }

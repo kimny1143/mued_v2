@@ -62,8 +62,9 @@ export default async function PluginsPortalPage() {
   const purchaseViewItems: PurchaseViewItem[] = purchases.map((p) => ({
     version: p.version,
     downloadUrl: p.downloadUrl,
-    licenseKey: p.licenseKey, // ★verbatim — the keyfile is signed over its exact bytes
+    licenseKey: p.licenseKey, // ★verbatim — the keyfile is signed over its exact bytes; null once refunded
     purchasedAtISO: p.purchasedAt.toISOString(),
+    refundedAtISO: p.refundedAt ? p.refundedAt.toISOString() : null,
   }));
 
   const available: AvailableViewItem[] = buildAvailableItems(items).map((a) => ({
