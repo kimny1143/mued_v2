@@ -60,8 +60,11 @@ function fileExt(url: string): string {
 export interface PurchaseViewItem {
   version: string | null;
   downloadUrl: string;
-  licenseKey: string;
+  /** ★null once the purchase was refunded — the key does not reach the client. */
+  licenseKey: string | null;
   purchasedAtISO: string;
+  /** Set when refunded in full / charged back (return.created). */
+  refundedAtISO?: string | null;
 }
 
 export interface AvailableViewItem {
@@ -324,8 +327,17 @@ function PurchaseCard({
           <span className={styles.kind}>{t("purchased.kind")}</span>
         </div>
         <p className={styles.claimed}>{t("purchased.purchasedOn", { date: fmtDate(item.purchasedAtISO) })}</p>
-        <LicenseKeyActions licenseKey={item.licenseKey} label={t("purchased.licenseLabel")} copyLabel={t("purchased.copy")} copiedLabel={t("purchased.copied")} failedLabel={t("purchased.copyFailed")} downloadLabel={t("purchased.download")} />
-        <p className={styles.howto}>{t("purchased.howto")}</p>
+        {/* ★Refunded: the row stays (it happened), marked, with no Copy / Download of the key (conductor 2026-09-30). */}
+        {item.refundedAtISO || !item.licenseKey ? (
+          <p className={styles.claimed} data-testid="purchase-refunded">
+            {t("purchased.refunded", { date: fmtDate(item.refundedAtISO ?? item.purchasedAtISO) })}
+          </p>
+        ) : (
+          <>
+            <LicenseKeyActions licenseKey={item.licenseKey} label={t("purchased.licenseLabel")} copyLabel={t("purchased.copy")} copiedLabel={t("purchased.copied")} failedLabel={t("purchased.copyFailed")} downloadLabel={t("purchased.download")} />
+            <p className={styles.howto}>{t("purchased.howto")}</p>
+          </>
+        )}
       </div>
       <div className={styles.action}>
         {item.version && (

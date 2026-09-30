@@ -19,7 +19,7 @@ import {
   verifyFastspringSignature,
   FASTSPRING_SIGNATURE_HEADER,
 } from "@/lib/masterchain/fastspring-signature";
-import { handleFastspringOrderCompleted } from "@/lib/masterchain/fastspring-webhook";
+import { handleFastspringOrderCompleted, handleFastspringReturnCreated } from "@/lib/masterchain/fastspring-webhook";
 
 export async function GET() {
   return NextResponse.json({
@@ -178,7 +178,8 @@ async function processFastspringEvent(event: unknown): Promise<void> {
 
   // ★live/test の判定は ★fulfillment と ★終端の書き方の両方に効くので、ここで1度だけ決める。
   // ★`=== true` に倒す（`!== false` ではない）理由は下の分岐のコメントに書いた。
-  const skippedTest = type === "order.completed" && e.live !== true;
+  // ★return.created follows the same rule: a test refund must not mark a real purchase refunded.
+  const skippedTest = (type === "order.completed" || type === "return.created") && e.live !== true;
 
   const [existing] = await db
     .select()
@@ -192,6 +193,7 @@ async function processFastspringEvent(event: unknown): Promise<void> {
 
   // ★tx の外で throw するためのフラグ（★中で throw すると行が消える）。
   let unparseable = false;
+  let noPurchase = false;
 
   await db.transaction(async (tx) => {
     if (existing) {
@@ -254,6 +256,25 @@ async function processFastspringEvent(event: unknown): Promise<void> {
       }
     }
 
+    if (type === "return.created" && !skippedTest) {
+      // ★A refund marks the purchase row (never deletes it). "unparseable" is recorded as failed like
+      //   order.completed, so a redelivery can still land once the shape is understood.
+      const result = await handleFastspringReturnCreated(tx, event);
+      if (result === "no_purchase") {
+        // ★Kept as failed + 500 so FastSpring redelivers: a refund that beats order.completed must not be
+        //   sealed as processed (CCO #1183 ②). A partial return on an already-refunded row lands here too;
+        //   redelivery then finds the same state and FastSpring eventually stops — nothing is lost.
+        unparseable = true;
+        noPurchase = true;
+      } else if (result === "unparseable") {
+        unparseable = true;
+        logger.error("[fastspring] return.created missing return id / original order — recording as failed", {
+          eventId,
+          shape: envelopeShape(e),
+        });
+      }
+    }
+
     if (unparseable) {
       // ★`failed` で確定 —— ★`processed` ではないので ★冪等 guard は弾かない ＝ 再配達で履行に
       // 到達できる。★かつ ★行（payload 付き）が残るので ★実 shape を後から読める。
@@ -261,7 +282,11 @@ async function processFastspringEvent(event: unknown): Promise<void> {
         .update(webhookEvents)
         .set({
           status: "failed",
-          errorMessage: "order.completed missing orderId/email — envelope not the shape we assumed",
+          errorMessage: noPurchase
+            ? "return.created: no unrefunded masterchain purchase row matched (order not written yet, or a partial return on an already refunded row) — left for redelivery"
+            : type === "return.created"
+              ? "return.created missing return id / original order — envelope not the shape we assumed"
+              : "order.completed missing orderId/email — envelope not the shape we assumed",
           completedAt: new Date(),
         })
         .where(eq(webhookEvents.eventId, eventId));
@@ -301,7 +326,13 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     // ★tx は commit 済（行は `failed` で残っている）∴ ★ここで throw しても行は消えない。
     // ★throw は POST handler の catch に落ちて 500 になり、★FastSpring が再配達する。
     throw new Error(
-      `[fastspring] event ${eventId}: order.completed missing orderId/email — refusing to report success`,
+      `[fastspring] event ${eventId}: ${
+        noPurchase
+          ? "return.created matched no unrefunded purchase row (not written yet, or partial on a refunded row)"
+          : type === "return.created"
+            ? "return.created missing return id / original order"
+            : "order.completed missing orderId/email"
+      } — refusing to report success`,
     );
   }
 }

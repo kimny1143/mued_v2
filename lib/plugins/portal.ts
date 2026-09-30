@@ -178,6 +178,8 @@ export function buildAvailableItems(owned: readonly { pluginKey: string }[] | nu
 export interface OwnedPurchase {
   licenseKey: string | null;
   createdAt: Date;
+  /** Set by a FULL refund / chargeback (return.created). */
+  refundedAt?: Date | null;
 }
 
 export interface PurchaseItem {
@@ -191,9 +193,14 @@ export interface PurchaseItem {
    */
   version: string | null;
   downloadUrl: string;
-  /** ★Only ever the caller's OWN row — the query upstream is scoped to their verified emails. */
-  licenseKey: string;
+  /**
+   * ★Only ever the caller's OWN row — the query upstream is scoped to their verified emails.
+   * ★null for a refunded purchase: the key does not cross to the client at all (like a replaced trial).
+   */
+  licenseKey: string | null;
   purchasedAt: Date;
+  /** When it was refunded in full (or charged back); null otherwise. */
+  refundedAt: Date | null;
 }
 
 /** "…/MUEDsp-masterchain-0.1.3-installer.pkg" → "0.1.3". Null when the filename carries none. */
@@ -231,12 +238,15 @@ export function buildPurchaseItems(
     // we never signed — a mutation visible only at offline verification, i.e. only to purchasers.
     if (!raw || raw.trim() === "" || seen.has(raw)) continue;
     seen.add(raw);
+    const refundedAt = p.refundedAt ?? null;
     items.push({
       productKey: "masterchain",
       version: versionInUrl(downloadUrl),
       downloadUrl,
-      licenseKey: raw,
+      // ★A refunded purchase keeps its row on the shelf, marked — but the key is not handed out again.
+      licenseKey: refundedAt ? null : raw,
       purchasedAt: p.createdAt,
+      refundedAt,
     });
   }
   items.sort((a, b) => b.purchasedAt.getTime() - a.purchasedAt.getTime());

@@ -92,7 +92,11 @@ export async function getPurchaseItemsForUser(user: ClerkUserLike | null | undef
   if (emails.length === 0) return []; // fail-closed — no verified email owns nothing
 
   const rows = await db
-    .select({ licenseKey: masterchainPurchases.licenseKey, createdAt: masterchainPurchases.createdAt })
+    .select({
+      licenseKey: masterchainPurchases.licenseKey,
+      createdAt: masterchainPurchases.createdAt,
+      refundedAt: masterchainPurchases.refundedAt,
+    })
     .from(masterchainPurchases)
     .where(inArray(masterchainPurchases.email, emails)); // scoped to the caller's verified emails ONLY
 

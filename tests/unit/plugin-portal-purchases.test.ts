@@ -78,10 +78,10 @@ describe("getPurchaseItemsForUser — the licence query is scoped to VERIFIED em
     expect(capturedEmails).toEqual(["a@x.co", "b@x.co"]);
   });
 
-  it("★selects ONLY licenseKey + createdAt — amount / order id / EULA columns are never fetched", async () => {
+  it("★selects ONLY licenseKey + createdAt + refundedAt — amount / order id / EULA columns are never fetched", async () => {
     await getPurchaseItemsForUser({ emailAddresses: [verified("me@studio.jp")] });
     const projection = mockSelect.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(Object.keys(projection).sort()).toEqual(["createdAt", "licenseKey"]);
+    expect(Object.keys(projection).sort()).toEqual(["createdAt", "licenseKey", "refundedAt"]);
   });
 
   it("★a row with no licenceKey is skipped, not rendered as an empty box", async () => {

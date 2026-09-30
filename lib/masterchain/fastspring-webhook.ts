@@ -31,7 +31,7 @@ import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 import { issueLicense, LICENSE_VERSION } from "@/lib/masterchain/license";
 import { emailService } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 
 // ── safe JSON access (lint-clean, no `any`) for the untyped external payload ───────────────────────
@@ -390,4 +390,90 @@ export async function handleFastspringOrderCompleted(
   }
 
   return "ok";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// return.created — a refund or chargeback (conductor 2026-09-30, f)
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// ★Shape from FastSpring's reference (developer.fastspring.com/reference/returncreated, read 2026-09-30):
+//   data.return (return id) · data.original.{id, order, reference} (the ORIGINAL order) · data.type
+//   ("RETURN" | "ALERT" | "CHARGEBACK") · data.items[].refundType ("Full Refund" or a partial) ·
+//   data.changed (ms) / changedInSeconds. ★Not yet seen in a real payload here — the first one is kimny's
+//   verification order's refund, which is exactly when this path is meant to be checked.
+// ★Which original id we stored: order.completed keeps `data.order ?? data.id` as order_id, so both
+//   `original.order` and `original.id` are tried against it.
+
+export interface FastspringReturnParsed {
+  returnId: string;
+  /** Candidates for masterchain_purchases.order_id (original.order, original.id), de-duplicated. */
+  orderIds: string[];
+  kind: "full" | "partial" | "chargeback";
+  refundedAt: Date | undefined;
+}
+
+export function parseFastspringReturnCreated(event: unknown): FastspringReturnParsed | null {
+  const e = asObj(event);
+  const data = asObj(e.data);
+  const original = asObj(data.original);
+  const returnId = asStr(data.return) ?? asStr(data.id) ?? asStr(e.id);
+  const orderIds = [asStr(original.order), asStr(original.id)].filter((v): v is string => !!v);
+  if (!returnId || orderIds.length === 0) return null;
+  const type = (asStr(data.type) ?? "").toUpperCase();
+  // ★Full only when every item says so. Missing refundType is treated as PARTIAL — the cautious side:
+  //   a partial refund leaves the key visible; wrongly hiding a paying buyer's key is the worse error.
+  const items = asArr(data.items).map((i) => asStr(asObj(i).refundType) ?? "");
+  const allFull = items.length > 0 && items.every((t) => /full/i.test(t));
+  const kind: FastspringReturnParsed["kind"] = type === "CHARGEBACK" ? "chargeback" : allFull ? "full" : "partial";
+  const changedInSeconds = asNum(data.changedInSeconds);
+  const ms = asNum(data.changed) ?? (changedInSeconds !== undefined ? changedInSeconds * 1000 : undefined) ?? asNum(e.created);
+  const at = ms === undefined ? undefined : new Date(ms);
+  return {
+    returnId,
+    orderIds: [...new Set(orderIds)],
+    kind,
+    refundedAt: at && !Number.isNaN(at.getTime()) ? at : undefined,
+  };
+}
+
+/**
+ * Record a verified, deduped, LIVE `return.created` on the purchase row. Never deletes the row.
+ *   "unparseable" — no return id / original order id (the route records the event as failed)
+ *   "no_purchase" — no purchase row matches (yet). ★The route records it as FAILED so FastSpring redelivers:
+ *                   this store sells masterchain only, so the likely cause is the refund arriving before
+ *                   order.completed wrote the row — processing it would lose the refund (CCO #1183 ②).
+ *   "recorded"
+ */
+export async function handleFastspringReturnCreated(
+  tx: Tx,
+  event: unknown,
+): Promise<"unparseable" | "no_purchase" | "recorded"> {
+  const parsed = parseFastspringReturnCreated(event);
+  if (!parsed) return "unparseable";
+  const refunded = parsed.kind === "full" || parsed.kind === "chargeback";
+  const rows = await tx
+    .update(masterchainPurchases)
+    .set({
+      refundReturnId: parsed.returnId,
+      refundKind: parsed.kind,
+      // ★A partial refund does not clear an earlier full refund, and does not set one.
+      ...(refunded ? { refundedAt: parsed.refundedAt ?? new Date() } : {}),
+    })
+    // ★A partial return must not overwrite an earlier FULL refund / chargeback (CCO #1183 ①): partial only
+    //   touches rows that are not refunded yet.
+    .where(
+      refunded
+        ? inArray(masterchainPurchases.orderId, parsed.orderIds)
+        : and(inArray(masterchainPurchases.orderId, parsed.orderIds), isNull(masterchainPurchases.refundedAt)),
+    )
+    .returning({ id: masterchainPurchases.id });
+  if (rows.length === 0) {
+    logger.warn("[fastspring] return.created for an order with no masterchain purchase row", {
+      returnId: parsed.returnId,
+      kind: parsed.kind,
+    });
+    return "no_purchase";
+  }
+  logger.warn("[fastspring] refund recorded on a masterchain purchase", { returnId: parsed.returnId, kind: parsed.kind });
+  return "recorded";
 }
