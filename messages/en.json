@@ -2559,7 +2559,7 @@
       "thanks": "Thank you for your purchase. Instructions will arrive shortly at the email you used at checkout. You can also get the download and your license key in your portal (mued.jp/dashboard/plugins).",
       "thanksPortal": "Open your portal",
       "agreeAndBuy": "Agree and continue to purchase",
-      "readToEnd": "Scroll to the end to agree.",
+      "agreeNote": "By continuing you agree to the EULA above.",
       "checkoutLoading": "Preparing checkout…",
       "modalClose": "Close",
       "modalEnglishLink": "Open the English (governing) text"

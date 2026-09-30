@@ -2559,7 +2559,7 @@
       "thanks": "購入ありがとうございます。購入時のメールアドレスに、まもなく案内が届きます。ダウンロードと鍵は、ポータル（mued.jp/dashboard/plugins）でも受け取れます。",
       "thanksPortal": "ポータルを開く",
       "agreeAndBuy": "同意して購入へ進む",
-      "readToEnd": "最後までお読みいただくと、同意できます。",
+      "agreeNote": "内容に同意のうえ、購入へ進みます。",
       "checkoutLoading": "購入画面を準備しています…",
       "modalClose": "閉じる",
       "modalEnglishLink": "英語版（正文）を開く"

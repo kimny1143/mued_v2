@@ -113,17 +113,6 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
   const isJa = locale === "ja";
   const titleId = useId();
   const dialog = useRef<HTMLDivElement>(null);
-  const body = useRef<HTMLDivElement>(null);
-  // ★Agree is pressable only once the text has been scrolled to the end (kimny 10/1: 「最後までスクロールしないと
-  //   同意ボタンが押せない」). A screen tall enough to show it all at once counts as read from the start.
-  const [readToEnd, setReadToEnd] = useState(false);
-  const checkRead = useCallback(() => {
-    const el = body.current;
-    if (el && el.scrollTop + el.clientHeight >= el.scrollHeight - 8) setReadToEnd(true);
-  }, []);
-  useEffect(() => {
-    checkRead();
-  }, [checkRead]);
   const content = parseEulaContent({
     intro: t.raw("intro"),
     articles: t.raw("articles"),
@@ -197,7 +186,7 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
             ×
           </button>
         </div>
-        <div ref={body} onScroll={checkRead} className="flex-1 overflow-y-auto px-5 py-4 text-sm" data-testid="eula-modal-body">
+        <div className="flex-1 overflow-y-auto px-5 py-4 text-sm" data-testid="eula-modal-body">
           {isJa && (
             <p data-testid="eula-modal-reference-note" className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-200">
               {t("referenceNote")}{" "}
@@ -208,21 +197,21 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
           )}
           <EulaBlocks blocks={content.intro} />
           <EulaArticles articles={content.articles} />
-          <div className="mt-8 flex flex-col items-start gap-2 border-t border-white/10 pt-5">
-            <button
-              type="button"
-              onClick={onAgree}
-              disabled={!checkoutReady || !readToEnd}
-              aria-disabled={!checkoutReady || !readToEnd}
-              aria-describedby="eula-agree-hint"
-              className="rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 py-3 font-semibold text-black transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
-            >
-              {tb("agreeAndBuy")}
-            </button>
-            <p id="eula-agree-hint" className="text-xs text-white/45">
-              {!readToEnd ? tb("readToEnd") : !checkoutReady ? tb("checkoutLoading") : ""}
-            </p>
-          </div>
+        </div>
+        {/* ★Always visible under the text and pressable at once (kimny 10/1: 「全部読まないとボタン押せない、に
+            しちゃうと絶対離脱する…ボタンは常時下に表示しておいて押せるようにした方がいい」). The text stays
+            one scroll away above it. */}
+        <div className="flex flex-col items-start gap-2 border-t border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-white/50">{checkoutReady ? tb("agreeNote") : tb("checkoutLoading")}</p>
+          <button
+            type="button"
+            onClick={onAgree}
+            disabled={!checkoutReady}
+            aria-disabled={!checkoutReady}
+            className="rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 py-3 font-semibold text-black transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
+          >
+            {tb("agreeAndBuy")}
+          </button>
         </div>
       </div>
     </div>
