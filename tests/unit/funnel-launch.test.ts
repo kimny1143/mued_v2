@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { DEMO_SUBJECTS, LAUNCH_AT, PURCHASE_SUBJECTS, toLaunchNumbers } from "@/lib/funnel/launch";
 import { toFunnelNumbers, type FunnelReport } from "@/lib/funnel/numbers";
 import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_PURCHASE_LIVE } from "@/lib/masterchain/config";
+import { INTERNAL_ORDERS, LAST_INTERNAL_ORDER_AT } from "@/lib/masterchain/internal-orders";
 import { emailTemplates } from "@/lib/services/email.service";
 import type { Newsletter } from "@/lib/funnel/newsletters";
 import type { ResendEmail } from "@/lib/funnel/download-link-emails";
@@ -55,6 +56,18 @@ describe("launch numbers", () => {
     if (LAUNCH_AT !== null) {
       expect(MASTERCHAIN_DEMO_LIVE, "LAUNCH_AT is set but the demo entry is closed").toBe(true);
       expect(MASTERCHAIN_PURCHASE_LIVE, "LAUNCH_AT is set but purchase is closed").toBe(true);
+    }
+  });
+
+  it("★LAUNCH_AT must start after our own orders — kimny's confirmation purchase is not a launch sale (conductor 10/1)", () => {
+    // Positive control: the internal order list is not empty and its time parses.
+    expect(INTERNAL_ORDERS.length).toBeGreaterThan(0);
+    expect(Number.isNaN(Date.parse(LAST_INTERNAL_ORDER_AT))).toBe(false);
+    expect(LAST_INTERNAL_ORDER_AT).toBe("2026-09-30T20:01:23Z");
+    if (LAUNCH_AT !== null) {
+      expect(Date.parse(LAUNCH_AT), `LAUNCH_AT ${LAUNCH_AT} would count the internal order at ${LAST_INTERNAL_ORDER_AT}`).toBeGreaterThan(
+        Date.parse(LAST_INTERNAL_ORDER_AT),
+      );
     }
   });
 
