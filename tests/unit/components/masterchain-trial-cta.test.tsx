@@ -21,8 +21,8 @@ vi.mock("@/components/brand/brand-header", () => ({ BrandHeader: () => null }));
 vi.mock("@/components/features/muedsat-landing/muedsat-signup-form", () => ({
   MuedsatSignupForm: () => null, MuedsatSignupFormFallback: () => null,
 }));
-vi.mock("@/components/features/muedsp-landing/masterchain-purchase-control", () => ({
-  MasterchainPurchaseControl: ({ buyLabel }: { buyLabel: string }) => <button>{buyLabel}</button>,
+vi.mock("@/components/features/muedsp-landing/masterchain-buy-try", () => ({
+  MasterchainBuyTry: ({ buyLabel }: { buyLabel: string }) => <button>{buyLabel}</button>,
 }));
 
 import { MuedspLandingContent } from "@/components/features/muedsp-landing/muedsp-landing-content";

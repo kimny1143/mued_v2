@@ -28,10 +28,8 @@ import { type PluginKey } from "@/lib/plugins/registry";
 import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 import { WINDOWS_BETA_LIVE } from "@/lib/plugins/windows-beta";
-import { MasterchainPurchaseControl } from "@/components/features/muedsp-landing/masterchain-purchase-control";
-import { MasterchainDemoForm } from "@/components/features/muedsp-landing/masterchain-demo-form";
+import { MasterchainBuyTry } from "@/components/features/muedsp-landing/masterchain-buy-try";
 import {
-  MASTERCHAIN_DEMO_LIVE,
   MASTERCHAIN_PURCHASE_LIVE,
   MASTERCHAIN_TRIAL_DAYS,
   MASTERCHAIN_TRIAL_LIVE,
@@ -117,8 +115,9 @@ export function MuedspLandingContent() {
             <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/55">
               {th("lead")}
             </p>
+            {/* ★To masterchain's buy row (kimny 2026-10-01). It used to go to #get = the free MUEDsat form. */}
             <a
-              href="#get"
+              href="#buy"
               className="mt-7 inline-flex items-center gap-2 rounded-[var(--radius-sm)] bg-[#f5a524] px-5 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
             >
               {th("cta")}
@@ -176,58 +175,24 @@ export function MuedspLandingContent() {
               ))}
             </dl>
 
-            <div className="mt-8 flex flex-col gap-4 border-t border-white/8 pt-6 sm:flex-row sm:items-center sm:justify-between">
-              {/* Price statement lives entirely in copy (priceNote) — single source, no hardcoded
-                  number (keeps price/no-discount wording under content課's control). */}
-              <p className="max-w-sm text-[15px] leading-relaxed text-white/70">
-                {tmc(MASTERCHAIN_PURCHASE_LIVE ? "priceNoteLive" : "priceNote")}
-              </p>
-              {/* Valhalla-type structural Buy slot — LIVE only when the storefront is configured.
-
-                  ★★THE TAG CONTRACT HAS MOVED INTO CODE (2026-09-13). It is now
-                  `CHECKOUT_TAG_NAMES` in lib/masterchain/fastspring-checkout.ts, pinned to the parser
-                  by tests/unit/fastspring-tag-contract.test.ts. ★The prose list that used to sit here
-                  was correct but untypeable; the guard beside it said "the day a popup is wired … the
-                  contract should move into code", and this is that day.
-
-                  ★NEXT_PUBLIC_* は ★build 時に inline される ∴ ★env を入れた「後」の build が要る。
-                  ★2026-09-16 実測: ★env 投入の 3 分後に作られた build でも ★ボタンは disabled のままで、
-                  ★同じ branch の 2 本目（6 分後）でも同じだった。★timing と scope は潰したので、
-                  ★残る疑いは ★Vercel の build cache が inline 済の出力を再利用していること。
-                  ★∴ ★env だけ入れて「反映された」と見なさない ——★必ず ★ボタンの描画で確かめる
-                  （★disabled 形 `shrink-0 cursor-not-allowed` か ★enabled 形 `bg-[var(--accent)] px-5 py-3` か）。
-
-                  ★WHY THE BUTTON MAY STILL BE INERT: `MASTERCHAIN_CHECKOUT_ENABLED` needs BOTH
-                  NEXT_PUBLIC_FASTSPRING_STOREFRONT and NEXT_PUBLIC_FASTSPRING_PRODUCT_PATH. Neither
-                  is set yet — the storefront is a FastSpring account setting and the SKU / product
-                  path is ★still a kimny decision (docs/paid-line/c1-…spec.md:25, :101). ★With either
-                  missing the button renders exactly as before: disabled, same label, no script
-                  loaded. ★Nothing about this change is visible to a customer until those are set. */}
+            {/* ★Buy + demo in one block (kimny 2026-10-01): [BUY $69] [TRY] on one row, the email for TRY below,
+                then one short demo line. The FastSpring tag contract lives in lib/masterchain/fastspring-checkout.ts
+                (CHECKOUT_TAG_NAMES, pinned by tests/unit/fastspring-tag-contract.test.ts). NEXT_PUBLIC_* are inlined
+                at build time — check the rendered button, not just the env. */}
+            <div id="buy" className="mt-8 scroll-mt-20 space-y-4 border-t border-white/8 pt-6">
+              {!MASTERCHAIN_PURCHASE_LIVE && (
+                <p className="max-w-sm text-[15px] leading-relaxed text-white/70">{tmc("priceNote")}</p>
+              )}
               {MASTERCHAIN_TRIAL_LIVE && (
                 <Link href={`/${locale}/muedsp/trial`} className="inline-flex shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[#f5a524] px-5 py-3 font-semibold text-black transition-colors hover:bg-[#ffb638]">
                   {tt("cta", { days: MASTERCHAIN_TRIAL_DAYS })}
                 </Link>
               )}
-              <MasterchainPurchaseControl
-                locale={locale}
-                // ★The closed label says "Coming soon"; an enabled button must not.
-                buyLabel={tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")}
-                consentPrefix={tmc("eulaConsentPrefix")}
-                eulaLabel={tmc("eulaLabel")}
-                signInNote={tmc("signInNote")}
-              />
+              <Suspense fallback={null}>
+                {/* ★The closed label says "Coming soon"; an open button says "BUY $69". */}
+                <MasterchainBuyTry buyLabel={tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")} />
+              </Suspense>
             </div>
-            {MASTERCHAIN_DEMO_LIVE && (
-              <>
-                <p className="mt-5 text-sm leading-relaxed text-white/70">{tmc("demoNote")}</p>
-                <div id="demo" className="mt-4 scroll-mt-20">
-                  <Suspense fallback={null}>
-                    <MasterchainDemoForm />
-                  </Suspense>
-                </div>
-              </>
-            )}
-            {/* ★Only while purchase is closed — once it is open there is no "launch" to be notified of. */}
             {!MASTERCHAIN_PURCHASE_LIVE && (
               <a
                 href="#get"

@@ -138,6 +138,23 @@ type FastSpringBuilder = {
   checkout: () => void;
 };
 
+/**
+ * ★After payment (conductor 2026-10-01): FastSpring calls the function named in the script tag's
+ * `data-popup-closed` when the popup closes — with the order reference when an order COMPLETED, and null
+ * when the buyer closed it without paying (developer.fastspring.com/docs/redirect-after-checkout).
+ * We turn only the completed case into a DOM event the Buy control listens for; a closed-without-paying
+ * popup shows nothing.
+ */
+export const POPUP_CLOSED_CALLBACK = "__muedspFsPopupClosed";
+export const ORDER_COMPLETED_EVENT = "muedsp:fastspring-order-completed";
+
+export function handlePopupClosed(orderReference: unknown): boolean {
+  const ref = orderReference && typeof orderReference === "object" ? (orderReference as Record<string, unknown>) : null;
+  const completed = !!ref && (typeof ref.id === "string" && ref.id !== "" || typeof ref.reference === "string" && ref.reference !== "");
+  if (completed && typeof window !== "undefined") window.dispatchEvent(new CustomEvent(ORDER_COMPLETED_EVENT));
+  return completed;
+}
+
 function builder(): FastSpringBuilder | undefined {
   const fs = (window as unknown as { fastspring?: { builder?: FastSpringBuilder } }).fastspring;
   return fs?.builder;
@@ -179,6 +196,9 @@ export function loadCheckoutScript(): Promise<boolean> {
     }, { once: true });
 
     if (!existing) {
+      // The callback must exist (and be named on the tag) before the builder script reads its attributes.
+      (window as unknown as Record<string, unknown>)[POPUP_CLOSED_CALLBACK] = handlePopupClosed;
+      el.setAttribute("data-popup-closed", POPUP_CLOSED_CALLBACK);
       el.id = SCRIPT_ID;
       el.src = BUILDER_SRC;
       el.async = true;
