@@ -30,7 +30,18 @@ export const MUEDRIVE_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Served from mued.jp static
 // hosting (public/downloads/). NOT a secret (public CDN URL).
-// Package: MUEDrive 0.1.2 — dsp's signed re-release (dsp #731); first shipped as 0.1.0-alpha.
+// Package: MUEDrive 1.0.0 (2026-09-30) — the 1.0.0 release; all four MUEDsp plugins ship 1.0.0 together
+//   (kimny 9/23). Built by dsp with the provisional EULA 2026.09 in the installer.
+//   sha256: 1f3fc0918ccbbb9551c4d217594c043f2f9e0b808023576b640d9e08f6ce8d49
+//   size:   3,620,155 B
+//   ★Verified 2026-09-30 on the copy under public/downloads/ (not the relayed values): shasum -a 256
+//   matched dsp's + conductor's, `cmp` byte-identical to dsp's plugin/dist/, magic `xar!`,
+//   pkgutil = Developer ID Installer: glasswerks inc. (F529L4WT3V), stapler validate OK,
+//   spctl -t install = accepted / Notarized Developer ID.
+//   Verify after any swap: shasum -a 256 public/downloads/MUEDrive-1.0.0-installer.pkg
+//   ★The 0.1.x files below stay on the shelf (sent mail quotes them — W0b). History follows.
+//
+// Previous — MUEDrive 0.1.2 — dsp's signed re-release (dsp #731); first shipped as 0.1.0-alpha.
 //   ★What changed functionally vs 0.1.0 is dsp's record, NOT re-measured here.
 //   Three-position CHARACTER (tube / warm / console) + DRIVE / FOCUS / MIX / OUTPUT and a true BYPASS.
 //   THREE formats (VST3 · AU · AAX (Pro Tools)), macOS Universal, notarized + stapled
@@ -45,7 +56,7 @@ export const MUEDRIVE_LIVE = true;
 //
 // No 0.1.0-alias problem here (unlike MUEDsat/MUEDlim): MUEDrive has never been emailed under an
 // older filename, so this URL is the only one that has ever existed for it.
-export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-0.1.2-installer.pkg";
+export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-1.0.0-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Bumped when a new build ships. NOT a secret.
@@ -59,7 +70,7 @@ export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-0.1.2-i
 // ★URL and VERSION now carry the same semver, and tests/unit/plugin-version-matches-download.test.ts
 //   fails if they part again. (The on-screen label is still pinned separately by
 //   tests/unit/components/plugin-version-display.test.tsx — plain semver, never the filename.)
-export const MUEDRIVE_VERSION = "0.1.2";
+export const MUEDRIVE_VERSION = "1.0.0";
 
 // Press / reviewer bypass — DESIGN ROOM ONLY (dormant until a token is set; not a public feature).
 // When non-empty, `?press=<token>` reveals MUEDRIVE_DOWNLOAD_URL directly, skipping the email gate.

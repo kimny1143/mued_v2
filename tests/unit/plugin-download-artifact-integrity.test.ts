@@ -52,31 +52,31 @@ import { MUEDSAT_DOWNLOAD_URL } from "@/lib/muedsat/config";
  * as they cover the free three.
  */
 const MASTERCHAIN_PIN: { sha256: string; bytes: number } | null = {
-  // ★Measured on the COPY under public/downloads/, not on dsp's source and not from the relayed
-  //   message — `shasum -a 256` / `stat -f%z`, 2026-09-11. dsp's declared values matched, and
-  //   `cmp` against the source was byte-identical, so three independent readings agree.
-  sha256: "d9c21c25c0aa47a33cc1c627df0223d9c5b7972412fd70454d120822298351db",
-  bytes: 4_133_469,
+  // ★1.0.0 (2026-09-30). Measured on the COPY under public/downloads/, not on dsp's source and not
+  //   from the relayed message — `shasum -a 256` / `stat -f%z`. dsp's and conductor's declared sha256
+  //   matched, and `cmp` against dsp's plugin/dist/ was byte-identical. (0.1.3 was d9c21c25…/4_133_469.)
+  sha256: "07607ba9a378e2054c0b3fa2bbf01ff7dc7492b9951746826bf8d1659683761d",
+  bytes: 4_280_176,
 };
 
 const ARTIFACTS = [
   {
     name: "MUEDlim",
     url: MUEDLIM_DOWNLOAD_URL,
-    sha256: "fe2d35d4e1762fb29591f9396c04dd4c3b1ef1dd736f5dce1f2459c311153226",
-    bytes: 3_254_821,
+    sha256: "e71952251543959bb156f81611b1a5c40834699add4a5a2b687c35dce5600ad3",
+    bytes: 3_272_834,
   },
   {
     name: "MUEDsat",
     url: MUEDSAT_DOWNLOAD_URL,
-    sha256: "d41d5a30e71df80723a750b036027c3388c19be33eab0343e3385384fefdb610",
-    bytes: 3_405_970,
+    sha256: "e36fd15220290c7d9b8faf51574711263df73321a26360533b8a6a7e876c89ff",
+    bytes: 3_420_493,
   },
   {
     name: "MUEDrive",
     url: MUEDRIVE_DOWNLOAD_URL,
-    sha256: "cf5a9a7b1a6ea984091b1f7329ce54b4c0229ef3ec259bfdc16559362b51e5b3",
-    bytes: 3_584_930,
+    sha256: "1f3fc0918ccbbb9551c4d217594c043f2f9e0b808023576b640d9e08f6ce8d49",
+    bytes: 3_620_155,
   },
   // ★Present only once BOTH the URL and the pin exist — so the same two tests below start covering
   //   the paid artifact the moment it is published, with no separate wiring to remember.
