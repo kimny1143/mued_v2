@@ -63,7 +63,7 @@ function DemoForm() {
       <label htmlFor="masterchain-demo-email" className="block text-sm text-white/70">{t("emailLabel")}</label>
       <div className="flex flex-col gap-3 sm:flex-row">
         <input id="masterchain-demo-email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("emailPlaceholder")} aria-invalid={status === "error" && error === "invalid_email"} aria-describedby={status === "error" ? "masterchain-demo-error" : "masterchain-demo-note"} className="min-w-0 flex-1 rounded-[var(--radius-lg)] border border-white/15 bg-white/[0.04] px-4 py-3 font-mono text-white focus:outline-none focus:ring-2 focus:ring-[#f5a524]" />
-        <button type="submit" disabled={status === "submitting"} className="rounded-[var(--radius-lg)] border border-[#f5a524]/50 px-6 py-3 font-semibold text-[#f5a524] hover:bg-[#f5a524]/10 disabled:opacity-60">{t("submit")}</button>
+        <button type="submit" disabled={status === "submitting"} className="self-start rounded-[var(--radius-lg)] border border-[#f5a524]/50 px-4 py-2 text-sm font-semibold sm:self-auto text-[#f5a524] hover:bg-[#f5a524]/10 disabled:opacity-60">{t("submit")}</button>
       </div>
       <label className="flex items-start gap-2 text-sm text-white/70">
         <input type="checkbox" checked={marketingOptIn} onChange={(e) => setMarketingOptIn(e.target.checked)} className="mt-1 accent-[#f5a524]" />

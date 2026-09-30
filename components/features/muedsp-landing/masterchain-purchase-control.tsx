@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   MASTERCHAIN_CHECKOUT_ENABLED,
+  ORDER_COMPLETED_EVENT,
   loadCheckoutScript,
   openCheckout,
 } from "@/lib/masterchain/fastspring-checkout";
@@ -23,6 +24,8 @@ interface MasterchainPurchaseControlProps {
   eulaLabel: string;
   /** Shown under the consent while purchase is open: the portal finds the order by the checkout email. */
   signInNote?: string;
+  /** Shown after FastSpring reports a COMPLETED order (never on a popup closed without paying). */
+  thanks?: { body: string; portalLabel: string };
 }
 
 export function MasterchainPurchaseControl({
@@ -31,8 +34,16 @@ export function MasterchainPurchaseControl({
   consentPrefix,
   eulaLabel,
   signInNote,
+  thanks,
 }: MasterchainPurchaseControlProps) {
   const [checkoutReady, setCheckoutReady] = useState(false);
+  const [ordered, setOrdered] = useState(false);
+
+  useEffect(() => {
+    const onDone = () => setOrdered(true);
+    window.addEventListener(ORDER_COMPLETED_EVENT, onDone);
+    return () => window.removeEventListener(ORDER_COMPLETED_EVENT, onDone);
+  }, []);
   const [eulaAccepted, setEulaAccepted] = useState(false);
 
   useEffect(() => {
@@ -47,6 +58,20 @@ export function MasterchainPurchaseControl({
   }, []);
 
   const canPurchase = checkoutReady && PURCHASE_OPEN && eulaAccepted;
+
+  if (ordered && thanks) {
+    return (
+      <div role="status" data-testid="masterchain-thanks" className="flex max-w-sm flex-col items-start gap-3 sm:items-end sm:text-right">
+        <p className="text-sm leading-relaxed text-white/80">{thanks.body}</p>
+        <Link
+          href="/dashboard/plugins"
+          className="shrink-0 rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 py-3 font-semibold text-black transition hover:brightness-110"
+        >
+          {thanks.portalLabel}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">

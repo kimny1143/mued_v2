@@ -20,6 +20,7 @@ vi.mock("next/link", () => ({
 
 vi.mock("@/lib/masterchain/fastspring-checkout", () => ({
   MASTERCHAIN_CHECKOUT_ENABLED: true,
+  ORDER_COMPLETED_EVENT: "muedsp:fastspring-order-completed",
   loadCheckoutScript,
   openCheckout,
 }));
@@ -30,6 +31,7 @@ const props = {
   consentPrefix: "I have read and agree to the",
   eulaLabel: "EULA",
   signInNote: "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
+  thanks: { body: "Thank you for your purchase.", portalLabel: "Open your portal" },
 };
 
 describe("masterchain EULA consent gate", () => {
@@ -97,5 +99,13 @@ describe("masterchain EULA consent gate", () => {
     document.body.innerHTML = "";
     await renderControl(true);
     expect(screen.queryByTestId("masterchain-signin-note")).toBeNull();
+  });
+
+  it("★after a COMPLETED order the Buy area becomes the thank-you + portal button; nothing before that", async () => {
+    await renderControl(true);
+    expect(screen.queryByTestId("masterchain-thanks")).toBeNull();
+    window.dispatchEvent(new CustomEvent("muedsp:fastspring-order-completed"));
+    await waitFor(() => expect(screen.getByTestId("masterchain-thanks")).toHaveTextContent("Thank you for your purchase."));
+    expect(screen.getByRole("link", { name: "Open your portal" })).toHaveAttribute("href", "/dashboard/plugins");
   });
 });

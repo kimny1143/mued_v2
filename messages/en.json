@@ -2525,6 +2525,8 @@
       "eulaConsentPrefix": "I have read and agree to the",
       "eulaLabel": "EULA",
       "signInNote": "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
+      "thanks": "Thank you for your purchase. We've sent instructions to the email you used at checkout. You can also get the download and your license key in your portal (mued.jp/dashboard/plugins).",
+      "thanksPortal": "Open your portal",
       "mockLabel": "The masterchain 1.0.1 screen (demo).",
       "controlsLead": "Here's how it works.",
       "controls": {
@@ -2550,7 +2552,7 @@
         }
       },
       "demoToggle": "Try it before you buy (demo, no time limit)",
-      "demoNote": "It processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved."
+      "demoNote": "After processing the first 45 seconds of audio, it passes audio through unprocessed until you reinsert it, and settings aren't saved."
     },
     "demo": {
       "emailLabel": "Email",

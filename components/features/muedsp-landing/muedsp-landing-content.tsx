@@ -216,22 +216,22 @@ export function MuedspLandingContent() {
                 consentPrefix={tmc("eulaConsentPrefix")}
                 eulaLabel={tmc("eulaLabel")}
                 signInNote={tmc("signInNote")}
+                thanks={{ body: tmc("thanks"), portalLabel: tmc("thanksPortal") }}
               />
             </div>
-            {/* ★Purchase leads, the demo follows (kimny 9/30「デモを前に出さない」, 10/1): one quiet line that
-                opens the explanation and the email field only when asked for. */}
+            {/* ★Purchase leads, the demo follows (kimny 9/30「デモを前に出さない」, 10/1) — by colour and size only:
+                Buy is the amber fill above; the demo sits below, always visible (not folded — kimny 10/1), with an
+                outline button one size smaller. */}
             {MASTERCHAIN_DEMO_LIVE && (
-              <details id="demo" className="group mt-6 scroll-mt-20 border-t border-white/5 pt-4">
-                <summary className="cursor-pointer list-none text-sm text-white/60 transition-colors hover:text-white/85">
-                  {tmc("demoToggle")} <span aria-hidden="true" className="inline-block transition-transform group-open:rotate-90">›</span>
-                </summary>
-                <p className="mt-3 text-sm leading-relaxed text-white/60">{tmc("demoNote")}</p>
+              <div id="demo" className="mt-6 scroll-mt-20 border-t border-white/5 pt-5">
+                <p className="text-sm font-medium text-white/75">{tmc("demoToggle")}</p>
+                <p className="mt-1 text-sm leading-relaxed text-white/55">{tmc("demoNote")}</p>
                 <div className="mt-4">
                   <Suspense fallback={null}>
                     <MasterchainDemoForm />
                   </Suspense>
                 </div>
-              </details>
+              </div>
             )}
             {/* ★Only while purchase is closed — once it is open there is no "launch" to be notified of. */}
             {!MASTERCHAIN_PURCHASE_LIVE && (
