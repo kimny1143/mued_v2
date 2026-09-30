@@ -2,6 +2,7 @@ import { BrandMark } from "@/components/brand/brand-mark";
 import { ProductLink } from "@/components/brand/product-link";
 import Image from "next/image";
 import Link from "next/link";
+import { Fragment } from "react";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
@@ -99,7 +100,21 @@ export async function StudioShowroom({
             {/* ★One line only (kimny 2026-09-30: 「『クリエイター自身が作る、制作のための道具。』だけにしよう」).
                 It is the page's single h1 — structurally, not visually: a compact size, not a banner
                 (kimny: 「そんなに馬鹿でかいヒーローにしないでいいよ。小気味良いサイズで」). */}
-            <h1 id="studio-title" className={styles.heroTitle}>{portal("hero.lead")}</h1>
+            <h1 id="studio-title" className={styles.heroTitle}>
+              {/* ★When it has to wrap (375px), ja breaks only after 「、」 — keep-all + <wbr>, never mid-word. */}
+              {portal("hero.lead")
+                .split("、")
+                .map((part, i, all) => (
+                  <Fragment key={i}>
+                    {part}
+                    {i < all.length - 1 && (
+                      <>
+                        、<wbr />
+                      </>
+                    )}
+                  </Fragment>
+                ))}
+            </h1>
             <a href="#instruments" className={styles.primaryLink}>
               {t("explore")} <ArrowDown size={18} aria-hidden="true" />
             </a>
