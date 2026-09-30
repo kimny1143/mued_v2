@@ -5,7 +5,11 @@
 //
 // The draft's shape (conductor docs/drafts/launch/eula-provisional-20260926/EULA-provisional-*.md):
 //   # Title
-//   Version …            ← dropped: the version shown is EULA_VERSION (the one recorded at checkout)
+//   Version …            ← optional (dsp's English text has none: the version lives in dsp's RTF
+//                          generator). When present it must equal EULA_VERSION (checked by the caller).
+//   Last updated / Effective date / 施行日: <date>  ← becomes effectiveDate, verbatim — the same string
+//                          dsp puts in the installer RTF (2026.10: "October 1, 2026" / 「2026年10月1日」).
+//                          A placeholder like [DATE] is an error, never a date.
 //   施行日 / Effective date: …   ← dropped: effectiveDate is set only once decided (never "[発売日]")
 //   intro paragraphs
 //   ## N. Heading        ← one article each
@@ -19,13 +23,16 @@ import type { EulaArticle, EulaBlock } from "./eula-content";
 
 export interface EulaMarkdown {
   title: string;
-  /** From the "Version …" line — checked against EULA_VERSION by the caller, never rendered. */
-  version: string;
+  /** From the "Version …" line when present — checked against EULA_VERSION by the caller, never rendered. */
+  version?: string;
+  /** From the date line ("Last updated:" / "Effective date:" / 「施行日:」), verbatim. */
+  effectiveDate?: string;
   intro: EulaBlock[];
   articles: EulaArticle[];
 }
 
-const META_LINE = /^(Version |施行日[:：]|Effective date:)/;
+const META_LINE = /^(Version |施行日[:：]|最終更新日[:：]|Effective date:|Last updated:)/;
+const DATE_LINE = /^(?:施行日|最終更新日|Effective date|Last updated)[:：]\s*(.+)$/;
 const BULLET = /^- (.+)$/;
 const NUMBERED = /^(\d+)\. (.+)$/;
 
@@ -44,6 +51,7 @@ export function eulaFromMarkdown(md: string): EulaMarkdown {
   const lines = md.replace(/\r\n/g, "\n").split("\n");
   let title: string | undefined;
   let version: string | undefined;
+  let effectiveDate: string | undefined;
   const intro: EulaBlock[] = [];
   const articles: EulaArticle[] = [];
   const target = () => (articles.length ? articles[articles.length - 1].blocks : intro);
@@ -79,8 +87,15 @@ export function eulaFromMarkdown(md: string): EulaMarkdown {
 
     if (!articles.length && META_LINE.test(text)) {
       flush();
-      if (text.startsWith("Version ")) version = text.slice("Version ".length).trim();
-      return; // the effective-date line is dropped (see header)
+      if (text.startsWith("Version ")) {
+        version = text.slice("Version ".length).trim();
+        return;
+      }
+      const date = text.match(DATE_LINE);
+      if (!date) fail(n, "unrecognised metadata line");
+      if (effectiveDate !== undefined) fail(n, "a second date line");
+      effectiveDate = checkInline(date[1].trim(), n); // ★[DATE] fails here — never a date
+      return;
     }
 
     const bullet = text.match(BULLET);
@@ -101,8 +116,13 @@ export function eulaFromMarkdown(md: string): EulaMarkdown {
   flush();
 
   if (title === undefined) fail(1, "no # title");
-  if (version === undefined) fail(1, "no Version line");
   const empty = articles.find((a) => a.blocks.length === 0);
   if (empty) throw new Error(`[eula-markdown] article without text: ${empty.heading}`);
-  return { title, version, intro, articles };
+  return {
+    title,
+    ...(version === undefined ? {} : { version }),
+    ...(effectiveDate === undefined ? {} : { effectiveDate }),
+    intro,
+    articles,
+  };
 }

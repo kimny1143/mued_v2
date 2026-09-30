@@ -301,7 +301,7 @@
     }
   },
   "eula": {
-    "title": "MUEDsp End-User License Agreement",
+    "title": "MUEDsp plug-ins (MUEDsp masterchain, MUEDlim, MUEDsat, MUEDrive) End-User License Agreement",
     "referenceNote": "This is the governing English text. A Japanese reference translation is available; if the two differ, the English text prevails.",
     "intro": [
       "This End-User License Agreement (“Agreement”) is a legal agreement between you (either an individual or a single entity, “you” or “Licensee”) and 株式会社グラスワークス / glasswerks inc., a company organized under the laws of Japan with its principal place of business at 4-7-27-3F Aobadai, Meguro-ku, Tokyo 153-0042, Japan (“glasswerks,” “we,” “us,” or “Licensor”), governing your use of the software product identified above, including any associated documentation, updates, and license keys (collectively, the “Software”).",
@@ -358,7 +358,7 @@
       {
         "heading": "6. Demo Mode (Paid Products)",
         "blocks": [
-          "Prior to entering a valid license key, the paid version of the Software may operate in a demonstration mode with reduced functionality, including periodic audio degradation. Use of demonstration mode is subject to this Agreement. Purchasing a license key removes these limitations."
+          "Prior to entering a valid license key, the paid version of the Software operates in a demonstration mode with no time limit. Each time the Software is inserted or loaded, it processes the first forty-five (45) seconds of audio and then passes audio through unprocessed until it is inserted or loaded again. Settings changed in demonstration mode are not saved, and presets cannot be saved. Entering a valid license key removes these limitations. Use of demonstration mode is subject to this Agreement."
         ]
       },
       {
@@ -370,7 +370,7 @@
       {
         "heading": "8. License Delivery and Activation",
         "blocks": [
-          "Upon purchase, glasswerks will deliver a license key to the email address provided through the FastSpring purchase process. You are responsible for placing the license key file in the location specified in the Software's documentation. The Software does not use an online activation server; glasswerks does not collect or process any personal data from you beyond the purchase-notification information (such as your email address) that FastSpring provides for the purpose of issuing your license key. Payment information is collected and held solely by FastSpring; see FastSpring's privacy policy at https://fastspring.com/privacy/ and glasswerks's privacy policy at https://mued.jp/en/privacy for further detail."
+          "Upon purchase, glasswerks will send instructions to the email address provided through the FastSpring purchase process explaining how to obtain your license key through your account on glasswerks's website (mued.jp). License keys are made available only through that account and are not sent by email. You may activate the Software by pasting the license key into the Software or by loading the license key file into the Software; you do not need to place the file in any particular location. The Software does not use an online activation server. glasswerks processes personal data as described in its privacy policy at https://mued.jp/en/privacy, including: the purchase-notification information (such as your email address) that FastSpring provides for the purpose of issuing your license key; the email address you use to sign in to your account on glasswerks's website; the email address you provide when downloading a free product or a demonstration version; and, only if you have consented, your email address for sending you news and announcements. Payment information is collected and held solely by FastSpring; see FastSpring's privacy policy at https://fastspring.com/privacy/ and glasswerks's privacy policy at https://mued.jp/en/privacy for further detail."
         ]
       },
       {
@@ -379,13 +379,15 @@
           "The Software incorporates the following third-party components, each subject to its own license terms. Full license texts are reproduced in the THIRD-PARTY-LICENSES.md and FONT-LICENSES.md files included with the Software, and are also available at https://mued.jp/en/licenses.",
           {
             "ul": [
-              "**VST3 SDK** — Licensor: Steinberg Media Technologies GmbH — License: MIT License — Notice: Required — reproduced in THIRD-PARTY-LICENSES.md",
-              "**iPlug2, WDL, NanoVG, NanoSVG** — Licensor: iPlug2 contributors / Cockos Incorporated — License: zlib License — Notice: Provided as a courtesy acknowledgment",
-              "**stb** — Licensor: Sean Barrett — License: Public domain — Notice: Not required",
-              "**HIIR** — Licensor: Laurent de Soras — License: — — Notice: Not required",
-              "**Monocypher** — Licensor: Loup Vaillant — License: BSD-2-Clause / CC0 1.0 — Notice: Provided as a courtesy acknowledgment",
-              "**Roboto** — Licensor: Google — License: Apache License 2.0 — Notice: Reproduced in FONT-LICENSES.md",
-              "**Sora** — Licensor: — — License: SIL Open Font License 1.1 — Notice: Reproduced in FONT-LICENSES.md"
+              "VST3 SDK — Steinberg Media Technologies GmbH — MIT License — Required — reproduced in THIRD-PARTY-LICENSES.md",
+              "iPlug2, WDL, NanoVG, NanoSVG — iPlug2 contributors / Cockos Incorporated — zlib License — Provided as a courtesy acknowledgment",
+              "stb — Sean Barrett — Public domain — Not required",
+              "HIIR — Laurent de Soras — WTFPL Version 2 — Not required",
+              "Monocypher — Loup Vaillant — BSD-2-Clause / CC0 1.0 — Provided as a courtesy acknowledgment",
+              "Roboto — Google — Apache License 2.0 — Reproduced in FONT-LICENSES.md",
+              "Sora — The Sora Project Authors — SIL Open Font License 1.1 — Reproduced in FONT-LICENSES.md",
+              "khrplatform.h (Windows version only) — The Khronos Group Inc. — MIT-style license — Reproduced in THIRD-PARTY-LICENSES.md",
+              "glad OpenGL loader (Windows version only) — glad contributors — MIT-style license — Listed in THIRD-PARTY-LICENSES.md"
             ]
           },
           "VST and VST3 are trademarks of Steinberg Media Technologies GmbH, registered in Europe and other countries. Audio Units (AU) is a trademark of Apple Inc. AAX is a trademark of Avid Technology, Inc. The AAX plug-in format is implemented under a separate developer agreement between glasswerks and Avid Technology, Inc.; the AAX SDK is proprietary and is not open-source software."
@@ -394,7 +396,7 @@
       {
         "heading": "10. Fees and Refunds",
         "blocks": [
-          "The price of a paid license is as stated at the time of purchase on the FastSpring order page. All payments are processed by FastSpring as merchant of record. Given the nature of downloadable digital content, purchases are generally non-refundable once the license key has been delivered, except as FastSpring's refund policy or applicable law otherwise requires — for example, in cases of billing error or a confirmed technical problem preventing use of the Software. Refund requests are handled by FastSpring in accordance with its refund policy, available at https://mued.jp/en/refund. To the extent applicable law grants you a mandatory right to withdraw from or cancel your purchase of digital content, nothing in this Agreement limits that right; where such a right can be waived by your informed consent, your purchase and immediate delivery of the license key constitutes such consent to the extent permitted by applicable law."
+          "The price of a paid license is as stated at the time of purchase on the FastSpring order page. All payments are processed by FastSpring as merchant of record. Given the nature of downloadable digital content, purchases are generally non-refundable once the license key has been delivered, except as FastSpring's refund policy or applicable law otherwise requires — for example, in cases of billing error or a confirmed technical problem preventing use of the Software. Refund requests are handled by FastSpring in accordance with glasswerks's refund policy, available at https://mued.jp/en/refund. FastSpring's consumer support is available at https://fastspring.com/consumer-support/. To the extent applicable law grants you a mandatory right to withdraw from or cancel your purchase of digital content, nothing in this Agreement limits that right; where such a right can be waived by your informed consent, your purchase and immediate delivery of the license key constitutes such consent to the extent permitted by applicable law."
         ]
       },
       {
@@ -432,7 +434,7 @@
       {
         "heading": "16. Language",
         "blocks": [
-          "This Agreement is drafted in English."
+          "This Agreement is drafted in English. glasswerks may provide a Japanese translation for reference only; in the event of any conflict or inconsistency between the English version and any translation, the English version prevails."
         ]
       },
       {
@@ -444,10 +446,13 @@
       {
         "heading": "18. Contact",
         "blocks": [
-          "株式会社グラスワークス / glasswerks inc.\n4-7-27-3F Aobadai, Meguro-ku, Tokyo 153-0042, Japan\nsupport@mued.jp"
+          "株式会社グラスワークス / glasswerks inc.",
+          "4-7-27-3F Aobadai, Meguro-ku, Tokyo 153-0042, Japan",
+          "support@mued.jp"
         ]
       }
-    ]
+    ],
+    "effectiveDate": "October 1, 2026"
   },
   "terms": {
     "title": "Terms of Service",
