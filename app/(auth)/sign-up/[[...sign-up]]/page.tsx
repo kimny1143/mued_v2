@@ -33,22 +33,6 @@ export default function SignUpPage() {
           <p className="text-xl text-amber-400 mb-6">
             Making music visible.
           </p>
-
-          {/* Features highlight */}
-          <div className="text-left space-y-3">
-            <div className="flex items-center gap-3 text-slate-300">
-              <span className="text-amber-400">✓</span>
-              <span>Free to start</span>
-            </div>
-            <div className="flex items-center gap-3 text-slate-300">
-              <span className="text-amber-400">✓</span>
-              <span>Sync with iOS app</span>
-            </div>
-            <div className="flex items-center gap-3 text-slate-300">
-              <span className="text-amber-400">✓</span>
-              <span>Review your sessions anytime</span>
-            </div>
-          </div>
         </div>
       </div>
 
