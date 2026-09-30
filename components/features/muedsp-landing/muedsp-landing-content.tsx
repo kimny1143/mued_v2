@@ -43,7 +43,8 @@ const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
 const FACEPLATE_MUEDLIM = "/muedlim/faceplate.webp";
 const FACEPLATE_MUEDRIVE = "/muedrive/faceplate.png";
 // masterchain flagship render — an honest MOCK (minimal.html → webp, conductor-rendered). NOT the
-// shipping plugin; always shown with the "開発中のUI（予定）" caption (mockLabel).
+// shipping plugin; always shown with the "画面のイメージです（実際の画面とは細部が違います）" caption
+// (mockLabel). ★To be replaced by dsp's real 1.0.1 screen (kimny: no dummies) — conductor 2026-09-30.
 const MASTERCHAIN_MOCK = "/muedsp/masterchain-mock.webp";
 
 // MUEDsat saturation: four knobs; Bypass is a header toggle (bypassNote, not counted).
@@ -128,7 +129,7 @@ export function MuedspLandingContent() {
         <section className="border-t border-white/5 px-6 py-14">
           <div className="mx-auto max-w-3xl">
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#f5a524]/70">
-              {tmc("eyebrow")}
+              {tmc(MASTERCHAIN_PURCHASE_LIVE ? "eyebrowLive" : "eyebrow")}
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">{tmc("heading")}</h2>
             <p className="mt-4 text-[17px] leading-[1.8] text-white/75">{tmc("body")}</p>
@@ -140,8 +141,8 @@ export function MuedspLandingContent() {
                   src={MASTERCHAIN_MOCK}
                   alt={
                     isJa
-                      ? "MUEDsp masterchain の開発中UIモック（予定・実機ではありません）"
-                      : "A mock of the in-development MUEDsp masterchain UI (planned — not the shipping product)"
+                      ? "MUEDsp masterchain の画面のイメージ（実際の画面とは細部が違います）"
+                      : "An illustrative MUEDsp masterchain screen (the actual plugin differs in detail)"
                   }
                   width={1640}
                   height={740}

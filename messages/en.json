@@ -34,9 +34,9 @@
     "explore": "Explore the instruments",
     "hooAlt": "Hoo, the amber-eyed owl, sitting at a studio mixing console",
     "pluginCollection": "Mastering plug-in collection",
-    "masterAlt": "An in-development MUEDsp masterchain UI mock with Hoo in the background",
-    "inDevelopment": "In development",
-    "mockNote": "UI mock shown. See the product page for current availability.",
+    "masterAlt": "An illustrative MUEDsp masterchain screen with Hoo in the background",
+    "inDevelopment": "Demo available",
+    "mockNote": "Illustrative screen — the actual plugin differs in detail. See the product page for current availability.",
     "modulesTitle": "Start with a little character.",
     "modulesBody": "Free plug-ins for your own sessions. From stages of masterchain to standalone effects.",
     "freeAlpha": "FREE",
@@ -87,7 +87,7 @@
       },
       "master": {
         "origin": "The everyday master chain, packaged into one.",
-        "statusNote": "Free modules to try right now; the full masterchain is in development.",
+        "statusNote": "Free modules to try right now; the full masterchain has a demo.",
         "role": "Master-bus plugin suite",
         "label": "MASTER",
         "heading": "MUEDsp",
@@ -2509,7 +2509,7 @@
   "muedsp": {
     "meta": {
       "title": "MUEDsp — a whole mastering chain, in one plugin",
-      "description": "The master-bus chain I use for mastering, reproduced in a single plugin suite (in development). One stage, the transformer saturation, is free right now as MUEDsat."
+      "description": "The master-bus chain I use for mastering, reproduced in a single plugin suite. One stage, the transformer saturation, is free right now as MUEDsat."
     },
     "hero": {
       "eyebrow": "Mastering plugin suite",
@@ -2519,17 +2519,18 @@
       "cta": "Try one, free"
     },
     "masterchain": {
-      "eyebrow": "In development",
+      "eyebrow": "Demo available",
+      "eyebrowLive": "Out now",
       "heading": "MUEDsp masterchain",
-      "body": "I'm bundling the chain I always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details. Still building it.",
+      "body": "I've bundled the chain I always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details.",
       "priceNote": "One-time $69. Available at launch.",
       "buyLabel": "Coming soon",
       "priceNoteLive": "One-time $69.",
       "buyLabelLive": "Buy",
       "eulaConsentPrefix": "I have read and agree to the",
       "eulaLabel": "EULA",
-      "mockLabel": "A work-in-progress screen — not the real thing yet.",
-      "controlsLead": "Here's roughly how it'll work.",
+      "mockLabel": "Illustrative screen — the actual plugin differs in detail.",
+      "controlsLead": "Here's how it works.",
       "controls": {
         "ceiling": {
           "name": "Ceiling",
@@ -2634,7 +2635,7 @@
     },
     "about": {
       "heading": "What it is",
-      "originLead": "Not a demo or a trial — it's the final peak-limiting stage (a true-peak limiter) of the chain I always master with, pulled out and made free (its finished form, MUEDsp masterchain, is in development). It catches inter-sample peaks and holds true peaks to a ceiling you set (−1 dBTP by default).",
+      "originLead": "Not a demo or a trial — it's the final peak-limiting stage (a true-peak limiter) of the chain I always master with, pulled out and made free (its finished form is MUEDsp masterchain). It catches inter-sample peaks and holds true peaks to a ceiling you set (−1 dBTP by default).",
       "controlsHeading": "INPUT and CEILING",
       "controlsLead": "INPUT for loudness, CEILING for the ceiling. That's all.",
       "controls": {
@@ -2774,7 +2775,7 @@
     },
     "about": {
       "heading": "What it is",
-      "originLead": "Not a demo or a trial — it's the transformer-saturation stage of the master chain I actually use, pulled out and made free (its finished form, MUEDsp masterchain, is in development). Push it for obvious grit, or back it off until it just sits under the sound.",
+      "originLead": "Not a demo or a trial — it's the transformer-saturation stage of the master chain I actually use, pulled out and made free (its finished form is MUEDsp masterchain). Push it for obvious grit, or back it off until it just sits under the sound.",
       "intro1": "MUEDsp saturation (aka MUEDsat) is the first of MUEDsp — a mastering plugin suite I'm building. Its finished form — MUEDsp masterchain — brings together the chain I always master with (I'm building it now). MUEDsat isn't a stripped-down demo or trial: it's an actual stage of that chain — the transformer saturation — pulled out as a standalone plugin and made free.",
       "intro2": "At its heart is one thing: transformer-style saturation. Turn it up for obvious grit, or back it off until it just sits under the sound.",
       "controlsHeading": "Four knobs",
@@ -2839,8 +2840,8 @@
       "signatureHeading": "The transfer curve"
     },
     "masterchain": {
-      "eyebrow": "In development",
-      "body": "MUEDsat is one stage of MUEDsp masterchain — the finished chain I'm building now."
+      "eyebrow": "Demo available",
+      "body": "MUEDsat is one stage of MUEDsp masterchain."
     }
   },
   "pluginPortal": {

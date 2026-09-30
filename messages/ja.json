@@ -34,9 +34,9 @@
     "explore": "制作の道具を見る",
     "hooAlt": "琥珀色の目をしたHooが、スタジオのミキシングコンソールに座っている",
     "pluginCollection": "マスタリング・プラグイン コレクション",
-    "masterAlt": "Hooを背景にしたMUEDsp masterchainの開発中UIモック",
-    "inDevelopment": "開発中",
-    "mockNote": "画面はUIモックです。製品の提供状況は詳細ページをご覧ください。",
+    "masterAlt": "Hooを背景にしたMUEDsp masterchainの画面のイメージ",
+    "inDevelopment": "デモあり",
+    "mockNote": "画面のイメージです（実際の画面とは細部が違います）。製品の提供状況は詳細ページをご覧ください。",
     "modulesTitle": "まずは、ひとつの音から。",
     "modulesBody": "無料のプラグインを、あなたのセッションで。masterchainの段から、独立したエフェクトまで。",
     "freeAlpha": "無料",
@@ -87,7 +87,7 @@
       },
       "master": {
         "origin": "いつものマスターチェーンを1つのパッケージに。",
-        "statusNote": "無料モジュールは、今すぐ試せます。全段の masterchain は開発中。",
+        "statusNote": "無料モジュールは、今すぐ試せます。全段の masterchain はデモで試せます。",
         "role": "マスターバス用プラグイン・スイート",
         "label": "MASTER",
         "heading": "MUEDsp",
@@ -2509,7 +2509,7 @@
   "muedsp": {
     "meta": {
       "title": "MUEDsp — マスタリングのチェーンを、まるごと1つのプラグインに",
-      "description": "僕がマスタリングで使っているマスターバスのチェーンを、1つのプラグインに再現するスイート（開発中）。その1段のトランス・サチュレーションは、無料の MUEDsat として今すぐ試せます。"
+      "description": "僕がマスタリングで使っているマスターバスのチェーンを、1つのプラグインに再現するスイート。その1段のトランス・サチュレーションは、無料の MUEDsat として今すぐ試せます。"
     },
     "hero": {
       "eyebrow": "マスタリング・プラグインスイート",
@@ -2519,17 +2519,18 @@
       "cta": "無料の1本を試す"
     },
     "masterchain": {
-      "eyebrow": "開発中",
+      "eyebrow": "デモあり",
+      "eyebrowLive": "発売中",
       "heading": "MUEDsp masterchain",
-      "body": "僕がいつもマスタリングで使ってるチェーンを、1つのプラグインにまとめてみてます。コンプ、EQ、リミッター。細かい調整に潜り込まなくても曲を仕上げられるように、ノブは少なく。まだ作ってる途中です。",
+      "body": "僕がいつもマスタリングで使ってるチェーンを、1つのプラグインにまとめました。コンプ、EQ、リミッター。細かい調整に潜り込まなくても曲を仕上げられるように、ノブは少なく。",
       "priceNote": "買い切り $69。発売と同時にご案内します。",
       "buyLabel": "近日発売",
       "priceNoteLive": "買い切り $69。",
       "buyLabelLive": "購入する",
       "eulaConsentPrefix": "EULA を読み、内容に同意します:",
       "eulaLabel": "使用許諾契約",
-      "mockLabel": "開発中の画面です（まだ実物じゃありません）",
-      "controlsLead": "できたら、こんな感じになる予定です。",
+      "mockLabel": "画面のイメージです（実際の画面とは細部が違います）",
+      "controlsLead": "こんなふうに使います。",
       "controls": {
         "ceiling": {
           "name": "Ceiling",
@@ -2634,7 +2635,7 @@
     },
     "about": {
       "heading": "これは何か",
-      "originLead": "体験版でも試供品でもありません。僕がいつもマスタリングで使ってるチェーンの、ピークを抑える最後の段（トゥルーピーク・リミッター）を取り出して無料にしたものです（完成形の MUEDsp masterchain は開発中）。インターサンプルピークまで見て、真のピークを、決めた天井（既定 −1 dBTP）に抑えます。",
+      "originLead": "体験版でも試供品でもありません。僕がいつもマスタリングで使ってるチェーンの、ピークを抑える最後の段（トゥルーピーク・リミッター）を取り出して無料にしたものです（完成形は MUEDsp masterchain）。インターサンプルピークまで見て、真のピークを、決めた天井（既定 −1 dBTP）に抑えます。",
       "controlsHeading": "INPUT と CEILING",
       "controlsLead": "音圧を決める INPUT と、天井を決める CEILING。それだけです。",
       "controls": {
@@ -2774,7 +2775,7 @@
     },
     "about": {
       "heading": "これは何か",
-      "originLead": "体験版でも試供品でもありません。僕が実際に使っているマスターチェーンの、トランス・サチュレーションの段を取り出して無料にしたものです（完成形の MUEDsp masterchain は開発中）。はっきり歪ませても、音の下にそっと敷くだけでもいい。",
+      "originLead": "体験版でも試供品でもありません。僕が実際に使っているマスターチェーンの、トランス・サチュレーションの段を取り出して無料にしたものです（完成形は MUEDsp masterchain）。はっきり歪ませても、音の下にそっと敷くだけでもいい。",
       "intro1": "MUEDsp saturation（通称 MUEDsat）は、僕が作ってる MUEDsp っていうマスタリング用プラグインスイートの、最初の1つです。その完成形 MUEDsp masterchain は、僕がいつもマスタリングで使っているチェーンをまとめたもの（いま作ってます）。MUEDsat は、削ぎ落とした体験版でも試供品でもありません——そのチェーンの実際の1段（トランス・サチュレーション）を、単体で取り出して無料にしたものです。",
       "intro2": "中心にあるのは1つ、トランス系のサチュレーションです。はっきり歪ませてもいいし、音の下にそっと敷くだけでもいい。",
       "controlsHeading": "4つのノブ",
@@ -2839,8 +2840,8 @@
       "signatureHeading": "伝達カーブ"
     },
     "masterchain": {
-      "eyebrow": "開発中",
-      "body": "MUEDsat は、いま作っている MUEDsp masterchain の1段です。"
+      "eyebrow": "デモあり",
+      "body": "MUEDsat は、MUEDsp masterchain の1段です。"
     }
   },
   "pluginPortal": {

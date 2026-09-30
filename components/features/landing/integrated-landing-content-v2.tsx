@@ -122,8 +122,8 @@ export function IntegratedLandingContentV2() {
           render={RENDER_MASTER}
           renderAlt={
             isJa
-              ? "MUEDsp masterchain の開発中UIモック（予定）"
-              : "A mock of the in-development MUEDsp masterchain UI (planned)"
+              ? "MUEDsp masterchain の画面のイメージ（実際の画面とは細部が違います）"
+              : "An illustrative MUEDsp masterchain screen (the actual plugin differs in detail)"
           }
           renderW={1640}
           renderH={740}
