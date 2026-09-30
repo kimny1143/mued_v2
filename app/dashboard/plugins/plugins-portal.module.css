@@ -159,6 +159,25 @@
   color: #3a2600;
 }
 .dl:hover { background: #ffb838; transform: translateY(-1px); }
+/* Windows beta — the secondary download: outlined, so the Mac build stays the primary action. */
+.dlAlt {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  color: var(--amber);
+  border: 1px solid rgba(245, 165, 36, 0.45);
+  border-radius: 9px;
+  padding: 8px 16px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  transition: background 0.12s ease;
+}
+.dlAlt small { font-family: var(--font-mono); font-weight: 500; font-size: 9.5px; letter-spacing: 0.03em; color: var(--amber-dim); }
+.dlAlt:hover { background: var(--amber-glow); }
+.dlAlt:focus-visible { outline: 2px solid #ffd98a; outline-offset: 2px; }
 .dl:focus-visible { outline: 2px solid #ffd98a; outline-offset: 2px; }
 
 /* empty state */

@@ -4,6 +4,7 @@ import { MuednoteLayout } from "@/components/layouts/muednote-layout";
 import { getPortalItemsForUser, getPurchaseItemsForUser, getTrialItemForUser, markPortalRegistered } from "@/lib/plugins/portal-data";
 import { MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
 import { buildAvailableItems } from "@/lib/plugins/portal";
+import { windowsBetaFor } from "@/lib/plugins/windows-beta";
 import {
   PluginsPortalView,
   type PortalViewItem,
@@ -54,6 +55,8 @@ export default async function PluginsPortalPage() {
     downloadUrl: it.downloadUrl,
     // ★null when the module is included because they already hold another one (never claimed).
     claimedAtISO: it.claimedAt ? it.claimedAt.toISOString() : null,
+    // ★Windows beta — null until WINDOWS_BETA_LIVE (the portal is the only place it is linked).
+    windows: windowsBetaFor(it.pluginKey),
   }));
 
   // The live free modules this user does NOT own yet. Registry-derived and read-only — nothing is

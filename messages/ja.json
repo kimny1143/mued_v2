@@ -2611,9 +2611,20 @@
       "heading": "Windows 版",
       "body": "Windows 版を準備しています。",
       "freeLabel": "無料 3 種（MUEDsat・MUEDlim・MUEDrive）",
-      "freeStatus": "VST3 のベータ版を、数日内にこのページで公開します。",
+      "freeStatus": "VST3 のベータ版を、数日内に公開します。Mac 版と同じく、メールアドレスのご登録で入れるポータルからダウンロードできます。",
       "masterchainLabel": "MUEDsp masterchain",
-      "masterchainStatus": "近日公開予定。ライセンスキーはMac版と共通です"
+      "masterchainStatus": "近日公開予定。ライセンスキーはMac版と共通です",
+      "bodyLive": "無料 3 種の Windows 版（VST3・ベータ）を公開しています。",
+      "freeStatusLive": "VST3 のベータ版を公開中です。Mac 版と同じく、メールアドレスのご登録で入れるポータルからダウンロードできます。",
+      "stepsTitle": "Windows 版の入れ方",
+      "steps": [
+        "各プラグインのページでメールアドレスを登録します（登録済みの方は不要です）。",
+        "ポータルにサインインし、「Windows 版（ベータ）」から ZIP をダウンロードします。",
+        "ZIP を展開すると、外側のフォルダ（例: MUEDrive-1.0.1-win-x64-…）ができます。外側のフォルダは入れず、中の「.vst3」フォルダだけを C:\\Program Files\\Common Files\\VST3\\ にコピーします（管理者の許可が要ることがあります）。",
+        "DAW で VST3 を再スキャンします。"
+      ],
+      "note": "署名のないベータ版です。ノブは Shift か Ctrl を押しながら動かすと、細かく調整できます。",
+      "portalCta": "ポータルを開く"
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
@@ -2851,6 +2862,10 @@
     "verified": "確認済み",
     "versionLabel": "ver",
     "download": "最新版をダウンロード",
+    "windows": {
+      "download": "Windows 版（ベータ）",
+      "howto": "Windows 版（VST3・ベータ）: ZIP を展開すると、外側のフォルダ（例: MUEDrive-1.0.1-win-x64-…）ができます。外側のフォルダは入れず、中の「.vst3」フォルダだけを C:\\Program Files\\Common Files\\VST3\\ にコピーしてください（管理者の許可が要ることがあります）。そのあと DAW で VST3 を再スキャンします。署名のないベータ版です。"
+    },
     "added": "{date} に追加",
     "kind": {
       "muedsat": "サチュレーション",

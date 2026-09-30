@@ -33,6 +33,7 @@ import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 import { MUEDLIM_DOWNLOAD_URL } from "@/lib/muedlim/config";
 import { MUEDRIVE_DOWNLOAD_URL } from "@/lib/muedrive/config";
 import { MUEDSAT_DOWNLOAD_URL } from "@/lib/muedsat/config";
+import { WINDOWS_BETA } from "@/lib/plugins/windows-beta";
 
 /**
  * ★The paid module's pin, kept separate because it does not exist yet.
@@ -82,8 +83,27 @@ const ARTIFACTS = [
     sha256: "75bf0dcc1457559a35fbda9b55ae74c318f51dca754767863d0c080481a40fd4",
     bytes: 3_616_696,
   },
-  // ★Present only once BOTH the URL and the pin exist — so the same two tests below start covering
-  //   the paid artifact the moment it is published, with no separate wiring to remember.
+  // ★Windows VST3 beta (dsp build/win-beta-20260930b). Pinned from the moment the files are on the
+  //   shelf, not from the day WINDOWS_BETA_LIVE flips: the zip URL is static like every .pkg.
+  //   Measured on the copies under public/downloads/ (2026-09-30): matched conductor's relay + cmp to dsp.
+  {
+    name: "MUEDsat (Windows beta)",
+    url: WINDOWS_BETA.muedsat.url,
+    sha256: "1b85e2df84c2371f03b7e6532f97d8707fce557076d23962953f22d3cdb7b4ce",
+    bytes: 1_188_719,
+  },
+  {
+    name: "MUEDlim (Windows beta)",
+    url: WINDOWS_BETA.muedlim.url,
+    sha256: "6594238da928c3068ddd47508c9a375c9e303193a8bf88885eb36463e99e58d8",
+    bytes: 1_110_522,
+  },
+  {
+    name: "MUEDrive (Windows beta)",
+    url: WINDOWS_BETA.muedrive.url,
+    sha256: "4c691c4ecf17d3d81769acbda633ca08bcc4d40c91a13aec2b3ffc6f074ac4ec",
+    bytes: 1_225_353,
+  },
   // ★Shelf: the first 1.0.0 builds (EULA 2026.09). No constant points here any more, but the launch
   //   mail of 2026-09-30 does — so the bytes behind these URLs must not change (kimny 9/30: published
   //   versions stay available).
@@ -99,6 +119,8 @@ const ARTIFACTS = [
     sha256: "e36fd15220290c7d9b8faf51574711263df73321a26360533b8a6a7e876c89ff",
     bytes: 3_420_493,
   },
+  // ★Present only once BOTH the URL and the pin exist — so the same two tests below start covering
+  //   the paid artifact the moment it is published, with no separate wiring to remember.
   ...(MASTERCHAIN_DOWNLOAD_URL && MASTERCHAIN_PIN
     ? [{ name: "masterchain", url: MASTERCHAIN_DOWNLOAD_URL, ...MASTERCHAIN_PIN }]
     : []),

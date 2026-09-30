@@ -17,6 +17,11 @@ export interface PortalViewItem {
   downloadUrl: string;
   /** ★null = included with the family (see lib/plugins/portal.ts), never claimed. */
   claimedAtISO: string | null;
+  /**
+   * The Windows VST3 beta for this module (lib/plugins/windows-beta.ts). ★Absent/null while the beta is
+   * not live. Shown here and ONLY here — the portal is behind the same email sign-up as the Mac build.
+   */
+  windows?: { url: string; version: string } | null;
 }
 
 // Fixed brand display names + shipped formats (technical labels — not translated). Both current free
@@ -171,10 +176,19 @@ export function PluginsPortalView({
                       {t("download")}
                       <small>{`${d.name} ${it.version}${fileExt(it.downloadUrl) ? ` · ${fileExt(it.downloadUrl)}` : ""}`}</small>
                     </a>
+                    {it.windows && (
+                      <a className={styles.dlAlt} href={it.windows.url} download data-testid="portal-windows-beta">
+                        {t("windows.download")}
+                        <small>{`${d.name} ${it.windows.version} · VST3 · ${fileExt(it.windows.url)}`}</small>
+                      </a>
+                    )}
                   </div>
                 </div>
               );
             })}
+            {/* ★Same steps as the zip's INSTALL.txt — the one mistake it guards against is copying the
+                outer folder that Windows "Extract All" creates. */}
+            {items.some((it) => it.windows) && <p className={styles.howto}>{t("windows.howto")}</p>}
           </div>
         ) : (
           <div className={styles.empty}>
