@@ -96,18 +96,10 @@ export async function StudioShowroom({
             />
           </div>
           <div className={`${styles.container} ${styles.heroInner}`}>
-            <p className={styles.eyebrow}>
-              <span className={styles.signal} />
-              {t("heroEyebrow")}
-            </p>
-            <h1 id="studio-title">
-              {t("heroLine1")}
-              <br />
-              {t("heroLine2")}
-              <br />
-              <span>{t("heroLine3")}</span>
-            </h1>
-            <p className={styles.heroLead}>{portal("hero.lead")}</p>
+            {/* ★One line only (kimny 2026-09-30: 「『クリエイター自身が作る、制作のための道具。』だけにしよう」).
+                It is the page's single h1 — structurally, not visually: a compact size, not a banner
+                (kimny: 「そんなに馬鹿でかいヒーローにしないでいいよ。小気味良いサイズで」). */}
+            <h1 id="studio-title" className={styles.heroTitle}>{portal("hero.lead")}</h1>
             <a href="#instruments" className={styles.primaryLink}>
               {t("explore")} <ArrowDown size={18} aria-hidden="true" />
             </a>

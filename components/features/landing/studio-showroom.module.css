@@ -128,7 +128,7 @@
 .hero {
   position: relative;
   overflow: hidden;
-  min-height: 670px;
+  min-height: 430px;
   background: #111214;
 }
 
@@ -165,12 +165,13 @@
   color: #d1d0c8;
 }
 
-.hero h1 {
-  font-size: clamp(56px, 6.1vw, 88px);
-  line-height: 1.12;
+/* ★Compact on purpose (kimny 2026-09-30): about one step above the old 14px lead, one line at desktop. */
+.hero h1.heroTitle {
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.5;
   font-weight: 600;
-  letter-spacing: -0.07em;
-  margin: 36px 0 26px;
+  letter-spacing: -0.01em;
+  margin: 72px 0 28px;
   max-width: 640px;
 }
 
@@ -752,13 +753,13 @@
     height: auto;
   }
   .hero {
-    min-height: 780px;
+    min-height: 460px;
   }
   .heroInner {
     padding-top: 46px;
   }
-  .hero h1 {
-    font-size: 64px;
+  .hero h1.heroTitle {
+    font-size: 22px;
     margin-top: 28px;
   }
   .heroArt {
@@ -850,11 +851,11 @@
     padding: 12px 5px;
   }
   .hero {
-    min-height: 740px;
+    min-height: 440px;
   }
-  .hero h1 {
-    font-size: clamp(49px, 13.7vw, 70px);
-    line-height: 1.14;
+  .hero h1.heroTitle {
+    font-size: 20px;
+    line-height: 1.5;
   }
   .heroInner {
     padding-top: 34px;
