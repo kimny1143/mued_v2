@@ -25,20 +25,25 @@ function news(plugin: string, locale: "ja" | "en", format: "html" | "text") {
 
 describe.each(cases)("$plugin welcome consent", ({ plugin, template, sender }) => {
   describe.each(["ja", "en"] as const)("%s", (locale) => {
-    it.each([undefined, false, true])("gates every news sentence with consent %s, preserving download and footer", async (marketingOptIn) => {
+    it.each([undefined, false, true])("gates all marketing content with consent %s, preserving the download", async (marketingOptIn) => {
       const data = { locale, ...(marketingOptIn === undefined ? {} : { marketingOptIn }) };
       const unsubscribeUrl = "https://mued.jp/unsubscribe-test";
       const output = emailTemplates[template]({ ...data, unsubscribeUrl });
-      const optedIn = emailTemplates[template]({ locale, marketingOptIn: true, unsubscribeUrl });
+      const optedIn = marketingOptIn === true;
       const downloadUrl = PLUGIN_DIST[plugin].downloadUrl;
       expect(downloadUrl).not.toBe("");
       for (const format of ["html", "text"] as const) {
         expect(output[format].includes(news(plugin, locale, format))).toBe(marketingOptIn === true);
         expect(output[format]).toContain(downloadUrl);
-        expect(output[format]).toContain(unsubscribeUrl);
-        // Removing the consent-dependent sentence leaves all other wording intact.
-        const normalize = (body: string) => body.replace(news(plugin, locale, format), "").replace(/<[^>]*>/g, "").replace(/\s+/g, "").trim();
-        expect(normalize(output[format])).toBe(normalize(optedIn[format]));
+        expect(output[format].includes('/dashboard/plugins')).toBe(optedIn);
+        expect(output[format].includes('/muedsp')).toBe(optedIn);
+        expect(output[format].includes(unsubscribeUrl)).toBe(optedIn);
+        const footer = locale === "en" ? "Unsubscribe" : format === "html" ? "メール配信を解除する" : "メール配信の解除";
+        expect(output[format].includes(footer)).toBe(optedIn);
+        expect(/Unsubscribe|メール配信/.test(output[format])).toBe(optedIn);
+        expect(output[format]).toContain(locale === "ja"
+          ? plugin === "muedsat" ? "無料のトランス・サチュレーション・プラグイン" : plugin === "muedlim" ? "無料のトゥルーピーク・リミッター" : "無料のサチュレーター"
+          : plugin === "muedsat" ? "free transformer-saturation plugin" : plugin === "muedlim" ? "free true-peak limiter" : "free saturator");
       }
       if (plugin === "muedsat") {
         expect(output.html).toContain(locale === "ja"
@@ -46,6 +51,7 @@ describe.each(cases)("$plugin welcome consent", ({ plugin, template, sender }) =
           : "I'd rather you decide with your own ears than take my word for it.");
       }
       const send = vi.spyOn(emailService, "send").mockResolvedValue({ success: true });
+      const render = vi.spyOn(emailTemplates, template);
       await emailService[sender]({ email: "listener@example.com" }, data);
       expect(send).toHaveBeenCalledTimes(1);
       const sent = send.mock.calls[0][0];
@@ -53,7 +59,33 @@ describe.each(cases)("$plugin welcome consent", ({ plugin, template, sender }) =
         expect(sent[format]?.includes(news(plugin, locale, format))).toBe(marketingOptIn === true);
         expect(sent[format]).toContain(downloadUrl);
       }
-      expect(sent.headers).toHaveProperty("List-Unsubscribe-Post", "List-Unsubscribe=One-Click");
+      expect(render).toHaveBeenCalledTimes(1);
+      const templateData = render.mock.calls[0][0];
+      expect(templateData).toEqual({ ...data, unsubscribeUrl: optedIn ? expect.any(String) : undefined });
+      if (optedIn) {
+        expect(templateData.unsubscribeUrl).toContain('/api/plugins/unsubscribe?');
+        const url = new URL(templateData.unsubscribeUrl!);
+        expect(url.searchParams.get('plugin')).toBe(plugin);
+        expect(url.searchParams.get('email')).toBe('listener@example.com');
+        expect(url.searchParams.get('locale')).toBe(locale);
+        expect(sent.headers).toEqual({
+          'List-Unsubscribe': `<${templateData.unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        });
+        expect(sent.html).toContain(templateData.unsubscribeUrl!);
+        expect(sent.text).toContain(templateData.unsubscribeUrl!);
+      } else {
+        expect(templateData.unsubscribeUrl).toBeUndefined();
+        expect(sent).not.toHaveProperty('headers');
+        for (const format of ["html", "text"] as const) {
+          expect(sent[format]).not.toContain('/api/plugins/unsubscribe');
+          expect(sent[format]).not.toMatch(/Unsubscribe|メール配信/);
+        }
+      }
+      for (const format of ["html", "text"] as const) {
+        expect(sent[format]?.includes('/dashboard/plugins')).toBe(optedIn);
+        expect(sent[format]?.includes('/muedsp')).toBe(optedIn);
+      }
     });
   });
 });
