@@ -1,3 +1,4 @@
+import { SHARE_IMAGES } from "@/lib/seo/share-image";
 import { BrandHeader } from "@/components/brand/brand-header";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -17,7 +18,8 @@ export const metadata: Metadata = {
   description: DESC,
   alternates: { canonical: `${BASE}/learn` },
   robots: { index: LEARN_LIVE, follow: LEARN_LIVE }, // staged until go-live (kimny)
-  openGraph: { title: TITLE, description: DESC, url: `${BASE}/learn`, type: "website", locale: "en_US", siteName: "MUED" },
+  openGraph: { images: SHARE_IMAGES, title: TITLE, description: DESC, url: `${BASE}/learn`, type: "website", locale: "en_US", siteName: "MUED" },
+  twitter: { images: SHARE_IMAGES, card: "summary_large_image", title: TITLE, description: DESC },
 };
 
 export default function LearnIndexPage() {

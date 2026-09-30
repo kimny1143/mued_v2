@@ -6,24 +6,21 @@ import { MUEDSP_LIVE } from "@/lib/muedsp/config";
 import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 
-const MUED_CONTENT = `# MUED — 音楽制作のための AI プロダクトスイート
+const MUED_CONTENT = `# MUED — 音楽制作の道具
 
-> 耳を鍛え、制作を記録し、ミックスを AI に任せる。音楽クリエイターのための AI プロダクトスイート。glasswerks inc.（株式会社グラスワークス）が開発・運営。
-
-MUED は、音楽制作を前に進めるための AI プロダクト群です。「ミューズの教え——神秘ではなく、方法論。」をコンセプトに、耳のトレーニングから制作の記録、AI ミキシング、事業の仕組みづくりまでを、glasswerks inc. が開発・運営しています。
+> MUED は、glasswerks inc. の音楽制作の道具のブランドです。クリエイター自身が作る、制作のための道具（プラグインなど）を出しています。
+> MUED is glasswerks inc.'s brand of music production tools: tools for creation, made by the creators who use them.
 
 ## プロダクト
 
-- **MUEDear**: 7種の耳トレゲームで認知プロファイル（MUEDlobe／音程感知・リズム・和音・音場定位等）を可視化する iOS アプリ。完全無料。
-- **MUEDnote**: 制作を記録し、AIアシスタント Hoo が「ディレクター目線」で対話サポート。
-- **MUEDial**: ステムをアップロードして AI と話すだけでプロ品質のミックス・マスタリングを得る、日本語対応の AI ミキシングサービス（https://dial.mued.jp）。
-- **MUED advisory**: 小規模事業者向けのAI業務改善・自走化支援サービス（https://mued.jp/ja/advisory）。
-- **MUEDsp saturation（通称 MUEDsat）**: マスタリングのためのプラグイン・スイート MUEDsp のマスターバス・チェーンから、トランスの色付けの1段だけを取り出した無料のサチュレーション・プラグイン（https://mued.jp/ja/muedsat）。
-- **MUEDsp**: マスタリングのためのプラグイン・スイート（署名 DSP スイート）。完成形＝MUEDsp masterchain。無料で公開しているプラグインは下の「MUEDsp」節に一覧。
+- **MUEDsp masterchain（有料・買い切り $69）**: 作編曲家である代表がマスタリングで使っているマスターバスのチェーン（コンプ→EQ→リミッター）を、1つのプラグインにしたもの（https://mued.jp/ja/muedsp）。
+- **無料のプラグイン（MUEDsp）**: MUEDsat（トランス・サチュレーション）・MUEDlim（トゥルーピーク・リミッター）・MUEDrive（3キャラクターのドライブ）。詳細は下の「MUEDsp」節。
+- **MUEDial**: ステムをアップロードして AI と話すだけでミックス・マスタリングを得る、日本語対応の AI ミキシングサービス（https://dial.mued.jp）。
+- **MUEDear**: 耳トレのゲームで、聴き取りの傾向を可視化する iOS アプリ。
 
 ## Hoo について
 
-HooはMUEDのAIアシスタントです。ユーザーの認知特性・制作ジャンル・機材環境を記憶し、制作上の判断を「ディレクター目線」でサポートします。MUEDnote（耳トレ・制作ログ）とMUEDial（AIミキシング）の両サービスで連続した文脈を維持します。
+HooはMUEDのAIアシスタントです。MUEDial（AIミキシング）で、ユーザーの制作ジャンルや要望を聞き取り、ミックスの判断を「ディレクター目線」でサポートします。
 
 ## Hoo MCP
 
@@ -101,7 +98,7 @@ MUEDialは、ステムファイルをアップロードしてAIと話すだけ�
 
 ## 関連サービス
 
-- **MUEDnote**: 音楽制作者向けプロダクションコンパニオン・耳トレアプリ（https://mued.jp）
+- **MUED**: glasswerks inc. の音楽制作の道具のブランド（https://mued.jp）
 - **Hoo MCP**: AI向けAPIサービス（https://hoo-mcp.glasswerkskimny.workers.dev）
 `;
 

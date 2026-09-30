@@ -1,3 +1,4 @@
+import { DIAL_SHARE_IMAGES } from "@/lib/seo/share-image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -23,6 +24,14 @@ export const metadata: Metadata = {
       "MUEDial waitlist登録。宅録・DTM向けAIミキシングへの先行アクセス。無料診断・プレビュー1回試せます。",
     url: "https://dial.mued.jp/waitlist",
     siteName: "MUEDial",
+    images: DIAL_SHARE_IMAGES,
+  },
+  // ★A layout/page og or twitter REPLACES its parent's (no merge): images and twitter are set here too.
+  twitter: {
+    card: "summary_large_image",
+    title: "waitlist登録 — AIミキシング先行アクセス | MUEDial",
+    description: "MUEDial waitlist登録。宅録・DTM向けAIミキシングへの先行アクセス。無料診断・プレビュー1回試せます。",
+    images: DIAL_SHARE_IMAGES,
   },
 };
 

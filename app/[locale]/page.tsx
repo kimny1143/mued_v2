@@ -1,3 +1,4 @@
+import { SHARE_IMAGES } from "@/lib/seo/share-image";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
@@ -27,12 +28,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       canonical: `https://mued.jp/${locale}`,
     },
     openGraph: {
+      images: SHARE_IMAGES,
       title,
       description,
     },
-    // Override the root layout's lore twitter card so the home's social preview is product-first too
-    // (§4). Layout defaults stay for the other pages.
+    // ★A page's twitter REPLACES the layout's (no merge), so card and images are set here too (CCO #1188).
     twitter: {
+      card: "summary_large_image",
+      images: SHARE_IMAGES,
       title,
       description,
     },

@@ -1,3 +1,4 @@
+import { DIAL_SHARE_IMAGES } from "@/lib/seo/share-image";
 import type { Metadata } from "next";
 import Script from "next/script";
 import { FirstTouchTracker } from "@/components/dial/first-touch-tracker";
@@ -125,14 +126,7 @@ export const metadata: Metadata = {
       "ステムをアップロードしてAIと話すだけ。宅録・DTM向けAIミキシング・マスタリング。おまかせミックス$7.49から。",
     url: "https://dial.mued.jp/",
     siteName: "MUEDial",
-    images: [
-      {
-        url: "/muedial-hoo-mixing-console.webp",
-        width: 1200,
-        height: 630,
-        alt: "MUEDial — 宅録・DTM向けAIミキシング",
-      },
-    ],
+    images: DIAL_SHARE_IMAGES,
     locale: "ja_JP",
   },
   twitter: {
@@ -140,7 +134,7 @@ export const metadata: Metadata = {
     title: "MUEDial — 宅録・DTMの仕上げをAIと。",
     description:
       "ステムをアップロードしてAIと話すだけ。宅録・DTM向けAIミキシング・マスタリング。おまかせミックス$7.49から。",
-    images: ["/muedial-hoo-mixing-console.webp"],
+    images: DIAL_SHARE_IMAGES,
   },
 };
 

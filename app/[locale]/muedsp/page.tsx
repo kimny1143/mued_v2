@@ -3,6 +3,7 @@
 // generateMetadata (robots tied to MUEDSP_LIVE => noindex while staged) + JSON-LD (gated) + a
 // self-contained client landing component. Hero + masterchain copy live in the muedsp.* i18n
 // namespace; the saturation block reuses muedsat.*.
+import { SHARE_IMAGES } from "@/lib/seo/share-image";
 import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { locales, type Locale } from "@/lib/i18n/config";
@@ -40,10 +41,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       languages: generateHreflangAlternates("/muedsp"),
     },
     openGraph: {
+      images: SHARE_IMAGES,
       title: t("title"),
       description: t("description"),
       type: "website",
       url: `https://mued.jp/${locale}/muedsp`,
+    },
+    // ★Without this, twitter:* fell back to the site default instead of this page's own title/description.
+    twitter: {
+      images: SHARE_IMAGES,
+      card: "summary_large_image",
+      title: t("title"),
+      description: t("description"),
     },
   };
 }
