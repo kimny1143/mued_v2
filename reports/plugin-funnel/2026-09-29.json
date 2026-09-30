@@ -1,6 +1,6 @@
 {
   "date": "2026-09-29",
-  "generated_at": "2026-09-30T01:59:48.681Z",
+  "generated_at": "2026-09-30T06:50:11.454Z",
   "resend": {
     "mued_sp_total_contacts": 1087,
     "mued_sp_net_new_day": 13,
@@ -97,7 +97,7 @@
     "since": "2026-09-23T06:51:00.000Z",
     "all_time": {
       "from": "2026-09-23T06:51:00.000Z",
-      "until": "2026-09-30T01:59:47.869Z",
+      "until": "2026-09-30T06:50:10.497Z",
       "total": {
         "sent": 104,
         "bounced": 3,
@@ -154,20 +154,20 @@
       }
     },
     "last_24h": {
-      "from": "2026-09-29T01:59:47.869Z",
-      "until": "2026-09-30T01:59:47.869Z",
+      "from": "2026-09-29T06:50:10.497Z",
+      "until": "2026-09-30T06:50:10.497Z",
       "total": {
-        "sent": 21,
-        "bounced": 2,
-        "reached": 18,
-        "clicked": 15,
+        "sent": 19,
+        "bounced": 1,
+        "reached": 17,
+        "clicked": 14,
         "opened": 0,
         "delivered": 3,
         "complained": 0,
         "other": 1,
-        "unique_recipients": 12,
-        "unique_clicked_recipients": 9,
-        "unique_opened_or_clicked_recipients": 9
+        "unique_recipients": 11,
+        "unique_clicked_recipients": 8,
+        "unique_opened_or_clicked_recipients": 8
       },
       "by_product": {
         "muedsat": {
@@ -184,17 +184,17 @@
           "unique_opened_or_clicked_recipients": 3
         },
         "muedlim": {
-          "sent": 10,
-          "bounced": 1,
-          "reached": 9,
-          "clicked": 7,
+          "sent": 8,
+          "bounced": 0,
+          "reached": 8,
+          "clicked": 6,
           "opened": 0,
           "delivered": 2,
           "complained": 0,
           "other": 0,
-          "unique_recipients": 9,
-          "unique_clicked_recipients": 7,
-          "unique_opened_or_clicked_recipients": 7
+          "unique_recipients": 8,
+          "unique_clicked_recipients": 6,
+          "unique_opened_or_clicked_recipients": 6
         },
         "muedrive": {
           "sent": 6,
@@ -212,5 +212,10 @@
       }
     }
   },
-  "download_link_emails_definition": "登録直後に自動で届くダウンロードリンクメール（Resend の transactional・broadcast は含まない）。件名が /download|ダウンロード/i に一致し、かつ製品キー（muedlim / muedsat / muedrive・大小無視）を含むものを、その製品に数える。リンクの無い代替件名（「〜をありがとうございます」）は含まない。all_time は since（クリック計測 on・2026-09-23T06:51Z）から until まで、last_24h は until の 24 時間前から until まで。until は集計時刻。状態は各メールの最新の 1 つ（last_event）: clicked / opened / delivered / bounced / complained、それ以外は other。reached = clicked + opened + delivered + complained（届いた分）。unique_recipients は届いた分の宛先の重複を除いた人数、unique_clicked_recipients はそのうち 1 通でも clicked の人数、unique_opened_or_clicked_recipients は 1 通でも opened か clicked の人数（宛先アドレスは出力しない）。後から押されると delivered/opened が clicked に変わるので、同じ期間でも後で数えると clicked は増えうる。delivered は「開いていない」ではない（画像を読まないメールソフトでは開封が記録されない）。リンク確認の自動スキャンで clicked になる場合がある。クリックはダウンロードページへの到達で、インストール完了ではない。取得が失敗した日、または since より前まで一覧を遡れなかった日は null（0 ではない）。"
+  "download_link_emails_definition": "登録直後に自動で届くダウンロードリンクメール（Resend の transactional・broadcast は含まない）。件名が /download|ダウンロード/i に一致し、かつ製品キー（muedlim / muedsat / muedrive・大小無視）を含むものを、その製品に数える。リンクの無い代替件名（「〜をありがとうございます」）は含まない。all_time は since（クリック計測 on・2026-09-23T06:51Z）から until まで、last_24h は until の 24 時間前から until まで。until は集計時刻。状態は各メールの最新の 1 つ（last_event）: clicked / opened / delivered / bounced / complained、それ以外は other。reached = clicked + opened + delivered + complained（届いた分）。unique_recipients は届いた分の宛先の重複を除いた人数、unique_clicked_recipients はそのうち 1 通でも clicked の人数、unique_opened_or_clicked_recipients は 1 通でも opened か clicked の人数（宛先アドレスは出力しない）。後から押されると delivered/opened が clicked に変わるので、同じ期間でも後で数えると clicked は増えうる。delivered は「開いていない」ではない（画像を読まないメールソフトでは開封が記録されない）。リンク確認の自動スキャンで clicked になる場合がある。クリックはダウンロードページへの到達で、インストール完了ではない。取得が失敗した日、または since より前まで一覧を遡れなかった日は null（0 ではない）。",
+  "launch": {
+    "started": false,
+    "launch_at": null
+  },
+  "launch_definition": "起点は発売便の送信時刻（launch_at）。all_time は起点から集計時刻まで、last_24h は集計時刻の 24 時間前から（起点より前は含まない）。demo_downloads は masterchain のデモの控えのメール（件名で判別）を送った宛先の人数（重複を除く）＝デモの入口で DL が始まった人数。インストール完了ではない。控えのメールの送信に失敗した人、honeypot・rate limit で弾いた人は含まない。purchases は masterchain の購入の案内メール（件名で判別・webhook から送られる）の通数＝注文数（人数ではない）。launch_newsletter は起点以降に送った最初の broadcast の unique_opened / unique_clicked（Resend の値のまま・無い時は null）。launch_at が null の間は started=false で、何も数えない（0 ではない）。取得が失敗した日は null。"
 }

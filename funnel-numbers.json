@@ -5,9 +5,9 @@
   "remaining_to_target": 3956,
   "remaining_to_1000": -44,
   "portal_registrations": 127,
-  "measured_at": "2026-09-30T01:59:48.681Z",
-  "trigger": "schedule",
-  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/36657640977",
+  "measured_at": "2026-09-30T06:50:11.454Z",
+  "trigger": "workflow_dispatch",
+  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/36680243375",
   "source_report": "reports/plugin-funnel/2026-09-29.json",
   "newsletters": [
     {
@@ -51,7 +51,7 @@
     "since": "2026-09-23T06:51:00.000Z",
     "all_time": {
       "from": "2026-09-23T06:51:00.000Z",
-      "until": "2026-09-30T01:59:47.869Z",
+      "until": "2026-09-30T06:50:10.497Z",
       "total": {
         "sent": 104,
         "bounced": 3,
@@ -108,20 +108,20 @@
       }
     },
     "last_24h": {
-      "from": "2026-09-29T01:59:47.869Z",
-      "until": "2026-09-30T01:59:47.869Z",
+      "from": "2026-09-29T06:50:10.497Z",
+      "until": "2026-09-30T06:50:10.497Z",
       "total": {
-        "sent": 21,
-        "bounced": 2,
-        "reached": 18,
-        "clicked": 15,
+        "sent": 19,
+        "bounced": 1,
+        "reached": 17,
+        "clicked": 14,
         "opened": 0,
         "delivered": 3,
         "complained": 0,
         "other": 1,
-        "unique_recipients": 12,
-        "unique_clicked_recipients": 9,
-        "unique_opened_or_clicked_recipients": 9
+        "unique_recipients": 11,
+        "unique_clicked_recipients": 8,
+        "unique_opened_or_clicked_recipients": 8
       },
       "by_product": {
         "muedsat": {
@@ -138,17 +138,17 @@
           "unique_opened_or_clicked_recipients": 3
         },
         "muedlim": {
-          "sent": 10,
-          "bounced": 1,
-          "reached": 9,
-          "clicked": 7,
+          "sent": 8,
+          "bounced": 0,
+          "reached": 8,
+          "clicked": 6,
           "opened": 0,
           "delivered": 2,
           "complained": 0,
           "other": 0,
-          "unique_recipients": 9,
-          "unique_clicked_recipients": 7,
-          "unique_opened_or_clicked_recipients": 7
+          "unique_recipients": 8,
+          "unique_clicked_recipients": 6,
+          "unique_opened_or_clicked_recipients": 6
         },
         "muedrive": {
           "sent": 6,
@@ -165,5 +165,9 @@
         }
       }
     }
+  },
+  "launch": {
+    "started": false,
+    "launch_at": null
   }
 }
