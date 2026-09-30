@@ -2505,7 +2505,7 @@
   "muedsp": {
     "meta": {
       "title": "MUEDsp — a whole mastering chain, in one plugin",
-      "description": "The master-bus chain I use for mastering, reproduced in a single plugin suite. One stage, the transformer saturation, is free right now as MUEDsat."
+      "description": "MUEDsp masterchain: the master-bus chain I use for mastering, in one plugin (one-time $69). The free plugins (MUEDsat, MUEDlim, MUEDrive) are ready to try now."
     },
     "hero": {
       "eyebrow": "Mastering plugin suite",
@@ -2639,13 +2639,13 @@
   "muedlim": {
     "meta": {
       "title": "MUEDsp limiter (aka MUEDlim) — a free true-peak limiter",
-      "description": "MUEDsp limiter (aka MUEDlim) is a free true-peak limiter — the peak-limiting stage, taken out of MUEDsp, the mastering suite I'm building. It catches inter-sample peaks and holds true peaks to a ceiling you set (−1 dBTP by default). macOS (Universal), VST3 · AU · AAX (Pro Tools). Nothing locked, nothing paywalled."
+      "description": "MUEDsp limiter (aka MUEDlim) is a free true-peak limiter — the peak-limiting stage, taken out of MUEDsp, the mastering suite I make. It catches inter-sample peaks and holds true peaks to a ceiling you set (−1 dBTP by default). macOS (Universal), VST3 · AU · AAX (Pro Tools). Nothing locked, nothing paywalled."
     },
     "hero": {
       "badge": "Free · macOS · VST3 · AU · AAX",
       "title": "MUEDlim",
       "tagline": "A free true-peak limiter",
-      "lead": "The peak-limiting stage, taken out of MUEDsp — the mastering suite I'm building. Free.",
+      "lead": "The peak-limiting stage, taken out of MUEDsp — the mastering suite I make. Free.",
       "tryLine": "Free. Just grab it and try it on your own music."
     },
     "about": {
@@ -2791,7 +2791,7 @@
     "about": {
       "heading": "What it is",
       "originLead": "Not a demo or a trial — it's the transformer-saturation stage of the master chain I actually use, pulled out and made free (its finished form is MUEDsp masterchain). Push it for obvious grit, or back it off until it just sits under the sound.",
-      "intro1": "MUEDsp saturation (aka MUEDsat) is the first of MUEDsp — a mastering plugin suite I'm building. Its finished form — MUEDsp masterchain — brings together the chain I always master with (I'm building it now). MUEDsat isn't a stripped-down demo or trial: it's an actual stage of that chain — the transformer saturation — pulled out as a standalone plugin and made free.",
+      "intro1": "MUEDsp saturation (aka MUEDsat) is the first of MUEDsp — a mastering plugin suite I make. Its finished form — MUEDsp masterchain — brings together the chain I always master with. MUEDsat isn't a stripped-down demo or trial: it's an actual stage of that chain — the transformer saturation — pulled out as a standalone plugin and made free.",
       "intro2": "At its heart is one thing: transformer-style saturation. Turn it up for obvious grit, or back it off until it just sits under the sound.",
       "controlsHeading": "Four knobs",
       "controlsLead": "Four knobs, nothing hidden.",
