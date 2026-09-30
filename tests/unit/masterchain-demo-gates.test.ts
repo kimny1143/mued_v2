@@ -35,3 +35,25 @@ it("keeps all new translation keys paired", () => {
     expect(messages.tokushoho.muedsp.cancellation.demo).toBeTruthy();
   }
 });
+
+it("★with the demo open, no user-facing copy still calls masterchain \"in development\" (conductor 2026-09-30)", () => {
+  const DEV = /開発中|in development|in-development|Still building|作ってる途中|not the real thing|まだ実物/i;
+  const hits: string[] = [];
+  const walk = (o: unknown, p: string) => {
+    if (typeof o === "string") { if (DEV.test(o)) hits.push(p); }
+    else if (o && typeof o === "object") for (const [k, v] of Object.entries(o)) walk(v, `${p}.${k}`);
+  };
+  walk(ja, "ja");
+  walk(en, "en");
+  for (const f of [
+    "app/llms.txt/route.ts",
+    "components/features/landing/integrated-landing-content-v2.tsx",
+    "components/features/muedsp-landing/muedsp-landing-content.tsx",
+  ]) {
+    // String literals only (comments may describe history).
+    for (const lit of readFileSync(f, "utf8").match(/"[^"\n]*"|`[^`]*`/g) ?? []) if (DEV.test(lit)) hits.push(`${f}: ${lit.slice(0, 60)}`);
+  }
+  if (MASTERCHAIN_DEMO_LIVE) expect(hits).toEqual([]);
+  // ★Positive control: the pattern does match the old wording.
+  expect(DEV.test("全段の masterchain は開発中。")).toBe(true);
+});
