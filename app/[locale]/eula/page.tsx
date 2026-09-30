@@ -52,8 +52,12 @@ function EulaContent({ locale }: { locale: string }) {
     // ★Read only when present: t.raw on a missing key would return a fallback string, not undefined.
     effectiveDate: t.has("effectiveDate") ? t.raw("effectiveDate") : undefined,
   });
-  // ★Empty articles = the text has not been pasted in yet → today's placeholder page, unchanged.
-  const filled = content.articles.length > 0;
+  // ★The text is required now (provisional EULA 2026.09 since 2026-09-30). Empty articles would mean
+  //   the contract silently vanished from the page, so fail the (static) build instead of rendering
+  //   a placeholder — there is no placeholder copy any more.
+  if (content.articles.length === 0) {
+    throw new Error("[eula] messages eula.articles is empty — the EULA page must not render without its text");
+  }
   // ★The version shown is the SAME constant recorded at checkout, so page and consent cannot disagree.
   //   Unset values are left out rather than printed as a placeholder.
   const meta = [
@@ -68,15 +72,9 @@ function EulaContent({ locale }: { locale: string }) {
       <main className="pt-24 pb-16 px-6">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-4">{t("title")}</h1>
-          {filled ? (
-            <>
-              {meta.length > 0 && <p className="text-sm text-slate-500 mb-8">{meta.join(" · ")}</p>}
-              <EulaBlocks blocks={content.intro} />
-              <EulaArticles articles={content.articles} />
-            </>
-          ) : (
-            <PlaceholderSections />
-          )}
+          {meta.length > 0 && <p className="text-sm text-slate-500 mb-8">{meta.join(" · ")}</p>}
+          <EulaBlocks blocks={content.intro} />
+          <EulaArticles articles={content.articles} />
 
           <div className="mt-12 flex flex-wrap gap-6 text-sm">
             <Link href={`/${locale}/terms`} className="text-slate-400 hover:text-white">
@@ -98,35 +96,5 @@ function EulaContent({ locale }: { locale: string }) {
         </div>
       </main>
     </div>
-  );
-}
-
-/** The page as it is before any EULA text is supplied (status / agreement / contact). */
-function PlaceholderSections() {
-  const t = useTranslations("eula");
-  return (
-    <>
-      <p className="text-sm text-slate-500 mb-8">{t("lastUpdated")}</p>
-
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold text-white mb-4">{t("sections.status.heading")}</h2>
-        <p className="text-slate-400">{t("sections.status.body")}</p>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold text-white mb-4">{t("sections.agreement.heading")}</h2>
-        <p className="text-slate-400">{t("sections.agreement.body")}</p>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold text-white mb-4">{t("sections.contact.heading")}</h2>
-        <p className="text-slate-400">
-          {t("sections.contact.body")}{" "}
-          <a href="mailto:support@mued.jp" className="text-blue-400 hover:underline">
-            support@mued.jp
-          </a>
-        </p>
-      </section>
-</>
   );
 }

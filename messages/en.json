@@ -289,21 +289,7 @@
   },
   "eula": {
     "title": "MUEDsp End User License Agreement",
-    "lastUpdated": "Status: placeholder pending lawyer-approved text",
-    "sections": {
-      "status": {
-        "heading": "Publication status",
-        "body": "Placeholder only: the lawyer-approved EULA text and effective date have not yet been supplied. This preview is not the final agreement."
-      },
-      "agreement": {
-        "heading": "License terms",
-        "body": "The final license terms will replace this placeholder before the EULA and purchase consent are published."
-      },
-      "contact": {
-        "heading": "Contact",
-        "body": "Questions about this placeholder:"
-      }
-    },
+    "effectiveDate": "September 30, 2026",
     "intro": [
       "This End User License Agreement (\"Agreement\") is between you and glasswerks inc., a company incorporated in Japan (\"glasswerks\", \"we\", \"us\"). It covers the MUEDsp plugins. Please read it before you install or use them. By installing or using a plugin, or by accepting this Agreement at checkout, you agree to it. If you do not agree, do not install or use the plugins."
     ],
