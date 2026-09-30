@@ -32,10 +32,13 @@ describe("staged EULA page", () => {
     expect(page).not.toContain("PlaceholderSections");
   });
 
-  it("★the effective date is the launch day, the same string in both locales (and in dsp's RTF)", () => {
+  it("★the effective date is the launch day, written exactly as in dsp's installer RTF", () => {
+    // ★Same version (2026.09) must mean the same text on the web and in the installer. dsp filled the
+    //   RTF's [発売日] as below and baked it into the 1.0.0 builds (conductor 2026-09-30), so the web
+    //   copies the strings verbatim instead of formatting a date (a formatter could drift from them).
     const load = (l: string) => JSON.parse(readFileSync(join(ROOT, "messages", `${l}.json`), "utf8")).eula;
-    expect(load("ja").effectiveDate).toBe("2026-09-30");
-    expect(load("en").effectiveDate).toBe("2026-09-30");
+    expect(load("ja").effectiveDate).toBe("2026年9月30日");
+    expect(load("en").effectiveDate).toBe("September 30, 2026");
   });
 
   it("keeps the Japanese and English EULA key sets identical", () => {
