@@ -21,9 +21,19 @@ const nl = (id: string, sent_at: string, unique_opened: number | null, unique_cl
 });
 
 describe("launch numbers", () => {
-  it("★ships not-started until LAUNCH_AT is set — a value, never 0", () => {
-    expect(LAUNCH_AT).toBeNull(); // flipped in the one-line PR right after the launch send
-    expect(toLaunchNumbers([mail(DEMO_SUBJECTS[0], "2026-10-05T02:00:00Z")], [], UNTIL)).toEqual({
+  it("★LAUNCH_AT is the launch newsletter's sent_at (Resend a615f3f2, 2026-10-01 07:13:13 JST)", () => {
+    expect(LAUNCH_AT).toBe("2026-09-30T22:13:13.198Z");
+  });
+  it("★the launch newsletter itself is found: Resend's Postgres-style sent_at equal to LAUNCH_AT counts (>=)", () => {
+    const sent = "2026-09-30 22:13:13.198114+00"; // the shape Resend returned for a615f3f2
+    const out = toLaunchNumbers([], [nl("a615f3f2", sent, 10, 2)], "2026-10-01T12:00:00.000Z", LAUNCH_AT);
+    expect(out.started && out.launch_newsletter?.id).toBe("a615f3f2");
+  });
+
+  it("★not-started while there is no launch time — a value, never 0", () => {
+    // ★Passes null explicitly: the shipped LAUNCH_AT is now set, and this property (no launch → "not started",
+    //   never 0) must keep holding.
+    expect(toLaunchNumbers([mail(DEMO_SUBJECTS[0], "2026-10-05T02:00:00Z")], [], UNTIL, null)).toEqual({
       started: false, launch_at: null,
     });
   });
@@ -53,6 +63,8 @@ describe("launch numbers", () => {
   it("★LAUNCH_AT may be set only once the demo AND purchase are both open (else both counts are 0 by construction)", () => {
     // CCO #1168: with either gate closed, demo downloads / purchases cannot happen, so the fixed guide
     // line "デモ DL < 30 → 伝え方" would point at the wrong cause. Set LAUNCH_AT after both flips.
+    // ★Once set, it is the ISO UTC send time of the launch newsletter (a parseable instant).
+    if (LAUNCH_AT !== null) expect(Number.isNaN(Date.parse(LAUNCH_AT)), `LAUNCH_AT ${LAUNCH_AT} is not an ISO time`).toBe(false);
     if (LAUNCH_AT !== null) {
       expect(MASTERCHAIN_DEMO_LIVE, "LAUNCH_AT is set but the demo entry is closed").toBe(true);
       expect(MASTERCHAIN_PURCHASE_LIVE, "LAUNCH_AT is set but purchase is closed").toBe(true);
