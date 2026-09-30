@@ -42,10 +42,12 @@ const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
 // mock (dsp-captured, dev version-string cropped out). One clean shot, 1000×700 (= MUEDsat parity).
 const FACEPLATE_MUEDLIM = "/muedlim/faceplate.webp";
 const FACEPLATE_MUEDRIVE = "/muedrive/faceplate.png";
-// masterchain flagship render — an honest MOCK (minimal.html → webp, conductor-rendered). NOT the
-// shipping plugin; always shown with the "画面のイメージです（実際の画面とは細部が違います）" caption
-// (mockLabel). ★To be replaced by dsp's real 1.0.1 screen (kimny: no dummies) — conductor 2026-09-30.
-const MASTERCHAIN_MOCK = "/muedsp/masterchain-mock.webp";
+// masterchain flagship image — the REAL 1.0.1 screen (kimny: no dummies). dsp 2026-09-30: built from
+// 1.0.1 source (main c5b601b2) as a capture-only standalone that opens no audio device, no key (DEMO
+// badge, before the fade), audio stopped so meters read "--". Source PNG
+// _mued-dsp/build/screens/masterchain-1.0.1-demo-ui.png sha256 17618b70…aa81b (2186×912) → cwebp -q 86.
+// The old mock (/muedsp/masterchain-mock.webp) stays on disk but is no longer referenced.
+const MASTERCHAIN_MOCK = "/muedsp/masterchain-1.0.1-demo.webp";
 
 // MUEDsat saturation: four knobs; Bypass is a header toggle (bypassNote, not counted).
 const KNOBS = ["drive", "mix", "air", "output"] as const;
@@ -141,11 +143,11 @@ export function MuedspLandingContent() {
                   src={MASTERCHAIN_MOCK}
                   alt={
                     isJa
-                      ? "MUEDsp masterchain の画面のイメージ（実際の画面とは細部が違います）"
-                      : "An illustrative MUEDsp masterchain screen (the actual plugin differs in detail)"
+                      ? "MUEDsp masterchain 1.0.1 の画面（デモ）"
+                      : "The MUEDsp masterchain 1.0.1 screen (demo)"
                   }
-                  width={1640}
-                  height={740}
+                  width={2186}
+                  height={912}
                   priority
                   sizes="(min-width: 768px) 720px, 90vw"
                   className="h-auto w-full rounded-lg"
