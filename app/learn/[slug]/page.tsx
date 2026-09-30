@@ -1,3 +1,4 @@
+import { SHARE_IMAGES } from "@/lib/seo/share-image";
 import { BrandHeader } from "@/components/brand/brand-header";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -34,6 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     // Staged: noindex until the track goes live (kimny flips LEARN_LIVE after the tone gate).
     robots: { index: LEARN_LIVE, follow: LEARN_LIVE },
     openGraph: {
+      images: SHARE_IMAGES,
       title: article.seoTitle,
       description: article.description,
       url,
@@ -43,6 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     },
     // ★Same title/description as og — without it twitter:* fell back to the site default (conductor 2026-10-01).
     twitter: {
+      images: SHARE_IMAGES,
       card: "summary_large_image",
       title: article.seoTitle,
       description: article.description,

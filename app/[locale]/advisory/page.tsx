@@ -2,6 +2,7 @@
 // MUED advisory LP v7 (staged). Mirrors app/[locale]/ai-mixing/page.tsx:
 // generateMetadata + JSON-LD + a self-contained client landing component.
 // STAGED: robots index/follow are tied to ADVISORY_LIVE (false => noindex).
+import { SHARE_IMAGES } from "@/lib/seo/share-image";
 import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { locales, type Locale } from "@/lib/i18n/config";
@@ -42,6 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       languages: generateHreflangAlternates("/advisory"),
     },
     openGraph: {
+      images: SHARE_IMAGES,
       title: t("title"),
       description: t("description"),
       type: "website",
@@ -49,6 +51,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     // ★Same title/description as og — without it twitter:* fell back to the site default (conductor 2026-10-01).
     twitter: {
+      images: SHARE_IMAGES,
       card: "summary_large_image",
       title: t("title"),
       description: t("description"),

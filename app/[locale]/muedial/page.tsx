@@ -2,6 +2,7 @@
 // /muedial LP (wave2 "使い始める" LP, STAGED). Replaces the wave1 placeholder stub. Mirrors
 // app/[locale]/muedsp/page.tsx: generateMetadata (robots tied to MUEDIAL_LP_LIVE => noindex while
 // staged) + gated JSON-LD + a self-contained client landing component. All copy = muedialLp.* i18n.
+import { SHARE_IMAGES } from "@/lib/seo/share-image";
 import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { locales, type Locale } from "@/lib/i18n/config";
@@ -34,6 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       languages: generateHreflangAlternates("/muedial"),
     },
     openGraph: {
+      images: SHARE_IMAGES,
       title: t("title"),
       description: t("description"),
       type: "website",
@@ -41,6 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     // ★Same title/description as og — without it twitter:* fell back to the site default (conductor 2026-10-01).
     twitter: {
+      images: SHARE_IMAGES,
       card: "summary_large_image",
       title: t("title"),
       description: t("description"),

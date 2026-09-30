@@ -1,3 +1,4 @@
+import { SHARE_IMAGES } from "@/lib/seo/share-image";
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
@@ -51,14 +52,7 @@ export const metadata: Metadata = {
       "現役の作編曲家／ミックスエンジニアが作る、音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。",
     url: "https://mued.jp",
     siteName: "MUED",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "MUED — 音楽制作のための AI プロダクトスイート",
-      },
-    ],
+    images: SHARE_IMAGES,
     locale: "ja_JP",
     type: "website",
   },
@@ -67,7 +61,7 @@ export const metadata: Metadata = {
     title: "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
     description:
       "現役の作編曲家／ミックスエンジニアが作る、音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。",
-    images: ["/og-image.jpg"],
+    images: SHARE_IMAGES,
   },
 };
 
