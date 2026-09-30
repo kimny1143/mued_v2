@@ -52,6 +52,7 @@ import {
   type ResendEmail,
 } from "@/lib/funnel/download-link-emails";
 import { isReached, welcomeReachAnomalies, welcomeReachCheckHealthy } from "@/lib/funnel/welcome-reach";
+import { LAUNCH_DEFINITION, toLaunchNumbers, type LaunchNumbers } from "@/lib/funnel/launch";
 
 const KEY = process.env.RESEND_API_KEY;
 if (!KEY) {
@@ -572,12 +573,26 @@ async function main() {
   //   DOWNLOAD_LINK_UNTIL (ISO, optional) reproduces a past cut for comparison with a hand count;
   //   the scheduled run leaves it empty = "now".
   let downloadLinkEmails: DownloadLinkEmails | null = null;
+  // ★The same email list feeds the launch numbers below (lib/funnel/launch.ts) — listed ONCE, so the
+  //   launch count adds no Resend request. null when the listing failed (then both are null).
+  let transactionalEmails: ResendEmail[] | null = null;
+  const until = process.env.DOWNLOAD_LINK_UNTIL || new Date().toISOString();
   try {
-    const until = process.env.DOWNLOAD_LINK_UNTIL || new Date().toISOString();
-    downloadLinkEmails = toDownloadLinkEmails(await fetchEmailsSince(DOWNLOAD_LINK_SINCE), PLUGIN_KEYS, until);
+    transactionalEmails = await fetchEmailsSince(DOWNLOAD_LINK_SINCE);
+    downloadLinkEmails = toDownloadLinkEmails(transactionalEmails, PLUGIN_KEYS, until);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     anomalies.push(`★download_link_emails: 取得失敗 — null で出す。0 ではない。${redact(message)}`);
+  }
+  // ★Launch numbers (kimny 2026-09-30): demo downloads / purchases / launch newsletter, from LAUNCH_AT.
+  //   Not started (LAUNCH_AT null) is a value, {started:false}; a failed listing is null + an anomaly.
+  let launch: LaunchNumbers | null = null;
+  try {
+    if (transactionalEmails === null) throw new Error("transactional email listing unavailable");
+    launch = toLaunchNumbers(transactionalEmails, newsletters, until);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    anomalies.push(`★launch: 集計できず — null で出す。0 ではない。${redact(message)}`);
   }
   if (!jaHealthy) {
     anomalies.push(
@@ -648,6 +663,8 @@ async function main() {
     newsletters_definition: NEWSLETTERS_DEFINITION,
     download_link_emails: downloadLinkEmails,
     download_link_emails_definition: DOWNLOAD_LINK_EMAILS_DEFINITION,
+    launch,
+    launch_definition: LAUNCH_DEFINITION,
   };
 
   mkdirSync("reports/plugin-funnel", { recursive: true });

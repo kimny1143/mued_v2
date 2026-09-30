@@ -27,6 +27,7 @@
 // closed in the NAME rather than in a comment nobody reads at the call site.
 //
 
+import type { LaunchNumbers } from "./launch";
 import type { Newsletter } from "./newsletters";
 import type { DownloadLinkEmails } from "./download-link-emails";
 
@@ -38,6 +39,7 @@ export interface FunnelReport {
   generated_at?: unknown;
   newsletters?: unknown;
   download_link_emails?: unknown;
+  launch?: unknown;
 }
 
 export interface FunnelNumbersMeta {
@@ -66,6 +68,8 @@ export interface FunnelNumbers {
   source_report: string;
   newsletters: Newsletter[] | null;
   download_link_emails: DownloadLinkEmails | null;
+  /** Launch numbers (lib/funnel/launch.ts). null = older report or a day the collector could not count. */
+  launch: LaunchNumbers | null;
 }
 
 /** The North Star target `remaining_to_target` is taken against. 1,000 (kimny 2026-07-18) was passed
@@ -123,11 +127,26 @@ export function toFunnelNumbers(report: FunnelReport, meta: FunnelNumbersMeta): 
     ) ? report.newsletters as Newsletter[] : null,
     // Same rule: an older report, or a day the collector could not list back far enough, is null.
     download_link_emails: isDownloadLinkEmails(report.download_link_emails) ? report.download_link_emails : null,
+    // Same rule: an older report, or a day the collector could not count, is null — never a made-up 0.
+    launch: isLaunchNumbers(report.launch) ? report.launch : null,
   };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isLaunchWindow(value: unknown): boolean {
+  return isRecord(value) && typeof value.from === "string" && typeof value.until === "string" &&
+    Number.isSafeInteger(value.demo_downloads) && Number.isSafeInteger(value.purchases);
+}
+
+function isLaunchNumbers(value: unknown): value is LaunchNumbers {
+  if (!isRecord(value)) return false;
+  if (value.started === false) return value.launch_at === null;
+  return value.started === true && typeof value.launch_at === "string" &&
+    isLaunchWindow(value.all_time) && isLaunchWindow(value.last_24h) &&
+    (value.launch_newsletter === null || (isRecord(value.launch_newsletter) && typeof value.launch_newsletter.sent_at === "string"));
 }
 
 function isDownloadLinkEmails(value: unknown): value is DownloadLinkEmails {
