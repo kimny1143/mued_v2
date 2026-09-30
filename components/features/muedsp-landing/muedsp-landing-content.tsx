@@ -27,6 +27,7 @@ import {
 import { type PluginKey } from "@/lib/plugins/registry";
 import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
+import { WINDOWS_BETA_LIVE } from "@/lib/plugins/windows-beta";
 import { MasterchainPurchaseControl } from "@/components/features/muedsp-landing/masterchain-purchase-control";
 import { MasterchainDemoForm } from "@/components/features/muedsp-landing/masterchain-demo-form";
 import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_TRIAL_DAYS, MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
@@ -469,15 +470,36 @@ export function MuedspLandingContent() {
               {tw("eyebrow")}
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">{tw("heading")}</h2>
-            <p className="mt-4 text-[17px] leading-[1.8] text-white/75">{tw("body")}</p>
+            <p className="mt-4 text-[17px] leading-[1.8] text-white/75">{tw(WINDOWS_BETA_LIVE ? "bodyLive" : "body")}</p>
             <dl className="mt-6 divide-y divide-white/5 border-y border-white/5">
               {(["free", "masterchain"] as const).map((key) => (
                 <div key={key} className="grid gap-1 py-4 sm:grid-cols-[16rem_1fr] sm:gap-5">
                   <dt className="text-[15px] font-semibold text-white/85">{tw(`${key}Label`)}</dt>
-                  <dd className="text-[15px] leading-relaxed text-white/70">{tw(`${key}Status`)}</dd>
+                  <dd className="text-[15px] leading-relaxed text-white/70">
+                    {tw(key === "free" && WINDOWS_BETA_LIVE ? "freeStatusLive" : `${key}Status`)}
+                  </dd>
                 </div>
               ))}
             </dl>
+            {/* ★Steps only — no zip link on this page (conductor 2026-09-30, (b)). The zips are on the
+                portal, behind the same email sign-up as the Mac builds (lib/plugins/windows-beta.ts). */}
+            {WINDOWS_BETA_LIVE && (
+              <div data-testid="muedsp-windows-steps" className="mt-8">
+                <h3 className="text-lg font-semibold text-white">{tw("stepsTitle")}</h3>
+                <ol className="mt-3 list-decimal space-y-2 pl-6 text-[15px] leading-relaxed text-white/75">
+                  {(tw.raw("steps") as string[]).map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+                <p className="mt-4 text-[14px] leading-relaxed text-white/55">{tw("note")}</p>
+                <Link
+                  href="/dashboard/plugins"
+                  className="mt-5 inline-block text-[15px] font-semibold text-[#f5a524] hover:text-[#ffb838]"
+                >
+                  {tw("portalCta")} →
+                </Link>
+              </div>
+            )}
           </div>
         </section>
       </main>

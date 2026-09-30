@@ -2625,9 +2625,20 @@
       "heading": "Windows",
       "body": "Windows builds are on the way.",
       "freeLabel": "The three free plugins (MUEDsat, MUEDlim, MUEDrive)",
-      "freeStatus": "A VST3 beta will go up on this page within a few days.",
+      "freeStatus": "A VST3 beta is coming within a few days. Like the Mac builds, you'll download it from your portal, which you get into by signing up with your email.",
       "masterchainLabel": "MUEDsp masterchain",
-      "masterchainStatus": "Planned for October 14. The license key is the same one you use on Mac, so there's nothing to buy again."
+      "masterchainStatus": "Planned for October 14. The license key is the same one you use on Mac, so there's nothing to buy again.",
+      "bodyLive": "The Windows builds (VST3, beta) of the three free plugins are out.",
+      "freeStatusLive": "The VST3 beta is out. Like the Mac builds, you download it from your portal, which you get into by signing up with your email.",
+      "stepsTitle": "Installing on Windows",
+      "steps": [
+        "Sign up with your email on a plugin's page (skip this if you already have).",
+        "Sign in to your portal and download the ZIP from “Windows (beta)”.",
+        "Extracting the ZIP creates an outer folder (e.g. MUEDrive-1.0.1-win-x64-…). Don't copy that outer folder — copy only the “.vst3” folder inside it to C:\\Program Files\\Common Files\\VST3\\ (administrator permission may be required).",
+        "Rescan VST3 plug-ins in your DAW."
+      ],
+      "note": "This is an unsigned beta build. Hold Shift or Ctrl while dragging a knob for fine adjustment.",
+      "portalCta": "Open your portal"
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
@@ -2865,6 +2876,10 @@
     "verified": "verified",
     "versionLabel": "ver",
     "download": "Download latest",
+    "windows": {
+      "download": "Windows (beta)",
+      "howto": "Windows (VST3, beta): extracting the ZIP creates an outer folder (e.g. MUEDrive-1.0.1-win-x64-…). Don't copy that outer folder — copy only the “.vst3” folder inside it to C:\\Program Files\\Common Files\\VST3\\ (administrator permission may be required), then rescan VST3 plug-ins in your DAW. This is an unsigned beta build."
+    },
     "added": "Added {date}",
     "kind": {
       "muedsat": "Saturation",

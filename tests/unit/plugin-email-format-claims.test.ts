@@ -38,23 +38,27 @@ const FILES = [
 ];
 
 /**
- * ## The one exemption: `muedsp.windows.freeStatus` (kimny 2026-09-29, via conductor)
+ * ## The one exemption: the Windows blocks `muedsp.windows` and `pluginPortal.windows` (kimny 2026-09-29, via conductor)
  *
  * The three-format rule is about the macOS builds. ★The Windows beta of the three free plugins ships
  * VST3 ONLY (no AU on Windows; no AAX in the beta), so "VST3 のベータ版" there is a true statement —
  * and naming VST3 is what tells a Windows Pro Tools user there is no build for them yet.
  * Exempted by the named JSON key, not by a word in the line: a "Windows" substring rule would also
  * let a macOS line through if it happened to mention Windows.
+ * ★2026-09-30: widened from the one key `freeStatus` to every string in the two Windows blocks — the
+ * 10/1 beta copy (status, install steps on /muedsp#windows, the portal's Windows button + note) is
+ * the same fact: the Windows build is VST3 only. Still exempted by named blocks, never by a word.
  * ★REMOVE THE EXEMPTION WHEN: the Windows builds ship AAX (then the copy lists AAX and passes the
- * rule unaided), or the 10/1 beta copy replaces this key — whichever comes first. Adding another key
- * here needs the same kind of fact (a build that really lacks AAX), not a copy preference.
+ * rule unaided). Adding another block here needs the same kind of fact (a build that really lacks
+ * AAX), not a copy preference.
  */
-const WINDOWS_ONLY_KEYS = ['freeStatus'] as const;
+const WINDOWS_BLOCKS = [['muedsp', 'windows'], ['pluginPortal', 'windows']] as const;
+const stringsIn = (v: unknown): string[] =>
+  typeof v === 'string' ? [v] : Array.isArray(v) ? v.flatMap(stringsIn) : v && typeof v === 'object' ? Object.values(v).flatMap(stringsIn) : [];
 const WINDOWS_ONLY_VALUES = new Map(
   ['messages/ja.json', 'messages/en.json'].map((file) => {
     const json = JSON.parse(readFileSync(path.resolve(__dirname, '../..', file), 'utf8'));
-    const block: Record<string, string> = json.muedsp.windows;
-    return [file, WINDOWS_ONLY_KEYS.map((k) => JSON.stringify(block[k]))];
+    return [file, WINDOWS_BLOCKS.flatMap(([a, b]) => stringsIn(json[a][b])).map((s) => JSON.stringify(s))];
   }),
 );
 
