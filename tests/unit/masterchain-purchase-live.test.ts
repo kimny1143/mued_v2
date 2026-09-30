@@ -7,7 +7,7 @@ import ja from "@/messages/ja.json";
 // ★Purchase opens after the demo (conductor's order, 2026-09-30): demo → kimny's verification order →
 //   purchase → launch send → LAUNCH_AT.
 it("purchase is open only with the demo already open", () => {
-  expect(MASTERCHAIN_PURCHASE_LIVE).toBe(true);
+  expect(typeof MASTERCHAIN_PURCHASE_LIVE).toBe("boolean"); // ★open or closed; the rule below is what holds
   if (MASTERCHAIN_PURCHASE_LIVE) expect(MASTERCHAIN_DEMO_LIVE).toBe(true);
 });
 

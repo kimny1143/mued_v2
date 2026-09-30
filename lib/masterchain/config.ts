@@ -80,7 +80,8 @@ export const MASTERCHAIN_DOWNLOAD_URL =
 //   button has to be open for it. Customers can buy from this moment, which is why the launch mail
 //   waits until that order has run end to end (webhook → key → portal → keyfile → LICENSED).
 //   Rollback if it fails: branch revert/purchase-live (PURCHASE_LIVE=false only).
-export const MASTERCHAIN_PURCHASE_LIVE = true;
+// ★CLOSED AGAIN (flag-only rollback): the verification order did not pass end to end. Copy and tests stay.
+export const MASTERCHAIN_PURCHASE_LIVE = false;
 
 // Trial rollout is a reviewed code change, never an environment switch.
 export const MASTERCHAIN_TRIAL_LIVE = false;
