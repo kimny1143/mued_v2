@@ -35,7 +35,7 @@
     "hooAlt": "Hoo, the amber-eyed owl, sitting at a studio mixing console",
     "pluginCollection": "Mastering plug-in collection",
     "masterAlt": "The MUEDsp masterchain 1.0.1 screen (demo), with Hoo in the background",
-    "inDevelopment": "Demo available",
+    "inDevelopment": "A master chain for composers",
     "mockNote": "The masterchain 1.0.1 screen (demo). See the product page for current availability.",
     "modulesTitle": "Start with a little character.",
     "modulesBody": "Free plug-ins for your own sessions. From stages of masterchain to standalone effects.",
@@ -87,7 +87,7 @@
       },
       "master": {
         "origin": "The everyday master chain, packaged into one.",
-        "statusNote": "Free modules to try right now; the full masterchain has a demo.",
+        "statusNote": "Free modules to try right now.",
         "role": "Master-bus plugin suite",
         "label": "MASTER",
         "heading": "MUEDsp",
@@ -2519,7 +2519,7 @@
       "cta": "Try one, free"
     },
     "masterchain": {
-      "eyebrow": "Demo available",
+      "eyebrow": "A master chain for composers",
       "heading": "MUEDsp masterchain",
       "body": "I've bundled the chain I always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details.",
       "priceNote": "One-time $69. Available at launch.",
@@ -2837,7 +2837,7 @@
       "signatureHeading": "The transfer curve"
     },
     "masterchain": {
-      "eyebrow": "Demo available",
+      "eyebrow": "A master chain for composers",
       "body": "MUEDsat is one stage of MUEDsp masterchain."
     }
   },

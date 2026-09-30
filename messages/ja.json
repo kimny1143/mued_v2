@@ -35,7 +35,7 @@
     "hooAlt": "琥珀色の目をしたHooが、スタジオのミキシングコンソールに座っている",
     "pluginCollection": "マスタリング・プラグイン コレクション",
     "masterAlt": "Hooを背景にしたMUEDsp masterchain 1.0.1 の画面（デモ）",
-    "inDevelopment": "デモあり",
+    "inDevelopment": "作曲家のためのマスターチェーン",
     "mockNote": "masterchain 1.0.1 の画面（デモ）。製品の提供状況は詳細ページをご覧ください。",
     "modulesTitle": "まずは、ひとつの音から。",
     "modulesBody": "無料のプラグインを、あなたのセッションで。masterchainの段から、独立したエフェクトまで。",
@@ -87,7 +87,7 @@
       },
       "master": {
         "origin": "いつものマスターチェーンを1つのパッケージに。",
-        "statusNote": "無料モジュールは、今すぐ試せます。全段の masterchain はデモで試せます。",
+        "statusNote": "無料モジュールは、今すぐ試せます。",
         "role": "マスターバス用プラグイン・スイート",
         "label": "MASTER",
         "heading": "MUEDsp",
@@ -2519,7 +2519,7 @@
       "cta": "無料の1本を試す"
     },
     "masterchain": {
-      "eyebrow": "デモあり",
+      "eyebrow": "作曲家のためのマスターチェーン",
       "heading": "MUEDsp masterchain",
       "body": "僕がいつもマスタリングで使ってるチェーンを、1つのプラグインにまとめました。コンプ、EQ、リミッター。細かい調整に潜り込まなくても曲を仕上げられるように、ノブは少なく。",
       "priceNote": "買い切り $69。発売と同時にご案内します。",
@@ -2837,7 +2837,7 @@
       "signatureHeading": "伝達カーブ"
     },
     "masterchain": {
-      "eyebrow": "デモあり",
+      "eyebrow": "作曲家のためのマスターチェーン",
       "body": "MUEDsat は、MUEDsp masterchain の1段です。"
     }
   },
