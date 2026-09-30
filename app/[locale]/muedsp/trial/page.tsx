@@ -42,6 +42,7 @@ export default async function MasterchainTrialPage({ params, searchParams }: {
         <Link href={`/${locale}/muedsp`} className="font-mono text-sm text-[#f5a524]">MUEDsp</Link>
         <h1 className="mt-8 text-3xl font-semibold tracking-tight">{t("title", { days: MASTERCHAIN_TRIAL_DAYS })}</h1>
         <p className="mt-4 text-white/75">{t("intro", { days: MASTERCHAIN_TRIAL_DAYS })}</p>
+        {/* ★signInHint ("a code sent to your email") holds only while Clerk's email first factor is email_code (CCO #1180). */}
         {!user && <p className="mt-3 text-white/75">{t("signInHint")}</p>}
         <p className="mt-3 text-sm leading-relaxed text-white/65">{t("bypass")}</p>
         <div className="mt-8 border-t border-white/10 pt-6">

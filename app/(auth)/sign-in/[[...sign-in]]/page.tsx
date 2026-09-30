@@ -27,17 +27,11 @@ export default function SignInPage() {
           </Link>
 
           {/* Tagline */}
-          <h1 className="text-3xl font-bold text-white mb-4">
-            MUED
-          </h1>
+          {/* The mark above already reads "MUED." — the visible heading duplicated it (kimny 2026-09-30).
+              Kept for screen readers so the page still has its h1. */}
+          <h1 className="sr-only">MUED</h1>
           <p className="text-xl text-amber-400 mb-6">
             Making music visible.
-          </p>
-
-          {/* Description */}
-          <p className="text-slate-400 leading-relaxed">
-            Your companion in music production.<br />
-            Rest reminders, sound reactive, voice memos.
           </p>
         </div>
       </div>
@@ -76,6 +70,9 @@ export default function SignInPage() {
               headerSubtitle: "!text-slate-400",
               socialButtonsBlockButton: "!bg-white/5 !border-white/10 !text-white hover:!bg-white/10",
               socialButtonsBlockButtonText: "!text-white",
+              // Apple's mark ships black; on this dark card it disappears. Apple's guidelines allow the white
+              // logo on dark backgrounds. Google's multicolour "G" stays as it is (its dark-theme button keeps it).
+              socialButtonsProviderIcon__apple: "!invert",
               dividerLine: "!bg-white/10",
               dividerText: "!text-slate-500",
               formFieldLabel: "!text-slate-300",
