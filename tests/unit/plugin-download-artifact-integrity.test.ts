@@ -57,8 +57,10 @@ const MASTERCHAIN_PIN: { sha256: string; bytes: number } | null = {
   //   dsp's source and not from the relayed message — `shasum -a 256` / `stat -f%z`. conductor's
   //   declared sha256/bytes matched, and `cmp` against dsp's plugin/dist/ was byte-identical.
   //   (1.0.0 was 07607ba9…/4_280_176; 0.1.3 was d9c21c25…/4_133_469 — both stay on the shelf.)
-  sha256: "e484688613197dc26d40cca3ca1c6c2e69608e575600254c1bb47c7bc8fa3fb0",
-  bytes: 4_276_006,
+  // ★1.0.1 UI rebuild (2026-09-30 night, /downloads/ui-2026.10/): matched conductor's relay + cmp to dsp.
+  //   The first 1.0.1 (e4846886…/4_276_006) is pinned below as a shelf entry.
+  sha256: "b9fef6da4d5c11a990d358248308fc5b7c95c9b1b67e43e7334150cdbd4791d6",
+  bytes: 4_296_252,
 };
 
 const ARTIFACTS = [
@@ -103,6 +105,13 @@ const ARTIFACTS = [
     url: WINDOWS_BETA.muedrive.url,
     sha256: "4c691c4ecf17d3d81769acbda633ca08bcc4d40c91a13aec2b3ffc6f074ac4ec",
     bytes: 1_225_353,
+  },
+  // ★Shelf: the first masterchain 1.0.1 (before tonight's UI rebuild). Demo mails sent before the swap point here.
+  {
+    name: "masterchain 1.0.1 (first build, shelf)",
+    url: "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-installer.pkg",
+    sha256: "e484688613197dc26d40cca3ca1c6c2e69608e575600254c1bb47c7bc8fa3fb0",
+    bytes: 4_276_006,
   },
   // ★Shelf: the first 1.0.0 builds (EULA 2026.09). No constant points here any more, but the launch
   //   mail of 2026-09-30 does — so the bytes behind these URLs must not change (kimny 9/30: published

@@ -67,7 +67,11 @@ export const MASTERCHAIN_INTEREST_LIVE = false;
 // ★repo のコメントを読んで「unset だから安全」と読まないこと（それがこの訂正の理由）。
 //
 export const MASTERCHAIN_DOWNLOAD_URL =
-  "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-installer.pkg";
+  // ★1.0.1 rebuilt 2026-09-30 night (dsp §5 passed): tonight's UI fixes (DEMO badge, buy link on the expired
+  //   screen, short links mc-buy / mc-buy-panel / mc-plugin / mc-portal baked in), EULA 2026.10, notarised.
+  //   Same version and file name, so it is served from its own directory (the MUEDlim/MUEDsat pattern);
+  //   the first 1.0.1 stays at /downloads/MUEDsp-masterchain-1.0.1-installer.pkg and is pinned as a shelf entry.
+  "https://mued.jp/downloads/ui-2026.10/MUEDsp-masterchain-1.0.1-installer.pkg";
 
 // Purchase rollout — same rule as the trial below: a reviewed code change, never an environment switch.
 // ★CLOSED 2026-09-30 (launch day), kimny 逐語「今日の販売はそもそも間に合わない。最短のルートで進めて
