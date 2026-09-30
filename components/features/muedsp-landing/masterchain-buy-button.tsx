@@ -9,7 +9,7 @@ import {
   loadCheckoutScript,
   openCheckout,
 } from "@/lib/masterchain/fastspring-checkout";
-import { MASTERCHAIN_PURCHASE_LIVE } from "@/lib/masterchain/config";
+import { MASTERCHAIN_PURCHASE_LIVE, MASTERCHAIN_VERSION } from "@/lib/masterchain/config";
 import { EULA_VERSION } from "@/lib/legal/eula";
 import { parseEulaContent } from "@/lib/legal/eula-content";
 import { EulaArticles, EulaBlocks } from "@/components/legal/eula-body";
@@ -26,8 +26,10 @@ const PURCHASE_OPEN = MASTERCHAIN_PURCHASE_LIVE && EULA_CONSENT_LIVE;
  * スクロールしてさ、しかもEULA押すまで暗転してるボタンなんて誰も押さないわ」).
  *
  * The button sits beside masterchain's heading and is always pressable while purchase is open. Pressing it
- * opens the EULA (2026.10) in a modal; the button below the text — 「同意して購入へ進む」 — goes straight to
- * the FastSpring popup, passing the EULA version as before (the tag contract in fastspring-checkout.ts).
+ * opens a two-column modal (kimny 10/1 「やってみよう」): the order on the right — what you get, $69, and
+ * 「購入へ進む」 straight to the FastSpring popup, passing the EULA version as before (the tag contract in
+ * fastspring-checkout.ts) — and the EULA (2026.10) on the left, scrolling in its own column. On a phone the
+ * order is on top and the EULA below it. No totals: FastSpring's popup is where tax and currency are fixed.
  * Closing the modal (×, Esc, the backdrop) does nothing. After FastSpring reports a COMPLETED order, the
  * button becomes the thank-you + portal link.
  */
@@ -112,6 +114,7 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
   const locale = useLocale();
   const isJa = locale === "ja";
   const titleId = useId();
+  const noteId = useId();
   const dialog = useRef<HTMLDivElement>(null);
   const content = parseEulaContent({
     intro: t.raw("intro"),
@@ -158,60 +161,79 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 md:p-6"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
       data-testid="eula-modal-backdrop"
     >
+      {/* DOM order = the phone order (the order on top, the EULA below) and the focus order (× → purchase →
+          the EULA's links); md:flex-row-reverse puts the EULA on the left on a wide screen. */}
       <div
         ref={dialog}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex max-h-[88vh] w-full max-w-2xl flex-col rounded-lg border border-white/10 bg-[#141414] shadow-2xl"
+        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-white/10 bg-[#141414] shadow-2xl md:h-[min(88vh,720px)] md:flex-row-reverse"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4">
-          <div>
-            <h2 id={titleId} className="text-lg font-semibold text-white">{t("title")}</h2>
-            <p className="mt-1 text-xs text-white/45">{meta.join(" · ")}</p>
+        <section data-testid="order-panel" className="flex shrink-0 flex-col gap-4 border-b border-white/10 p-5 md:w-[340px] md:border-b-0 md:border-l md:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <h2 id={titleId} className="text-lg font-semibold leading-snug text-white">
+              {tb("orderProduct", { version: MASTERCHAIN_VERSION })}
+            </h2>
+            <button
+              type="button"
+              data-autofocus
+              onClick={onClose}
+              aria-label={tb("modalClose")}
+              className="-mr-1 -mt-1 rounded p-1 text-2xl leading-none text-white/60 hover:text-white"
+            >
+              ×
+            </button>
           </div>
-          <button
-            type="button"
-            data-autofocus
-            onClick={onClose}
-            aria-label={tb("modalClose")}
-            className="rounded p-1 text-2xl leading-none text-white/60 hover:text-white"
-          >
-            ×
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4 text-sm" data-testid="eula-modal-body">
-          {isJa && (
-            <p data-testid="eula-modal-reference-note" className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-200">
-              {/* ★No link out of the modal (kimny 10/1: 「リンクつけちゃったらそれは離脱の扉」). The note stays: the
-                  English text governs (EULA §16). */}
-              {t("referenceNote")}
+          <p className="-mt-2 text-sm text-white/60">{tb("orderFormats")}</p>
+          <div>
+            <p className="text-3xl font-semibold tabular-nums text-white">{tb("orderPrice")}</p>
+            <p className="mt-1 text-xs text-white/50">{tb("orderTaxNote")}</p>
+          </div>
+          <p className="text-sm leading-relaxed text-white/75">{tb("orderKeyNote")}</p>
+          <div className="flex flex-col gap-2 md:mt-auto">
+            <button
+              type="button"
+              onClick={onAgree}
+              disabled={!checkoutReady}
+              aria-disabled={!checkoutReady}
+              aria-describedby={noteId}
+              className="w-full rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 py-3.5 text-base font-semibold text-black transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
+            >
+              {checkoutReady ? tb("continueToCheckout") : tb("checkoutLoading")}
+            </button>
+            {/* Where the EULA is depends on the layout: left on a wide screen, below on a phone. */}
+            <p id={noteId} className="text-xs leading-relaxed text-white/50">
+              <span className="md:hidden">{tb("agreeNoteBelow")}</span>
+              <span className="hidden md:inline">{tb("agreeNoteLeft")}</span>
             </p>
-          )}
-          <EulaBlocks blocks={content.intro} newTab />
-          <EulaArticles articles={content.articles} newTab />
-        </div>
-        {/* ★Always visible under the text and pressable at once (kimny 10/1: 「全部読まないとボタン押せない、に
-            しちゃうと絶対離脱する…ボタンは常時下に表示しておいて押せるようにした方がいい」). The text stays
-            one scroll away above it. */}
-        <div className="flex flex-col items-start gap-2 border-t border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-white/50">{checkoutReady ? tb("agreeNote") : tb("checkoutLoading")}</p>
-          <button
-            type="button"
-            onClick={onAgree}
-            disabled={!checkoutReady}
-            aria-disabled={!checkoutReady}
-            className="rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 py-3 font-semibold text-black transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
-          >
-            {tb("agreeAndBuy")}
-          </button>
-        </div>
+          </div>
+        </section>
+        <section className="flex min-h-0 flex-1 flex-col" aria-label={t("title")}>
+          <div className="border-b border-white/10 px-5 py-3">
+            <h3 className="text-sm font-semibold text-white/85">{t("title")}</h3>
+            <p className="mt-0.5 text-xs text-white/45">{meta.join(" · ")}</p>
+          </div>
+          {/* The EULA scrolls in its own column, in smaller type. No consent control here — pressing 「購入へ進む」
+              is the consent (the note under the button says so). */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 text-[13px] leading-relaxed [&_h2]:mb-2 [&_h2]:text-sm [&_p]:mb-3 [&_section]:mb-5" data-testid="eula-modal-body">
+            {isJa && (
+              <p data-testid="eula-modal-reference-note" className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
+                {/* ★No link out of the modal (kimny 10/1: 「リンクつけちゃったらそれは離脱の扉」). The note stays: the
+                    English text governs (EULA §16). */}
+                {t("referenceNote")}
+              </p>
+            )}
+            <EulaBlocks blocks={content.intro} newTab />
+            <EulaArticles articles={content.articles} newTab />
+          </div>
+        </section>
       </div>
     </div>
   );

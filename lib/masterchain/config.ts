@@ -73,6 +73,11 @@ export const MASTERCHAIN_DOWNLOAD_URL =
   //   the first 1.0.1 stays at /downloads/MUEDsp-masterchain-1.0.1-installer.pkg and is pinned as a shelf entry.
   "https://mued.jp/downloads/ui-2026.10/MUEDsp-masterchain-1.0.1-installer.pkg";
 
+/** The version the installer above is (…-1.0.1-installer.pkg → "1.0.1") — shown in the purchase modal,
+ *  derived so it cannot drift from what a buyer downloads. */
+export const MASTERCHAIN_VERSION =
+  new URL(MASTERCHAIN_DOWNLOAD_URL).pathname.match(/-(\d+\.\d+\.\d+)-installer\.pkg$/)?.[1] ?? "";
+
 // Purchase rollout — same rule as the trial below: a reviewed code change, never an environment switch.
 // ★CLOSED 2026-09-30 (launch day), kimny 逐語「今日の販売はそもそも間に合わない。最短のルートで進めて
 //   準備整い次第告知」. The FastSpring env was already live (button enabled 11:09 JST); this keeps the

@@ -1,7 +1,8 @@
 /**
- * masterchain's Buy beside the heading (kimny 2026-10-01): always pressable while purchase is open; opens the
- * EULA in a modal; 「同意して購入へ進む」 is always shown below the text and pressable at once (kimny: forcing a
- * full read loses buyers), and goes straight to the FastSpring popup. ×, Esc and the backdrop close it.
+ * masterchain's Buy beside the heading (kimny 2026-10-01): always pressable while purchase is open; opens a
+ * two-column modal — the order (version, formats, $69, 「購入へ進む」) and the EULA scrolling in its own column.
+ * 「購入へ進む」 is pressable at once (kimny: forcing a full read loses buyers) and goes straight to the FastSpring
+ * popup with the EULA consent. No totals. ×, Esc and the backdrop close it.
  */
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { AnchorHTMLAttributes } from "react";
@@ -13,12 +14,12 @@ const { loadCheckoutScript, openCheckout, m } = vi.hoisted(() => ({
   m: { purchaseLive: true, locale: "en" },
 }));
 
-vi.mock("@/lib/masterchain/config", () => ({ get MASTERCHAIN_PURCHASE_LIVE() { return m.purchaseLive; } }));
+vi.mock("@/lib/masterchain/config", () => ({ get MASTERCHAIN_PURCHASE_LIVE() { return m.purchaseLive; }, MASTERCHAIN_VERSION: "1.0.1" }));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: AnchorHTMLAttributes<HTMLAnchorElement>) => <a href={String(href)} {...props}>{children}</a>,
 }));
 vi.mock("next-intl", () => {
-  const t = (key: string) => key;
+  const t = (key: string, values?: Record<string, string>) => (values ? `${key}:${JSON.stringify(values)}` : key);
   const eula = Object.assign((key: string) => key, {
     raw: (key: string) =>
       key === "intro" ? ["Intro text. See https://mued.jp/ja/refund and https://fastspring.com/privacy/ ."] : key === "articles" ? [{ heading: "1. Grant", blocks: ["Body text."] }] : key === "effectiveDate" ? "October 1, 2026" : "Last updated",
@@ -74,21 +75,43 @@ describe("the Buy button", () => {
 });
 
 describe("the EULA modal", () => {
-  it("★opens on Buy; agree is pressable at once and sits OUTSIDE the scrolling text (always visible); it opens checkout", async () => {
+  it("★opens on Buy; 「購入へ進む」 is pressable at once, sits OUTSIDE the scrolling EULA, and opens checkout with consent", async () => {
     await renderButton();
     await waitFor(() => expect(loadCheckoutScript).toHaveBeenCalled());
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(screen.getByText("Body text.")).toBeInTheDocument(); // the EULA text itself
-    const agree = screen.getByRole("button", { name: "agreeAndBuy" });
-    // ★kimny 10/1: no "read to the end first" — the button is always shown below the text and pressable.
-    await waitFor(() => expect(agree).toBeEnabled());
-    expect(screen.getByTestId("eula-modal-body")).not.toContainElement(agree);
-    expect(screen.getByText("agreeNote")).toBeInTheDocument();
-    fireEvent.click(agree);
+    const go = await screen.findByRole("button", { name: "continueToCheckout" });
+    // ★kimny 10/1: no "read to the end first" — no checkbox, no scroll condition.
+    expect(go).toBeEnabled();
+    expect(dialog.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(screen.getByTestId("eula-modal-body")).not.toContainElement(go);
+    // The consent note is tied to the button, in both layouts (left on a wide screen, below on a phone).
+    const note = document.getElementById(go.getAttribute("aria-describedby") ?? "");
+    expect(note).toHaveTextContent("agreeNoteBelow");
+    expect(note).toHaveTextContent("agreeNoteLeft");
+    fireEvent.click(go);
     expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true });
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("★the order panel says what you get — version from the installer, formats, $69, tax note, where the key is — and no total", async () => {
+    await renderButton();
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    const order = screen.getByTestId("order-panel");
+    expect(screen.getByRole("dialog")).toHaveAccessibleName('orderProduct:{"version":"1.0.1"}');
+    for (const key of ["orderFormats", "orderPrice", "orderTaxNote", "orderKeyNote"]) expect(order).toHaveTextContent(key);
+    // ★No totals / subtotals: FastSpring's popup shows the localized amount; ours would disagree with it.
+    expect(order.textContent).not.toMatch(/total|合計|小計/i);
+    expect(screen.getByTestId("eula-modal-body")).not.toContainElement(order);
+  });
+
+  it("while the checkout script loads, the button says so and waits", async () => {
+    loadCheckoutScript.mockImplementationOnce(() => new Promise(() => {}));
+    await renderButton();
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+    expect(screen.getByRole("button", { name: "checkoutLoading" })).toBeDisabled();
   });
 
   it.each(["close button", "Escape", "backdrop"])("%s closes it without opening checkout", async (how) => {
