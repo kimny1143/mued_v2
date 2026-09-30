@@ -924,7 +924,7 @@ Hoo MCP経由の自動送信
     const isJa = data.locale === 'ja';
     const subject = isJa ? 'MUEDsp masterchain デモのダウンロード' : 'Your MUEDsp masterchain demo download';
     const intro = isJa ? "MUEDsp masterchain のデモをお試しいただき、ありがとうございます。" : "Thanks for trying the MUEDsp masterchain demo.";
-    const limits = isJa ? "キーを入れなくても、デモとして期限なく使えます。デモの間は 45 秒ごとにエフェクトが一瞬抜け、開くたびに設定が既定に戻り、プリセットは保存できません。ライセンスキーを入れると、これらの制限はなくなります。" : "Without a key, masterchain runs as a demo with no time limit. In the demo the effect fades out every 45 seconds, settings return to their defaults each time you open it, and presets can't be saved. Entering a license key removes these limits.";
+    const limits = isJa ? "キーを入れなくても、デモとして期限なく使えます。デモでは、挿してから、音を 45 秒ぶん処理するまではすべて効き、その後はプラグインを挿し直すまで原音のまま通ります。設定は保存されず、プリセットも保存できません。ライセンスキーを入れると、これらの制限はなくなります。" : "Without a key, masterchain runs as a demo with no time limit. In the demo it processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved and presets can't be saved. Entering a license key removes these limits.";
     const label = isJa ? 'デモをダウンロード' : 'Download the demo';
     const formats = 'VST3 · AU · AAX (Pro Tools) · macOS';
     return {

@@ -1177,7 +1177,7 @@
         },
         "q10": {
           "question": "Can I try it before I buy?",
-          "answer": "Yes. Without a key, masterchain runs as a demo with no time limit. In the demo the effect fades out every 45 seconds, settings return to their defaults each time you open it, and presets can't be saved. Entering a license key removes these limits."
+          "answer": "Yes. Without a key, masterchain runs as a demo with no time limit. In the demo it processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved and presets can't be saved. Entering a license key removes these limits."
         }
     },
     "company": {
@@ -2553,7 +2553,7 @@
           "desc": "The whole plugin on/off."
         }
       },
-      "demoNote": "Before you buy, masterchain runs as a demo with no time limit: the effect fades out every 45 seconds and settings aren't saved."
+      "demoNote": "Before you buy, masterchain runs as a demo with no time limit: it processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved."
     },
     "demo": {
       "emailLabel": "Email",
