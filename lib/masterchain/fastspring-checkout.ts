@@ -155,6 +155,82 @@ export function handlePopupClosed(orderReference: unknown): boolean {
   return completed;
 }
 
+/**
+ * ★The price in the buyer's own currency, tax included, from FastSpring itself (kimny 10/1: 「ドルだけしかも税
+ * 計算なしだと違和感がすごい」). The builder script calls the function named in `data-data-callback` with the
+ * session's order data after every change. Measured against the live store (2026-10-01, product in the cart):
+ *   JP → total "¥12,364", tax "¥1,124", taxRate "10%", taxType "JCT", taxPriceType "included"
+ *   DE → "€74.90" incl. VAT 19% / GB → "£64.78" incl. VAT 20%
+ *   US → "$69.00", taxPriceType "added", tax "$0.00" (sales tax needs the address, on the next screen)
+ * ★With an empty cart every total is "¥0" — the product has to be in the session first (requestQuote).
+ * ★This is the same session the popup opens on, so the figure cannot disagree with the next screen —
+ * which was the reason the modal used to show only "$69".
+ */
+export type CheckoutQuote = {
+  /** Formatted, in the session's currency — what the popup shows as the total ("¥12,364", "$69.00"). */
+  total: string;
+  currency: string;
+  /** "included": the total already has the tax in it (JP, EU, UK…). "added": tax comes on top (US). */
+  taxPriceType: "included" | "added";
+  tax: string;
+  taxRate: string;
+  taxType: string;
+};
+
+export const DATA_CALLBACK = "__muedspFsData";
+export const QUOTE_EVENT = "muedsp:fastspring-quote";
+let lastQuote: CheckoutQuote | null = null;
+
+/**
+ * Pure: FastSpring session data → the quote for masterchain, or null. ★Null unless the cart holds exactly
+ * masterchain × 1 and nothing else: the order-level total would otherwise not be masterchain's price.
+ */
+export function readQuote(data: unknown, productPath: string = PRODUCT_PATH): CheckoutQuote | null {
+  if (!data || typeof data !== "object" || !productPath) return null;
+  const d = data as Record<string, unknown>;
+  const items = (Array.isArray(d.groups) ? d.groups : []).flatMap((g) =>
+    g && typeof g === "object" && Array.isArray((g as Record<string, unknown>).items) ? ((g as Record<string, unknown>).items as unknown[]) : [],
+  ) as Record<string, unknown>[];
+  const inCart = items.filter((i) => i && i.selected === true);
+  if (inCart.length !== 1 || inCart[0].path !== productPath || inCart[0].quantity !== 1) return null;
+  const str = (k: string) => (typeof d[k] === "string" ? (d[k] as string) : "");
+  const total = str("totalWithTax");
+  const type = str("taxPriceType");
+  if (!total || typeof d.totalWithTaxValue !== "number" || d.totalWithTaxValue <= 0) return null;
+  if (type !== "included" && type !== "added") return null;
+  return { total, currency: str("currency"), taxPriceType: type, tax: str("tax"), taxRate: str("taxRate"), taxType: str("taxType") };
+}
+
+export function handleSessionData(data: unknown): CheckoutQuote | null {
+  const quote = readQuote(data);
+  if (quote) {
+    lastQuote = quote;
+    if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(QUOTE_EVENT, { detail: quote }));
+  }
+  return quote;
+}
+
+/** The latest quote this page has seen (a modal opened a second time shows it at once). */
+export function currentQuote(): CheckoutQuote | null {
+  return lastQuote;
+}
+
+/**
+ * Put masterchain × 1 in the session so FastSpring prices it (the answer arrives through DATA_CALLBACK).
+ * ★Session only — nothing is charged and no popup opens; openCheckout pushes the same line again.
+ */
+export function requestQuote(): boolean {
+  if (!MASTERCHAIN_CHECKOUT_ENABLED || typeof window === "undefined") return false;
+  const b = builder();
+  if (!b) return false;
+  try {
+    b.push({ products: [{ path: PRODUCT_PATH, quantity: 1 }] });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function builder(): FastSpringBuilder | undefined {
   const fs = (window as unknown as { fastspring?: { builder?: FastSpringBuilder } }).fastspring;
   return fs?.builder;
@@ -199,6 +275,8 @@ export function loadCheckoutScript(): Promise<boolean> {
       // The callback must exist (and be named on the tag) before the builder script reads its attributes.
       (window as unknown as Record<string, unknown>)[POPUP_CLOSED_CALLBACK] = handlePopupClosed;
       el.setAttribute("data-popup-closed", POPUP_CLOSED_CALLBACK);
+      (window as unknown as Record<string, unknown>)[DATA_CALLBACK] = handleSessionData;
+      el.setAttribute("data-data-callback", DATA_CALLBACK);
       el.id = SCRIPT_ID;
       el.src = BUILDER_SRC;
       el.async = true;

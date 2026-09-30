@@ -83,6 +83,9 @@ describe("★env unset — the page must behave exactly as it did before this fe
     // ★The popup-closed callback is named on the tag and exists before the builder reads it.
     expect(el?.getAttribute("data-popup-closed")).toBe("__muedspFsPopupClosed");
     expect(typeof (window as unknown as Record<string, unknown>).__muedspFsPopupClosed).toBe("function");
+    // ★The session-data callback too — it is how the modal gets the price in the buyer's currency.
+    expect(el?.getAttribute("data-data-callback")).toBe("__muedspFsData");
+    expect(typeof (window as unknown as Record<string, unknown>).__muedspFsData).toBe("function");
   });
 });
 
@@ -189,5 +192,55 @@ describe("popup closed → completed order only (conductor 2026-10-01)", () => {
     expect(handlePopupClosed({ id: "ORD-1", reference: "GLASSWERKSJP261001-1" })).toBe(true);
     expect(seen).toHaveBeenCalledTimes(1);
     window.removeEventListener(ORDER_COMPLETED_EVENT, seen);
+  });
+});
+
+/** Session data as the live store returned it (2026-10-01, abridged to the fields read). */
+function session(over: Record<string, unknown>, items: Record<string, unknown>[] = [{ path: "muedsp-masterchain", selected: true, quantity: 1 }]) {
+  return { groups: [{ items }], ...over };
+}
+const JP = { country: "JP", currency: "JPY", total: "¥12,364", totalWithTax: "¥12,364", totalWithTaxValue: 12364, tax: "¥1,124", taxRate: "10%", taxType: "JCT", taxPriceType: "included" };
+const US = { country: "US", currency: "USD", total: "$69.00", totalWithTax: "$69.00", totalWithTaxValue: 69, tax: "$0.00", taxRate: "0%", taxType: "US", taxPriceType: "added" };
+
+describe("★the price in the buyer's currency, from FastSpring's own session (kimny 10/1)", () => {
+  it("reads JP (tax included) and US (tax added) as the store returned them", async () => {
+    const { readQuote } = await load(CONFIGURED);
+    expect(readQuote(session(JP))).toEqual({ total: "¥12,364", currency: "JPY", taxPriceType: "included", tax: "¥1,124", taxRate: "10%", taxType: "JCT" });
+    expect(readQuote(session(US))).toMatchObject({ total: "$69.00", taxPriceType: "added" });
+  });
+
+  it("★no figure unless the cart is exactly masterchain × 1 — an empty cart totals ¥0 on the live store", async () => {
+    const { readQuote } = await load(CONFIGURED);
+    expect(readQuote(session({ ...JP, totalWithTax: "¥0", totalWithTaxValue: 0 }, []))).toBeNull(); // before requestQuote
+    expect(readQuote(session(JP, [{ path: "muedsp-masterchain", selected: false, quantity: 1 }]))).toBeNull();
+    expect(readQuote(session(JP, [{ path: "muedsp-masterchain", selected: true, quantity: 2 }]))).toBeNull();
+    expect(readQuote(session(JP, [{ path: "muedsp-masterchain", selected: true, quantity: 1 }, { path: "other", selected: true, quantity: 1 }]))).toBeNull();
+    expect(readQuote(session({ ...JP, taxPriceType: "unknown" }))).toBeNull();
+    expect(readQuote(null)).toBeNull();
+  });
+
+  it("handleSessionData announces a quote and remembers it; requestQuote puts masterchain × 1 in the session", async () => {
+    const m = await load(CONFIGURED);
+    const seen = vi.fn();
+    window.addEventListener(m.QUOTE_EVENT, seen);
+    expect(m.currentQuote()).toBeNull();
+    m.handleSessionData(session({ ...JP, totalWithTaxValue: 0 }, [])); // empty cart: nothing announced
+    expect(seen).not.toHaveBeenCalled();
+    m.handleSessionData(session(JP));
+    expect(seen).toHaveBeenCalledTimes(1);
+    expect(m.currentQuote()?.total).toBe("¥12,364");
+    window.removeEventListener(m.QUOTE_EVENT, seen);
+
+    const { pushed, checkout } = checkoutBuilder();
+    expect(m.requestQuote()).toBe(true);
+    expect(pushed).toEqual([{ products: [{ path: "muedsp-masterchain", quantity: 1 }] }]);
+    expect(checkout).not.toHaveBeenCalled(); // pricing only — no popup
+  });
+
+  it("requestQuote does nothing while checkout is not configured", async () => {
+    const m = await load({});
+    const { pushed } = checkoutBuilder();
+    expect(m.requestQuote()).toBe(false);
+    expect(pushed).toEqual([]);
   });
 });

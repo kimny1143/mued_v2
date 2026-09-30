@@ -6,8 +6,12 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   MASTERCHAIN_CHECKOUT_ENABLED,
   ORDER_COMPLETED_EVENT,
+  QUOTE_EVENT,
+  currentQuote,
   loadCheckoutScript,
   openCheckout,
+  requestQuote,
+  type CheckoutQuote,
 } from "@/lib/masterchain/fastspring-checkout";
 import { MASTERCHAIN_PURCHASE_LIVE, MASTERCHAIN_VERSION } from "@/lib/masterchain/config";
 import { EULA_VERSION } from "@/lib/legal/eula";
@@ -29,7 +33,8 @@ const PURCHASE_OPEN = MASTERCHAIN_PURCHASE_LIVE && EULA_CONSENT_LIVE;
  * opens a two-column modal (kimny 10/1 「やってみよう」): the order on the right — what you get, $69, the EULA
  * consent check and 「購入へ進む」 (pressable once checked) straight to the FastSpring popup, passing the EULA version as before (the tag contract in
  * fastspring-checkout.ts) — and the EULA (2026.10) on the left, scrolling in its own column. On a phone the
- * order is on top and the EULA below it. No totals: FastSpring's popup is where tax and currency are fixed.
+ * order is on top and the EULA below it. The price is FastSpring's own figure for the buyer's session — their
+ * currency, tax included where the country includes it (kimny 10/1) — so it matches the popup that follows.
  * Closing the modal (×, Esc, the backdrop) does nothing. After FastSpring reports a COMPLETED order, the
  * button becomes the thank-you + portal link.
  */
@@ -111,6 +116,63 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
 // The popup's own stack (FastSpring renders in system fonts), so the two screens read as one flow.
 const FASTSPRING_LIKE_FONT =
   '-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif';
+
+/** How long to wait for FastSpring's figure before falling back to "$69" + "confirmed on the next screen". */
+export const QUOTE_WAIT_MS = 5000;
+
+const JA_TAX_NAMES: Record<string, string> = { JCT: "消費税", VAT: "付加価値税（VAT）" };
+
+/**
+ * The price, as FastSpring will charge it (see CheckoutQuote in fastspring-checkout.ts). While the figure is on
+ * its way: a placeholder, not "$69" (a Japanese buyer would see $69 flip to ¥12,364). If it never comes (script
+ * blocked, store unreachable): "$69" and "tax and currency are confirmed on the next screen", as before.
+ */
+function OrderPrice({ checkoutReady }: { checkoutReady: boolean }) {
+  const tb = useTranslations("muedsp.buyTry");
+  const locale = useLocale();
+  const [quote, setQuote] = useState<CheckoutQuote | null>(() => currentQuote());
+  const [gaveUp, setGaveUp] = useState(false);
+
+  useEffect(() => {
+    const onQuote = (e: Event) => setQuote((e as CustomEvent<CheckoutQuote>).detail);
+    window.addEventListener(QUOTE_EVENT, onQuote);
+    if (checkoutReady) requestQuote();
+    const timer = window.setTimeout(() => setGaveUp(true), QUOTE_WAIT_MS);
+    return () => {
+      window.removeEventListener(QUOTE_EVENT, onQuote);
+      window.clearTimeout(timer);
+    };
+  }, [checkoutReady]);
+
+  if (quote) {
+    const taxName = locale === "ja" ? (JA_TAX_NAMES[quote.taxType] ?? quote.taxType) : quote.taxType;
+    return (
+      <div data-testid="order-price">
+        <p className="text-3xl font-semibold tabular-nums text-[#356eec]">{quote.total}</p>
+        <p className="mt-1 text-xs text-[#767676]">
+          {quote.taxPriceType === "included"
+            ? tb("orderTaxIncluded", { taxName, tax: quote.tax, rate: quote.taxRate })
+            : tb("orderTaxAdded")}
+        </p>
+      </div>
+    );
+  }
+  if (gaveUp) {
+    return (
+      <div data-testid="order-price">
+        <p className="text-3xl font-semibold tabular-nums text-[#356eec]">{tb("orderPrice")}</p>
+        <p className="mt-1 text-xs text-[#767676]">{tb("orderTaxNote")}</p>
+      </div>
+    );
+  }
+  return (
+    <div data-testid="order-price" aria-busy="true">
+      <span className="sr-only">{tb("orderPriceLoading")}</span>
+      <div aria-hidden className="h-9 w-32 animate-pulse rounded bg-[#eeeeee]" />
+      <div aria-hidden className="mt-2 h-3 w-44 animate-pulse rounded bg-[#f3f3f3]" />
+    </div>
+  );
+}
 
 function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; onAgree: () => void; checkoutReady: boolean }) {
   const t = useTranslations("eula");
@@ -203,10 +265,7 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
             </button>
           </div>
           <p className="-mt-2 text-sm text-[#767676]">{tb("orderFormats")}</p>
-          <div>
-            <p className="text-3xl font-semibold tabular-nums text-[#356eec]">{tb("orderPrice")}</p>
-            <p className="mt-1 text-xs text-[#767676]">{tb("orderTaxNote")}</p>
-          </div>
+          <OrderPrice checkoutReady={checkoutReady} />
           <p className="text-sm leading-relaxed text-[#444]">{tb("orderKeyNote")}</p>
           <div className="flex flex-col gap-3 md:mt-auto">
             {/* Where the EULA is depends on the layout: left on a wide screen, below on a phone. */}

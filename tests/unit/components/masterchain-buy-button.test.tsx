@@ -5,14 +5,15 @@
  * consent (kimny 10/1 「同意チェックありで」) and 「購入へ進む」 goes straight to the FastSpring popup. No totals.
  * ×, Esc and the backdrop close it.
  */
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { AnchorHTMLAttributes } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { loadCheckoutScript, openCheckout, m } = vi.hoisted(() => ({
+const { loadCheckoutScript, openCheckout, requestQuote, m } = vi.hoisted(() => ({
   loadCheckoutScript: vi.fn(() => Promise.resolve(true)),
   openCheckout: vi.fn(() => true),
-  m: { purchaseLive: true, locale: "en" },
+  requestQuote: vi.fn(() => true),
+  m: { purchaseLive: true, locale: "en", quote: null as Record<string, string> | null },
 }));
 
 vi.mock("@/lib/masterchain/config", () => ({ get MASTERCHAIN_PURCHASE_LIVE() { return m.purchaseLive; }, MASTERCHAIN_VERSION: "1.0.1" }));
@@ -31,9 +32,15 @@ vi.mock("next-intl", () => {
 vi.mock("@/lib/masterchain/fastspring-checkout", () => ({
   MASTERCHAIN_CHECKOUT_ENABLED: true,
   ORDER_COMPLETED_EVENT: "muedsp:fastspring-order-completed",
+  QUOTE_EVENT: "muedsp:fastspring-quote",
+  currentQuote: () => m.quote,
   loadCheckoutScript,
   openCheckout,
+  requestQuote,
 }));
+
+const JP_QUOTE = { total: "¥12,364", currency: "JPY", taxPriceType: "included", tax: "¥1,124", taxRate: "10%", taxType: "JCT" };
+const US_QUOTE = { total: "$69.00", currency: "USD", taxPriceType: "added", tax: "$0.00", taxRate: "0%", taxType: "US" };
 
 async function renderButton(eulaLive = true) {
   vi.stubEnv("NEXT_PUBLIC_EULA_LIVE", eulaLive ? "1" : "");
@@ -46,6 +53,7 @@ beforeEach(() => {
   vi.resetModules();
   m.purchaseLive = true;
   m.locale = "en";
+  m.quote = null;
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -112,17 +120,14 @@ describe("the EULA modal", () => {
     expect(screen.getByRole("checkbox")).not.toBeChecked();
   });
 
-  it("★the order panel says what you get — version from the installer, formats, $69, tax note, where the key is — and no total", async () => {
+  it("the order panel says what you get — version from the installer, formats, where the key is", async () => {
     await renderButton();
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
     const order = screen.getByTestId("order-panel");
     expect(screen.getByRole("dialog")).toHaveAccessibleName('orderProduct:{"version":"1.0.1"}');
-    for (const key of ["orderFormats", "orderPrice", "orderTaxNote", "orderKeyNote"]) expect(order).toHaveTextContent(key);
-    // ★No totals / subtotals: FastSpring's popup shows the localized amount; ours would disagree with it.
-    expect(order.textContent).not.toMatch(/total|合計|小計/i);
+    for (const key of ["orderFormats", "orderKeyNote"]) expect(order).toHaveTextContent(key);
     expect(screen.getByTestId("eula-modal-body")).not.toContainElement(order);
   });
-
   it("while the checkout script loads, the button says so and waits", async () => {
     loadCheckoutScript.mockImplementationOnce(() => new Promise(() => {}));
     await renderButton();
@@ -166,5 +171,68 @@ describe("the EULA modal", () => {
     await renderButton();
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "modalClose" }));
+  });
+});
+
+describe("★the price — FastSpring's own figure for this session (kimny 10/1: 「ドルだけしかも税計算なしだと違和感」)", () => {
+  const open = async () => {
+    await renderButton();
+    await waitFor(() => expect(loadCheckoutScript).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain $69" }));
+  };
+
+  it("asks FastSpring to price masterchain when the modal opens, and shows a placeholder — not $69 — meanwhile", async () => {
+    await open();
+    await waitFor(() => expect(requestQuote).toHaveBeenCalled());
+    const price = screen.getByTestId("order-price");
+    expect(price).toHaveAttribute("aria-busy", "true");
+    expect(price).toHaveTextContent("orderPriceLoading");
+    // The $69 fallback is not shown yet (exact match: "orderPrice" is a prefix of "orderPriceLoading").
+    expect(within(price).queryByText("orderPrice")).toBeNull();
+    expect(within(price).queryByText("orderTaxNote")).toBeNull();
+  });
+
+  it("★JP: the yen total with the consumption tax it includes (ja names it 消費税)", async () => {
+    m.locale = "ja";
+    await open();
+    act(() => void window.dispatchEvent(new CustomEvent("muedsp:fastspring-quote", { detail: JP_QUOTE })));
+    const price = screen.getByTestId("order-price");
+    expect(price).toHaveTextContent("¥12,364");
+    expect(price).toHaveTextContent('orderTaxIncluded:{"taxName":"消費税","tax":"¥1,124","rate":"10%"}');
+    expect(price).not.toHaveAttribute("aria-busy");
+  });
+
+  it("US: the dollar price, and that sales tax (if any) comes on the next screen from the address", async () => {
+    await open();
+    act(() => void window.dispatchEvent(new CustomEvent("muedsp:fastspring-quote", { detail: US_QUOTE })));
+    const price = screen.getByTestId("order-price");
+    expect(price).toHaveTextContent("$69.00");
+    expect(price).toHaveTextContent("orderTaxAdded");
+  });
+
+  it("a figure the page already has shows at once (the modal opened a second time)", async () => {
+    m.quote = JP_QUOTE;
+    await open();
+    expect(screen.getByTestId("order-price")).toHaveTextContent("¥12,364");
+  });
+
+  it("★no figure from FastSpring within the wait → $69 and 「税・通貨は次の画面で確定します」, as before", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      await open();
+      act(() => void vi.advanceTimersByTime(5000));
+      const price = screen.getByTestId("order-price");
+      expect(within(price).getByText("orderPrice")).toBeInTheDocument(); // exact — not "orderPriceLoading"
+      expect(within(price).getByText("orderTaxNote")).toBeInTheDocument();
+      expect(price).not.toHaveAttribute("aria-busy");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("★no total or subtotal wording of our own — the figure is FastSpring's", async () => {
+    await open();
+    act(() => void window.dispatchEvent(new CustomEvent("muedsp:fastspring-quote", { detail: JP_QUOTE })));
+    expect(screen.getByTestId("order-panel").textContent).not.toMatch(/total|合計|小計/i);
   });
 });
