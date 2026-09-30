@@ -140,7 +140,8 @@ export function MasterchainBuyTry({ buyLabel }: { buyLabel: string }) {
         </label>
       )}
 
-      <div className="flex flex-row gap-3">
+      {/* One row from sm up; stacked on phones so the longer labels stay on one line (kimny 10/1 labels). */}
+      <div className="flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
           disabled={!canPurchase}

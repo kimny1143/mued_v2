@@ -22,7 +22,7 @@ it("★an open Buy button never says \"Coming soon\" — the label and price not
     const mc = m.muedsp.masterchain;
     expect(mc.buyLabelLive).toBeTruthy();
     expect(mc.buyLabelLive).not.toBe(mc.buyLabel);
-    expect(mc.buyLabelLive).toBe("BUY $69"); // kimny 10/1: the same letters in ja and en
+    expect(mc.buyLabelLive).toMatch(/masterchain.*\$69/); // kimny 10/1: "masterchain を購入 $69" / "Buy masterchain $69"
   }
 });
 
@@ -33,4 +33,11 @@ it("★the plugin's button names are quoted exactly — 'Load license file…' w
     expect(src, f).toContain("Load license file…");
     expect(src, f).toContain("Paste license from clipboard");
   }
+});
+
+it("★ja and en have their own button words (kimny 10/1: 「JP ENの区別もちゃんとつけよう」)", () => {
+  expect(ja.muedsp.masterchain.buyLabelLive).toBe("masterchain を購入 $69");
+  expect(en.muedsp.masterchain.buyLabelLive).toBe("Buy masterchain $69");
+  expect(ja.muedsp.buyTry.try).toBe("masterchain を試す");
+  expect(en.muedsp.buyTry.try).toBe("Try masterchain");
 });

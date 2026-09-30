@@ -2520,7 +2520,7 @@
       "body": "I've bundled the chain I always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details.",
       "priceNote": "One-time $69. Available at launch.",
       "buyLabel": "Coming soon",
-      "buyLabelLive": "BUY $69",
+      "buyLabelLive": "Buy masterchain $69",
       "eulaConsentPrefix": "I have read and agree to the",
       "eulaLabel": "EULA",
       "mockLabel": "The masterchain 1.0.1 screen (demo).",
@@ -2551,10 +2551,10 @@
     "buyTry": {
       "eulaConsentPrefix": "I have read and agree to the",
       "eulaLabel": "EULA",
-      "try": "TRY",
-      "emailLabel": "Email (for TRY)",
+      "try": "Try masterchain",
+      "emailLabel": "Email (to try it)",
       "emailPlaceholder": "you@example.com",
-      "demoNote": "The demo has no time limit. Each insert runs for the first 45 seconds. Settings aren't saved. TRY starts the download and sends one receipt email.",
+      "demoNote": "The demo has no time limit. Each insert runs for the first 45 seconds. Settings aren't saved. \"Try masterchain\" starts the download and sends one receipt email.",
       "signInNote": "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
       "thanks": "Thank you for your purchase. We've sent instructions to the email you used at checkout. You can also get the download and your license key in your portal (mued.jp/dashboard/plugins).",
       "thanksPortal": "Open your portal"

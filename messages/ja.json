@@ -2520,7 +2520,7 @@
       "body": "僕がいつもマスタリングで使ってるチェーンを、1つのプラグインにまとめました。コンプ、EQ、リミッター。細かい調整に潜り込まなくても曲を仕上げられるように、ノブは少なく。",
       "priceNote": "買い切り $69。発売と同時にご案内します。",
       "buyLabel": "近日発売",
-      "buyLabelLive": "BUY $69",
+      "buyLabelLive": "masterchain を購入 $69",
       "eulaConsentPrefix": "EULA を読み、内容に同意します:",
       "eulaLabel": "使用許諾契約",
       "mockLabel": "masterchain 1.0.1 の画面（デモ）",
@@ -2551,10 +2551,10 @@
     "buyTry": {
       "eulaConsentPrefix": "EULA を読み、内容に同意します:",
       "eulaLabel": "使用許諾契約",
-      "try": "TRY",
-      "emailLabel": "メールアドレス（TRY 用）",
+      "try": "masterchain を試す",
+      "emailLabel": "メールアドレス（試す時に使います）",
       "emailPlaceholder": "you@example.com",
-      "demoNote": "デモは期限なし。挿すたびに最初の 45 秒だけ効きます。設定は保存されません。TRY でダウンロードが始まり、控えのメールを 1 通お送りします。",
+      "demoNote": "デモは期限なし。挿すたびに最初の 45 秒だけ効きます。設定は保存されません。「masterchain を試す」でダウンロードが始まり、控えのメールを 1 通お送りします。",
       "signInNote": "購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。",
       "thanks": "購入ありがとうございます。購入時のメールアドレスに案内をお送りしました。ダウンロードと鍵は、ポータル（mued.jp/dashboard/plugins）でも受け取れます。",
       "thanksPortal": "ポータルを開く"
