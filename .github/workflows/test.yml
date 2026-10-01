@@ -105,10 +105,13 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    # ★Self-hosted when the repo variable CI_RUNNER_LINUX is set (colima-mued-v2 — ARC on Colima k3s,
-    #   conductor 2026-10-01), else GitHub's ubuntu-latest. No repo secrets here: Build's env is mock values,
-    #   and the token is the per-run GITHUB_TOKEN (contents/pull-requests: read). Clear the variable to go back.
-    runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-latest' }}
+    # ★Self-hosted only: ARC runner scale set colima-mued-v2 on Colima k3s (conductor 2026-10-01). ★Literal on
+    #   purpose — no `vars.X || 'ubuntu-latest'` fallback (kimny: 「フォールバック気にして置いておくと、そのうち
+    #   うっかり走り出しちゃうんじゃないか？」): a fallback silently runs on GitHub, and bills, the moment a
+    #   variable is missing. While the Mac is off, these jobs wait (queued) — they do not move elsewhere. To go
+    #   back to GitHub, change these three lines to ubuntu-latest in a PR. No repo secrets here: Build's env is
+    #   mock values, and the token is the per-run GITHUB_TOKEN (contents/pull-requests: read).
+    runs-on: colima-mued-v2
     steps:
       # ★Isolation check, self-hosted only (conductor/CCO 2026-10-01). The runner pod must not reach the Mac,
       #   the LAN gateway, the kubelet or the k8s API. Any of the four answering = isolation broken → fail.
@@ -227,10 +230,13 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    # ★Self-hosted when the repo variable CI_RUNNER_LINUX is set (colima-mued-v2 — ARC on Colima k3s,
-    #   conductor 2026-10-01), else GitHub's ubuntu-latest. No repo secrets here: Build's env is mock values,
-    #   and the token is the per-run GITHUB_TOKEN (contents/pull-requests: read). Clear the variable to go back.
-    runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-latest' }}
+    # ★Self-hosted only: ARC runner scale set colima-mued-v2 on Colima k3s (conductor 2026-10-01). ★Literal on
+    #   purpose — no `vars.X || 'ubuntu-latest'` fallback (kimny: 「フォールバック気にして置いておくと、そのうち
+    #   うっかり走り出しちゃうんじゃないか？」): a fallback silently runs on GitHub, and bills, the moment a
+    #   variable is missing. While the Mac is off, these jobs wait (queued) — they do not move elsewhere. To go
+    #   back to GitHub, change these three lines to ubuntu-latest in a PR. No repo secrets here: Build's env is
+    #   mock values, and the token is the per-run GITHUB_TOKEN (contents/pull-requests: read).
+    runs-on: colima-mued-v2
     steps:
       # ★Isolation check, self-hosted only (conductor/CCO 2026-10-01). The runner pod must not reach the Mac,
       #   the LAN gateway, the kubelet or the k8s API. Any of the four answering = isolation broken → fail.
@@ -328,10 +334,13 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    # ★Self-hosted when the repo variable CI_RUNNER_LINUX is set (colima-mued-v2 — ARC on Colima k3s,
-    #   conductor 2026-10-01), else GitHub's ubuntu-latest. No repo secrets here: Build's env is mock values,
-    #   and the token is the per-run GITHUB_TOKEN (contents/pull-requests: read). Clear the variable to go back.
-    runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-latest' }}
+    # ★Self-hosted only: ARC runner scale set colima-mued-v2 on Colima k3s (conductor 2026-10-01). ★Literal on
+    #   purpose — no `vars.X || 'ubuntu-latest'` fallback (kimny: 「フォールバック気にして置いておくと、そのうち
+    #   うっかり走り出しちゃうんじゃないか？」): a fallback silently runs on GitHub, and bills, the moment a
+    #   variable is missing. While the Mac is off, these jobs wait (queued) — they do not move elsewhere. To go
+    #   back to GitHub, change these three lines to ubuntu-latest in a PR. No repo secrets here: Build's env is
+    #   mock values, and the token is the per-run GITHUB_TOKEN (contents/pull-requests: read).
+    runs-on: colima-mued-v2
     steps:
       # ★Isolation check, self-hosted only (conductor/CCO 2026-10-01). The runner pod must not reach the Mac,
       #   the LAN gateway, the kubelet or the k8s API. Any of the four answering = isolation broken → fail.
