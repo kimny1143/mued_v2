@@ -15,6 +15,9 @@ export default defineConfig({
     testTimeout: 10000,
     include: [
       'tests/unit/**/*.{test,spec}.{ts,tsx}',
+      // ★The component tests are pure UI (jsdom, mocks) — they run here, not under vitest.config.ts with
+      //   testcontainers (conductor 2026-10-01, CI review: ~26 s per CI run for 6 files).
+      'components/**/*.test.tsx',
     ],
     exclude: [
       'node_modules/**',

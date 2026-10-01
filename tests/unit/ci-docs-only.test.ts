@@ -68,30 +68,54 @@ describe("CI workflow keeps the REQUIRED jobs and guards every heavy step", () =
     ["validate", "Validate"],
     ["test", "Test"],
     ["build", "Build"],
-  ])("%s keeps its gate name, depends on `changes`, and every step is conditioned", (job, name) => {
+  ])("%s keeps its gate name, decides docs-only in its own first steps, and every heavy step is conditioned", (job, name) => {
     const b = block(job);
     expect(b).toContain(`    name: ${name}\n`);
-    expect(b).toMatch(/\n    needs: (changes|\[changes, validate\])\n/);
+    // ★No separate `changes` job (conductor 2026-10-01: a ~10 s job is billed a full minute on every run).
+    expect(b).not.toContain("needs.changes");
+    expect(b).not.toMatch(/\n    needs: .*changes/);
     // ★No job-level `if:` — a skipped REQUIRED job is void to the merge gate.
     expect(b).not.toMatch(/\n    if: /);
     const lines = b.split("\n");
     const stepStarts = lines.flatMap((l, i) => (/^      - (uses|name|run): /.test(l) ? [i] : []));
-    expect(stepStarts.length).toBeGreaterThan(1);
-    for (const i of stepStarts) {
-      expect(lines[i + 1], `step "${lines[i].trim()}" has a condition`).toMatch(/^        if: needs\.changes\.outputs\.code (==|!=) 'false'$/);
+    // The first two steps are the checkout and the detection itself; they always run.
+    expect(lines[stepStarts[0]]).toMatch(/^      - uses: actions\/checkout@v4$/);
+    expect(lines[stepStarts[1]]).toBe("      - name: Detect changes");
+    expect(lines[stepStarts[1] + 1]).toBe("        id: docs");
+    expect(stepStarts.length).toBeGreaterThan(3);
+    for (const i of stepStarts.slice(2)) {
+      expect(lines[i + 1], `step "${lines[i].trim()}" has a condition`).toMatch(/^        if: steps\.docs\.outputs\.code (==|!=) 'false'$/);
     }
     // ★Fail-CLOSED: exactly one no-op step runs only on an explicit 'false'; every heavy step runs
     //   unless the output is exactly 'false' — an empty output runs everything (CCO #1156).
-    expect(b.match(/if: needs\.changes\.outputs\.code == 'false'/g)).toHaveLength(1);
+    expect(b.match(/if: steps\.docs\.outputs\.code == 'false'/g)).toHaveLength(1);
     expect(b).not.toContain("code == 'true'");
-  });
-
-  it("the changes job treats schedule / workflow_dispatch as full runs and paginates the file list", () => {
-    const b = block("changes");
+    // The detection treats schedule / workflow_dispatch as full runs and paginates the file list.
     expect(b).toContain('if [ "$EVENT" != "pull_request" ]');
     expect(b).toContain("--paginate");
     expect(b).toContain(".previous_filename // empty");
     expect(b).toContain("scripts/ci/docs-only.mjs");
+    // It needs to read the PR's files.
+    expect(b).toMatch(/\n    permissions:\n      contents: read\n      pull-requests: read\n/);
+  });
+
+  it("the three jobs carry the same detection (same script, same input → the same answer)", () => {
+    const det = (job: string) => {
+      const b = block(job);
+      return b.slice(b.indexOf("      - name: Detect changes"), b.indexOf("      - name: Docs-only PR"));
+    };
+    expect(det("test")).toBe(det("validate"));
+    expect(det("build")).toBe(det("validate"));
+  });
+
+  it("there is no separate `changes` job any more", () => {
+    expect(wf).not.toMatch(/\n  changes:\n/);
+  });
+
+  it("★component tests run inside the unit tests (no testcontainers for 6 UI files)", () => {
+    expect(block("test")).not.toContain("npm run test:components");
+    const unit = readFileSync(join(process.cwd(), "vitest.config.unit.ts"), "utf8");
+    expect(unit).toContain("'components/**/*.test.tsx'");
   });
 
   it("codex-scope no longer runs on PR-body edits", () => {

@@ -1,10 +1,11 @@
 name: Daily RAG Metrics Calculation
 
-# Schedule: Every day at 02:00 JST (17:00 UTC previous day)
-# Also allows manual triggering via workflow_dispatch
+# ★Schedule removed (conductor 2026-10-01, CI review stage 0). Measured that day: nothing in app/,
+#   components/ or lib/ reads rag_metrics_history (the only reference is the INSERT in
+#   app/api/cron/rag-metrics/route.ts), and that Vercel cron (vercel.json) writes the same table
+#   every day already — so this workflow was a second writer with no reader (~60 billed min/month).
+#   Manual runs stay possible. To bring the schedule back, restore `schedule: - cron: '0 17 * * *'`.
 on:
-  schedule:
-    - cron: '0 17 * * *'  # 02:00 JST (UTC+9)
   workflow_dispatch:      # Manual trigger button in GitHub Actions UI
     inputs:
       date:

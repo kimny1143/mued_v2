@@ -81,7 +81,7 @@ concurrency:
 
 jobs:
   # ============================================
-  # 0. Changes: is this PR documentation only?
+  # Docs-only PRs (#1156): each job decides for itself, in its first steps
   # ============================================
   # ★Why (conductor 2026-09-28, after the Actions budget ran out): in 2026-09, 109 of 211 PRs changed
   #   only docs/ or root .md files and still ran all three jobs (~11 min, three `npm ci`).
@@ -89,24 +89,28 @@ jobs:
   #   (scripts/verify/pr-merge-gate.ts REQUIRED), and it treats a SKIPPED required check as void —
   #   so a docs-only PR could never merge. Instead the three jobs still RUN, under the same names,
   #   and only their heavy steps are skipped: a job whose steps are all skipped concludes `success`.
+  # ★No separate `changes` job any more (conductor 2026-10-01, CI review stage 0): a job is billed at
+  #   least one minute however short, and that job ran ~10 s on every run. The same check now runs as
+  #   a step inside each of the three jobs (same script, same input → the same answer in all three).
   # ★Fail-CLOSED: heavy steps run unless the output is exactly 'false' — an empty or missing output
   #   runs everything (CCO #1156).
   # ★The rule is by path (scripts/ci/docs-only.mjs, unit-tested), never by branch name.
   # ★schedule / workflow_dispatch are never docs-only: they test main as a whole.
-  changes:
-    name: Detect changes
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
+
+  # ============================================
+  # 1. Validate: typecheck + lint + security
+  # ============================================
+  validate:
+    name: Validate
     permissions:
       contents: read
       pull-requests: read
-    outputs:
-      code: ${{ steps.detect.outputs.code }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          sparse-checkout: scripts/ci
-      - id: detect
+
+      - name: Detect changes
+        id: docs
         env:
           GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
@@ -122,35 +126,24 @@ jobs:
           # ★--paginate: the files endpoint returns at most 100 per page.
           # ★Both sides of a rename: moving lib/x.ts into docs/ deletes code, and only previous_filename
           #   says so (CCO #1156).
-          gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)' > files.txt
-          node scripts/ci/docs-only.mjs < files.txt >> "$GITHUB_OUTPUT"
+          gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)' > "$RUNNER_TEMP/files.txt"
+          node scripts/ci/docs-only.mjs < "$RUNNER_TEMP/files.txt" >> "$GITHUB_OUTPUT"
 
-  # ============================================
-  # 1. Validate: typecheck + lint + security
-  # ============================================
-  validate:
-    name: Validate
-    needs: changes
-    runs-on: ubuntu-latest
-    steps:
       - name: Docs-only PR — heavy steps skipped
-        if: needs.changes.outputs.code == 'false'
+        if: steps.docs.outputs.code == 'false'
         run: echo "Only docs/ or root .md changed (scripts/ci/docs-only.mjs). Validate/Test/Build steps skipped; this job reports success."
 
-      - uses: actions/checkout@v4
-        if: needs.changes.outputs.code != 'false'
-
       - uses: actions/setup-node@v4
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - run: npm ci --prefer-offline --no-audit
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
 
       - name: TypeScript check
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
         run: npx tsc --noEmit
 
       # scripts/ is excluded wholesale from tsconfig.json, so the step above never sees it. On
@@ -160,7 +153,7 @@ jobs:
       # ★It plants a known type error first and asserts tsc catches it — exit 2 means the check
       # itself could not be trusted, which is NOT the same as "no errors found".
       - name: TypeScript check (scripts/)
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
         run: npx tsx scripts/verify/typecheck-scripts.ts
 
       # .gitignore hides `.claude/skills/*` behind a short allowlist, so a skill that is neither a
@@ -169,15 +162,15 @@ jobs:
       # requires every real skill dir to be tracked here or named in .claude/skills/DISTRIBUTED.txt.
       # ★A new distribution turns this red until the skill is classified. That is intended.
       - name: Skill durability (.claude/skills)
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
         run: npx tsx scripts/verify/skill-durability.ts
 
       - name: ESLint
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
         run: npm run lint
 
       - name: Security audit (production deps)
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
         # Not a plain `npm audit`: that exits 1 both when vulnerabilities are found AND when the
         # audit API is unreachable, so a registry outage is indistinguishable from a security finding
         # (npm's API failed on both endpoints 2026-07-26 and blocked every PR in this repo).
@@ -191,69 +184,111 @@ jobs:
   # ============================================
   test:
     name: Test
-    needs: [changes, validate]
+    needs: validate
+    permissions:
+      contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
     steps:
-      - name: Docs-only PR — heavy steps skipped
-        if: needs.changes.outputs.code == 'false'
-        run: echo "Only docs/ or root .md changed (scripts/ci/docs-only.mjs). Validate/Test/Build steps skipped; this job reports success."
-
       # ★fetch-depth: 0 —— plugin-download-retention.test.ts が母集団を git 履歴から導く
       #   （`*_DOWNLOAD_URL` が過去に持った全ての値）。★既定の shallow (depth=1) では
       #   その履歴が存在しないので、★配布物が全件そろっていても必ず RED になる。
       # ★この job だけ。validate / build は履歴を読まないので shallow のまま。
       - uses: actions/checkout@v4
-        if: needs.changes.outputs.code != 'false'
         with:
           fetch-depth: 0
 
+      - name: Detect changes
+        id: docs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "event=$EVENT — full pipeline"
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # ★--paginate: the files endpoint returns at most 100 per page.
+          # ★Both sides of a rename: moving lib/x.ts into docs/ deletes code, and only previous_filename
+          #   says so (CCO #1156).
+          gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)' > "$RUNNER_TEMP/files.txt"
+          node scripts/ci/docs-only.mjs < "$RUNNER_TEMP/files.txt" >> "$GITHUB_OUTPUT"
+
+      - name: Docs-only PR — heavy steps skipped
+        if: steps.docs.outputs.code == 'false'
+        run: echo "Only docs/ or root .md changed (scripts/ci/docs-only.mjs). Validate/Test/Build steps skipped; this job reports success."
+
       - uses: actions/setup-node@v4
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - run: npm ci --prefer-offline --no-audit
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
 
       - name: Unit tests
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
         run: npm run test:unit
         env:
           DATABASE_URL: "postgresql://test:test@localhost:5432/test"
 
-      - name: Component tests
-        if: needs.changes.outputs.code != 'false'
-        run: npm run test:components
-        env:
-          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+      # ★components/**/*.test.tsx run inside "Unit tests" (vitest.config.unit.ts include: jsdom, no Docker).
+      #   The separate step ran them under vitest.config.ts — the testcontainers config — for 6 files of
+      #   pure UI tests: ~26 s that pushed this job over 3 billed minutes (conductor 2026-10-01).
 
   # ============================================
   # 3. Build: Next.js build verification
   # ============================================
   build:
     name: Build
-    needs: [changes, validate]
+    needs: validate
+    permissions:
+      contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changes
+        id: docs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "event=$EVENT — full pipeline"
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # ★--paginate: the files endpoint returns at most 100 per page.
+          # ★Both sides of a rename: moving lib/x.ts into docs/ deletes code, and only previous_filename
+          #   says so (CCO #1156).
+          gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)' > "$RUNNER_TEMP/files.txt"
+          node scripts/ci/docs-only.mjs < "$RUNNER_TEMP/files.txt" >> "$GITHUB_OUTPUT"
+
       - name: Docs-only PR — heavy steps skipped
-        if: needs.changes.outputs.code == 'false'
+        if: steps.docs.outputs.code == 'false'
         run: echo "Only docs/ or root .md changed (scripts/ci/docs-only.mjs). Validate/Test/Build steps skipped; this job reports success."
 
-      - uses: actions/checkout@v4
-        if: needs.changes.outputs.code != 'false'
-
       - uses: actions/setup-node@v4
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - run: npm ci --prefer-offline --no-audit
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
 
       - name: Build
-        if: needs.changes.outputs.code != 'false'
+        if: steps.docs.outputs.code != 'false'
         run: npm run build
         env:
           DATABASE_URL: "postgresql://build:build@localhost:5432/build"
