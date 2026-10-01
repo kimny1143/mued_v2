@@ -390,7 +390,7 @@
     },
     "section6": {
       "title": "6. Cookies",
-      "description": "This site uses two kinds of cookies. (1) Essential cookies: used to remember your display language (NEXT_LOCALE) and to keep you signed in (Clerk cookies such as __session). They are required to provide the service and cannot be turned off. (2) Measurement cookies: used by Google Analytics 4 to measure site usage (_ga and cookies starting with _ga_). They are currently set for all visitors. To stop this measurement, see Section 9."
+      "description": "This site uses two kinds of cookies. (1) Essential cookies: used to remember your display language (NEXT_LOCALE) and to keep you signed in (Clerk cookies such as __session). They are required to provide the service and cannot be turned off. (2) Measurement cookies: used by Google Analytics 4 to measure site usage (_ga and cookies starting with _ga_). They are set only if you choose \"Accept\" in the notice at the bottom of the screen. If you choose \"Essential only\", or until you choose, Google Analytics is not loaded. You can change your choice at any time with the button below (your choice is stored in the \"mued_cookie_consent\" cookie, which is also an essential cookie)."
     },
     "section7": {
       "title": "7. Changes to This Policy",

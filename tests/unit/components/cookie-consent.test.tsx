@@ -171,3 +171,13 @@ describe("app/layout.tsx", () => {
     expect(layout).toContain("<CookieConsent");
   });
 });
+
+describe("privacy §6 matches the banner", () => {
+  it.each([
+    ["ja", ja.privacy.section6.description, "すべての訪問者に設定されます"],
+    ["en", en.privacy.section6.description, "currently set for all visitors"],
+  ])("%s: names the consent cookie and no longer says GA4 runs for everyone", (_l, text, stale) => {
+    expect(text).toContain(CONSENT_COOKIE);
+    expect(text).not.toContain(stale);
+  });
+});

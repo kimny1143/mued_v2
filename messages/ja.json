@@ -390,7 +390,7 @@
     },
     "section6": {
       "title": "6. Cookie",
-      "description": "本サイトでは、次の 2 種類の Cookie を使用しています。(1) 必須の Cookie: 表示言語の保持（NEXT_LOCALE）と、サインイン中の認証状態の維持（Clerk の __session など）に使います。サービスの提供に必要なため、無効にはできません。(2) 計測の Cookie: Google Analytics 4 がアクセス状況の計測に使います（_ga、および _ga_ で始まるもの）。現在は、すべての訪問者に設定されます。計測を止める方法は第 9 項をご覧ください。"
+      "description": "本サイトでは、次の 2 種類の Cookie を使用しています。(1) 必須の Cookie: 表示言語の保持（NEXT_LOCALE）と、サインイン中の認証状態の維持（Clerk の __session など）に使います。サービスの提供に必要なため、無効にはできません。(2) 計測の Cookie: Google Analytics 4 がアクセス状況の計測に使います（_ga、および _ga_ で始まるもの）。画面の下の表示で「同意する」を選んだ方にだけ設定します。「必須のみ」を選んだ場合や、まだ選んでいない間は、Google Analytics を読み込みません。選択は、下のボタンからいつでも変えられます（選択は Cookie「mued_cookie_consent」に保存します。これも必須の Cookie です）。"
     },
     "section7": {
       "title": "7. ポリシーの変更",
