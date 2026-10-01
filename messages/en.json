@@ -407,7 +407,7 @@
       "description": "This site uses Google Analytics 4 (GA4) to measure site usage. Anonymized access logs collected by GA4 (user identifiers, partial IP addresses, browser information, page visit history, and event data) are transferred to and stored in Google Cloud BigQuery. No directly personally identifiable information such as names or email addresses is included.",
       "retention": "Data is retained for a maximum of 2 months and is automatically deleted thereafter.",
       "purpose": "Purpose of use: Service improvement, marketing effectiveness measurement, A/B test analysis, UX improvement",
-      "optout": "You can opt out of data collection at any time via your Google Account settings (https://myaccount.google.com/activitycontrols) or by using the Google Analytics Opt-out Browser Add-on."
+      "optout": "We measure only visitors who chose \"Accept\" in the notice described in Section 6. To stop, choose \"Essential only\" with the button in Section 6. You can also opt out of data collection at any time via your Google Account settings (https://myaccount.google.com/activitycontrols) or by using the Google Analytics Opt-out Browser Add-on."
     },
     "section10": {
       "title": "About MUED advisory (consulting & build service)",

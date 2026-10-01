@@ -56,6 +56,16 @@ export function CookieConsent({ gaMeasurementId, copy }: Props) {
         for (const expiry of expireCookieStrings(name, window.location.hostname)) document.cookie = expiry;
       }
     }
+    if (next === "all" && gaMeasurementId) {
+      // Back from "essential" on a page where gtag.js already ran ("all" → "essential" → "all"):
+      // the init <Script> won't run again (next/script dedupes by id), so lift the disable flag and
+      // re-send the config ourselves. On a page where gtag.js never loaded, rendering <Script> does it.
+      const w = window as unknown as Record<string, unknown> & { gtag?: (...args: unknown[]) => void };
+      if (w[`ga-disable-${gaMeasurementId}`] === true) {
+        w[`ga-disable-${gaMeasurementId}`] = false;
+        if (typeof w.gtag === "function") w.gtag("config", gaMeasurementId);
+      }
+    }
     setConsent(next);
     setReopened(false);
   };

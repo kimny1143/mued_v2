@@ -407,7 +407,7 @@
       "description": "当サイトは Google Analytics 4（GA4）を使用してアクセス状況を計測しています。GA4 で収集した匿名化されたアクセスログ（利用者識別子、IPアドレスの一部、ブラウザ情報、訪問ページ履歴、イベント情報）は、Google Cloud BigQuery に転送・蓄積されます。氏名・メールアドレス等の個人を直接特定する情報は含まれません。",
       "retention": "データの保存期間は最大2ヶ月で、その後自動的に削除されます。",
       "purpose": "利用目的：サービス改善、マーケティング効果測定、A/B テスト分析、UX 改善",
-      "optout": "データ収集のオプトアウトは、Google アカウント設定（https://myaccount.google.com/activitycontrols）またはブラウザの Google Analytics オプトアウト拡張機能からいつでも行えます。"
+      "optout": "計測は、第 6 項の表示で「同意する」を選んだ方にだけ行います。止めるには、第 6 項のボタンから「必須のみ」を選んでください。このほか、データ収集のオプトアウトは、Google アカウント設定（https://myaccount.google.com/activitycontrols）またはブラウザの Google Analytics オプトアウト拡張機能からいつでも行えます。"
     },
     "section10": {
       "title": "MUED advisory（相談・構築サービス）について",

@@ -147,6 +147,28 @@ describe("<CookieConsent>", () => {
     expect(gtagScripts()).toHaveLength(0);
   });
 
+  it("all → essential → all on the same page lifts ga-disable and re-sends the config", () => {
+    document.cookie = `${CONSENT_COOKIE}=all; Path=/`;
+    const gtag = vi.fn();
+    const w = window as unknown as Record<string, unknown>;
+    w.gtag = gtag;
+    render(
+      <>
+        <CookieConsent gaMeasurementId={GA} copy={copy} />
+        <CookieSettingsButton label={ja.cookieConsent.settingsButton} />
+      </>,
+    );
+    fireEvent.click(screen.getByTestId("cookie-settings-button"));
+    fireEvent.click(screen.getByText(ja.cookieConsent.essentialOnly));
+    expect(w[`ga-disable-${GA}`]).toBe(true);
+    fireEvent.click(screen.getByTestId("cookie-settings-button"));
+    fireEvent.click(screen.getByText(ja.cookieConsent.accept));
+    expect(w[`ga-disable-${GA}`]).toBe(false);
+    expect(gtag).toHaveBeenCalledWith("config", GA);
+    delete w.gtag;
+    delete w[`ga-disable-${GA}`];
+  });
+
   it("the reopen event is the one the button sends", () => {
     render(<CookieConsent gaMeasurementId={GA} copy={copy} />);
     fireEvent.click(screen.getByText(ja.cookieConsent.accept));
@@ -179,5 +201,13 @@ describe("privacy §6 matches the banner", () => {
   ])("%s: names the consent cookie and no longer says GA4 runs for everyone", (_l, text, stale) => {
     expect(text).toContain(CONSENT_COOKIE);
     expect(text).not.toContain(stale);
+  });
+
+  it.each([
+    ["ja", ja.privacy.section9.optout, ja.cookieConsent.accept, ja.cookieConsent.essentialOnly],
+    ["en", en.privacy.section9.optout, en.cookieConsent.accept, en.cookieConsent.essentialOnly],
+  ])("%s: §9 says only consenting visitors are measured and how to stop, in the banner's own words", (_l, text, accept, essential) => {
+    expect(text).toContain(accept);
+    expect(text).toContain(essential);
   });
 });
