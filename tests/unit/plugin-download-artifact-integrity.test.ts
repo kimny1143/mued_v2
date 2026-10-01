@@ -75,7 +75,15 @@ const ARTIFACTS = [
   {
     name: "MUEDsat",
     url: MUEDSAT_DOWNLOAD_URL,
-    // 1.0.0, EULA 2026.10 rebuild (/downloads/eula-2026.10/). The first 1.0.0 is pinned as a shelf entry below.
+    // 1.0.1 (2026-10-01, /downloads/): matched dsp's relay + cmp to dsp's plugin/dist/. The 1.0.0 builds are
+    //   pinned as shelf entries below.
+    sha256: "39596b0a813a3ded383f900e29f682d32810ec76af9121c65cbc76c848f6a066",
+    bytes: 3_425_562,
+  },
+  // ★Shelf: MUEDsat 1.0.0, EULA 2026.10 rebuild — the download until 2026-10-01; mail sent in that window points here.
+  {
+    name: "MUEDsat 1.0.0 (eula-2026.10, shelf)",
+    url: "https://mued.jp/downloads/eula-2026.10/MUEDsat-1.0.0-installer.pkg",
     sha256: "9871b6071ddb7b522162000bcd28d1b6993c5ccfcb88a04744c1d0d27b8b4dc8",
     bytes: 3_417_085,
   },
