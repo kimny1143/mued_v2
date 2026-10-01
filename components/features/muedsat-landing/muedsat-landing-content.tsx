@@ -30,8 +30,8 @@ function SignupForm() {
   );
 }
 
-const FACEPLATE_HOT = "/muedsat/faceplate-hot.webp";
-const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
+const FACEPLATE_HOT = "/muedsat/faceplate-1.0.1-drive85.webp";
+const FACEPLATE_IDLE = "/muedsat/faceplate-1.0.1-drive30.webp";
 
 // Four knobs; Bypass is a header toggle, described in bypassNote (kimny 現物: the page must match the
 // knob count you can see).

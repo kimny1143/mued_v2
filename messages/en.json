@@ -2865,10 +2865,10 @@
     "visuals": {
       "idleLabel": "Idle (dry)",
       "hotLabel": "Driven (saturating)",
-      "faceplateAlt": "The MUEDsat 1.0.0 plugin interface, with audio running and DRIVE turned up: a large DRIVE knob glowing ember, and a black-glass window on the right showing the transfer curve and an estimated THD of 0.69 %. MIX, AIR and OUTPUT knobs below, and a mued.jp link at the bottom right.",
-      "compareAlt": "The same MUEDsat 1.0.0 interface side by side, both with audio running: DRIVE at 30 on the left (the default; a gently bent transfer curve, estimated THD 0.29 %) and DRIVE at 85 on the right (the curve bent harder, DRIVE glowing, estimated THD 0.69 %).",
+      "faceplateAlt": "The MUEDsat 1.0.1 plugin interface, with audio running and DRIVE turned up to 85: a large DRIVE knob glowing ember, and a black-glass window on the right showing the transfer curve and a measured THD of 1.66 %. A white dot marks the input peak on the curve and swings right as the music gets louder. MIX, AIR and OUTPUT knobs below, and a mued.jp link at the bottom right.",
+      "compareAlt": "The same MUEDsat 1.0.1 interface side by side, both with audio running: DRIVE at 30 on the left (the default; a gently bent transfer curve, THD 0.41 %) and DRIVE at 85 on the right (the curve bent harder, DRIVE glowing, THD 1.66 %). THD is measured, and a white dot marks the input peak on the curve.",
       "driveAlt": "Close-up of the DRIVE knob, an ember heat-ring lit around its base.",
-      "meterAlt": "Close-up of the transfer-curve meter: TRANSFER label, dashed unity reference, an ember saturation curve, and an estimated THD readout (calculated from the input level and DRIVE).",
+      "meterAlt": "Close-up of the transfer-curve meter: TRANSFER label, dashed unity reference, an ember saturation curve, a white dot marking the input peak, and a THD readout (the measured share of harmonics in the output).",
       "knobsAlt": "The three smaller knobs — MIX, AIR, and OUTPUT.",
       "signatureHeading": "The transfer curve"
     },

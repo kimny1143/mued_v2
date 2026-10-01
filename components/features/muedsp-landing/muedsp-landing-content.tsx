@@ -36,8 +36,8 @@ import {
   MASTERCHAIN_TRIAL_LIVE,
 } from "@/lib/masterchain/config";
 
-const FACEPLATE_HOT = "/muedsat/faceplate-hot.webp";
-const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
+const FACEPLATE_HOT = "/muedsat/faceplate-1.0.1-drive85.webp";
+const FACEPLATE_IDLE = "/muedsat/faceplate-1.0.1-drive30.webp";
 // MUEDlim faceplate — a REAL render of the shipping iPlug2 UI (a832976a LUFS-hero build), NOT a
 // mock (dsp-captured, dev version-string cropped out). One clean shot, 1000×700 (= MUEDsat parity).
 const FACEPLATE_MUEDLIM = "/muedlim/faceplate.webp";

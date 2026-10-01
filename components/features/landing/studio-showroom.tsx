@@ -11,7 +11,7 @@ const modules = [
   {
     name: "MUEDsat",
     slug: "muedsat",
-    image: "/muedsat/faceplate-idle.webp",
+    image: "/muedsat/faceplate-1.0.1-drive30.webp",
     width: 1000,
     height: 700,
     key: "sat",
