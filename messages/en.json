@@ -2637,6 +2637,7 @@
       "freeStatus": "A VST3 beta is coming within a few days. Like the Mac builds, you'll download it from your portal, which you get into by signing up with your email.",
       "masterchainLabel": "MUEDsp masterchain",
       "masterchainStatus": "Coming soon. The license key is shared with the Mac version.",
+      "masterchainStatusLive": "The Windows version (VST3) is available. The license key is the same as for the Mac version — buyers can download it from their portal. You can try the demo from the product page.",
       "bodyLive": "The Windows builds (VST3, beta) of the three free plugins are out.",
       "freeStatusLive": "The VST3 beta is out. Like the Mac builds, you download it from your portal, which you get into by signing up with your email.",
       "stepsTitle": "Installing on Windows",

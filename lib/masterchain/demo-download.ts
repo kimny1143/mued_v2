@@ -15,10 +15,13 @@ export interface DemoDownloadPlan {
 }
 
 /** The visitor's OS from what the browser reports. `platform` is navigator.userAgentData?.platform when present. */
-export function detectDemoOs(nav: { platform?: string | null; userAgent?: string | null }): DemoOs {
+export function detectDemoOs(nav: { platform?: string | null; userAgent?: string | null; maxTouchPoints?: number | null }): DemoOs {
   const p = `${nav.platform ?? ""} ${nav.userAgent ?? ""}`;
-  // iPhone/iPad report "Mac" in some modes, but cannot run a desktop plug-in either way — treat as unknown.
+  // iPhone/iPad cannot run a desktop plug-in — treat as unknown (both links, nothing started).
   if (/iPhone|iPad|iPod|Android/i.test(p)) return "unknown";
+  // ★iPadOS Safari asks for the desktop site and reports "Macintosh" (CCO #1200). A "Mac" with a touch screen is
+  //   an iPad — Macs report 0 touch points.
+  if (/mac/i.test(p) && (nav.maxTouchPoints ?? 0) > 1) return "unknown";
   if (/Windows|Win64|Win32/i.test(p)) return "windows";
   if (/mac/i.test(p)) return "mac";
   return "unknown";

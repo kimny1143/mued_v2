@@ -34,6 +34,7 @@ import {
   MASTERCHAIN_PURCHASE_LIVE,
   MASTERCHAIN_TRIAL_DAYS,
   MASTERCHAIN_TRIAL_LIVE,
+  MASTERCHAIN_WINDOWS_LIVE,
 } from "@/lib/masterchain/config";
 
 const FACEPLATE_HOT = "/muedsat/faceplate-1.0.1-drive85.webp";
@@ -465,7 +466,13 @@ export function MuedspLandingContent() {
                 <div key={key} className="grid gap-1 py-4 sm:grid-cols-[16rem_1fr] sm:gap-5">
                   <dt className="text-[15px] font-semibold text-white/85">{tw(`${key}Label`)}</dt>
                   <dd className="text-[15px] leading-relaxed text-white/70">
-                    {tw(key === "free" && WINDOWS_BETA_LIVE ? "freeStatusLive" : `${key}Status`)}
+                    {tw(
+                      key === "free" && WINDOWS_BETA_LIVE
+                        ? "freeStatusLive"
+                        : key === "masterchain" && MASTERCHAIN_WINDOWS_LIVE
+                          ? "masterchainStatusLive"
+                          : `${key}Status`,
+                    )}
                   </dd>
                 </div>
               ))}

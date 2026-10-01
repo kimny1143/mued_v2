@@ -98,6 +98,15 @@ describe("the Windows copy lives in the Windows blocks (the format-claims exempt
   });
 });
 
+describe("masterchain for Windows — the product page status", () => {
+  it("the masterchain row switches to masterchainStatusLive only with MASTERCHAIN_WINDOWS_LIVE", () => {
+    const c = src("components/features/muedsp-landing/muedsp-landing-content.tsx");
+    expect(c).toMatch(/key === "masterchain" && MASTERCHAIN_WINDOWS_LIVE\s*\?\s*"masterchainStatusLive"/);
+    for (const m of [ja, en]) expect(m.muedsp.windows.masterchainStatusLive).toMatch(/VST3/);
+    expect(ja.muedsp.windows.masterchainStatus).toBe("近日公開予定。ライセンスキーはMac版と共通です"); // kimny 9/30, unchanged while off
+  });
+});
+
 describe("masterchain for Windows — portal", () => {
   const row = { licenseKey: "MUEDSP-LICENSE-v2\nsig=x\n", createdAt: new Date("2026-10-02") };
   const win = { url: "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-win-x64.zip", version: "1.0.1" };
@@ -138,6 +147,10 @@ describe("masterchain for Windows — demo download", () => {
     expect(detectDemoOs({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)" })).toBe("unknown");
     expect(detectDemoOs({ userAgent: "Mozilla/5.0 (X11; Linux x86_64)" })).toBe("unknown");
     expect(detectDemoOs({})).toBe("unknown");
+    // ★iPadOS Safari reports "Macintosh" (CCO #1200): a Mac with touch points is an iPad → unknown.
+    const ipadUa = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
+    expect(detectDemoOs({ userAgent: ipadUa, maxTouchPoints: 5 })).toBe("unknown");
+    expect(detectDemoOs({ userAgent: ipadUa, maxTouchPoints: 0 })).toBe("mac"); // a real Mac
   });
 
   it("★without a Windows URL it is exactly the old behaviour: start the Mac download, offer nothing", () => {
@@ -159,6 +172,13 @@ describe("masterchain for Windows — demo download", () => {
       const on = emailTemplates.masterchainDemoDownload({ locale, windowsUrl: WIN });
       expect(on.html).toContain(`href="${WIN}"`);
       expect(on.text).toContain(WIN);
+      // ★With a Windows build both buttons name their OS and the format line is the Mac's (CCO #1200).
+      expect(on.text).toContain(locale === "ja" ? "Mac 版のデモをダウンロード" : "Download the demo for Mac");
+      expect(on.text).toContain(locale === "ja" ? "Windows 版のデモをダウンロード" : "Download the demo for Windows");
+      expect(on.text).toContain("Mac: VST3 · AU · AAX (Pro Tools) · macOS");
+      // Without one, the old wording exactly.
+      expect(off.text).toContain(locale === "ja" ? "デモをダウンロード: " : "Download the demo: ");
+      expect(off.text).not.toContain("Mac: ");
     }
   });
 });
