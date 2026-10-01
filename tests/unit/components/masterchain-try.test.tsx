@@ -97,3 +97,32 @@ describe("TRY — works only with a well-formed email", () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+describe("★which download starts — the visitor's OS (masterchain for Windows, 2026-10-01)", () => {
+  const MAC = "https://mued.jp/downloads/demo.pkg";
+  const WIN = "https://mued.jp/downloads/demo-win.zip";
+  async function tryWith(userAgent: string, maxTouchPoints = 0) {
+    vi.stubGlobal("navigator", { userAgent, maxTouchPoints });
+    m.fetch.mockResolvedValue({ ok: true, json: async () => ({ ok: true, downloadUrl: MAC, windowsDownloadUrl: WIN }) });
+    await renderBlock(true);
+    fireEvent.change(screen.getByLabelText("emailLabel"), { target: { value: "person@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "try" }));
+    await waitFor(() => expect(screen.getByRole("status")).toBeInTheDocument());
+  }
+
+  it("Windows: starts the zip, says it started, offers the Mac one", async () => {
+    await tryWith("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+    expect(m.assign).toHaveBeenCalledWith(WIN);
+    expect(screen.getByRole("status")).toHaveTextContent("success");
+    expect(screen.getByRole("link", { name: "demoOtherMac" })).toHaveAttribute("href", MAC);
+  });
+
+  it("★OS unknown (iPad: 'Macintosh' + touch): starts nothing and does NOT say it started — pick below, both links", async () => {
+    await tryWith("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15", 5);
+    expect(m.assign).not.toHaveBeenCalled();
+    expect(screen.getByRole("status")).toHaveTextContent("demoChoose");
+    expect(screen.getByRole("status")).not.toHaveTextContent("success"); // kimny: 「事実と違うことは書かないで」
+    expect(screen.getByRole("link", { name: "demoOtherMac" })).toHaveAttribute("href", MAC);
+    expect(screen.getByRole("link", { name: "demoOtherWindows" })).toHaveAttribute("href", WIN);
+  });
+});

@@ -93,8 +93,9 @@ export function MasterchainTry() {
       </div>
       {status === "success" ? (
         <div role="status" className="space-y-2">
-          <p className="text-sm text-[#f5a524]">{td("success")}</p>
-          {offer.length > 1 && <p className="text-sm text-white/70">{twin("demoChoose")}</p>}
+          {/* ★When the OS could not be told, nothing was started — so do not say it was (kimny: 「事実と違うことは
+              書かないで」). Only then: "pick one below; the receipt has both links". */}
+          <p className="text-sm text-[#f5a524]">{offer.length > 1 ? twin("demoChoose") : td("success")}</p>
           {offer.length > 0 && (
             <p className="flex flex-wrap gap-4 text-sm" data-testid="masterchain-demo-offer">
               {offer.map((o) => (

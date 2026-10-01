@@ -2656,7 +2656,7 @@
       "tokushohoAll": "Windows builds (VST3, 64-bit) are offered as well. The free MUEDsat, MUEDlim and MUEDrive are beta builds. The license key is the same as for the Mac version.",
       "demoOtherMac": "Get the Mac version",
       "demoOtherWindows": "Get the Windows version",
-      "demoChoose": "Choose the one for your computer."
+      "demoChoose": "Choose the one for your computer below. The confirmation email has both links too."
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
