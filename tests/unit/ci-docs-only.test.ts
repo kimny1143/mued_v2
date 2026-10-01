@@ -78,23 +78,32 @@ describe("CI workflow keeps the REQUIRED jobs and guards every heavy step", () =
     expect(b).not.toMatch(/\n    if: /);
     const lines = b.split("\n");
     const stepStarts = lines.flatMap((l, i) => (/^      - (uses|name|run): /.test(l) ? [i] : []));
-    // The first two steps are the checkout and the detection itself; they always run.
+    // The first three steps always run: the checkout, node (the detection runs a node script, and the
+    // self-hosted runner image has no node of its own), and the detection itself.
     expect(lines[stepStarts[0]]).toMatch(/^      - uses: actions\/checkout@v4$/);
-    expect(lines[stepStarts[1]]).toBe("      - name: Detect changes");
-    expect(lines[stepStarts[1] + 1]).toBe("        id: docs");
-    expect(stepStarts.length).toBeGreaterThan(3);
-    for (const i of stepStarts.slice(2)) {
+    expect(lines[stepStarts[1]]).toBe("      - uses: actions/setup-node@v4");
+    expect(lines[stepStarts[2]]).toBe("      - name: Detect changes");
+    expect(lines[stepStarts[2] + 1]).toBe("        id: docs");
+    expect(b.match(/uses: actions\/setup-node@v4/g)).toHaveLength(1);
+    expect(stepStarts.length).toBeGreaterThan(4);
+    for (const i of stepStarts.slice(3)) {
       expect(lines[i + 1], `step "${lines[i].trim()}" has a condition`).toMatch(/^        if: steps\.docs\.outputs\.code (==|!=) 'false'$/);
     }
     // ★Fail-CLOSED: exactly one no-op step runs only on an explicit 'false'; every heavy step runs
     //   unless the output is exactly 'false' — an empty output runs everything (CCO #1156).
     expect(b.match(/if: steps\.docs\.outputs\.code == 'false'/g)).toHaveLength(1);
     expect(b).not.toContain("code == 'true'");
-    // The detection treats schedule / workflow_dispatch as full runs and paginates the file list.
+    // The detection treats schedule / workflow_dispatch as full runs and reads EVERY page of the file list
+    // (100 per page; a full page means there may be more), with curl + jq — the runner image has no gh.
     expect(b).toContain('if [ "$EVENT" != "pull_request" ]');
-    expect(b).toContain("--paginate");
+    expect(b).toContain("per_page=100&page=$page");
+    expect(b).toContain(`[ "$(printf '%s' "$body" | jq 'length')" -lt 100 ] && break`);
     expect(b).toContain(".previous_filename // empty");
     expect(b).toContain("scripts/ci/docs-only.mjs");
+    expect(b).not.toMatch(/\bgh (api|pr|run)\b/);
+    // Self-hosted when the repo variable is set, GitHub's runner otherwise.
+    expect(b).toContain("    runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-latest' }}\n");
+    expect(b).not.toContain("secrets.");
     // It needs to read the PR's files.
     expect(b).toMatch(/\n    permissions:\n      contents: read\n      pull-requests: read\n/);
   });
