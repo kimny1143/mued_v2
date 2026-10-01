@@ -105,6 +105,10 @@ export const MASTERCHAIN_DEMO_LIVE = true;
 //   and every page reads exactly as before. On the day: put the file under public/downloads/, set the URL and
 //   version (pin its sha256/bytes in tests/unit/plugin-download-artifact-integrity.test.ts), flip the flag.
 // ★The license key is the same file as on the Mac (offline Ed25519, format v2) — dsp to confirm before the flip.
-export const MASTERCHAIN_WINDOWS_LIVE = false;
-export const MASTERCHAIN_WINDOWS_URL = "";
-export const MASTERCHAIN_WINDOWS_VERSION = "";
+// ★OPENED 2026-10-01 (kimny accepted build 43430827 after the scale check; same license.key → LICENSED in Parallels).
+//   MUEDsp-masterchain-1.0.1-win-x64-43430827.zip — VST3 only, not code-signed yet (INSTALL.txt says so).
+//   sha256 5b4775d8de6f311043cc1bf59a79a5acd824b5a74eb2f33338b5e713a561e8b9 · 1,416,832 B — measured on the copy
+//   under public/downloads/ (shasum -a 256 / stat -f%z), matched dsp's relay, cmp-identical to dsp's file.
+export const MASTERCHAIN_WINDOWS_LIVE = true;
+export const MASTERCHAIN_WINDOWS_URL = "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-win-x64-43430827.zip";
+export const MASTERCHAIN_WINDOWS_VERSION = "1.0.1";

@@ -16,6 +16,8 @@ vi.mock("@/lib/masterchain/config", () => ({
   MASTERCHAIN_DEMO_LIVE: false,
   // …and the purchase flag (closed here: this test pins the closed-state purchase copy).
   MASTERCHAIN_PURCHASE_LIVE: false,
+  // …and masterchain for Windows (off here: this test is about the trial CTA only).
+  MASTERCHAIN_WINDOWS_LIVE: false,
 }));
 vi.mock("@/components/brand/brand-header", () => ({ BrandHeader: () => null }));
 vi.mock("@/components/features/muedsat-landing/muedsat-signup-form", () => ({

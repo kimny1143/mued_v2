@@ -34,6 +34,7 @@ import { MUEDLIM_DOWNLOAD_URL } from "@/lib/muedlim/config";
 import { MUEDRIVE_DOWNLOAD_URL } from "@/lib/muedrive/config";
 import { MUEDSAT_DOWNLOAD_URL } from "@/lib/muedsat/config";
 import { WINDOWS_BETA } from "@/lib/plugins/windows-beta";
+import { MASTERCHAIN_WINDOWS_URL } from "@/lib/masterchain/config";
 
 /**
  * ★The paid module's pin, kept separate because it does not exist yet.
@@ -114,6 +115,13 @@ const ARTIFACTS = [
     url: WINDOWS_BETA.muedrive.url,
     sha256: "96009dae19a384c96b41864fc209db145ac4f16c30a977672c82cebd0e848f7b",
     bytes: 1_252_194,
+  },
+  // ★masterchain for Windows (VST3) — 43430827 (dsp 2026-10-01, the build kimny accepted after the scale check).
+  {
+    name: "masterchain (Windows)",
+    url: MASTERCHAIN_WINDOWS_URL,
+    sha256: "5b4775d8de6f311043cc1bf59a79a5acd824b5a74eb2f33338b5e713a561e8b9",
+    bytes: 1_416_832,
   },
   // ★Shelf: the first Windows beta zips (dsp build/win-beta-20260930b, 80178027). Never linked (the flag was off
   //   while they were the table's), but public under these URLs since 2026-09-30 — so their bytes stay fixed.

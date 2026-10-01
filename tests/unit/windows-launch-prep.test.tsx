@@ -35,13 +35,17 @@ import { PluginsPortalView } from "@/app/dashboard/plugins/plugins-portal-view";
 const src = (f: string) => readFileSync(f, "utf8");
 const PRODUCTS = ["muedsat", "muedlim", "muedrive"] as const;
 
-describe("the flags: the free beta is live (2026-10-01); masterchain for Windows is not yet", () => {
-  it("WINDOWS_BETA_LIVE is on; masterchain for Windows is off and has no file yet", () => {
+describe("the flags: the free beta and masterchain for Windows are live (2026-10-01)", () => {
+  it("both are on (2026-10-01): the free beta, and masterchain for Windows with its zip", () => {
     expect(WINDOWS_BETA_LIVE).toBe(true);
-    expect(MASTERCHAIN_WINDOWS_LIVE).toBe(false);
-    expect(MASTERCHAIN_WINDOWS_URL).toBe("");
-    expect(MASTERCHAIN_WINDOWS_VERSION).toBe("");
-    expect(masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION)).toBeNull();
+    expect(MASTERCHAIN_WINDOWS_LIVE).toBe(true);
+    expect(MASTERCHAIN_WINDOWS_URL).toBe("https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-win-x64-43430827.zip");
+    expect(MASTERCHAIN_WINDOWS_VERSION).toBe("1.0.1");
+    expect(MASTERCHAIN_WINDOWS_URL).toContain(`-${MASTERCHAIN_WINDOWS_VERSION}-win-x64-`);
+    expect(masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION)).toEqual({
+      url: MASTERCHAIN_WINDOWS_URL,
+      version: "1.0.1",
+    });
   });
 
   it("the Mac strings are untouched — the Windows ones are added beside them, never replacing them", () => {
@@ -166,7 +170,7 @@ describe("masterchain for Windows — demo download", () => {
   it("the receipt email carries a Windows link only when there is a Windows build", async () => {
     const { emailTemplates } = await import("@/lib/services/email.service");
     for (const locale of ["ja", "en"] as const) {
-      const off = emailTemplates.masterchainDemoDownload({ locale });
+      const off = emailTemplates.masterchainDemoDownload({ locale, windowsUrl: null });
       expect(off.html).not.toMatch(/Windows/);
       expect(off.text).not.toMatch(/Windows/);
       const on = emailTemplates.masterchainDemoDownload({ locale, windowsUrl: WIN });

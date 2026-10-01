@@ -3,12 +3,13 @@ import { readFileSync } from "node:fs";
 import { NextRequest, NextResponse } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MUEDSP_AUDIENCE_ID } from "@/lib/plugins/registry";
-import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
+import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_URL } from "@/lib/masterchain/config";
 
-const m = vi.hoisted(() => ({ live: true, create: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn(), alert: vi.fn() }));
+const m = vi.hoisted(() => ({ live: true, windows: true, create: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn(), alert: vi.fn() }));
 vi.mock("@/lib/masterchain/config", async (original) => ({
   ...await original<typeof import("@/lib/masterchain/config")>(),
   get MASTERCHAIN_DEMO_LIVE() { return m.live; },
+  get MASTERCHAIN_WINDOWS_LIVE() { return m.windows; },
 }));
 vi.mock("resend", () => ({ Resend: class { contacts = { create: m.create }; } }));
 vi.mock("@/lib/services/email.service", () => ({ emailService: { sendMasterchainDemoDownload: m.send, isConfigured: () => true, sendAdminAlert: m.alert } }));
@@ -21,8 +22,10 @@ import { handleMasterchainDemo } from "@/lib/masterchain/demo-handler";
 function request(body: unknown = { email: "person@example.com" }) {
   return new NextRequest("https://mued.jp/api/masterchain/demo", { method: "POST", body: JSON.stringify(body) });
 }
-const success = { ok: true, downloadUrl: MASTERCHAIN_DOWNLOAD_URL };
+// ★masterchain for Windows is live (2026-10-01): the response also carries the Windows zip.
+const success = { ok: true, downloadUrl: MASTERCHAIN_DOWNLOAD_URL, windowsDownloadUrl: MASTERCHAIN_WINDOWS_URL };
 beforeEach(() => {
+  m.windows = true;
   m.live = true;
   vi.stubEnv("RESEND_API_KEY", "test");
   m.ip.mockResolvedValue(null);
@@ -125,4 +128,10 @@ it("does not alert when the consenting person reached the list", async () => {
   m.create.mockResolvedValue({ data: { id: "contact" }, error: null });
   await handleMasterchainDemo(request({ email: "person@example.com", marketingOptIn: true }));
   expect(m.alert).not.toHaveBeenCalled();
+});
+
+it("★with masterchain for Windows off, the response is exactly the Mac-only one it was before", async () => {
+  m.windows = false;
+  const res = await handleMasterchainDemo(request());
+  expect(await res.json()).toEqual({ ok: true, downloadUrl: MASTERCHAIN_DOWNLOAD_URL });
 });
