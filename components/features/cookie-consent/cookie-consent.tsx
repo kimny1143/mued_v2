@@ -1,0 +1,130 @@
+"use client";
+
+import Script from "next/script";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import {
+  OPEN_COOKIE_SETTINGS_EVENT,
+  analyticsCookieNames,
+  consentCookieString,
+  consentLocale,
+  expireCookieStrings,
+  readConsent,
+  type Consent,
+} from "@/lib/analytics/consent";
+
+export type CookieConsentCopy = {
+  message: string;
+  accept: string;
+  essentialOnly: string;
+  details: string;
+  label: string;
+};
+
+type Props = {
+  /** NEXT_PUBLIC_GA_MEASUREMENT_ID; when absent GA4 is never loaded, but the choice is still offered. */
+  gaMeasurementId?: string;
+  copy: { ja: CookieConsentCopy; en: CookieConsentCopy };
+};
+
+/**
+ * Cookie consent for every visitor + the only place gtag.js is loaded.
+ * ★gtag.js is rendered ONLY when the stored choice is "all". Before a choice and after
+ * "essential" it is never requested, so `_ga` is never set (lib/analytics/gtag.ts already
+ * no-ops every event while window.gtag is undefined).
+ */
+export function CookieConsent({ gaMeasurementId, copy }: Props) {
+  const pathname = usePathname() ?? "/";
+  // undefined = not read yet (server render / first paint) → render nothing, avoiding a flash.
+  const [consent, setConsent] = useState<Consent | null | undefined>(undefined);
+  const [reopened, setReopened] = useState(false);
+
+  useEffect(() => {
+    setConsent(readConsent(document.cookie));
+    const reopen = () => setReopened(true);
+    window.addEventListener(OPEN_COOKIE_SETTINGS_EVENT, reopen);
+    return () => window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, reopen);
+  }, []);
+
+  const choose = (next: Consent) => {
+    document.cookie = consentCookieString(next, window.location.protocol === "https:");
+    if (next === "essential") {
+      // Switching away from "all" on a page where gtag.js already ran: stop further hits and
+      // remove the measurement cookies it set.
+      if (gaMeasurementId) (window as unknown as Record<string, unknown>)[`ga-disable-${gaMeasurementId}`] = true;
+      for (const name of analyticsCookieNames(document.cookie)) {
+        for (const expiry of expireCookieStrings(name, window.location.hostname)) document.cookie = expiry;
+      }
+    }
+    setConsent(next);
+    setReopened(false);
+  };
+
+  const locale = consentLocale(pathname, typeof document === "undefined" ? undefined : document.documentElement.lang);
+  const t = copy[locale];
+  const showBanner = consent === null || (consent !== undefined && reopened);
+
+  return (
+    <>
+      {consent === "all" && gaMeasurementId && (
+        <>
+          <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} strategy="afterInteractive" />
+          <Script id="ga4-init" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              var _gaDebug = new URLSearchParams(window.location.search).has('debug_mode');
+              gtag('config', '${gaMeasurementId}', { debug_mode: _gaDebug });
+            `}
+          </Script>
+        </>
+      )}
+      {showBanner && (
+        <section
+          role="region"
+          aria-label={t.label}
+          data-testid="cookie-consent"
+          className="fixed inset-x-3 bottom-3 z-50 rounded-lg border border-white/10 bg-[#111113]/95 p-3 text-xs text-slate-300 shadow-lg backdrop-blur sm:inset-x-auto sm:left-4 sm:bottom-4 sm:max-w-sm"
+        >
+          <p className="leading-relaxed">
+            {t.message}{" "}
+            <a href={`/${locale}/privacy#cookies`} className="underline underline-offset-2 hover:text-white">
+              {t.details}
+            </a>
+          </p>
+          <div className="mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => choose("essential")}
+              className="rounded-md border border-white/15 px-3 py-1.5 text-slate-200 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5a524]"
+            >
+              {t.essentialOnly}
+            </button>
+            <button
+              type="button"
+              onClick={() => choose("all")}
+              className="rounded-md bg-[#f5a524] px-3 py-1.5 font-medium text-black hover:bg-[#f5a524]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+            >
+              {t.accept}
+            </button>
+          </div>
+        </section>
+      )}
+    </>
+  );
+}
+
+/** Privacy page button: reopens the banner so the visitor can change the choice. */
+export function CookieSettingsButton({ label }: { label: string }) {
+  return (
+    <button
+      type="button"
+      data-testid="cookie-settings-button"
+      onClick={() => window.dispatchEvent(new Event(OPEN_COOKIE_SETTINGS_EVENT))}
+      className="mt-3 rounded-md border border-white/15 px-3 py-1.5 text-sm text-slate-200 hover:bg-white/5"
+    >
+      {label}
+    </button>
+  );
+}

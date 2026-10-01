@@ -91,7 +91,7 @@ const ANALYTICS_NAME =
  */
 const ALLOWED: Record<string, string> = {
   NEXT_PUBLIC_GA_MEASUREMENT_ID:
-    "proved from this repo, not from a note: app/layout.tsx renders the gtag <Script> only when this is truthy, and GA4 received 300 client dial_playback_issue events in the 60 days to 2026-07-29 — so it is set in production",
+    "proved from this repo, not from a note: app/layout.tsx passes this to components/features/cookie-consent, which renders the gtag <Script> only when it is truthy (and, since the consent banner, only after the visitor accepts), and GA4 received 300 client dial_playback_issue events in the 60 days to 2026-07-29 — so it is set in production",
   GA4_MP_API_SECRET:
     "verified by hand in Vercel production on 2026-07-29. NOTE: weaker evidence than the line above — the wrong measurement-id name short-circuited every call, so this value was never actually exercised. Confirm by observing a server-side event arrive, not by reading code",
   GA4_DEBUG_MODE:

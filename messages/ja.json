@@ -3085,5 +3085,13 @@
       "howto": "鍵のファイル（.key）をダウンロードし、{product} の画面{masterchain, select, yes {（「Drop license.key here」）} other {}}にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをコピーして「Paste license key」を押してください。",
       "purchasedOn": "{date} に購入"
     }
+  },
+  "cookieConsent": {
+    "message": "このサイトは、言語とサインインに必要な Cookie を使います。同意いただいた場合に限り、Google Analytics の計測 Cookie も使います。",
+    "accept": "同意する",
+    "essentialOnly": "必須のみ",
+    "details": "詳しく",
+    "label": "Cookie の設定",
+    "settingsButton": "Cookie の設定を変える"
   }
 }

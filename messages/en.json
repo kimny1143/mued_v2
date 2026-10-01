@@ -3085,5 +3085,13 @@
       "howto": "Download your key file (.key) and drag it onto {product}{masterchain, select, yes { (\"Drop license.key here\")} other {}}. If drop doesn't work in your DAW, use \"Load license file…\", or copy the key and press \"Paste license key\".",
       "purchasedOn": "Purchased {date}"
     }
+  },
+  "cookieConsent": {
+    "message": "This site uses cookies needed for language and sign-in. Only with your consent, it also uses Google Analytics cookies to measure site usage.",
+    "accept": "Accept",
+    "essentialOnly": "Essential only",
+    "details": "Details",
+    "label": "Cookie settings",
+    "settingsButton": "Change cookie settings"
   }
 }
