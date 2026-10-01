@@ -77,24 +77,35 @@ describe("CI workflow keeps the REQUIRED jobs and guards every heavy step", () =
     // ★No job-level `if:` — a skipped REQUIRED job is void to the merge gate.
     expect(b).not.toMatch(/\n    if: /);
     const lines = b.split("\n");
-    const stepStarts = lines.flatMap((l, i) => (/^      - (uses|name|run): /.test(l) ? [i] : []));
-    // The first two steps are the checkout and the detection itself; they always run.
-    expect(lines[stepStarts[0]]).toMatch(/^      - uses: actions\/checkout@v4$/);
-    expect(lines[stepStarts[1]]).toBe("      - name: Detect changes");
-    expect(lines[stepStarts[1] + 1]).toBe("        id: docs");
-    expect(stepStarts.length).toBeGreaterThan(3);
-    for (const i of stepStarts.slice(2)) {
+    const stepStarts = lines.flatMap((l, i) => (/^      - (uses|name|run|if): /.test(l) ? [i] : []));
+    // Step 0: the isolation check, self-hosted only. Then three steps that always run: the checkout, node
+    // (the detection runs a node script, and the self-hosted runner image has no node of its own), and the
+    // detection itself.
+    expect(lines[stepStarts[0]]).toBe("      - if: runner.environment == 'self-hosted'");
+    expect(lines[stepStarts[1]]).toMatch(/^      - uses: actions\/checkout@v4$/);
+    expect(lines[stepStarts[2]]).toBe("      - uses: actions/setup-node@v4");
+    expect(lines[stepStarts[3]]).toBe("      - name: Detect changes");
+    expect(lines[stepStarts[3] + 1]).toBe("        id: docs");
+    expect(b.match(/uses: actions\/setup-node@v4/g)).toHaveLength(1);
+    expect(stepStarts.length).toBeGreaterThan(5);
+    for (const i of stepStarts.slice(4)) {
       expect(lines[i + 1], `step "${lines[i].trim()}" has a condition`).toMatch(/^        if: steps\.docs\.outputs\.code (==|!=) 'false'$/);
     }
     // ★Fail-CLOSED: exactly one no-op step runs only on an explicit 'false'; every heavy step runs
     //   unless the output is exactly 'false' — an empty output runs everything (CCO #1156).
     expect(b.match(/if: steps\.docs\.outputs\.code == 'false'/g)).toHaveLength(1);
     expect(b).not.toContain("code == 'true'");
-    // The detection treats schedule / workflow_dispatch as full runs and paginates the file list.
+    // The detection treats schedule / workflow_dispatch as full runs and reads EVERY page of the file list
+    // (100 per page; a full page means there may be more), with curl + jq — the runner image has no gh.
     expect(b).toContain('if [ "$EVENT" != "pull_request" ]');
-    expect(b).toContain("--paginate");
+    expect(b).toContain("per_page=100&page=$page");
+    expect(b).toContain(`[ "$(printf '%s' "$body" | jq 'length')" -lt 100 ] && break`);
     expect(b).toContain(".previous_filename // empty");
     expect(b).toContain("scripts/ci/docs-only.mjs");
+    expect(b).not.toMatch(/\bgh (api|pr|run)\b/);
+    // Self-hosted when the repo variable is set, GitHub's runner otherwise.
+    expect(b).toContain("    runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-latest' }}\n");
+    expect(b).not.toContain("secrets.");
     // It needs to read the PR's files.
     expect(b).toMatch(/\n    permissions:\n      contents: read\n      pull-requests: read\n/);
   });
@@ -106,6 +117,27 @@ describe("CI workflow keeps the REQUIRED jobs and guards every heavy step", () =
     };
     expect(det("test")).toBe(det("validate"));
     expect(det("build")).toBe(det("validate"));
+  });
+
+  it("★the self-hosted isolation check: positive control first, the four private targets, fail if any answers", () => {
+    const iso = (job: string) => {
+      const b = block(job);
+      const start = b.indexOf("      - if: runner.environment == 'self-hosted'");
+      const last = 'none of the 4 private targets do"';
+      return b.slice(start, b.indexOf(last, start) + last.length);
+    };
+    const v = iso("validate");
+    expect(v.length).toBeGreaterThan(0);
+    expect(iso("test")).toBe(v);
+    expect(iso("build")).toBe(v);
+    // Positive control before the probes: a probe that can reach nothing must not pass as "isolated".
+    expect(v.indexOf("can_reach github.com 443")).toBeGreaterThan(-1);
+    expect(v.indexOf("can_reach github.com 443")).toBeLessThan(v.indexOf("for target in"));
+    for (const t of ["192.168.5.2:7000", "192.168.5.1:22", "192.168.5.1:10250", "10.43.0.1:443"]) expect(v).toContain(t);
+    expect(v).not.toContain(":17500"); // only open while Dropbox runs — not a control (conductor 10/1)
+    expect(v.match(/exit 1/g)).toHaveLength(2);
+    // ★No `name:` line — moving one in test.yml voids the merge gate.
+    expect(v).not.toMatch(/^\s*-?\s*name:/m);
   });
 
   it("there is no separate `changes` job any more", () => {
