@@ -106,7 +106,12 @@ export const MASTERCHAIN_DEMO_LIVE = true;
 //   version (pin its sha256/bytes in tests/unit/plugin-download-artifact-integrity.test.ts), flip the flag.
 // ★The license key is the same file as on the Mac (offline Ed25519, format v2) — dsp to confirm before the flip.
 // ★OPENED 2026-10-01 — build a2678157 (PLUG_HOST_RESIZE 0 after CCO's #835 review: the host window edge no longer
-//   resizes; the scale buttons do). kimny accepted it in Parallels (scale buttons work; same license.key → LICENSED).
+//   resizes; size changes only through the plug-in's scale buttons).
+//   ★What was checked and what was not: the key (same license.key → LICENSED) and the demo were checked in kimny's
+//   Parallels; ★switching the scale buttons while open (50→100→150→75) was NOT checked — the photos are two at 100 %
+//   only (conductor's correction). kimny decided to ship anyway, verbatim: 「いや、もう縮尺はいいから。デプロイすすめて」.
+//   ★If a report says the scale buttons do not resize the window, the fix is PLUG_HOST_RESIZE 1 + ConstrainEditorResize
+//   (dsp / CCO #835), shipped as a new zip in a new PR.
 //   43430827 was replaced before shipping and never served. VST3 only, not code-signed yet (INSTALL.txt says so).
 //   MUEDsp-masterchain-1.0.1-win-x64-a2678157.zip · sha256 af9dfe0424105a79171bedcdecabe8dc2bba6f25662f1240d369b32479535d29
 //   · 1,416,745 B — measured on the copy under public/downloads/ (shasum -a 256 / stat -f%z), cmp-identical to the copy
