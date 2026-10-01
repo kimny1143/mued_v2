@@ -3172,3 +3172,20 @@ plugin の埋め込み鍵   0x54,0xa6,…,0x1d,0x41 ★一致（mued-dsp origin/
 ★旧 MUEDial の今後 … Next のローンチと同時に停止。それまでは今のまま放置（kimny 2026-09-24）。販売停止の改修は不要
 ★RoEx 台帳 roex_vendor_packs は 2026-04-15 以降 未更新（残高 12,570cr の内訳・失効日は未確認 → kimny が RoEx の管理画面で）
 ```
+
+### (2a) — 返金の経路（FastSpring の return.created）を本番で 1 回通した・次の返金で見る所（2026-10-01T07:04:21+0900）
+
+**済み（2026-10-01）**: kimny の確認購入（order jrdPficIRayr15KZEyz0gg・GLASSWERKSJP260930-7382-30122）を kimny が全額返金で確定。
+- webhook_events: return.created は 1 件だけ（EVWBTFTRBRADIRCFXBLIZFCJXR45P4・2026-09-30T22:00:52Z・processed・error なし）。payload は live=true・type=RETURN・`completed: true`・items の refundType=["Full Refund"]
+- masterchain_purchases のその行: refunded_at=2026-09-30T22:00:51.523Z・refund_return_id=K1gkvDOBR-mZuFxzFO1LmA・refund_kind=full。行は消えず、license_key も残る
+- 「作成」と「Confirm」のどちらで送られたかは未確定（来たのは 1 件で completed=true）。★それに関わらず、`completed === true` の時だけ印を付けるように直した（conductor 10/1・MUEDsat 1.0.1 の PR）。completed が false・無い時は、webhook_events に記録（processed＋注記 `RETURN_NOT_COMPLETED_NOTE`）だけで、行には触らない
+- この注文は `lib/masterchain/internal-orders.ts` で社内の注文として印を付けた（売上・注文数の集計から除く）
+
+**次の返金で見る所**（本番 DB は kimny の許可を取って SELECT だけ）:
+1. FastSpring の Refund の時刻と、注文の reference を控える
+2. webhook_events に type='return.created'・source='fastspring' の行があり、status=processed・error_message が null（completed でない時は `recorded only: …` の注記）
+3. masterchain_purchases のその注文の行（order_id で引く）に refunded_at・refund_return_id・refund_kind（全額なら full）が入り、行は消えていない
+4. ポータルの表示は本人の画面でしか見えない → portal.ts の分岐（refunded なら鍵を出さない・test 済み）と 3. で代える。本人から問い合わせがあれば、画面を確かめてもらう
+5. 鍵はオフラインの署名なので無効にはならない（EULA のとおり）。取り消しの操作はしない
+6. ★まだ本番で通していない形: partial（一部返金）・chargeback・「作成」の後の Cancel。これらが来たら payload を保存して当課で形を確かめる
+

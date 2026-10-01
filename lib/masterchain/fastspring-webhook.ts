@@ -413,6 +413,8 @@ export interface FastspringReturnParsed {
   orderIds: string[];
   kind: "full" | "partial" | "chargeback";
   refundedAt: Date | undefined;
+  /** FastSpring's `data.completed` — true only for a return that has actually gone through. */
+  completed: boolean;
 }
 
 export function parseFastspringReturnCreated(event: unknown): FastspringReturnParsed | null {
@@ -436,6 +438,7 @@ export function parseFastspringReturnCreated(event: unknown): FastspringReturnPa
     orderIds: [...new Set(orderIds)],
     kind,
     refundedAt: at && !Number.isNaN(at.getTime()) ? at : undefined,
+    completed: data.completed === true || data.completed === "true",
   };
 }
 
@@ -445,14 +448,27 @@ export function parseFastspringReturnCreated(event: unknown): FastspringReturnPa
  *   "no_purchase" — no purchase row matches (yet). ★The route records it as FAILED so FastSpring redelivers:
  *                   this store sells masterchain only, so the likely cause is the refund arriving before
  *                   order.completed wrote the row — processing it would lose the refund (CCO #1183 ②).
+ *   "not_completed" — `data.completed` is not true: the row is NOT touched (the key stays visible). The route
+ *                   records the event as processed with a note. (conductor 2026-10-01: a return created in
+ *                   FastSpring's admin can still be cancelled before Confirm; a mark set then would stay.)
  *   "recorded"
  */
 export async function handleFastspringReturnCreated(
   tx: Tx,
   event: unknown,
-): Promise<"unparseable" | "no_purchase" | "recorded"> {
+): Promise<"unparseable" | "no_purchase" | "not_completed" | "recorded"> {
   const parsed = parseFastspringReturnCreated(event);
   if (!parsed) return "unparseable";
+  // ★Only a completed return marks the row (conductor 2026-10-01). The first live refund (kimny's verification
+  //   order, return K1gkvDOBR-mZuFxzFO1LmA, received 2026-09-30T22:00:52Z) carried `completed: true` with
+  //   refundType "Full Refund" — that shape is what marks. Anything else is recorded and left alone.
+  if (!parsed.completed) {
+    logger.warn("[fastspring] return.created that is not completed — recorded only, purchase row untouched", {
+      returnId: parsed.returnId,
+      kind: parsed.kind,
+    });
+    return "not_completed";
+  }
   const refunded = parsed.kind === "full" || parsed.kind === "chargeback";
   const rows = await tx
     .update(masterchainPurchases)

@@ -105,6 +105,8 @@ const MAX_KEYS = 40;
 /** ★意図的な skip の marker。★`status` は pgEnum ゆえ専用値が置けないので `errorMessage` に入れる。
  *  ★test からも参照して、★文字列の取り違えで assert が空振りしないようにする。 */
 export const SKIPPED_TEST_MARKER = "skipped: order.completed with live !== true";
+/** return.created whose `data.completed` is not true: recorded, but the purchase row is not marked refunded. */
+export const RETURN_NOT_COMPLETED_NOTE = "recorded only: return.created with completed !== true — purchase row not marked refunded";
 
 function envelopeShape(v: unknown, depth = 2): unknown {
   if (v === null) return "null";
@@ -194,6 +196,7 @@ async function processFastspringEvent(event: unknown): Promise<void> {
   // ★tx の外で throw するためのフラグ（★中で throw すると行が消える）。
   let unparseable = false;
   let noPurchase = false;
+  let processedNote: string | null = null;
 
   await db.transaction(async (tx) => {
     if (existing) {
@@ -266,6 +269,9 @@ async function processFastspringEvent(event: unknown): Promise<void> {
         //   redelivery then finds the same state and FastSpring eventually stops — nothing is lost.
         unparseable = true;
         noPurchase = true;
+      } else if (result === "not_completed") {
+        // Recorded as processed (FastSpring need not resend it) with a note; the purchase row is untouched.
+        processedNote = RETURN_NOT_COMPLETED_NOTE;
       } else if (result === "unparseable") {
         unparseable = true;
         logger.error("[fastspring] return.created missing return id / original order — recording as failed", {
@@ -317,7 +323,7 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     } else {
       await tx
         .update(webhookEvents)
-        .set({ status: "processed", completedAt: new Date() })
+        .set({ status: "processed", completedAt: new Date(), ...(processedNote ? { errorMessage: processedNote } : {}) })
         .where(eq(webhookEvents.eventId, eventId));
     }
   });

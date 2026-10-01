@@ -28,7 +28,20 @@ export const MUEDSAT_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Served from mued.jp static
 // hosting (public/downloads/, #598). NOT a secret (public CDN URL).
-// Package: MUEDsat 1.0.0 — EULA 2026.10 rebuild (2026-09-30). Same plug-in as the first 1.0.0: dsp §5
+// Package: MUEDsat 1.0.1 (2026-10-01, dsp §5 passed; kimny checked it by eye — 「手順4はOKでした」).
+//   What changed vs 1.0.0 (dsp's record): the THD readout shows the measured value, and the operating-point dot
+//   swings to about half the curve on a chorus — DISPLAY ONLY, the audio is bit-identical to 1.0.0.
+//   EULA in the installer: MUED-EULA-2026.10.rtf (same text as 1.0.0's 2026.10 build).
+//   ★Served from /downloads/ directly: the name carries the new version, so it collides with nothing.
+//   sha256: 39596b0a813a3ded383f900e29f682d32810ec76af9121c65cbc76c848f6a066
+//   size:   3,425,562 B
+//   ★Verified 2026-10-01 on the copy under public/downloads/: shasum -a 256 + bytes matched dsp's relay,
+//   `cmp` byte-identical to dsp's plugin/dist/, magic `xar!`, pkgutil = Developer ID Installer: glasswerks
+//   inc. (F529L4WT3V) + notarized, stapler validate OK, spctl -t install = Notarized Developer ID.
+//   Verify after any swap: shasum -a 256 public/downloads/MUEDsat-1.0.1-installer.pkg
+//   ★The Windows beta zip stays 1.0.0 (conductor 2026-10-01).
+//
+// Previous — MUEDsat 1.0.0, EULA 2026.10 rebuild (2026-09-30). Same plug-in as the first 1.0.0: dsp §5
 //   compared VST3 + AU on copies with the signature stripped (identical; only re-signed) and AAX
 //   byte-for-byte (identical; mued re-checked AAX with diff -r on the expanded payloads). What changed
 //   is the installer's EULA: Resources/MUED-EULA-2026.10.rtf (sha256 44f5b54f7f48f4a6…).
@@ -67,7 +80,7 @@ export const MUEDSAT_LIVE = true;
 // ★2026-08-27 (A'): the 0.1.0 FILENAME was ALSO overwritten with this same 0.1.1 payload, on purpose —
 //   same reason as MUEDlim (already-sent emails carry the literal 0.1.0 URL and cannot be edited).
 //   The old name is a compatibility alias; this constant points at the honest new name.
-export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/eula-2026.10/MUEDsat-1.0.0-installer.pkg";
+export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDsat-1.0.1-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Bumped when a new build ships. NOT a secret.
@@ -81,7 +94,7 @@ export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/eula-2026.10/MUED
 // ★URL and VERSION now carry the same semver, and tests/unit/plugin-version-matches-download.test.ts
 //   fails if they part again. (The on-screen label is still pinned separately by
 //   tests/unit/components/plugin-version-display.test.tsx — plain semver, never the filename.)
-export const MUEDSAT_VERSION = "1.0.0";
+export const MUEDSAT_VERSION = "1.0.1";
 
 // MUEDsp product page URL for the footer "where it came from" link. Empty => the link is hidden
 // (the copy's "MUEDsp product page — link TBD, kimny gate"). Set once the MUEDsp page exists.
