@@ -201,6 +201,9 @@ describe("privacy §6 matches the banner", () => {
   ])("%s: names the consent cookie and no longer says GA4 runs for everyone", (_l, text, stale) => {
     expect(text).toContain(CONSENT_COOKIE);
     expect(text).not.toContain(stale);
+    // Vercel Analytics / Speed Insights load for everyone (app/layout.tsx) — §6 says so (conductor 10/1).
+    expect(text).toContain("Vercel Web Analytics");
+    expect(text).toContain("Speed Insights");
   });
 
   it.each([
