@@ -35,16 +35,16 @@ import { PluginsPortalView } from "@/app/dashboard/plugins/plugins-portal-view";
 const src = (f: string) => readFileSync(f, "utf8");
 const PRODUCTS = ["muedsat", "muedlim", "muedrive"] as const;
 
-describe("★both flags ship false — nothing a visitor sees changes", () => {
-  it("the flags are off and masterchain for Windows has no file yet", () => {
-    expect(WINDOWS_BETA_LIVE).toBe(false);
+describe("the flags: the free beta is live (2026-10-01); masterchain for Windows is not yet", () => {
+  it("WINDOWS_BETA_LIVE is on; masterchain for Windows is off and has no file yet", () => {
+    expect(WINDOWS_BETA_LIVE).toBe(true);
     expect(MASTERCHAIN_WINDOWS_LIVE).toBe(false);
     expect(MASTERCHAIN_WINDOWS_URL).toBe("");
     expect(MASTERCHAIN_WINDOWS_VERSION).toBe("");
     expect(masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION)).toBeNull();
   });
 
-  it("the strings the pages show while off are the ones they showed before (pinned verbatim)", () => {
+  it("the Mac strings are untouched — the Windows ones are added beside them, never replacing them", () => {
     expect(ja.muedsat.hero.badge).toBe("無料 · macOS · VST3 · AU · AAX");
     expect(ja.muedlim.hero.badge).toBe("無料 · macOS · VST3 · AU · AAX");
     expect(ja.muedrive.hero.badge).toBe("無料 · macOS · VST3 · AU · AAX");
@@ -55,14 +55,14 @@ describe("★both flags ship false — nothing a visitor sees changes", () => {
     expect(en.tokushoho.muedsp.environment.windows).toBe("A Windows build is not currently offered.");
   });
 
-  it("the meta description and the JSON-LD OS are unchanged while off", () => {
+  it("the meta description and the JSON-LD OS: unchanged when off, Windows added when on (now on)", () => {
     expect(withWindowsSentence("D", "W", false)).toBe("D");
     expect(freePluginOperatingSystem(false)).toBe("macOS");
-    expect(withWindowsSentence("D", "W")).toBe("D"); // the shipped default
-    expect(freePluginOperatingSystem()).toBe("macOS");
-    // Positive control: on, they do change.
     expect(withWindowsSentence("D", "W", true)).toBe("D W");
     expect(freePluginOperatingSystem(true)).toBe("macOS, Windows");
+    // The shipped default follows WINDOWS_BETA_LIVE (on since 2026-10-01).
+    expect(withWindowsSentence("D", "W")).toBe("D W");
+    expect(freePluginOperatingSystem()).toBe("macOS, Windows");
   });
 
   it.each(PRODUCTS)("%s: the Windows badge/format lines are behind WINDOWS_BETA_LIVE; meta and JSON-LD go through the helpers", (p) => {

@@ -19,7 +19,9 @@
 //   relay and `cmp` against dsp's files was byte-identical. Pins: tests/unit/plugin-download-artifact-integrity.test.ts.
 import type { PluginKey } from "@/lib/plugins/registry";
 
-export const WINDOWS_BETA_LIVE = false;
+// ★OPENED 2026-10-01 (kimny 「いまやればいいじゃん、ぜんぶ。」・conductor's signal; kimny ran the 7ca36065 zips in
+//   Parallels — all three fine, MUEDrive's CHARACTER fix included).
+export const WINDOWS_BETA_LIVE = true;
 
 export interface WindowsBetaBuild {
   url: string;
@@ -27,9 +29,11 @@ export interface WindowsBetaBuild {
 }
 
 export const WINDOWS_BETA: Record<PluginKey, WindowsBetaBuild> = {
-  muedsat: { url: "https://mued.jp/downloads/MUEDsat-1.0.0-win-x64-80178027.zip", version: "1.0.0" },
-  muedlim: { url: "https://mued.jp/downloads/MUEDlim-1.0.0-win-x64-80178027.zip", version: "1.0.0" },
-  muedrive: { url: "https://mued.jp/downloads/MUEDrive-1.0.1-win-x64-80178027.zip", version: "1.0.1" },
+  // ★7ca36065 (dsp build 2026-10-01, from the GitHub CI artifact): MUEDsat 1.0.1 (same code as the Mac 1.0.1),
+  //   MUEDrive 1.0.1 with the CHARACTER knob fix, MUEDlim 1.0.0. The 80178027 zips stay on the shelf (pinned).
+  muedsat: { url: "https://mued.jp/downloads/MUEDsat-1.0.1-win-x64-7ca36065.zip", version: "1.0.1" },
+  muedlim: { url: "https://mued.jp/downloads/MUEDlim-1.0.0-win-x64-7ca36065.zip", version: "1.0.0" },
+  muedrive: { url: "https://mued.jp/downloads/MUEDrive-1.0.1-win-x64-7ca36065.zip", version: "1.0.1" },
 };
 
 /** The Windows build to show on a portal row — null while the beta is not live or for an unknown key. */
