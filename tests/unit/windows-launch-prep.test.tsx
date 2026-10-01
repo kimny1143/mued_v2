@@ -39,7 +39,7 @@ describe("the flags: the free beta and masterchain for Windows are live (2026-10
   it("both are on (2026-10-01): the free beta, and masterchain for Windows with its zip", () => {
     expect(WINDOWS_BETA_LIVE).toBe(true);
     expect(MASTERCHAIN_WINDOWS_LIVE).toBe(true);
-    expect(MASTERCHAIN_WINDOWS_URL).toBe("https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-win-x64-43430827.zip");
+    expect(MASTERCHAIN_WINDOWS_URL).toBe("https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-win-x64-a2678157.zip");
     expect(MASTERCHAIN_WINDOWS_VERSION).toBe("1.0.1");
     expect(MASTERCHAIN_WINDOWS_URL).toContain(`-${MASTERCHAIN_WINDOWS_VERSION}-win-x64-`);
     expect(masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION)).toEqual({
