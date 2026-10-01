@@ -91,7 +91,16 @@ const ARTIFACTS = [
   {
     name: "MUEDrive",
     url: MUEDRIVE_DOWNLOAD_URL,
-    // 1.0.1 (2026-09-30, EULA 2026.10 inside). 1.0.0 was 1f3fc091…/3_620_155 (stays on the shelf).
+    // 1.0.1 CHARACTER rebuild (2026-10-01, /downloads/character-2026.10/): matched dsp's relay + cmp to dsp's
+    //   plugin/dist/. The first 1.0.1 (75bf0dcc…/3_616_696) is pinned below as a shelf entry; 1.0.0 was 1f3fc091….
+    sha256: "c3fb7d164ab9907490ef03633757e35400d0acc3d5f49c59fe74be407b36f8f4",
+    bytes: 3_619_132,
+  },
+  // ★Shelf: the first MUEDrive 1.0.1 (2026-09-30 → 2026-10-01). Same name and version as the current one; mail
+  //   sent in that window points here. Told apart by sha256.
+  {
+    name: "MUEDrive 1.0.1 (first build, shelf)",
+    url: "https://mued.jp/downloads/MUEDrive-1.0.1-installer.pkg",
     sha256: "75bf0dcc1457559a35fbda9b55ae74c318f51dca754767863d0c080481a40fd4",
     bytes: 3_616_696,
   },
