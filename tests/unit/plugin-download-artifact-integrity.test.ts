@@ -94,24 +94,44 @@ const ARTIFACTS = [
     sha256: "75bf0dcc1457559a35fbda9b55ae74c318f51dca754767863d0c080481a40fd4",
     bytes: 3_616_696,
   },
-  // ★Windows VST3 beta (dsp build/win-beta-20260930b). Pinned from the moment the files are on the
-  //   shelf, not from the day WINDOWS_BETA_LIVE flips: the zip URL is static like every .pkg.
-  //   Measured on the copies under public/downloads/ (2026-09-30): matched conductor's relay + cmp to dsp.
+  // ★Windows VST3 beta — 7ca36065 (dsp 2026-10-01, the zips kimny ran in Parallels). Measured on the copies under
+  //   public/downloads/: shasum -a 256 + bytes matched dsp's relay, cmp-identical to dsp's files AND to the copy
+  //   kimny tested (_[MUED]fileshare/_win-check-20261001b).
   {
     name: "MUEDsat (Windows beta)",
     url: WINDOWS_BETA.muedsat.url,
-    sha256: "1b85e2df84c2371f03b7e6532f97d8707fce557076d23962953f22d3cdb7b4ce",
-    bytes: 1_188_719,
+    sha256: "c7c46e065f2f35fe7d9b40ffb46d48c59f68546d926ccf63c28626baf097e128",
+    bytes: 1_210_634,
   },
   {
     name: "MUEDlim (Windows beta)",
     url: WINDOWS_BETA.muedlim.url,
-    sha256: "6594238da928c3068ddd47508c9a375c9e303193a8bf88885eb36463e99e58d8",
-    bytes: 1_110_522,
+    sha256: "cff3ab78931d2639e4e230b7530336ca4976d32555c99decaa2c06681b65f09e",
+    bytes: 1_136_734,
   },
   {
     name: "MUEDrive (Windows beta)",
     url: WINDOWS_BETA.muedrive.url,
+    sha256: "96009dae19a384c96b41864fc209db145ac4f16c30a977672c82cebd0e848f7b",
+    bytes: 1_252_194,
+  },
+  // ★Shelf: the first Windows beta zips (dsp build/win-beta-20260930b, 80178027). Never linked (the flag was off
+  //   while they were the table's), but public under these URLs since 2026-09-30 — so their bytes stay fixed.
+  {
+    name: "MUEDsat (Windows beta 80178027, shelf)",
+    url: "https://mued.jp/downloads/MUEDsat-1.0.0-win-x64-80178027.zip",
+    sha256: "1b85e2df84c2371f03b7e6532f97d8707fce557076d23962953f22d3cdb7b4ce",
+    bytes: 1_188_719,
+  },
+  {
+    name: "MUEDlim (Windows beta 80178027, shelf)",
+    url: "https://mued.jp/downloads/MUEDlim-1.0.0-win-x64-80178027.zip",
+    sha256: "6594238da928c3068ddd47508c9a375c9e303193a8bf88885eb36463e99e58d8",
+    bytes: 1_110_522,
+  },
+  {
+    name: "MUEDrive (Windows beta 80178027, shelf)",
+    url: "https://mued.jp/downloads/MUEDrive-1.0.1-win-x64-80178027.zip",
     sha256: "4c691c4ecf17d3d81769acbda633ca08bcc4d40c91a13aec2b3ffc6f074ac4ec",
     bytes: 1_225_353,
   },

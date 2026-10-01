@@ -36,8 +36,8 @@ import { PluginsPortalView } from "@/app/dashboard/plugins/plugins-portal-view";
 const ROOT = join(__dirname, "..", "..");
 
 describe("Windows beta config", () => {
-  it("is off until conductor's signal (a reviewed code change, never env)", () => {
-    expect(WINDOWS_BETA_LIVE).toBe(false);
+  it("is on since conductor's signal 2026-10-01 (a reviewed code change, never env)", () => {
+    expect(WINDOWS_BETA_LIVE).toBe(true);
   });
 
   it("every free plugin has a Windows zip, and nothing else does", () => {
