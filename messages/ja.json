@@ -2637,6 +2637,7 @@
       "freeStatus": "VST3 のベータ版を、数日内に公開します。Mac 版と同じく、メールアドレスのご登録で入れるポータルからダウンロードできます。",
       "masterchainLabel": "MUEDsp masterchain",
       "masterchainStatus": "近日公開予定。ライセンスキーはMac版と共通です",
+      "masterchainStatusLive": "Windows 版（VST3）を公開しています。ライセンスキーは Mac 版と共通で、購入した方はポータルからダウンロードできます。デモは製品ページからお試しいただけます。",
       "bodyLive": "無料 3 種の Windows 版（VST3・ベータ）を公開しています。",
       "freeStatusLive": "VST3 のベータ版を公開中です。Mac 版と同じく、メールアドレスのご登録で入れるポータルからダウンロードできます。",
       "stepsTitle": "Windows 版の入れ方",

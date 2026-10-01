@@ -955,13 +955,17 @@ Hoo MCP経由の自動送信
     const windowsUrl = data.windowsUrl === undefined
       ? masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION)?.url ?? null
       : data.windowsUrl;
-    const windowsLabel = isJa ? 'Windows 版をダウンロード' : 'Download for Windows';
-    const windowsHtml = windowsUrl ? `<p><a href="${windowsUrl}">${windowsLabel}</a></p>` : '';
+    // ★With a Windows build, both buttons say which OS they are for, and the format line says it is the Mac's
+    //   (CCO #1200: "… · macOS" next to a Windows link reads as a contradiction). Without one: as before.
+    const windowsLabel = isJa ? 'Windows 版のデモをダウンロード' : 'Download the demo for Windows';
+    const macLabel = windowsUrl ? (isJa ? 'Mac 版のデモをダウンロード' : 'Download the demo for Mac') : label;
+    const macFormats = windowsUrl ? `Mac: ${formats}` : formats;
+    const windowsHtml = windowsUrl ? `<p><a href="${windowsUrl}" class="button">${windowsLabel}</a></p>` : '';
     const windowsText = windowsUrl ? `\n${windowsLabel}: ${windowsUrl}` : '';
     return {
       subject,
-      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p>${windowsHtml}<p>${limits}</p><p>${formats}</p>${buyHtml}${unsubHtml}`),
-      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}${windowsText}\n\n${limits}\n\n${formats}${buyText}${unsubText}\n\nglasswerks inc. — mued.jp`,
+      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${macLabel}</a></p>${windowsHtml}<p>${limits}</p><p>${macFormats}</p>${buyHtml}${unsubHtml}`),
+      text: `${intro}\n\n${macLabel}: ${MASTERCHAIN_DOWNLOAD_URL}${windowsText}\n\n${limits}\n\n${macFormats}${buyText}${unsubText}\n\nglasswerks inc. — mued.jp`,
     };
   },
 

@@ -60,7 +60,7 @@ export function MasterchainTry() {
       //   other is offered as a link, and an unknown OS gets both side by side (lib/masterchain/demo-download.ts).
       const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
       const plan = planDemoDownload(
-        detectDemoOs({ platform: nav.userAgentData?.platform, userAgent: navigator.userAgent }),
+        detectDemoOs({ platform: nav.userAgentData?.platform, userAgent: navigator.userAgent, maxTouchPoints: navigator.maxTouchPoints }),
         data.downloadUrl,
         typeof data.windowsDownloadUrl === "string" ? data.windowsDownloadUrl : null,
       );
