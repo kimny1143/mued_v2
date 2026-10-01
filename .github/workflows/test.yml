@@ -110,6 +110,29 @@ jobs:
     #   and the token is the per-run GITHUB_TOKEN (contents/pull-requests: read). Clear the variable to go back.
     runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-latest' }}
     steps:
+      # ★Isolation check, self-hosted only (conductor/CCO 2026-10-01). The runner pod must not reach the Mac,
+      #   the LAN gateway, the kubelet or the k8s API. Any of the four answering = isolation broken → fail.
+      #   Positive control first: github.com:443 MUST answer, so a broken probe (every connect failing) is
+      #   never read as "isolated". The Mac is probed on 7000 (AirPlay receiver, always listening) — not a
+      #   port that is only open while some app runs. No `name:` on purpose: the merge gate voids a PR that
+      #   moves a `name:` line in this file (scripts/verify/pr-merge-gate.ts ⑤), and this check needs none.
+      - if: runner.environment == 'self-hosted'
+        run: |
+          set -u
+          can_reach() { timeout 3 bash -c "exec 3<>/dev/tcp/$1/$2" 2>/dev/null; }
+          if ! can_reach github.com 443; then
+            echo "::error::isolation check is broken: github.com:443 did not answer either"
+            exit 1
+          fi
+          reached=""
+          for target in 192.168.5.2:7000 192.168.5.1:22 192.168.5.1:10250 10.43.0.1:443; do
+            if can_reach "${target%:*}" "${target##*:}"; then reached="$reached $target"; fi
+          done
+          if [ -n "$reached" ]; then
+            echo "::error::隔離が崩れている — the runner reached:$reached"
+            exit 1
+          fi
+          echo "isolation ok: github.com:443 answers; none of the 4 private targets do"
       - uses: actions/checkout@v4
 
       # ★Before the detection: it runs scripts/ci/docs-only.mjs with node, and the self-hosted runner image has
@@ -209,6 +232,29 @@ jobs:
     #   and the token is the per-run GITHUB_TOKEN (contents/pull-requests: read). Clear the variable to go back.
     runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-latest' }}
     steps:
+      # ★Isolation check, self-hosted only (conductor/CCO 2026-10-01). The runner pod must not reach the Mac,
+      #   the LAN gateway, the kubelet or the k8s API. Any of the four answering = isolation broken → fail.
+      #   Positive control first: github.com:443 MUST answer, so a broken probe (every connect failing) is
+      #   never read as "isolated". The Mac is probed on 7000 (AirPlay receiver, always listening) — not a
+      #   port that is only open while some app runs. No `name:` on purpose: the merge gate voids a PR that
+      #   moves a `name:` line in this file (scripts/verify/pr-merge-gate.ts ⑤), and this check needs none.
+      - if: runner.environment == 'self-hosted'
+        run: |
+          set -u
+          can_reach() { timeout 3 bash -c "exec 3<>/dev/tcp/$1/$2" 2>/dev/null; }
+          if ! can_reach github.com 443; then
+            echo "::error::isolation check is broken: github.com:443 did not answer either"
+            exit 1
+          fi
+          reached=""
+          for target in 192.168.5.2:7000 192.168.5.1:22 192.168.5.1:10250 10.43.0.1:443; do
+            if can_reach "${target%:*}" "${target##*:}"; then reached="$reached $target"; fi
+          done
+          if [ -n "$reached" ]; then
+            echo "::error::隔離が崩れている — the runner reached:$reached"
+            exit 1
+          fi
+          echo "isolation ok: github.com:443 answers; none of the 4 private targets do"
       # ★fetch-depth: 0 —— plugin-download-retention.test.ts が母集団を git 履歴から導く
       #   （`*_DOWNLOAD_URL` が過去に持った全ての値）。★既定の shallow (depth=1) では
       #   その履歴が存在しないので、★配布物が全件そろっていても必ず RED になる。
@@ -287,6 +333,29 @@ jobs:
     #   and the token is the per-run GITHUB_TOKEN (contents/pull-requests: read). Clear the variable to go back.
     runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-latest' }}
     steps:
+      # ★Isolation check, self-hosted only (conductor/CCO 2026-10-01). The runner pod must not reach the Mac,
+      #   the LAN gateway, the kubelet or the k8s API. Any of the four answering = isolation broken → fail.
+      #   Positive control first: github.com:443 MUST answer, so a broken probe (every connect failing) is
+      #   never read as "isolated". The Mac is probed on 7000 (AirPlay receiver, always listening) — not a
+      #   port that is only open while some app runs. No `name:` on purpose: the merge gate voids a PR that
+      #   moves a `name:` line in this file (scripts/verify/pr-merge-gate.ts ⑤), and this check needs none.
+      - if: runner.environment == 'self-hosted'
+        run: |
+          set -u
+          can_reach() { timeout 3 bash -c "exec 3<>/dev/tcp/$1/$2" 2>/dev/null; }
+          if ! can_reach github.com 443; then
+            echo "::error::isolation check is broken: github.com:443 did not answer either"
+            exit 1
+          fi
+          reached=""
+          for target in 192.168.5.2:7000 192.168.5.1:22 192.168.5.1:10250 10.43.0.1:443; do
+            if can_reach "${target%:*}" "${target##*:}"; then reached="$reached $target"; fi
+          done
+          if [ -n "$reached" ]; then
+            echo "::error::隔離が崩れている — the runner reached:$reached"
+            exit 1
+          fi
+          echo "isolation ok: github.com:443 answers; none of the 4 private targets do"
       - uses: actions/checkout@v4
 
       # ★Before the detection: it runs scripts/ci/docs-only.mjs with node, and the self-hosted runner image has
