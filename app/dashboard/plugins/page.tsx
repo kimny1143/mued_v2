@@ -68,6 +68,7 @@ export default async function PluginsPortalPage() {
     licenseKey: p.licenseKey, // ★verbatim — the keyfile is signed over its exact bytes; null once refunded
     purchasedAtISO: p.purchasedAt.toISOString(),
     refundedAtISO: p.refundedAt ? p.refundedAt.toISOString() : null,
+    windows: p.windows, // null until masterchain for Windows ships (MASTERCHAIN_WINDOWS_LIVE)
   }));
 
   const available: AvailableViewItem[] = buildAvailableItems(items).map((a) => ({

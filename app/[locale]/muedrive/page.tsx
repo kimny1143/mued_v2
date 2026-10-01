@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
+import { freePluginOperatingSystem, withWindowsSentence } from "@/lib/plugins/windows-beta";
 import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 import { MuedriveLandingContent } from "@/components/features/muedrive-landing";
 
@@ -21,10 +22,13 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "muedrive.meta" });
+  const tw = await getTranslations({ locale, namespace: "muedsp.windows" });
+  // ★Unchanged while the Windows beta is not live (lib/plugins/windows-beta.ts).
+  const description = withWindowsSentence(t("description"), tw("productMeta"));
 
   return {
     title: t("title"),
-    description: t("description"),
+    description,
     // Indexed only while MUEDRIVE_LIVE (currently ★false — staged until the signed .pkg and the
     // Resend audience land; the flip is its own kimny-gated PR). Keep this comment in step with
     // lib/muedrive/config.ts — the flip PR author reads this line first.
@@ -44,7 +48,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       images: SHARE_IMAGES,
       title: t("title"),
-      description: t("description"),
+      description,
       type: "website",
       url: `https://mued.jp/${locale}/muedrive`,
     },
@@ -53,7 +57,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: SHARE_IMAGES,
       card: "summary_large_image",
       title: t("title"),
-      description: t("description"),
+      description,
     },
   };
 }
@@ -63,6 +67,7 @@ export default async function MuedrivePage({ params }: PageProps) {
   setRequestLocale(locale as Locale);
 
   const tMeta = await getTranslations({ locale, namespace: "muedrive.meta" });
+  const tWin = await getTranslations({ locale, namespace: "muedsp.windows" });
 
   // SoftwareApplication (free plugin) — LLMO/GEO. Emitted only when LIVE. Numbers sealed per the
   // fact-lock (no version, no rating).
@@ -72,8 +77,8 @@ export default async function MuedrivePage({ params }: PageProps) {
     name: "MUEDsp drive",
     alternateName: "MUEDrive",
     applicationCategory: "MultimediaApplication",
-    operatingSystem: "macOS",
-    description: tMeta("description"),
+    operatingSystem: freePluginOperatingSystem(),
+    description: withWindowsSentence(tMeta("description"), tWin("productMeta")),
     offers: {
       "@type": "Offer",
       price: "0",

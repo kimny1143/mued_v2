@@ -15,7 +15,8 @@ import {
   type PurchaseItem,
   type ClerkUserLike,
 } from "@/lib/plugins/portal";
-import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
+import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION } from "@/lib/masterchain/config";
+import { masterchainWindowsBuild } from "@/lib/plugins/windows-beta";
 
 /** Trial ownership requires BOTH a verified email and the issuing Clerk account. */
 export async function getTrialItemForUser(user: (ClerkUserLike & { id?: string }) | null | undefined) {
@@ -100,5 +101,9 @@ export async function getPurchaseItemsForUser(user: ClerkUserLike | null | undef
     .from(masterchainPurchases)
     .where(inArray(masterchainPurchases.email, emails)); // scoped to the caller's verified emails ONLY
 
-  return buildPurchaseItems(rows, MASTERCHAIN_DOWNLOAD_URL);
+  return buildPurchaseItems(
+    rows,
+    MASTERCHAIN_DOWNLOAD_URL,
+    masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION),
+  );
 }

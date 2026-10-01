@@ -5,7 +5,8 @@ import { rateLimit, checkRateLimit } from "@/lib/middleware/rate-limit";
 import { MUEDSP_AUDIENCE_ID, isHoneypotTripped } from "@/lib/plugins/registry";
 import { emailService } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
-import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_DOWNLOAD_URL } from "./config";
+import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION } from "./config";
+import { masterchainWindowsBuild } from "@/lib/plugins/windows-beta";
 import { isDisposableEmail } from "./key-issuance";
 
 const schema = z.object({
@@ -48,7 +49,10 @@ export async function handleMasterchainDemo(request: NextRequest) {
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid_email" }, { status: 400 });
-  const success = () => NextResponse.json({ ok: true, downloadUrl: MASTERCHAIN_DOWNLOAD_URL });
+  // ★windowsDownloadUrl only once masterchain for Windows ships; until then the response is exactly as before.
+  const windows = masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION);
+  const success = () =>
+    NextResponse.json(windows ? { ok: true, downloadUrl: MASTERCHAIN_DOWNLOAD_URL, windowsDownloadUrl: windows.url } : { ok: true, downloadUrl: MASTERCHAIN_DOWNLOAD_URL });
   const { email, locale, marketingOptIn, website } = parsed.data;
   if (isHoneypotTripped(website)) return success();
   if (isDisposableEmail(email)) return NextResponse.json({ error: "disposable_email" }, { status: 422 });

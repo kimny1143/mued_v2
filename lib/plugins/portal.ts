@@ -201,6 +201,8 @@ export interface PurchaseItem {
   purchasedAt: Date;
   /** When it was refunded in full (or charged back); null otherwise. */
   refundedAt: Date | null;
+  /** The Windows build (VST3) — null until masterchain for Windows ships, and for a refunded purchase. */
+  windows: { url: string; version: string } | null;
 }
 
 /** "…/MUEDsp-masterchain-0.1.3-installer.pkg" → "0.1.3". Null when the filename carries none. */
@@ -227,6 +229,7 @@ function versionInUrl(url: string): string | null {
 export function buildPurchaseItems(
   purchases: readonly OwnedPurchase[] | null | undefined,
   downloadUrl: string,
+  windows: { url: string; version: string } | null = null,
 ): PurchaseItem[] {
   const items: PurchaseItem[] = [];
   const seen = new Set<string>();
@@ -247,6 +250,7 @@ export function buildPurchaseItems(
       licenseKey: refundedAt ? null : raw,
       purchasedAt: p.createdAt,
       refundedAt,
+      windows: refundedAt ? null : windows,
     });
   }
   items.sort((a, b) => b.purchasedAt.getTime() - a.purchasedAt.getTime());
