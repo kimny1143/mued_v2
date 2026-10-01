@@ -196,7 +196,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: July 18, 2026",
+    "lastUpdated": "Last updated: October 1, 2026",
     "intro": "glasswerks inc. (\"we,\" \"our,\" or \"us\") operates MUEDnote (the \"App\"). This Privacy Policy explains how we collect, use, and protect your information when you use our App.",
     "section1": {
       "title": "1. Information We Collect",
@@ -251,7 +251,7 @@
     },
     "section6": {
       "title": "6. Cookies",
-      "description": "The App uses cookies necessary for maintaining authentication state and providing our services."
+      "description": "This site uses two kinds of cookies. (1) Essential cookies: used to remember your display language (NEXT_LOCALE) and to keep you signed in (Clerk cookies such as __session). They are required to provide the service and cannot be turned off. (2) Measurement cookies: used by Google Analytics 4 to measure site usage (_ga and cookies starting with _ga_). They are currently set for all visitors. To stop this measurement, see Section 9."
     },
     "section7": {
       "title": "7. Changes to This Policy",
