@@ -103,8 +103,9 @@ describe("CI workflow keeps the REQUIRED jobs and guards every heavy step", () =
     expect(b).toContain(".previous_filename // empty");
     expect(b).toContain("scripts/ci/docs-only.mjs");
     expect(b).not.toMatch(/\bgh (api|pr|run)\b/);
-    // Self-hosted when the repo variable is set, GitHub's runner otherwise.
-    expect(b).toContain("    runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-latest' }}\n");
+    // ★Self-hosted, literally — no fallback to GitHub's runner (kimny 10/1: a fallback runs and bills silently).
+    expect(b).toContain("    runs-on: colima-mued-v2\n");
+    expect(b).not.toMatch(/runs-on: .*(ubuntu|vars\.)/);
     expect(b).not.toContain("secrets.");
     // It needs to read the PR's files.
     expect(b).toMatch(/\n    permissions:\n      contents: read\n      pull-requests: read\n/);
