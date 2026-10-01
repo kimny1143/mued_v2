@@ -1,5 +1,6 @@
 "use client";
 
+import { WINDOWS_BETA_LIVE } from "@/lib/plugins/windows-beta";
 import { BrandHeader } from "@/components/brand/brand-header";
 
 // MUEDsat free-download LP — dark, pro-audio faceplate aesthetic (not the advisory light editorial
@@ -44,6 +45,7 @@ export function MuedsatLandingContent() {
   const ta = useTranslations("muedsat.about");
   const tw = useTranslations("muedsat.whyFree");
   const tf = useTranslations("muedsat.footer");
+  const twin = useTranslations("muedsp.windows");
   const tv = useTranslations("muedsat.visuals");
   const tm = useTranslations("muedsat.masterchain");
 
@@ -59,6 +61,8 @@ export function MuedsatLandingContent() {
             <div>
               <span className="inline-block border-b border-[#f5a524]/50 pb-2 font-mono text-[11px] uppercase tracking-widest text-[#f5a524]">
                 {th("badge")}
+                {/* ★Windows only while the beta is live (lib/plugins/windows-beta.ts) — otherwise not a character changes. */}
+                {WINDOWS_BETA_LIVE && <> · {twin("productBadge")}</>}
               </span>
               <h1 className="mt-5 text-5xl font-semibold tracking-tight md:text-6xl">
                 <span className="text-white">MUED</span>
@@ -185,6 +189,7 @@ export function MuedsatLandingContent() {
         <div className="mx-auto max-w-5xl space-y-2.5">
           <p className="text-sm text-white/50">{tf("operator")}</p>
           <p className="font-mono text-xs uppercase tracking-wider text-white/35">{tf("format")}</p>
+          {WINDOWS_BETA_LIVE && <p className="font-mono text-xs uppercase tracking-wider text-white/35">{twin("productFormat")}</p>}
           <nav className="flex items-center gap-6 pt-1">
             <Link
               href={`/${locale}/privacy`}

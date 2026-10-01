@@ -99,3 +99,12 @@ export const MASTERCHAIN_TRIAL_DAYS = 15;
 //   since #1174 (2026-09-30, sha256 e4846886… on prod). 1.0.0 had DemoFade=0 — its behaviour does not
 //   match the demo copy — so tests/unit/masterchain-demo-gates.test.ts refuses DEMO_LIVE on a 1.0.0 URL.
 export const MASTERCHAIN_DEMO_LIVE = true;
+
+// ── masterchain for Windows (conductor 2026-10-01: prepare everything, ship on the day with a small PR) ──────
+// ★A reviewed code change, never an env switch. While false: no Windows link anywhere (portal, demo, mails),
+//   and every page reads exactly as before. On the day: put the file under public/downloads/, set the URL and
+//   version (pin its sha256/bytes in tests/unit/plugin-download-artifact-integrity.test.ts), flip the flag.
+// ★The license key is the same file as on the Mac (offline Ed25519, format v2) — dsp to confirm before the flip.
+export const MASTERCHAIN_WINDOWS_LIVE = false;
+export const MASTERCHAIN_WINDOWS_URL = "";
+export const MASTERCHAIN_WINDOWS_VERSION = "";

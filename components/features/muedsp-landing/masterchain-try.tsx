@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { MASTERCHAIN_DEMO_LIVE } from "@/lib/masterchain/config";
 import { trackCtaClick } from "@/lib/analytics/gtag";
+import { detectDemoOs, planDemoDownload, type DemoDownloadPlan } from "@/lib/masterchain/demo-download";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -19,6 +20,7 @@ type DemoError = "invalid_email" | "disposable_email" | "rate_limited" | "generi
 export function MasterchainTry() {
   const t = useTranslations("muedsp.buyTry");
   const td = useTranslations("muedsp.demo");
+  const twin = useTranslations("muedsp.windows");
   const locale = useLocale();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -26,6 +28,7 @@ export function MasterchainTry() {
   const [website, setWebsite] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [error, setError] = useState<DemoError>("generic");
+  const [offer, setOffer] = useState<DemoDownloadPlan["offer"]>([]);
   const emailOk = EMAIL_RE.test(email.trim());
   // ★Once the demo has been sent, Try stays done (CCO #1187): a second press would send a second receipt.
   const canTry = MASTERCHAIN_DEMO_LIVE && emailOk && status !== "submitting" && status !== "success";
@@ -53,7 +56,16 @@ export function MasterchainTry() {
         setStatus("error");
         return;
       }
-      window.location.assign(data.downloadUrl);
+      // ★Mac only until masterchain for Windows ships (no windowsDownloadUrl) — then the visitor's OS picks, the
+      //   other is offered as a link, and an unknown OS gets both side by side (lib/masterchain/demo-download.ts).
+      const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+      const plan = planDemoDownload(
+        detectDemoOs({ platform: nav.userAgentData?.platform, userAgent: navigator.userAgent }),
+        data.downloadUrl,
+        typeof data.windowsDownloadUrl === "string" ? data.windowsDownloadUrl : null,
+      );
+      if (plan.start) window.location.assign(plan.start);
+      setOffer(plan.offer);
       setStatus("success");
     } catch {
       setError("generic");
@@ -80,7 +92,19 @@ export function MasterchainTry() {
         <input id="masterchain-demo-website" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
       </div>
       {status === "success" ? (
-        <p role="status" className="text-sm text-[#f5a524]">{td("success")}</p>
+        <div role="status" className="space-y-2">
+          <p className="text-sm text-[#f5a524]">{td("success")}</p>
+          {offer.length > 1 && <p className="text-sm text-white/70">{twin("demoChoose")}</p>}
+          {offer.length > 0 && (
+            <p className="flex flex-wrap gap-4 text-sm" data-testid="masterchain-demo-offer">
+              {offer.map((o) => (
+                <a key={o.os} href={o.url} className="text-[#f5a524] underline underline-offset-2">
+                  {twin(o.os === "mac" ? "demoOtherMac" : "demoOtherWindows")}
+                </a>
+              ))}
+            </p>
+          )}
+        </div>
       ) : (
         <>
           <input

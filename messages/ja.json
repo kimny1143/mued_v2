@@ -2647,7 +2647,15 @@
         "DAW で VST3 を再スキャンします。"
       ],
       "note": "署名のないベータ版です。ノブは Shift か Ctrl を押しながら動かすと、細かく調整できます。",
-      "portalCta": "ポータルを開く"
+      "portalCta": "ポータルを開く",
+      "productBadge": "Windows（VST3・ベータ）",
+      "productFormat": "Windows: VST3（ベータ・64 bit）",
+      "productMeta": "Windows 版（VST3・ベータ）もあります。",
+      "tokushohoFree": "無料の MUEDsat・MUEDlim・MUEDrive は、Windows 版（VST3・ベータ・64 bit）をご提供しています。MUEDsp masterchain の Windows 版は現在ご提供しておりません。",
+      "tokushohoAll": "Windows 版（VST3・64 bit）もご提供しています。無料の MUEDsat・MUEDlim・MUEDrive はベータ版です。ライセンスキーは Mac 版と共通です。",
+      "demoOtherMac": "Mac 版はこちら",
+      "demoOtherWindows": "Windows 版はこちら",
+      "demoChoose": "お使いのパソコンに合わせて選んでください。"
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
@@ -2887,7 +2895,9 @@
     "download": "最新版をダウンロード",
     "windows": {
       "download": "Windows 版（ベータ）",
-      "howto": "Windows 版（VST3・ベータ）: ZIP を展開すると、外側のフォルダ（例: MUEDrive-1.0.1-win-x64-…）ができます。外側のフォルダは入れず、中の「.vst3」フォルダだけを C:\\Program Files\\Common Files\\VST3\\ にコピーしてください（管理者の許可が要ることがあります）。そのあと DAW で VST3 を再スキャンします。署名のないベータ版です。"
+      "howto": "Windows 版（VST3・ベータ）: ZIP を展開すると、外側のフォルダ（例: MUEDrive-1.0.1-win-x64-…）ができます。外側のフォルダは入れず、中の「.vst3」フォルダだけを C:\\Program Files\\Common Files\\VST3\\ にコピーしてください（管理者の許可が要ることがあります）。そのあと DAW で VST3 を再スキャンします。署名のないベータ版です。",
+      "masterchainDownload": "Windows 版",
+      "masterchainSameKey": "Windows 版（VST3）も、同じライセンスキーで使えます。"
     },
     "added": "{date} に追加",
     "kind": {

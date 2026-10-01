@@ -37,3 +37,25 @@ export function windowsBetaFor(pluginKey: string, live: boolean = WINDOWS_BETA_L
   if (!live) return null;
   return WINDOWS_BETA[pluginKey as PluginKey] ?? null;
 }
+
+/**
+ * masterchain for Windows on a buyer's portal row — null until MASTERCHAIN_WINDOWS_LIVE and a URL are set.
+ */
+export function masterchainWindowsBuild(live: boolean, url: string, version: string): WindowsBetaBuild | null {
+  return live && url ? { url, version } : null;
+}
+
+/**
+ * The operating systems a free plugin page claims (JSON-LD `operatingSystem`). macOS only until the beta is live.
+ */
+export function freePluginOperatingSystem(live: boolean = WINDOWS_BETA_LIVE): string {
+  return live ? "macOS, Windows" : "macOS";
+}
+
+/**
+ * A free plugin's meta description, with the Windows sentence appended only while the beta is live. ★While it
+ * is not, this returns the description unchanged — the pages read exactly as before (tests/unit/windows-launch-prep).
+ */
+export function withWindowsSentence(description: string, windowsSentence: string, live: boolean = WINDOWS_BETA_LIVE): string {
+  return live ? `${description} ${windowsSentence}` : description;
+}

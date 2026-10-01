@@ -13,7 +13,8 @@ import { logger } from '@/lib/utils/logger';
 import { MUEDSAT_DOWNLOAD_URL } from '@/lib/muedsat/config';
 import { MUEDLIM_DOWNLOAD_URL } from '@/lib/muedlim/config';
 import { MUEDRIVE_DOWNLOAD_URL } from '@/lib/muedrive/config';
-import { MASTERCHAIN_DOWNLOAD_URL } from '@/lib/masterchain/config';
+import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION } from '@/lib/masterchain/config';
+import { masterchainWindowsBuild } from '@/lib/plugins/windows-beta';
 import { formatUtcMinute } from '@/lib/masterchain/format';
 import { signUnsubscribeToken } from '@/lib/plugins/unsubscribe-token';
 
@@ -927,7 +928,7 @@ Hoo MCP経由の自動送信
    * Demo receipt. ★With consent (the person is now on the shared MUEDsp list) it carries an unsubscribe
    * link, like the free three; without consent it is purely transactional and has none (conductor 2026-09-30).
    */
-  masterchainDemoDownload(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
+  masterchainDemoDownload(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string; windowsUrl?: string | null }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const subject = isJa ? 'MUEDsp masterchain デモのダウンロード' : 'Your MUEDsp masterchain demo download';
     const intro = isJa ? "MUEDsp masterchain のデモをお試しいただき、ありがとうございます。" : "Thanks for trying the MUEDsp masterchain demo.";
@@ -950,10 +951,17 @@ Hoo MCP経由の自動送信
       ? `<p style="color: #9ca3af; font-size: 12px;"><a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a></p>`
       : '';
     const unsubText = data.unsubscribeUrl ? `\n\n${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}` : '';
+    // ★The Windows link only once masterchain for Windows ships; until then the mail is exactly as before.
+    const windowsUrl = data.windowsUrl === undefined
+      ? masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION)?.url ?? null
+      : data.windowsUrl;
+    const windowsLabel = isJa ? 'Windows 版をダウンロード' : 'Download for Windows';
+    const windowsHtml = windowsUrl ? `<p><a href="${windowsUrl}">${windowsLabel}</a></p>` : '';
+    const windowsText = windowsUrl ? `\n${windowsLabel}: ${windowsUrl}` : '';
     return {
       subject,
-      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p><p>${limits}</p><p>${formats}</p>${buyHtml}${unsubHtml}`),
-      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}\n\n${limits}\n\n${formats}${buyText}${unsubText}\n\nglasswerks inc. — mued.jp`,
+      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp masterchain</h2><p>${intro}</p><p><a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button">${label}</a></p>${windowsHtml}<p>${limits}</p><p>${formats}</p>${buyHtml}${unsubHtml}`),
+      text: `${intro}\n\n${label}: ${MASTERCHAIN_DOWNLOAD_URL}${windowsText}\n\n${limits}\n\n${formats}${buyText}${unsubText}\n\nglasswerks inc. — mued.jp`,
     };
   },
 

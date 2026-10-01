@@ -65,6 +65,8 @@ export interface PurchaseViewItem {
   purchasedAtISO: string;
   /** Set when refunded in full / charged back (return.created). */
   refundedAtISO?: string | null;
+  /** masterchain for Windows (VST3) — absent/null until it ships (MASTERCHAIN_WINDOWS_LIVE). */
+  windows?: { url: string; version: string } | null;
 }
 
 export interface AvailableViewItem {
@@ -336,6 +338,12 @@ function PurchaseCard({
           <>
             <LicenseKeyActions licenseKey={item.licenseKey} label={t("purchased.licenseLabel")} copyLabel={t("purchased.copy")} copiedLabel={t("purchased.copied")} failedLabel={t("purchased.copyFailed")} downloadLabel={t("purchased.download")} />
             <p className={styles.howto}>{t("purchased.howto")}</p>
+            {item.windows && (
+              <>
+                <p className={styles.howto} data-testid="portal-masterchain-windows-note">{t("windows.masterchainSameKey")}</p>
+                <p className={styles.howto}>{t("windows.howto")}</p>
+              </>
+            )}
           </>
         )}
       </div>
@@ -350,6 +358,13 @@ function PurchaseCard({
           {t("download")}
           <small>{`masterchain${item.version ? ` ${item.version}` : ""}${fileExt(item.downloadUrl) ? ` · ${fileExt(item.downloadUrl)}` : ""}`}</small>
         </a>
+        {/* ★Windows: the same license key (conductor 2026-10-01). Shown only once it ships and while not refunded. */}
+        {item.windows && (
+          <a className={styles.dlAlt} href={item.windows.url} download data-testid="portal-masterchain-windows">
+            {t("windows.masterchainDownload")}
+            <small>{`masterchain ${item.windows.version} · VST3 · ${fileExt(item.windows.url)}`}</small>
+          </a>
+        )}
       </div>
     </div>
   );

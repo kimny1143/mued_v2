@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
+import { freePluginOperatingSystem, withWindowsSentence } from "@/lib/plugins/windows-beta";
 import { MUEDSAT_LIVE } from "@/lib/muedsat/config";
 import { MuedsatLandingContent } from "@/components/features/muedsat-landing";
 
@@ -21,10 +22,13 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "muedsat.meta" });
+  const tw = await getTranslations({ locale, namespace: "muedsp.windows" });
+  // ★Unchanged while the Windows beta is not live (lib/plugins/windows-beta.ts).
+  const description = withWindowsSentence(t("description"), tw("productMeta"));
 
   return {
     title: t("title"),
-    description: t("description"),
+    description,
     // STAGED: not indexed until the kimny-gated unlock flips MUEDSAT_LIVE.
     robots: {
       index: MUEDSAT_LIVE,
@@ -42,7 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       images: SHARE_IMAGES,
       title: t("title"),
-      description: t("description"),
+      description,
       type: "website",
       url: `https://mued.jp/${locale}/muedsat`,
     },
@@ -51,7 +55,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: SHARE_IMAGES,
       card: "summary_large_image",
       title: t("title"),
-      description: t("description"),
+      description,
     },
   };
 }
@@ -61,6 +65,7 @@ export default async function MuedsatPage({ params }: PageProps) {
   setRequestLocale(locale as Locale);
 
   const tMeta = await getTranslations({ locale, namespace: "muedsat.meta" });
+  const tWin = await getTranslations({ locale, namespace: "muedsp.windows" });
 
   // SoftwareApplication (free plugin) — LLMO/GEO. Emitted only when LIVE: while staged the page
   // is noindex and undiscoverable, so no structured data leaks either. Numbers are sealed
@@ -71,8 +76,8 @@ export default async function MuedsatPage({ params }: PageProps) {
     name: "MUEDsp saturation",
     alternateName: "MUEDsat",
     applicationCategory: "MultimediaApplication",
-    operatingSystem: "macOS",
-    description: tMeta("description"),
+    operatingSystem: freePluginOperatingSystem(),
+    description: withWindowsSentence(tMeta("description"), tWin("productMeta")),
     offers: {
       "@type": "Offer",
       price: "0",

@@ -34,6 +34,10 @@ vi.mock("@/db/schema", () => ({
 
 vi.mock("@/lib/masterchain/config", () => ({
   MASTERCHAIN_DOWNLOAD_URL: "https://mued.jp/downloads/MUEDsp-masterchain-0.1.3-installer.pkg",
+  // masterchain for Windows — off, as shipped (tests/unit/windows-launch-prep.test.tsx covers it on).
+  MASTERCHAIN_WINDOWS_LIVE: false,
+  MASTERCHAIN_WINDOWS_URL: "",
+  MASTERCHAIN_WINDOWS_VERSION: "",
 }));
 
 import { getPurchaseItemsForUser } from "@/lib/plugins/portal-data";

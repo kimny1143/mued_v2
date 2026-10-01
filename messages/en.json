@@ -2647,7 +2647,15 @@
         "Rescan VST3 plug-ins in your DAW."
       ],
       "note": "This is an unsigned beta build. Hold Shift or Ctrl while dragging a knob for fine adjustment.",
-      "portalCta": "Open your portal"
+      "portalCta": "Open your portal",
+      "productBadge": "Windows (VST3, beta)",
+      "productFormat": "Windows: VST3 (beta, 64-bit)",
+      "productMeta": "A Windows build (VST3, beta) is available too.",
+      "tokushohoFree": "The free MUEDsat, MUEDlim and MUEDrive are offered for Windows (VST3, beta, 64-bit). A Windows build of MUEDsp masterchain is not currently offered.",
+      "tokushohoAll": "Windows builds (VST3, 64-bit) are offered as well. The free MUEDsat, MUEDlim and MUEDrive are beta builds. The license key is the same as for the Mac version.",
+      "demoOtherMac": "Get the Mac version",
+      "demoOtherWindows": "Get the Windows version",
+      "demoChoose": "Choose the one for your computer."
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
@@ -2887,7 +2895,9 @@
     "download": "Download latest",
     "windows": {
       "download": "Windows (beta)",
-      "howto": "Windows (VST3, beta): extracting the ZIP creates an outer folder (e.g. MUEDrive-1.0.1-win-x64-…). Don't copy that outer folder — copy only the “.vst3” folder inside it to C:\\Program Files\\Common Files\\VST3\\ (administrator permission may be required), then rescan VST3 plug-ins in your DAW. This is an unsigned beta build."
+      "howto": "Windows (VST3, beta): extracting the ZIP creates an outer folder (e.g. MUEDrive-1.0.1-win-x64-…). Don't copy that outer folder — copy only the “.vst3” folder inside it to C:\\Program Files\\Common Files\\VST3\\ (administrator permission may be required), then rescan VST3 plug-ins in your DAW. This is an unsigned beta build.",
+      "masterchainDownload": "Windows version",
+      "masterchainSameKey": "The Windows version (VST3) uses the same license key."
     },
     "added": "Added {date}",
     "kind": {

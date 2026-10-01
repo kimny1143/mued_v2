@@ -1,4 +1,5 @@
-import { MASTERCHAIN_DEMO_LIVE } from "@/lib/masterchain/config";
+import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_WINDOWS_LIVE } from "@/lib/masterchain/config";
+import { WINDOWS_BETA_LIVE } from "@/lib/plugins/windows-beta";
 import { BrandHeader } from "@/components/brand/brand-header";
 import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
@@ -43,6 +44,7 @@ export default async function TokushohoPage({ params }: PageProps) {
 
 function TokushohoContent({ locale }: { locale: string }) {
   const t = useTranslations("tokushoho");
+  const twin = useTranslations("muedsp.windows");
 
   return (
     <div className="dark min-h-screen bg-bg-primary">
@@ -156,7 +158,13 @@ function TokushohoContent({ locale }: { locale: string }) {
                   t("muedsp.environment.memory"),
                   t("muedsp.environment.formats"),
                   t("muedsp.environment.host"),
-                  t("muedsp.environment.windows"),
+                  // ★The Windows line follows what is actually offered (conductor 2026-10-01). While neither flag is on
+                  //   it is the same sentence as before — tests/unit/windows-launch-prep.test.ts.
+                  MASTERCHAIN_WINDOWS_LIVE
+                    ? twin("tokushohoAll")
+                    : WINDOWS_BETA_LIVE
+                      ? twin("tokushohoFree")
+                      : t("muedsp.environment.windows"),
                 ]}
                 contactTitle={t("muedsp.contact.title")}
                 contactValue={t("muedsp.contact.value")}
