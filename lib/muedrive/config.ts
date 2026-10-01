@@ -66,7 +66,14 @@ export const MUEDRIVE_LIVE = true;
 //
 // No 0.1.0-alias problem here (unlike MUEDsat/MUEDlim): MUEDrive has never been emailed under an
 // older filename, so this URL is the only one that has ever existed for it.
-export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-1.0.1-installer.pkg";
+// ★1.0.1 CHARACTER rebuild (2026-10-01, kimny checked + dsp §4/§5): the CHARACTER knob (TUBE / WARM / CONSOLE) now
+//   steps on drag (up/down, left/right, diagonal, wheel). Audio unchanged. EULA 2026.10, notarised, stapled.
+//   ★Same name AND same version as the first 1.0.1 — tell them apart by sha256 (support):
+//     this build   c3fb7d164ab9907490ef03633757e35400d0acc3d5f49c59fe74be407b36f8f4 · 3,619,132 B (/downloads/character-2026.10/)
+//     first 1.0.1  75bf0dcc1457559a35fbda9b55ae74c318f51dca754767863d0c080481a40fd4 · 3,616,696 B (/downloads/, pinned on the shelf)
+//   Verified 2026-10-01 on the copy under public/downloads/character-2026.10/: sha256 + bytes matched dsp's relay, cmp
+//   byte-identical to dsp's plugin/dist/, magic `xar!`, Developer ID Installer + notarized, stapler OK, spctl accepted.
+export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/character-2026.10/MUEDrive-1.0.1-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Bumped when a new build ships. NOT a secret.
