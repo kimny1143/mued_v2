@@ -39,6 +39,10 @@ describe("label", () => {
     expect(broadcastLabel({ id: "x", name: "MUEDsp on Windows", subject: "S", sent_at: LAUNCH_SENT })).toBe("MUEDsp on Windows");
     expect(broadcastLabel({ id: "x", name: "Untitled", subject: "masterchain is here", sent_at: LAUNCH_SENT })).toBe("masterchain is here");
     expect(broadcastLabel({ id: "x", name: null, subject: null, sent_at: LAUNCH_SENT })).toBe("x");
+    // The launch broadcast was sent as "Untitled" and can no longer be renamed in Resend.
+    expect(broadcastLabel({ id: "a615f3f2-4bd5-4e52-9e74-32a2ec67cbef", name: "Untitled", subject: "masterchain is here", sent_at: LAUNCH_SENT })).toBe("発売のお知らせ");
+    // …but a real name always wins over the override.
+    expect(broadcastLabel({ id: "a615f3f2-4bd5-4e52-9e74-32a2ec67cbef", name: "Launch", subject: "s", sent_at: LAUNCH_SENT })).toBe("Launch");
   });
 });
 
@@ -126,7 +130,7 @@ describe("toNewsletterMetrics", () => {
 
   it("computes the rates the hand-made file used (delivery over sent, the rest over delivered)", () => {
     const b = out.broadcasts[1];
-    expect(b.label).toBe("masterchain is here");
+    expect(b.label).toBe("発売のお知らせ");
     expect(b.sent_at).toBe("2026-10-01T07:13:13+09:00");
     expect(b.campaign).toBe("email_nl-launch-a-issue05");
     expect(b.rates).toEqual({ delivery: 97.94, open: 25.9, click: 5, unsubscribe: 1, complaint: 0 });

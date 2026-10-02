@@ -122,11 +122,21 @@ function pct(numerator: number | null, denominator: number | null): number | nul
   return Math.round((numerator / denominator) * 10000) / 100;
 }
 
-/** Resend's default broadcast name is "Untitled" — that is not a label, so fall back to the subject. */
+/**
+ * Labels for broadcasts that were sent as "Untitled". A sent broadcast's name cannot be changed
+ * (Resend: 403 "Only draft broadcasts can be edited", conductor 2026-10-02), so the one launch
+ * broadcast is named here. Future broadcasts get a name when conductor creates them — do not grow
+ * this map as a substitute for naming them.
+ */
+export const UNTITLED_LABELS: Readonly<Record<string, string>> = {
+  "a615f3f2-4bd5-4e52-9e74-32a2ec67cbef": "発売のお知らせ",
+};
+
+/** The name; Resend's default "Untitled" is not a label → UNTITLED_LABELS, then the subject. */
 export function broadcastLabel(b: BroadcastInfo): string {
   const name = (b.name ?? "").trim();
   if (name && name !== "Untitled") return name;
-  return (b.subject ?? "").trim() || b.id;
+  return UNTITLED_LABELS[b.id] ?? ((b.subject ?? "").trim() || b.id);
 }
 
 /**
