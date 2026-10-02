@@ -125,12 +125,24 @@ jobs:
           echo "report_name=$(basename "$report")" >> "$GITHUB_OUTPUT"
           echo "produced: $report"
 
+          # gw-dash の「メール」タブが読む newsletter-metrics/v1（conductor 2026-10-02・kimny「OK進めましょう」）。
+          # ★失敗しても funnel の publish は止めない（別の面なので）。その時は publish の側で file を置かない
+          #   ＝data branch の前の file が generated_at ごと残る（古さは file の中の generated_at で分かる）。
+          #   警告は run の annotation に出す（黙って落とさない）。
+          nl="$RUNNER_TEMP/newsletter-metrics.json"
+          if npx tsx scripts/emit-newsletter-metrics.ts "$nl" 2>&1 | tee -a collector.log; then
+            echo "newsletter_path=$nl" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::newsletter metrics failed — reports/newsletter/newsletter-metrics.json is NOT updated in this run"
+          fi
+
       - name: Publish to data/plugin-funnel-reports
         # 集計が失敗したら publish しない (古い/欠けたデータを最新として出さない)。
         if: success() && (github.event_name != 'workflow_dispatch' || inputs.publish)
         env:
           REPORT_PATH: ${{ steps.collect.outputs.report_path }}
           REPORT_NAME: ${{ steps.collect.outputs.report_name }}
+          NEWSLETTER_PATH: ${{ steps.collect.outputs.newsletter_path }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           # この行の存在理由が「鮮度の正本を機械可読にする」である以上、来歴を固定値にすると
           # ファイル自身が嘘をつく (手動 dispatch の publish が automated と記録される)。
@@ -150,6 +162,12 @@ jobs:
 
           mkdir -p reports/plugin-funnel
           cp "$RUNNER_TEMP/$REPORT_NAME" "reports/plugin-funnel/$REPORT_NAME"
+
+          # 最新の 1 file だけを置く（日ごとの履歴は持たない・gw-dash が読むのはこの path）。
+          if [ -n "${NEWSLETTER_PATH:-}" ] && [ -f "$NEWSLETTER_PATH" ]; then
+            mkdir -p reports/newsletter
+            cp "$NEWSLETTER_PATH" reports/newsletter/newsletter-metrics.json
+          fi
 
           # 鮮度は散文でなく機械可読ファイルを正本にする (README の日付が stale 化する事故を防ぐ)。
           cat > LAST_PUBLISH.json <<JSON
