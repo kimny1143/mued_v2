@@ -174,6 +174,7 @@ describe("toNewsletterMetrics", () => {
  * are a non-negative finite number OR null; hourly / links are an array OR null. The gw-dash side
  * carries the same fixture (WRITER_SAMPLE_WITH_NULLS below) in its own test.
  */
+// ★COPY — the authority is gw-dash parseNewsletterMetrics (+ its test on the same fixture, gw-dash #143). This copy does not follow it.
 const isCount = (v: unknown) => v === null || (typeof v === "number" && Number.isFinite(v) && v >= 0);
 function readerAccepts(doc: ReturnType<typeof toNewsletterMetrics>): string | true {
   for (const [i, b] of doc.broadcasts.entries()) {
