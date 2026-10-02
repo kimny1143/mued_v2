@@ -1,0 +1,416 @@
+{
+  "schema": "newsletter-metrics/v1",
+  "generated_at": "2026-10-02T12:17:15+09:00",
+  "source": "Resend API（/emails/metrics・/broadcasts/{id}/clicked-links）。plugin-funnel-collector が毎朝書き出す（mued_v2 scripts/emit-newsletter-metrics.ts）。",
+  "notes": [
+    "「押した人」には配信停止のリンクを押した人も入る（Resend の数え方）。製品へのリンクの数は下のリンク別を見る。",
+    "届かなかった（bounced）は一時的なもの（相手のメールボックスがいっぱい等）と恒久的なものの合計。",
+    "送らなかった（suppressed）は、過去に届かなかった・配信停止した宛先で、Resend が自動で送信から外したもの。",
+    "時間帯は日本時間・送ってから 24 時間まで（それ以降は合計だけを更新する）。数は「その 1 時間の中で開いた・押した人」で、時間をまたいで開いた人はそれぞれの時間に数える（∴時間帯を足すと合計より多い。2026-10-02 実測: 発売便 302 対 合計 259）。",
+    "「送った」は再送も数える（一時的に届かなかった宛先への再試行）。届いた数は変わらない。",
+    "時間帯で Resend が数を返さなかった時間は 0 として並べている（Resend は数のある時間だけを返す）。",
+    "リンク別は、同じ言語・同じ種類のリンクを 1 行にまとめた。1 行の中に URL が 2 つ以上ある時、押した人の数は足し算なので、両方押した人は 2 回数えている（上限の値）。"
+  ],
+  "broadcasts": [
+    {
+      "id": "6ff80645-34af-4cd7-8d1f-d20a16e863b6",
+      "label": "MUEDsp on Windows — masterchain + free 3 (2026-10-01)",
+      "subject": "MUEDsp on Windows: masterchain + 3 free plugins (VST3)",
+      "sent_at": "2026-10-01T17:31:35+09:00",
+      "campaign": "email_nl-windows-issue06",
+      "totals": {
+        "sent": 1011,
+        "delivered": 982,
+        "bounced": 29,
+        "bounced_transient": 29,
+        "bounced_permanent": 0,
+        "suppressed": 27,
+        "unique_opened": 258,
+        "unique_clicked": 40,
+        "unsubscribed": 10,
+        "complained": 0
+      },
+      "rates": {
+        "delivery": 97.13,
+        "open": 26.27,
+        "click": 4.07,
+        "unsubscribe": 1.02,
+        "complaint": 0
+      },
+      "hourly": [
+        {
+          "hour": "17",
+          "opened": 97,
+          "clicked": 7,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "18",
+          "opened": 46,
+          "clicked": 7,
+          "unsubscribed": 3
+        },
+        {
+          "hour": "19",
+          "opened": 23,
+          "clicked": 6,
+          "unsubscribed": 2
+        },
+        {
+          "hour": "20",
+          "opened": 19,
+          "clicked": 5,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "21",
+          "opened": 18,
+          "clicked": 1,
+          "unsubscribed": 2
+        },
+        {
+          "hour": "22",
+          "opened": 15,
+          "clicked": 3,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "23",
+          "opened": 15,
+          "clicked": 2,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌00",
+          "opened": 16,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌01",
+          "opened": 6,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌02",
+          "opened": 11,
+          "clicked": 3,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "翌03",
+          "opened": 7,
+          "clicked": 3,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌04",
+          "opened": 5,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌05",
+          "opened": 5,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌06",
+          "opened": 1,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌07",
+          "opened": 1,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌08",
+          "opened": 5,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌09",
+          "opened": 4,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌10",
+          "opened": 2,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌11",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌12",
+          "opened": 1,
+          "clicked": 0,
+          "unsubscribed": 0
+        }
+      ],
+      "links": [
+        {
+          "label": "英語の Windows の段",
+          "lang": "en",
+          "kind": "windows",
+          "unique": 30,
+          "clicks": 44
+        },
+        {
+          "label": "日本語の Windows の段",
+          "lang": "ja",
+          "kind": "windows",
+          "unique": 9,
+          "clicks": 12
+        },
+        {
+          "label": "配信停止",
+          "lang": "",
+          "kind": "unsubscribe",
+          "unique": 7,
+          "clicks": 7
+        }
+      ]
+    },
+    {
+      "id": "a615f3f2-4bd5-4e52-9e74-32a2ec67cbef",
+      "label": "発売のお知らせ",
+      "subject": "masterchain is here ・ masterchain を発売します — MUEDsp masterchain",
+      "sent_at": "2026-10-01T07:13:13+09:00",
+      "campaign": "email_nl-launch-a-issue05",
+      "totals": {
+        "sent": 1021,
+        "delivered": 1000,
+        "bounced": 21,
+        "bounced_transient": 20,
+        "bounced_permanent": 1,
+        "suppressed": 26,
+        "unique_opened": 262,
+        "unique_clicked": 50,
+        "unsubscribed": 10,
+        "complained": 0
+      },
+      "rates": {
+        "delivery": 97.94,
+        "open": 26.2,
+        "click": 5,
+        "unsubscribe": 1,
+        "complaint": 0
+      },
+      "hourly": [
+        {
+          "hour": "07",
+          "opened": 96,
+          "clicked": 15,
+          "unsubscribed": 2
+        },
+        {
+          "hour": "08",
+          "opened": 31,
+          "clicked": 2,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "09",
+          "opened": 10,
+          "clicked": 3,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "10",
+          "opened": 19,
+          "clicked": 4,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "11",
+          "opened": 13,
+          "clicked": 4,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "12",
+          "opened": 13,
+          "clicked": 5,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "13",
+          "opened": 8,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "14",
+          "opened": 10,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "15",
+          "opened": 19,
+          "clicked": 7,
+          "unsubscribed": 3
+        },
+        {
+          "hour": "16",
+          "opened": 9,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "17",
+          "opened": 16,
+          "clicked": 2,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "18",
+          "opened": 4,
+          "clicked": 2,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "19",
+          "opened": 8,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "20",
+          "opened": 8,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "21",
+          "opened": 2,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "22",
+          "opened": 5,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "23",
+          "opened": 7,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌00",
+          "opened": 8,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌01",
+          "opened": 5,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌02",
+          "opened": 2,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌03",
+          "opened": 2,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌04",
+          "opened": 4,
+          "clicked": 2,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌05",
+          "opened": 2,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌06",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌07",
+          "opened": 1,
+          "clicked": 0,
+          "unsubscribed": 0
+        }
+      ],
+      "links": [
+        {
+          "label": "英語の製品ページ",
+          "lang": "en",
+          "kind": "product",
+          "unique": 29,
+          "clicks": 32
+        },
+        {
+          "label": "英語の Windows の段",
+          "lang": "en",
+          "kind": "windows",
+          "unique": 10,
+          "clicks": 12
+        },
+        {
+          "label": "日本語の製品ページ",
+          "lang": "ja",
+          "kind": "product",
+          "unique": 7,
+          "clicks": 9
+        },
+        {
+          "label": "日本語の Windows の段",
+          "lang": "ja",
+          "kind": "windows",
+          "unique": 3,
+          "clicks": 4
+        },
+        {
+          "label": "/ja/eula",
+          "lang": "ja",
+          "kind": "eula",
+          "unique": 1,
+          "clicks": 1
+        },
+        {
+          "label": "読み物（/learn）",
+          "lang": "",
+          "kind": "learn",
+          "unique": 1,
+          "clicks": 1
+        },
+        {
+          "label": "配信停止",
+          "lang": "",
+          "kind": "unsubscribe",
+          "unique": 10,
+          "clicks": 10
+        }
+      ]
+    }
+  ]
+}
