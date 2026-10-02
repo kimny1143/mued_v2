@@ -1,0 +1,429 @@
+{
+  "schema": "newsletter-metrics/v1",
+  "generated_at": "2026-10-02T09:00:00+09:00",
+  "source": "sample (tests/fixtures/newsletter-metrics-inputs.ts)",
+  "notes": [
+    "「押した人」には配信停止のリンクを押した人も入る（Resend の数え方）。製品へのリンクの数は下のリンク別を見る。",
+    "届かなかった（bounced）は一時的なもの（相手のメールボックスがいっぱい等）と恒久的なものの合計。",
+    "送らなかった（suppressed）は、過去に届かなかった・配信停止した宛先で、Resend が自動で送信から外したもの。",
+    "時間帯は日本時間・送ってから 24 時間まで（それ以降は合計だけを更新する）。数は「その 1 時間の中で開いた・押した人」で、時間をまたいで開いた人はそれぞれの時間に数える（∴時間帯を足すと合計より多い。2026-10-02 実測: 発売便 302 対 合計 259）。",
+    "「送った」は再送も数える（一時的に届かなかった宛先への再試行）。届いた数は変わらない。",
+    "時間帯で Resend が数を返さなかった時間は 0 として並べている（Resend は数のある時間だけを返す）。",
+    "リンク別は、同じ言語・同じ種類のリンクを 1 行にまとめた。1 行の中に URL が 2 つ以上ある時、押した人の数は足し算なので、両方押した人は 2 回数えている（上限の値）。",
+    "11111111: 件名は取れなかった（HTTP 500）",
+    "11111111: 合計は取れなかった（HTTP 500）",
+    "11111111: 時間帯は取れなかった（HTTP 500）",
+    "11111111: リンク別は取れなかった（HTTP 500）"
+  ],
+  "broadcasts": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "label": "Failed",
+      "subject": null,
+      "sent_at": "2026-10-01T10:00:00+09:00",
+      "campaign": null,
+      "totals": {
+        "sent": null,
+        "delivered": null,
+        "bounced": null,
+        "bounced_transient": null,
+        "bounced_permanent": null,
+        "suppressed": null,
+        "unique_opened": null,
+        "unique_clicked": null,
+        "unsubscribed": null,
+        "complained": null
+      },
+      "rates": {
+        "delivery": null,
+        "open": null,
+        "click": null,
+        "unsubscribe": null,
+        "complaint": null
+      },
+      "hourly": null,
+      "links": null
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "label": "All bounced",
+      "subject": "s",
+      "sent_at": "2026-10-01T09:00:00+09:00",
+      "campaign": null,
+      "totals": {
+        "sent": 3,
+        "delivered": 0,
+        "bounced": 3,
+        "bounced_transient": 3,
+        "bounced_permanent": 0,
+        "suppressed": 0,
+        "unique_opened": 0,
+        "unique_clicked": 0,
+        "unsubscribed": 0,
+        "complained": 0
+      },
+      "rates": {
+        "delivery": 0,
+        "open": null,
+        "click": null,
+        "unsubscribe": null,
+        "complaint": null
+      },
+      "hourly": [
+        {
+          "hour": "09",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "10",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "11",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "12",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "13",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "14",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "15",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "16",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "17",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "18",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "19",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "20",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "21",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "22",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "23",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌00",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌01",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌02",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌03",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌04",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌05",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌06",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌07",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌08",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌09",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        }
+      ],
+      "links": [
+        {
+          "label": "配信停止",
+          "lang": "",
+          "kind": "unsubscribe",
+          "unique": null,
+          "clicks": 1
+        }
+      ]
+    },
+    {
+      "id": "a615f3f2-4bd5-4e52-9e74-32a2ec67cbef",
+      "label": "発売のお知らせ",
+      "subject": "masterchain is here",
+      "sent_at": "2026-10-01T07:13:13+09:00",
+      "campaign": "email_nl-launch-a-issue05",
+      "totals": {
+        "sent": 1021,
+        "delivered": 1000,
+        "bounced": 21,
+        "bounced_transient": 20,
+        "bounced_permanent": 1,
+        "suppressed": 26,
+        "unique_opened": 259,
+        "unique_clicked": 50,
+        "unsubscribed": 10,
+        "complained": 0
+      },
+      "rates": {
+        "delivery": 97.94,
+        "open": 25.9,
+        "click": 5,
+        "unsubscribe": 1,
+        "complaint": 0
+      },
+      "hourly": [
+        {
+          "hour": "07",
+          "opened": 96,
+          "clicked": 15,
+          "unsubscribed": 2
+        },
+        {
+          "hour": "08",
+          "opened": 31,
+          "clicked": 2,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "09",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "10",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "11",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "12",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "13",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "14",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "15",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "16",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "17",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "18",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "19",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "20",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "21",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "22",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "23",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌00",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌01",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌02",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌03",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌04",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌05",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌06",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌07",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
+        }
+      ],
+      "links": [
+        {
+          "label": "英語の製品ページ",
+          "lang": "en",
+          "kind": "product",
+          "unique": 29,
+          "clicks": 32
+        },
+        {
+          "label": "配信停止",
+          "lang": "",
+          "kind": "unsubscribe",
+          "unique": 10,
+          "clicks": 10
+        }
+      ]
+    }
+  ]
+}
