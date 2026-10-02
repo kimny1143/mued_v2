@@ -11,6 +11,8 @@ import {
   toNewsletterMetrics,
   type BroadcastInput,
 } from "@/lib/funnel/newsletter-metrics";
+import { SAMPLE_INPUTS, SAMPLE_NOW } from "../fixtures/newsletter-metrics-inputs";
+import sample from "../fixtures/newsletter-metrics-with-nulls.json";
 
 // Shapes as Resend returned them on 2026-10-02 (launch broadcast a615f3f2; addresses/tokens replaced).
 const LAUNCH_SENT = "2026-09-30 22:13:13.198114+00"; // 07:13 JST
@@ -217,5 +219,25 @@ describe("contract with gw-dash's reader (nulls allowed where the writer can pro
   it("the old rule (finite numbers only) would reject it — the reason gw-dash must widen first", () => {
     const strict = (v: unknown) => typeof v === "number" && Number.isFinite(v);
     expect(doc.broadcasts.every((b) => Object.values(b.totals).every(strict) && Object.values(b.rates).every(strict))).toBe(false);
+  });
+});
+
+describe("the null-bearing sample shared with gw-dash (tests/fixtures/newsletter-metrics-with-nulls.json)", () => {
+  const doc = toNewsletterMetrics(SAMPLE_INPUTS, SAMPLE_NOW, "sample (tests/fixtures/newsletter-metrics-inputs.ts)");
+
+  it("is exactly what the writer produces — if this fails, regenerate the JSON AND hand it to gw-dash again", () => {
+    expect(JSON.parse(JSON.stringify(doc))).toEqual(sample);
+  });
+
+  it("covers every null the writer can emit (0 delivered, a failed broadcast, a missing link count)", () => {
+    const byId = (p: string) => doc.broadcasts.find((b) => b.id.startsWith(p))!;
+    expect(byId("0000").rates.open).toBeNull();
+    expect(byId("0000").links?.[0].unique).toBeNull();
+    expect(byId("1111").totals.sent).toBeNull();
+    expect(byId("1111").hourly).toBeNull();
+    expect(byId("1111").links).toBeNull();
+    expect(byId("1111").subject).toBeNull();
+    expect(byId("1111").campaign).toBeNull();
+    expect(readerAccepts(doc)).toBe(true);
   });
 });
