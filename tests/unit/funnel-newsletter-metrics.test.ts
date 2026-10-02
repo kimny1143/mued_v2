@@ -80,6 +80,8 @@ describe("links", () => {
     expect(classifyLink(UNSUB)).toEqual({ lang: "", kind: "unsubscribe", place: "" });
     expect(classifyLink("https://example.com/a?x=secret")).toEqual({ lang: "", kind: "external", place: "example.com" });
     expect(classifyLink("not a url").kind).toBe("other");
+    expect(classifyLink("https://mued.jp/ja/eula/2026.10/archive?x=1")).toEqual({ lang: "ja", kind: "eula", place: "/ja/eula" });
+    expect(classifyLink("https://mued.jp/")).toEqual({ lang: "", kind: "top", place: "/" });
   });
 
   it("groups by (lang, kind), sums, puts 配信停止 last, and labels like the hand-made file", () => {
@@ -159,5 +161,61 @@ describe("toNewsletterMetrics", () => {
     expect(text).not.toContain("token=");
     expect(text).not.toContain("@");
     expect(text).not.toContain("https://");
+  });
+});
+
+/**
+ * ★Cross-repo contract (CCO #1211): gw-dash's parseNewsletterMetrics (kimny1143/gw-dash
+ * src/lib/newsletterMetrics.ts) must accept every shape this writer can produce. Before the widening,
+ * it required finite numbers everywhere, so ONE null (a failed request, or a broadcast with 0 delivered
+ * → rates null) broke the whole tab. This is the reader rule as agreed for the widening: count fields
+ * are a non-negative finite number OR null; hourly / links are an array OR null. The gw-dash side
+ * carries the same fixture (WRITER_SAMPLE_WITH_NULLS below) in its own test.
+ */
+const isCount = (v: unknown) => v === null || (typeof v === "number" && Number.isFinite(v) && v >= 0);
+function readerAccepts(doc: ReturnType<typeof toNewsletterMetrics>): string | true {
+  for (const [i, b] of doc.broadcasts.entries()) {
+    for (const k of ["id", "label", "sent_at"] as const) if (typeof b[k] !== "string") return `broadcasts[${i}].${k}`;
+    for (const [k, v] of Object.entries(b.totals)) if (!isCount(v)) return `broadcasts[${i}].totals.${k}`;
+    for (const [k, v] of Object.entries(b.rates)) if (!isCount(v)) return `broadcasts[${i}].rates.${k}`;
+    if (b.hourly !== null && !Array.isArray(b.hourly)) return `broadcasts[${i}].hourly`;
+    for (const h of b.hourly ?? []) if (typeof h.hour !== "string" || ![h.opened, h.clicked, h.unsubscribed].every((n) => typeof n === "number" && n >= 0)) return `broadcasts[${i}].hourly`;
+    if (b.links !== null && !Array.isArray(b.links)) return `broadcasts[${i}].links`;
+    for (const l of b.links ?? []) if (typeof l.label !== "string" || !isCount(l.unique) || !isCount(l.clicks)) return `broadcasts[${i}].links`;
+  }
+  return true;
+}
+
+describe("contract with gw-dash's reader (nulls allowed where the writer can produce them)", () => {
+  const now = Date.parse("2026-10-02T00:00:00Z");
+  const zeroDelivered: BroadcastInput = {
+    broadcast: { id: "00000000-0000-0000-0000-000000000000", name: "All bounced", subject: "s", sent_at: "2026-10-01 00:00:00+00" },
+    totals: { sent: 3, delivered: 0, bounced: 3, bounced_transient: 3, bounced_permanent: 0, suppressed: 0, unique_opened: 0, unique_clicked: 0, unsubscribed: 0, complained: 0 },
+    hourly: [],
+    links: [{ url: UNSUB, clicks: 1 }], // unique missing → null
+    errors: [],
+  };
+  const failed: BroadcastInput = {
+    broadcast: { id: "11111111-1111-1111-1111-111111111111", name: "Failed", subject: null, sent_at: "2026-10-01 01:00:00+00" },
+    totals: null,
+    hourly: null,
+    links: null,
+    errors: ["合計は取れなかった（HTTP 500）"],
+  };
+  const doc = toNewsletterMetrics([zeroDelivered, failed], now, "contract");
+
+  it("really contains the nulls the old reader rejected (the case is not vacuous)", () => {
+    expect(doc.broadcasts.find((b) => b.id.startsWith("0000"))?.rates.open).toBeNull();
+    expect(doc.broadcasts.find((b) => b.id.startsWith("1111"))?.totals.sent).toBeNull();
+    expect(doc.broadcasts.find((b) => b.id.startsWith("0000"))?.links?.[0].unique).toBeNull();
+  });
+
+  it("is accepted by the widened reader rule", () => {
+    expect(readerAccepts(doc)).toBe(true);
+  });
+
+  it("the old rule (finite numbers only) would reject it — the reason gw-dash must widen first", () => {
+    const strict = (v: unknown) => typeof v === "number" && Number.isFinite(v);
+    expect(doc.broadcasts.every((b) => Object.values(b.totals).every(strict) && Object.values(b.rates).every(strict))).toBe(false);
   });
 });

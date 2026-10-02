@@ -192,14 +192,15 @@ export function classifyLink(rawUrl: string): { lang: string; kind: string; plac
   }
   if (url.hostname === "unsubscribe.resend.com" || /unsubscribe/i.test(url.pathname)) return { lang: "", kind: "unsubscribe", place: "" };
   const own = url.hostname === "mued.jp" || url.hostname.endsWith(".mued.jp");
-  const place = own ? url.pathname : url.hostname;
   const lang = own ? (url.pathname.match(/^\/(ja|en)(?:\/|$)/)?.[1] ?? "") : "";
+  // ★Only the first segment after the locale (CCO #1211): "/ja/eula", never "/ja/eula/whatever/…".
+  const first = url.pathname.split("/").filter(Boolean).filter((s) => s !== "ja" && s !== "en")[0] ?? "";
+  const place = own ? `/${lang ? `${lang}/` : ""}${first}` : url.hostname;
   if (own && /(^|\/)learn(\/|$)/.test(url.pathname)) return { lang, kind: "learn", place };
   const content = url.searchParams.get("utm_content");
   if (content && /^[\w-]{1,40}$/.test(content)) return { lang, kind: content, place };
   if (!own) return { lang: "", kind: "external", place };
-  const segment = url.pathname.split("/").filter(Boolean).filter((s) => s !== "ja" && s !== "en")[0];
-  return { lang, kind: segment && /^[\w-]{1,40}$/.test(segment) ? segment : "top", place };
+  return { lang, kind: first && /^[\w-]{1,40}$/.test(first) ? first : "top", place };
 }
 
 export function campaignOf(links: readonly ClickedLinkRow[] | null): string | null {
