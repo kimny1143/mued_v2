@@ -2,7 +2,7 @@
 
 - 依頼: kimny 直命（10/3・Chief 経由）「MUEDvox … 実装しましょう」。MUEDvox は $69・単一価格・発売日に macOS AU/VST3/AAX＋Windows VST3
 - 書いた人: mued課（2026-10-04）。レビュー: Tier 3（決済と鍵）＝conductor 経由
-- ★この PR（設計）はコードを変えない。実装は下の PR-A から
+- この doc は PR-A（#1214）と同じ PR に入っている（設計と PR-A の実装）。PR-B・PR-C は §3.4
 
 ## 1. 今の形（1 製品前提）
 
@@ -59,6 +59,7 @@ paidProductByFastspringPath(path) → entry | null
   - 鍵を出さない・購入の行を作らない・メールを送らない
   - webhook_events の行は `failed` で残す（payload は残る）＋ `logger.error` ＋ 運用のメール（OPERATOR_ALERT_EMAIL）
   - ★`unparseable` と同じく、行を `failed` で確定してから 500 を返す＝FastSpring が再送する。★表を直して deploy すれば、次の再送でそのまま履行される（人の手の履行が要らない）
+  - FastSpring の再送には期限がある。間に合わない時は、FastSpring の管理画面から order.completed を手で再送する（運用のメールにも書いた）。運用のメールは再送のたびに鳴る（想定内）
   - ★「払った人に何も届かない」が起きるのは、FastSpring に商品を足したのに表に足していない時だけ。その時は運用のメールが鳴る。★間違った製品の鍵を出すより、届かない方が直せる（鍵はオフライン検証で撤回できない）（kimny 10/4「鍵を出さず通知」）
 - 鍵: `issueLicense({ owner, order, scope: product.scope })`
 - 行: `productId: product.productId`（masterchain は今と同じ値）
@@ -80,7 +81,7 @@ paidProductByFastspringPath(path) → entry | null
 |---|---|---|
 | PR-A | 表（masterchain だけ）＋ webhook の振り分け（3.2） | ★3 |
 | PR-B | ポータル: 購入の行を product_id で表から引く（DL・Windows・版）。funnel の発売の数を製品ごとに | 2 |
-| PR-C | MUEDvox: 表に 1 件（FastSpring の path が決まってから）・購入のボタンを製品の引数つきに（env の 1 本 → 表の path）・デモ・メールの template・製品ページ・法務の文 | 3（表と購入）＋2（ページ） |
+| PR-C | ★順番: 表に MUEDvox を足して deploy → その後に FastSpring のストアで公開（逆だと、最初の注文が unknown_product になる）。MUEDvox: 表に 1 件（FastSpring の path が決まってから）・購入のボタンを製品の引数つきに（env の 1 本 → 表の path）・デモ・メールの template・製品ページ・法務の文 | 3（表と購入）＋2（ページ） |
 
 ## 4. 外の手
 

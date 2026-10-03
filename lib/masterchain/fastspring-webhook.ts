@@ -289,7 +289,7 @@ export async function handleFastspringOrderCompleted(
       void emailService
         .sendAdminAlert(
           alertEmail,
-          `[fastspring] PAID order ${parsed.orderId} was NOT fulfilled: product ${JSON.stringify(parsed.itemPaths)} is not in PAID_PRODUCTS (or the order is not exactly one item). The buyer has no key yet. Add the path to lib/plugins/paid-products.ts — FastSpring's redelivery will then fulfil it.`,
+          `[fastspring] PAID order ${parsed.orderId} was NOT fulfilled: product ${JSON.stringify(parsed.itemPaths)} is not in PAID_PRODUCTS (or the order is not exactly one item). The buyer has no key yet. Add the path to lib/plugins/paid-products.ts — FastSpring's redelivery will then fulfil it. If FastSpring has stopped retrying by then, resend the order.completed webhook from the FastSpring admin (order → webhooks). This alert repeats on every redelivery until it is fixed.`,
         )
         .catch((err: unknown) => logger.error("[fastspring] operator alert failed", { error: String(err) }));
     }
