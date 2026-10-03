@@ -196,6 +196,7 @@ async function processFastspringEvent(event: unknown): Promise<void> {
   // ★tx の外で throw するためのフラグ（★中で throw すると行が消える）。
   let unparseable = false;
   let noPurchase = false;
+  let unknownProduct = false;
   let processedNote: string | null = null;
 
   await db.transaction(async (tx) => {
@@ -247,7 +248,14 @@ async function processFastspringEvent(event: unknown): Promise<void> {
         // ★payload を持つ行まで rollback で消える。★行を `failed` で確定させ、★tx の外で throw する。
         // ★license / email の失敗は ★handler が throw し、★従来どおり tx 全体が rollback される
         // （★売上行を作らずに retry させるのが正しい）。
-        if ((await handleFastspringOrderCompleted(tx, event)) === "unparseable") {
+        const result = await handleFastspringOrderCompleted(tx, event);
+        if (result === "unknown_product") {
+          // ★C9: the handler issued nothing (no key / row / email) and already logged + alerted. Recorded as
+          //   failed + 500 like unparseable, so FastSpring redelivers — and once the product is added to
+          //   PAID_PRODUCTS, a redelivery fulfils it.
+          unparseable = true;
+          unknownProduct = true;
+        } else if (result === "unparseable") {
           unparseable = true;
           logger.error("[fastspring] order.completed missing orderId/email — recording as failed", {
             eventId,
@@ -288,7 +296,9 @@ async function processFastspringEvent(event: unknown): Promise<void> {
         .update(webhookEvents)
         .set({
           status: "failed",
-          errorMessage: noPurchase
+          errorMessage: unknownProduct
+            ? "order.completed for a product not in PAID_PRODUCTS (or not exactly one item) — no key issued, left for redelivery"
+            : noPurchase
             ? "return.created: no unrefunded masterchain purchase row matched (order not written yet, or a partial return on an already refunded row) — left for redelivery"
             : type === "return.created"
               ? "return.created missing return id / original order — envelope not the shape we assumed"
@@ -333,7 +343,9 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     // ★throw は POST handler の catch に落ちて 500 になり、★FastSpring が再配達する。
     throw new Error(
       `[fastspring] event ${eventId}: ${
-        noPurchase
+        unknownProduct
+          ? "order.completed for a product we do not sell (or not exactly one item) — no key issued"
+          : noPurchase
           ? "return.created matched no unrefunded purchase row (not written yet, or partial on a refunded row)"
           : type === "return.created"
             ? "return.created missing return id / original order"

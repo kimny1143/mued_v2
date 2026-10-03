@@ -119,4 +119,17 @@ describe("FastSpring route — official envelope fixtures", () => {
       minimalAccountIdFixture.events[0],
     ]);
   });
+
+  it("★C9: an order for a product we do not sell is recorded as FAILED and answered non-2xx, so FastSpring redelivers", async () => {
+    mockHandleOrder.mockResolvedValue("unknown_product");
+    const response = await POST(request(payloadFrom(popupOrderLiveFixture)));
+
+    expect(response.status).toBeGreaterThanOrEqual(500);
+    expect(txInserts).toHaveLength(1); // the row with the payload stays — redelivery can still land
+    expect(txUpdates.at(-1)).toMatchObject({
+      status: "failed",
+      errorMessage: expect.stringContaining("not in PAID_PRODUCTS"),
+      completedAt: expect.any(Date),
+    });
+  });
 });
