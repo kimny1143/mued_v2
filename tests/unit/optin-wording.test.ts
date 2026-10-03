@@ -3,19 +3,20 @@ import ja from "@/messages/ja.json";
 import en from "@/messages/en.json";
 
 /**
- * The updates opt-in wording (kimny 2026-10-04, via Chief): one sentence for every form that has the box —
- * the three free plugins and the masterchain demo — and no promise of how often we write
+ * The opt-in wording (kimny 2026-10-04, via Chief): one sentence for every form that has the box — the three
+ * free plugins and the masterchain demo. ★It does not list WHAT we send (kimny「Dだよ。当然だろ」— an enumerated
+ * scope was narrower than the newsletters actually sent), and promises no frequency
  * (kimny「いちいち入れたらこっちの手が減るだろ」). The default stays OFF (pinned in the form tests).
  */
 const CONSENT = {
-  ja: "このプラグインの更新と、新しい MUEDsp プラグインのお知らせをメールで受け取る（いつでも解除できます）",
-  en: "Email me when this plugin is updated and when new MUEDsp plugins come out (unsubscribe anytime)",
+  ja: "MUEDsp のお知らせをメールで受け取る（いつでも解除できます）",
+  en: "Email me news from MUEDsp (unsubscribe anytime)",
 } as const;
 
 // The note under each free form explains the same consent — same scope as the box (CCO #1221).
 const NOTE = {
-  ja: "ダウンロードリンクをメールでお送りします。チェックを入れた場合は、更新と新しい MUEDsp プラグインのお知らせもお送りします。配信はいつでも解除できます。",
-  en: "I'll email you the download link. If you tick the box, I'll also email you about updates and new MUEDsp plugins. Unsubscribe anytime.",
+  ja: "ダウンロードリンクをメールでお送りします。チェックを入れた場合は、MUEDsp のお知らせもお送りします。配信はいつでも解除できます。",
+  en: "I'll email you the download link. If you tick the box, I'll also email you news from MUEDsp. Unsubscribe anytime.",
 } as const;
 
 // Site style is "plugin" (no hyphen) — "plug-in" is KVR's house style, not ours (Chief 10/4).
