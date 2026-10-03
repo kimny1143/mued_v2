@@ -12,6 +12,12 @@ const CONSENT = {
   en: "Email me when this plugin is updated and when new MUEDsp plugins come out (unsubscribe anytime)",
 } as const;
 
+// The note under each free form explains the same consent — same scope as the box (CCO #1221).
+const NOTE = {
+  ja: "ダウンロードリンクをメールでお送りします。チェックを入れた場合は、更新と新しい MUEDsp プラグインのお知らせもお送りします。配信はいつでも解除できます。",
+  en: "I'll email you the download link. If you tick the box, I'll also email you about updates and new MUEDsp plugins. Unsubscribe anytime.",
+} as const;
+
 // Site style is "plugin" (no hyphen) — "plug-in" is KVR's house style, not ours (Chief 10/4).
 const HYPHENATED = /plug-in/i;
 const FREQUENCY = /occasional|now and then|a few times|monthly|weekly|年に|月に|ときどき|たまに/i;
@@ -25,6 +31,10 @@ describe.each([["ja", ja], ["en", en]] as const)("%s opt-in wording", (locale, m
 
   it.each(Object.keys(forms))("%s: the checkbox says the approved sentence", (key) => {
     expect(forms[key as keyof typeof forms].consent).toBe(CONSENT[locale]);
+  });
+
+  it.each(Object.keys(forms))("%s: the note says the approved sentence", (key) => {
+    expect(forms[key as keyof typeof forms].note).toBe(NOTE[locale]);
   });
 
   it("masterchain demo: the same sentence", () => {
