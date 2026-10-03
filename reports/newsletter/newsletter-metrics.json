@@ -1,6 +1,6 @@
 {
   "schema": "newsletter-metrics/v1",
-  "generated_at": "2026-10-02T16:25:50+09:00",
+  "generated_at": "2026-10-03T15:59:05+09:00",
   "source": "Resend API（/emails/metrics・/broadcasts/{id}/clicked-links）。plugin-funnel-collector が毎朝書き出す（mued_v2 scripts/emit-newsletter-metrics.ts）。",
   "notes": [
     "「押した人」には配信停止のリンクを押した人も入る（Resend の数え方）。製品へのリンクの数は下のリンク別を見る。",
@@ -25,15 +25,15 @@
         "bounced_transient": 29,
         "bounced_permanent": 0,
         "suppressed": 27,
-        "unique_opened": 271,
-        "unique_clicked": 46,
+        "unique_opened": 284,
+        "unique_clicked": 48,
         "unsubscribed": 10,
         "complained": 0
       },
       "rates": {
         "delivery": 97.13,
-        "open": 27.6,
-        "click": 4.68,
+        "open": 28.92,
+        "click": 4.89,
         "unsubscribe": 1.02,
         "complaint": 0
       },
@@ -181,6 +181,12 @@
           "opened": 1,
           "clicked": 0,
           "unsubscribed": 0
+        },
+        {
+          "hour": "翌17",
+          "opened": 0,
+          "clicked": 0,
+          "unsubscribed": 0
         }
       ],
       "links": [
@@ -188,15 +194,15 @@
           "label": "英語の Windows の段",
           "lang": "en",
           "kind": "windows",
-          "unique": 35,
-          "clicks": 49
+          "unique": 36,
+          "clicks": 50
         },
         {
           "label": "日本語の Windows の段",
           "lang": "ja",
           "kind": "windows",
-          "unique": 11,
-          "clicks": 15
+          "unique": 12,
+          "clicks": 16
         },
         {
           "label": "配信停止",
@@ -220,16 +226,16 @@
         "bounced_transient": 20,
         "bounced_permanent": 1,
         "suppressed": 26,
-        "unique_opened": 264,
-        "unique_clicked": 50,
-        "unsubscribed": 10,
+        "unique_opened": 271,
+        "unique_clicked": 53,
+        "unsubscribed": 11,
         "complained": 0
       },
       "rates": {
         "delivery": 97.94,
-        "open": 26.4,
-        "click": 5,
-        "unsubscribe": 1,
+        "open": 27.1,
+        "click": 5.3,
+        "unsubscribe": 1.1,
         "complaint": 0
       },
       "hourly": [
@@ -389,8 +395,8 @@
           "label": "英語の製品ページ",
           "lang": "en",
           "kind": "product",
-          "unique": 29,
-          "clicks": 32
+          "unique": 31,
+          "clicks": 34
         },
         {
           "label": "英語の Windows の段",
@@ -431,8 +437,8 @@
           "label": "配信停止",
           "lang": "",
           "kind": "unsubscribe",
-          "unique": 10,
-          "clicks": 10
+          "unique": 11,
+          "clicks": 11
         }
       ]
     }
