@@ -3072,13 +3072,14 @@
     "purchased": {
       "label": "購入したもの",
       "kind": "マスタリング・チェーン",
+      "kindMuedvox": "ボーカルハーモナイザー",
       "licenseLabel": "ライセンスキー",
       "copy": "キーをコピー",
       "copied": "コピーしました",
       "copyFailed": "コピーできませんでした。キーを選択して手動でコピーしてください。",
-      "download": "license.key をダウンロード",
+      "download": "鍵のファイル（.key）をダウンロード",
       "refunded": "返金済み（{date}）。ライセンスキーは表示しません。",
-      "howto": "license.key をダウンロードし、masterchain の画面（「Drop license.key here」）にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをコピーして「Paste license key」を押してください。",
+      "howto": "鍵のファイル（.key）をダウンロードし、{product} の画面{masterchain, select, yes {（「Drop license.key here」）} other {}}にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをコピーして「Paste license key」を押してください。",
       "purchasedOn": "{date} に購入"
     }
   }

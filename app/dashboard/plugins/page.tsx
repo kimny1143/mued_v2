@@ -63,6 +63,9 @@ export default async function PluginsPortalPage() {
   // written, and the alternative (bulk-inserting entitlement rows so the shelf looks right) was
   // rejected because it would put "never obtained it" rows into the table the funnel collector reads.
   const purchaseViewItems: PurchaseViewItem[] = purchases.map((p) => ({
+    productKey: p.productKey,
+    displayName: p.displayName,
+    keyFileName: p.keyFileName,
     version: p.version,
     downloadUrl: p.downloadUrl,
     licenseKey: p.licenseKey, // ★verbatim — the keyfile is signed over its exact bytes; null once refunded

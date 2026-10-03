@@ -18,3 +18,8 @@ export function muedvoxPageVisible(live: boolean, vercelEnv: string | undefined,
   //   VERCEL_ENV (or any other value) answers 404 rather than publishing.
   return live || vercelEnv === "preview" || nodeEnv === "development";
 }
+
+// Set at launch with the sha256/bytes pin, like masterchain.
+export const MUEDVOX_DOWNLOAD_URL = "";
+export const MUEDVOX_WINDOWS_URL = "";
+export const MUEDVOX_WINDOWS_VERSION = "";

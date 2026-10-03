@@ -27,6 +27,7 @@
 import { trackServerPurchase, type GA4PurchaseParams } from "@/lib/analytics/ga4-server";
 import { masterchainPurchases } from "@/db/schema";
 import { addMasterchainContact } from "@/lib/masterchain/audience";
+import { MUEDVOX_DOWNLOAD_URL } from "@/lib/muedvox/config";
 import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 import { issueLicense, LICENSE_VERSION } from "@/lib/masterchain/license";
 import { paidProductByFastspringPath, type PaidProduct } from "@/lib/plugins/paid-products";
@@ -406,15 +407,28 @@ export async function handleFastspringOrderCompleted(
     // ★Two states, two lines, on purpose: "not configured yet" is a pre-launch condition, while
     //   "configured but the send failed" is an incident. ★Collapsing them is the shape #1002 fixed
     //   one level down — a configured-but-failed write that printed like a no-op.
-    if (!MASTERCHAIN_DOWNLOAD_URL) {
+    const deliveryConfig = (() => {
+      switch (product.key) {
+        case "masterchain":
+          return { url: MASTERCHAIN_DOWNLOAD_URL, constant: "MASTERCHAIN_DOWNLOAD_URL",
+            send: () => emailService.sendMasterchainLicenseDelivery({ email: parsed.email }, { locale: licenseEmailLocale(parsed.language) }) };
+        case "muedvox":
+          return { url: MUEDVOX_DOWNLOAD_URL, constant: "MUEDVOX_DOWNLOAD_URL",
+            send: () => emailService.sendMuedvoxLicenseDelivery({ email: parsed.email }, { locale: licenseEmailLocale(parsed.language) }) };
+        default: {
+          const exhaustive: never = product.key;
+          throw new Error(`Unhandled paid product: ${exhaustive}`);
+        }
+      }
+    })();
+    if (!deliveryConfig.url) {
       logger.error("[fastspring] delivering a PAID licence with NO download link — URL is unset", {
         orderId: parsed.orderId,
-        next: "set MASTERCHAIN_DOWNLOAD_URL (+ the sha256/bytes pin) once the .pkg is on the shelf",
+        next: `set ${deliveryConfig.constant} (+ the sha256/bytes pin) once the .pkg is on the shelf`,
       });
     }
 
-    const delivery = await emailService
-      .sendMasterchainLicenseDelivery({ email: parsed.email }, { locale: licenseEmailLocale(parsed.language) })
+    const delivery = await deliveryConfig.send()
       .catch((err: unknown) => ({ success: false, error: String(err) }));
 
     if (!delivery.success) {

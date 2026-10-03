@@ -13,6 +13,7 @@
 // The DB query that filters entitlements to `email = ANY(verifiedEmailsOf(user))` lives in the server
 // component (app/dashboard/plugins) — never trust a client-supplied email. This module does the pure
 // transforms around that query.
+import type { PaidProduct, PaidProductKey } from "@/lib/plugins/paid-products";
 import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
 
 /** Structural shape of a Clerk email address — avoids a hard Clerk type dependency in this pure module. */
@@ -176,6 +177,7 @@ export function buildAvailableItems(owned: readonly { pluginKey: string }[] | nu
 
 /** Minimal purchase shape the assembler consumes (decoupled from the Drizzle row). */
 export interface OwnedPurchase {
+  productId: string;
   licenseKey: string | null;
   createdAt: Date;
   /** Set by a FULL refund / chargeback (return.created). */
@@ -183,7 +185,9 @@ export interface OwnedPurchase {
 }
 
 export interface PurchaseItem {
-  productKey: "masterchain";
+  productKey: PaidProductKey;
+  displayName: string;
+  keyFileName: string;
   /**
    * ★Derived from the download URL, not stored in a second constant. The free modules keep
    * `*_VERSION` and `*_DOWNLOAD_URL` side by side and plugin-version-matches-download.test.ts exists
@@ -216,7 +220,7 @@ function versionInUrl(url: string): string | null {
 }
 
 /**
- * Map a buyer's masterchain purchases → portal rows. The caller MUST pass rows already filtered to
+ * Map a buyer's paid purchases → portal rows. The caller MUST pass rows already filtered to
  * verifiedEmailsOf() on the server.
  *
  * ★Rows with no licenseKey are SKIPPED, not rendered blank. A purchase row exists from the moment the
@@ -228,12 +232,18 @@ function versionInUrl(url: string): string | null {
  */
 export function buildPurchaseItems(
   purchases: readonly OwnedPurchase[] | null | undefined,
-  downloadUrl: string,
-  windows: { url: string; version: string } | null = null,
+  resolve: (productId: string) => {
+    product: PaidProduct;
+    downloadUrl: string;
+    windows: { url: string; version: string } | null;
+  } | null,
 ): PurchaseItem[] {
   const items: PurchaseItem[] = [];
   const seen = new Set<string>();
   for (const p of purchases ?? []) {
+    const resolved = resolve(p.productId);
+    if (!resolved) continue;
+    const { product, downloadUrl, windows } = resolved;
     const raw = p.licenseKey;
     // ★Emptiness is judged on a trimmed copy; the value we EMIT is verbatim. The keyfile is signed
     // over its exact bytes (licence.ts "prefix rule": nothing is re-serialised or normalised on
@@ -243,7 +253,9 @@ export function buildPurchaseItems(
     seen.add(raw);
     const refundedAt = p.refundedAt ?? null;
     items.push({
-      productKey: "masterchain",
+      productKey: product.key,
+      displayName: product.displayName,
+      keyFileName: product.keyFileName,
       version: versionInUrl(downloadUrl),
       downloadUrl,
       // ★A refunded purchase keeps its row on the shelf, marked — but the key is not handed out again.

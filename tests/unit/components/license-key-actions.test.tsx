@@ -32,17 +32,19 @@ describe("LicenseKeyActions", () => {
     expect(screen.queryByRole("button", { name: "Copied" })).toBeNull();
   });
 
-  it.each([KEY, `${KEY}\n`, `${KEY}\r\n`])("downloads exact UTF-8 bytes without adding a BOM or newline (%j)", async (licenseKey) => {
+  it.each([
+    [KEY, undefined], [`${KEY}\n`, "MUEDsp-masterchain.license.key"], [`${KEY}\r\n`, "MUEDvox.license.key"],
+  ])("downloads exact UTF-8 bytes with filename (%j, %j)", async (licenseKey, fileName) => {
     const createObjectURL = vi.fn(() => "blob:license-key");
     const revokeObjectURL = vi.fn();
     vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
-      expect(this.download).toBe("license.key");
+      expect(this.download).toBe(fileName ?? "license.key");
       expect(this.getAttribute("href")).toBe("blob:license-key");
       expect(this.isConnected).toBe(true);
       expect(revokeObjectURL).not.toHaveBeenCalled();
     });
-    render(<LicenseKeyActions licenseKey={licenseKey} {...labels} />);
+    render(<LicenseKeyActions licenseKey={licenseKey!} fileName={fileName} {...labels} />);
     fireEvent.click(screen.getByRole("button", { name: "Download license.key" }));
     expect(click).toHaveBeenCalledTimes(1);
     // ★Deferred: revoking synchronously can cancel the download in Safari.

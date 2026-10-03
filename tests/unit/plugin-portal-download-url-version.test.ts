@@ -14,6 +14,7 @@
 import { describe, expect, it } from "vitest";
 
 import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
+import { PAID_PRODUCTS } from "@/lib/plugins/paid-products";
 import { buildPurchaseItems } from "@/lib/plugins/portal";
 
 /**
@@ -42,8 +43,8 @@ function versionVerdict(url: string, version: string | null): { ok: boolean; why
 describe("purchase card version — measured against the real download URL", () => {
   it("★parses a version out of the constant the card actually links to", () => {
     const [item] = buildPurchaseItems(
-      [{ licenseKey: "MUEDSP-LICENSE-v2\nsig=AAAA\n", createdAt: new Date("2026-09-22T00:00:00Z") }],
-      MASTERCHAIN_DOWNLOAD_URL,
+      [{ productId: "muedsp_masterchain", licenseKey: "MUEDSP-LICENSE-v2\nsig=AAAA\n", createdAt: new Date("2026-09-22T00:00:00Z") }],
+      () => ({ product: PAID_PRODUCTS.masterchain, downloadUrl: MASTERCHAIN_DOWNLOAD_URL, windows: null }),
     );
     const v = versionVerdict(MASTERCHAIN_DOWNLOAD_URL, item.version);
     expect(v.ok, v.why).toBe(true);
@@ -51,8 +52,8 @@ describe("purchase card version — measured against the real download URL", () 
 
   it("the card links to the same URL the constant holds (no second copy)", () => {
     const [item] = buildPurchaseItems(
-      [{ licenseKey: "k", createdAt: new Date("2026-09-22T00:00:00Z") }],
-      MASTERCHAIN_DOWNLOAD_URL,
+      [{ productId: "muedsp_masterchain", licenseKey: "k", createdAt: new Date("2026-09-22T00:00:00Z") }],
+      () => ({ product: PAID_PRODUCTS.masterchain, downloadUrl: MASTERCHAIN_DOWNLOAD_URL, windows: null }),
     );
     expect(item.downloadUrl).toBe(MASTERCHAIN_DOWNLOAD_URL);
   });

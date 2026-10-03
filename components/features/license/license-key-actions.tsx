@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 
-export function LicenseKeyActions({ licenseKey, label, copyLabel, copiedLabel, failedLabel, downloadLabel }: {
+export function LicenseKeyActions({ licenseKey, label, copyLabel, copiedLabel, failedLabel, downloadLabel, fileName = "license.key" }: {
   licenseKey: string;
+  fileName?: string;
   label: string;
   copyLabel: string;
   copiedLabel: string;
@@ -23,7 +24,7 @@ export function LicenseKeyActions({ licenseKey, label, copyLabel, copiedLabel, f
     const url = URL.createObjectURL(new Blob([licenseKey], { type: "text/plain" }));
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "license.key";
+    anchor.download = fileName;
     document.body.appendChild(anchor);
     try {
       anchor.click();
