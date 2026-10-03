@@ -99,7 +99,10 @@ const MUTATIONS: Mutation[] = [
 ];
 
 async function main(): Promise<void> {
-  const src = readFileSync(GATE, "utf8");
+  // ★The copies live in a temp dir, so the gate's relative imports of its sibling helpers (scripts/ci/*.mjs —
+  //   the sales-path guard ⑥) are pointed at the real files. Only the import specifiers change; the code under
+  //   mutation is the gate's own.
+  const src = readFileSync(GATE, "utf8").replace(/from "\.\.\/ci\//g, `from "${resolve("scripts/ci")}/`);
   const dir = mkdtempSync(join(tmpdir(), "gate-mutation-"));
   const problems: string[] = [];
 
