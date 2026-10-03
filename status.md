@@ -3,14 +3,14 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: ★★**(2026-10-02T12:22:17+09:00) 10/2 午前の着地**。#1211（newsletter-metrics/v1 を collector で毎朝書き出す・data branch の reports/newsletter/newsletter-metrics.json・gw-dash #143 が先に merge・kimny の許可で merge 01:18:57Z f5998356・最初の file は 03:17Z の dispatch の run で確認・conductor に FILE_MAP の向け替えを依頼済み）。#1166 以降のチェック率: 新しい人 15 人中 0 人がチェック。前からリストに居る 16 人中 5 人はチェック＝計器は生きている。リストの新規は 0（1,087 のまま）。conductor へ送信済み（03:21Z）。10/1 夜の分（#1205〜#1210）は Recent events。
-next_action: ★★**(手番 2026-10-02T12:22:17+09:00) ① 10/3 の朝、plugin-funnel-collector の cron（01:30 UTC）が起動したかを確かめる**。10/2 は起動せず、03:15Z に dispatch を 1 回打った（run 36959368651）。原因は未確定（候補: #1211 がこの workflow を cron の 12 分前に変えた）。起動していれば reports/plugin-funnel/2026-10-02.json と reports/newsletter/newsletter-metrics.json（generated_at が 10/3）。起動していなければ conductor へ（dispatch を毎日の手当てにしない）。② #1208（Cookie の同意）＝draft・CCO PASS（条件つき・4d734ff9）・★10/8 の後に merge。CCO の条件＝Test・Build success と、log で cookie-consent.test.tsx が走ったこと。merge の日に privacy の lastUpdated を直す。merge の後に本番で、選ぶ前に gtag.js の要求が 0 件であることを確かめる。③ チェック率は conductor に渡した（kimny が決める・既定と文言は変えない）。④ W30・W31 は事象待ち。★実ブラウザの試験は GA の collect を abort する。★merge は gate だけ。本番に出る PR は kimny の許可。
+current_task: ★★**(2026-10-04T00:11:48+09:00) MUEDvox の発売の準備（kimny 直命 10/3・企画＝Chief・mued.jp の実装の指揮＝MUED・conductor は共有だけ）**。MUEDvox＝$69・単一価格・発売日に macOS AU/VST3/AAX＋Windows VST3（kimny 10/3）。発売日 R は vox の準備だけで決まる（未定）。① PR #1214（Tier 3）: 有料の webhook を注文の製品で振り分け（lib/plugins/paid-products.ts・表に無い製品には鍵を出さず通知＝kimny 10/4）。conductor のレビュー待ち・merge は kimny の許可。設計＝docs/paid-line/c9-multi-product-paid-line-design.md。② 製品ページ: Chief の文面 kit＝_chief decisions/mued/muedvox-launch/（ヒーロー B・4 形式）。mock を何にするかを Chief に照会中（推奨: 既存の masterchain の段を型の mock に・まず messages と route と設定を LIVE=false で）。10/2〜10/3: #1211（メールタブ）・#1213（外報の効き）merged。GA4 の custom dimension 5 つ（kimny 10/2 登録）は location・product に値が入り始めた。
+next_action: ★★**(手番 2026-10-04T00:11:48+09:00) ① #1214 の conductor のレビューを受ける → kimny の許可 → gate で merge → 本番で masterchain の注文が今と同じに履行されることは、次の本物の購入で確かめる**（試験の注文は作らない）。② Chief の答えを受けて、MUEDvox の messages（ja/en）・route・lib/muedvox/config.ts（LIVE=false）の下書き PR。③ FastSpring の MUEDvox の product path は kimny が商品を作った時に決まる→表に足す PR-C。④ #1208（Cookie の同意）＝draft・★10/8 の後に merge（CCO の条件: Test・Build success と log で cookie-consent.test.tsx）。merge の日に privacy の lastUpdated を直す。⑤ purchase の source/campaign は次の本物の購入の後に GA4 で確かめる。⑥ W30・W31 は事象待ち。★collector の cron は毎日数時間遅れて走る（10/2・10/3 で実測・欠けではない）。dispatch で補わない。★実ブラウザの試験は GA の collect を abort。★merge は gate だけ。
 blocked_by: ★★**(W32 閉じた・2026-10-02T00:32:46+09:00) #1207 は本番に出た（22:27 JST・ja/en の新しい文あり・旧文 0 件・どの deploy で出たかは未確認）。** ★★**(W33・2026-10-01T22:19:20+09:00) #1208 Cookie の同意は 10/8 の後に merge**（発売の 7 日集計の連続性・conductor）。** ★★**(W30・2026-10-01T14:54:22+09:00) ポータルの masterchain の Windows のボタンは本番で未確認**（購入者でないと見えない・今ある購入は kimny の確認購入 1 件で返金済み＝ボタンを出さない行）。★最初の本当の購入が入った時に、購入者の画面で「Windows 版」のボタン・同じ鍵の注記を確かめる（conductor 10/1）。コードは test 済み（windows-launch-prep）。** ★★**(W31・2026-10-01T14:54:22+09:00) masterchain の Windows の倍率の切り替え（開いたまま 50→100→150→75）は未確認のまま出した**（kimny 逐語「いや、もう縮尺はいいから。デプロイすすめて」）。効かない報告が来たら PLUG_HOST_RESIZE 1＋ConstrainEditorResize で新しい zip（lib/masterchain/config.ts の注釈）。** ★★**(W28) 閉じた: 発売便は 2026-09-30T22:13:13.198Z に送信（07:13:06 の queued は送信の直前）。**（created 21:54:16Z・sent_at null・07:13 JST に 2 回確認）。送信の操作は kimny の手番。LAUNCH_AT はこれ待ち。** ★★**(W26) content課への canonical 通知が未送信**（セッションが居ない）。送る内容: EULA 2026.10・返金ポリシー・masterchain 1.0.1（keyentry の版）・MUEDsat 1.0.1（THD の実測・画像）・FAQ q11・購入の開始と購入の流れ（#1191）・llms.txt（#1188）・案内メールの言語（#1193）・鍵の入れ方（ドロップが主）。** ★★**(W29) 返金で本番未確認の形: partial・chargeback・「作成」の後の Cancel**（台帳 2a）。#1197 以降、completed でない return.created は記録だけ（processed＋注記）＝最初の 1 件で、Confirm の後に別の event が来るかを照らす。** ★★**(W27) サポートの注意: 同じファイル名の版が複数（/downloads/・ui-2026.10・keyentry-2026.10）。見分けは URL。** ★★**(W0c) 特商法の表示価格と FastSpring の突き合わせ（conductor / kimny）。** ★★**(W22) remaining_to_1000 の削除（次の funnel PR）。** ★★**(W16) 【保留】有料 final の R2 URL。** ★★**(W15) 版の parser の 1 本化。** ★★**(W0b) 旧版の file を消さない。** ★全文＝退避ファイル。
 urgency: mid
 action_owner: peer
 deadline: null
 expected_next_check_at: null
-last_update: 2026-10-02T12:22:17+09:00
+last_update: 2026-10-04T00:11:48+09:00
 evidence: #1207 merged 487bae6b（13:05:04Z）・本番の /ja/privacy・/en/privacy で NEXT_LOCALE・2026-10-01 を確認、旧文 0 件（22:27 JST）。#1208 head 4d734ff9・CCO review 5379897935（PASS・条件つき）。#1206 merged（09:39:04Z）。Resend の audience 1,087 件（09:21Z 取得・funnel の値と一致）。
 confidence: high
 lane: delivery
@@ -19,6 +19,7 @@ lane: delivery
 
 
 ## Recent events
+- 2026-10-04T00:11:48+09:00 10/3〜10/4: MUEDvox の発売の準備に着手（kimny 直命）。#1214（有料の製品の振り分け・Tier 3）を出した。本番 DB の webhook_events を items の形だけ読んだ（kimny の許可）。10/2 の「cron が起動しなかった」は誤りで、6 時間遅れて走っていた（conductor に訂正）。
 - 2026-10-02T12:22:17+09:00 10/2 午前: #1211 merged（メールタブの自動化・gw-dash #143 が先）・cron が起動せず dispatch 1 回（03:15Z・success・newsletter file と funnel 10/1 分を publish）・チェック率（新しい人 0/15）を conductor へ。
 - 2026-10-02T00:32:46+09:00 10/1 夜: #1206（掲載の効果: 購読が止まったのは #1166 の opt-in・過去の掲載は毎回 +119〜150/週・BPB の 7 月の読者は戻らない）・#1207（privacy 第 6 項・本番で確認）・#1208（Cookie の同意・draft・10/8 の後）・#1209。
 
