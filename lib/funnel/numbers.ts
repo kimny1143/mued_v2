@@ -28,6 +28,7 @@
 //
 
 import type { LaunchNumbers } from "./launch";
+import type { DenominatorTrend } from "./denominator-trend";
 import type { Newsletter } from "./newsletters";
 import type { DownloadLinkEmails } from "./download-link-emails";
 
@@ -70,6 +71,9 @@ export interface FunnelNumbers {
   download_link_emails: DownloadLinkEmails | null;
   /** Launch numbers (lib/funnel/launch.ts). null = older report or a day the collector could not count. */
   launch: LaunchNumbers | null;
+  /** G4 (lib/funnel/denominator-trend.ts): 7-day vs prior-14-day new contacts; `alert` when below 0.5.
+   *  Attached by scripts/emit-funnel-numbers.ts from the published report history. */
+  denominator_trend?: DenominatorTrend;
 }
 
 /** The North Star target `remaining_to_target` is taken against. 1,000 (kimny 2026-07-18) was passed
