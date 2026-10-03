@@ -3,7 +3,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { SHARE_IMAGES } from "@/lib/seo/share-image";
 import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
-import { MUEDVOX_LIVE, MUEDVOX_PURCHASE_LIVE } from "@/lib/muedvox/config";
+import { notFound } from "next/navigation";
+import { MUEDVOX_LIVE, MUEDVOX_PURCHASE_LIVE, muedvoxPageVisible } from "@/lib/muedvox/config";
 import { MuedvoxLandingContent } from "@/components/features/muedvox-landing";
 
 interface PageProps {
@@ -43,6 +44,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function MuedvoxPage({ params }: PageProps) {
   const { locale } = await params;
+  // ★Not released → 404 in production (preview / dev still render). See muedvoxPageVisible.
+  if (!muedvoxPageVisible(MUEDVOX_LIVE, process.env.VERCEL_ENV)) notFound();
   setRequestLocale(locale as Locale);
   const t = await getTranslations({ locale, namespace: "muedvox.meta" });
   const softwareStructuredData = {

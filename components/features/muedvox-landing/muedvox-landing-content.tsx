@@ -23,11 +23,18 @@ function Section({ id, title, children }: { id: string; title: string; children:
   );
 }
 
+export type MuedvoxFaqItem = { id: string; requires?: "purchase" | "demo"; question: string; answer: string };
+
+/** FAQ answers whose subject is open: an item with `requires` shows only while that flag is on. */
+export function visibleFaq(items: readonly MuedvoxFaqItem[], open: { purchase: boolean; demo: boolean }): MuedvoxFaqItem[] {
+  return items.filter((item) => !item.requires || open[item.requires]);
+}
+
 export function MuedvoxLandingContent() {
   const locale = useLocale();
   const t = useTranslations("muedvox");
   const points = t.raw("points.items") as { title: string; body: string }[];
-  const faq = t.raw("faq.items") as { question: string; answer: string }[];
+  const faq = t.raw("faq.items") as MuedvoxFaqItem[];
   return (
     <div className="brand-product dark min-h-screen bg-[var(--bg-base)] text-white">
       <header className="brand-header">
@@ -96,7 +103,7 @@ export function MuedvoxLandingContent() {
               <th key={key} scope="col" className="py-3 pr-5 font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">{t(`modes.${key}`)}</th>
             ))}</tr></thead>
             <tbody className="divide-y divide-white/5">
-              {(["track", "live"] as const).map((mode) => (
+              {(["track", "trackShort", "live"] as const).map((mode) => (
                 <tr key={mode}>
                   <th scope="row" className="py-3 pr-5 font-semibold text-white/85">{t(`modes.${mode}.name`)}</th>
                   <td className="py-3 pr-5">{t(`modes.${mode}.latency`)}</td>
@@ -140,12 +147,14 @@ export function MuedvoxLandingContent() {
         )}
         <Section id="faq" title={t("faq.heading")}>
           <dl className="mt-6 divide-y divide-white/5 border-y border-white/5">
-            {faq.map((item, index) => index === 6 && !MUEDVOX_DEMO_LIVE ? null : (
+            {/* ★Filtered by what each answer needs (`requires` in messages), never by position (CCO #1216):
+                the key and refund answers only make sense once buying is open, the demo answer once the demo is. */}
+            {visibleFaq(faq, { purchase: MUEDVOX_PURCHASE_LIVE, demo: MUEDVOX_DEMO_LIVE }).map((item) => (
               <div key={item.question} className="py-4">
                 <dt className="text-[15px] font-semibold text-white/85">{item.question}</dt>
                 <dd className="mt-3 text-[15px] leading-relaxed text-white/70">
                   {item.answer}
-                  {index === 7 && MUEDVOX_DEMO_LIVE && <> {t("demo.refundNote")}</>}
+                  {item.id === "refund" && MUEDVOX_DEMO_LIVE && <> {t("demo.refundNote")}</>}
                 </dd>
               </div>
             ))}

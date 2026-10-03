@@ -5,6 +5,7 @@ import en from "@/messages/en.json";
 import ja from "@/messages/ja.json";
 import * as config from "@/lib/muedvox/config";
 import { MuedvoxLandingContent } from "@/components/features/muedvox-landing";
+import { visibleFaq, type MuedvoxFaqItem } from "@/components/features/muedvox-landing/muedvox-landing-content";
 import MuedvoxPage, { generateMetadata, generateStaticParams } from "@/app/[locale]/muedvox/page";
 import sitemap from "@/app/sitemap";
 
@@ -27,6 +28,7 @@ vi.mock("next/link", () => ({
 }));
 vi.mock("@/components/ui/locale-switcher", () => ({ LocaleSwitcher: () => null }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ host: "mued.jp" }) }));
+vi.mock("next/navigation", () => ({ notFound: vi.fn(() => { throw new Error("NEXT_NOT_FOUND"); }) }));
 afterEach(cleanup);
 
 function deepKeys(value: unknown, prefix = ""): string[] {
@@ -85,7 +87,41 @@ describe("MUEDvox staged product page", () => {
     expect(screen.queryByRole("button", { name: /buy|購入|demo|デモ/i })).toBeNull();
     expect(screen.getByRole("link", { name: "EULA" })).toHaveAttribute("href", `/${locale}/eula`);
     expect(screen.getByRole("table")).toBeInTheDocument();
-    expect(screen.getByText(copy.faq.items[2].answer)).toBeInTheDocument();
+    // FAQ: filtered by subject, checked by content (CCO #1216) — not by position.
+    const items = copy.faq.items as MuedvoxFaqItem[];
+    for (const item of items) {
+      if (item.requires) expect(screen.queryByText(item.question)).not.toBeInTheDocument();
+      else expect(screen.getByText(item.question)).toBeInTheDocument();
+    }
+    // Three modes, the build's values (mued-vox main, docs/mvp-listening-guide.md).
+    expect(screen.getAllByRole("row")).toHaveLength(4); // header + Track / Track Short / Live
+    expect(screen.getByText(copy.modes.trackShort.latency)).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/3–40|3〜40/);
+  });
+
+  it("FAQ subjects: the key / refund answers need purchase, the demo answer needs the demo (open = control)", () => {
+    for (const messages of [en, ja]) {
+      const items = messages.muedvox.faq.items as MuedvoxFaqItem[];
+      const byId = (open: { purchase: boolean; demo: boolean }) => visibleFaq(items, open).map((i) => i.id);
+      expect(byId({ purchase: false, demo: false })).toEqual(["latency", "windows", "protools", "input", "voice"]);
+      expect(byId({ purchase: true, demo: false })).toEqual(["latency", "windows", "protools", "input", "voice", "license", "refund"]);
+      expect(byId({ purchase: false, demo: true })).toEqual(["latency", "windows", "protools", "input", "voice", "demo"]);
+      expect(byId({ purchase: true, demo: true })).toHaveLength(8);
+    }
+  });
+
+  it("is a 404 in production until LIVE; preview and local dev still render (CCO #1216)", async () => {
+    expect(config.muedvoxPageVisible(false, "production")).toBe(false);
+    expect(config.muedvoxPageVisible(false, "preview")).toBe(true);
+    expect(config.muedvoxPageVisible(false, undefined)).toBe(true);
+    expect(config.muedvoxPageVisible(true, "production")).toBe(true);
+    const before = process.env.VERCEL_ENV;
+    process.env.VERCEL_ENV = "production";
+    try {
+      await expect(MuedvoxPage({ params: Promise.resolve({ locale: "en" }) })).rejects.toThrow("NEXT_NOT_FOUND");
+    } finally {
+      if (before === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = before;
+    }
   });
 
   it("excludes MUEDvox from the sitemap", async () => {

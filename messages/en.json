@@ -51,12 +51,17 @@
         "latency": "about 0.94 s",
         "use": "Mixing. It looks ahead to pick the parts, so it is not for recording through."
       },
+      "trackShort": {
+        "name": "Track Short",
+        "latency": "about 0.34 s",
+        "use": "Mixing, with a shorter look-ahead than Track."
+      },
       "live": {
         "name": "Live",
-        "latency": "3–40 ms",
+        "latency": "3 ms",
         "use": "Playing and monitoring while you sing."
       },
-      "note": "To record, switch to Live. When you mix, use Track."
+      "note": "To record, switch to Live. When you mix, use Track or Track Short."
     },
     "formats": {
       "heading": "Formats and requirements",
@@ -82,34 +87,45 @@
       "heading": "FAQ",
       "items": [
         {
+          "id": "latency",
           "question": "How much delay does it add?",
-          "answer": "It depends on the mode. Track mode adds about 0.94 seconds, because it looks ahead to choose the harmony parts; it is meant for mixing, not for recording through. Live mode adds 3 to 40 milliseconds and is meant for playing and monitoring. To record, use Live; to mix, use Track."
+          "answer": "It depends on the mode. Track adds about 0.94 seconds and Track Short about 0.34 seconds, because they look ahead to choose the harmony parts; they are meant for mixing, not for recording through. Live adds 3 milliseconds and is meant for playing and monitoring. To record, use Live; to mix, use Track or Track Short."
         },
         {
+          "id": "windows",
           "question": "Does it work on Windows?",
           "answer": "Windows: VST3. macOS: AU, VST3 and AAX."
         },
         {
+          "id": "protools",
           "question": "Does it work in Pro Tools?",
           "answer": "AAX for macOS is included."
         },
         {
+          "id": "input",
           "question": "What do I need to give it?",
           "answer": "One mono lead vocal on the track it is inserted on, and the key — set by hand, or sent as MIDI chords. Without chords it works from the key and scale you set."
         },
         {
+          "id": "voice",
           "question": "Does it turn my voice into someone else's?",
           "answer": "No. The harmony parts are made from your own recording."
         },
         {
+          "id": "license",
+          "requires": "purchase",
           "question": "How do I get my license key?",
           "answer": "After you buy, you are emailed a download link and the steps to get your key. The key is in your buyer's portal at mued.jp: sign in with the email address you used at checkout (a code is sent to that address). Drag the license.key file onto the plugin, or use \"Load license file…\" or \"Paste license key\". The plugin does not go online to activate, and there is no background app."
         },
         {
+          "id": "demo",
+          "requires": "demo",
           "question": "What does the demo do?",
           "answer": "It is the full plugin with no time limit. Each time you insert it, it processes the first 45 seconds of audio and then passes audio through unprocessed until you insert it again. Settings aren't saved."
         },
         {
+          "id": "refund",
+          "requires": "purchase",
           "question": "Can I get a refund?",
           "answer": "FastSpring is the Merchant of Record and handles refunds under the MUED Refund Policy. Purchases are generally non-refundable once the license key has been delivered, except for a billing error or a confirmed technical problem that prevents use. If the plugin does not run on a supported system, write to support@mued.jp first."
         }

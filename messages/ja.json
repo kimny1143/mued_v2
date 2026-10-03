@@ -51,12 +51,17 @@
         "latency": "約 0.94 秒",
         "use": "ミックス用。先読みで声部を決めるので、録音しながらは使えません。"
       },
+      "trackShort": {
+        "name": "Track Short",
+        "latency": "約 0.34 秒",
+        "use": "ミックス用。Track より先読みが短い。"
+      },
       "live": {
         "name": "Live",
-        "latency": "3〜40 ms",
+        "latency": "3 ms",
         "use": "歌いながら聴く・演奏用。"
       },
-      "note": "録るときは Live、ミックスは Track。"
+      "note": "録るときは Live、ミックスは Track か Track Short。"
     },
     "formats": {
       "heading": "形式と動作環境",
@@ -82,34 +87,45 @@
       "heading": "よくある質問",
       "items": [
         {
+          "id": "latency",
           "question": "遅延は？",
-          "answer": "Track は約 0.94 秒（ミックス用）、Live は 3〜40 ms（演奏用）。録るときは Live。"
+          "answer": "Track は約 0.94 秒、Track Short は約 0.34 秒（どちらもミックス用・先読みで声部を決める）。Live は 3 ms（演奏用）。録るときは Live。"
         },
         {
+          "id": "windows",
           "question": "Windows は？",
           "answer": "Windows: VST3。macOS: AU・VST3・AAX。"
         },
         {
+          "id": "protools",
           "question": "Pro Tools で使えますか？",
           "answer": "macOS 用の AAX が含まれます。"
         },
         {
+          "id": "input",
           "question": "何を入力しますか？",
           "answer": "インスタンスごとにモノのリードボーカル 1 本と、手動で設定した調、または MIDI のコード。コードがない場合は、設定した調とスケールから声部を選びます。"
         },
         {
+          "id": "voice",
           "question": "別人の声になりますか？",
           "answer": "なりません。ハモリは自分の録音から作ります。"
         },
         {
+          "id": "license",
+          "requires": "purchase",
           "question": "鍵はどこで受け取りますか？",
           "answer": "購入者ポータル（購入時のメールアドレスに届くコードでサインイン）。キーはメールでは送りません。license.key をプラグインにドラッグ＆ドロップ、または「Load license file…」「Paste license key」。オンライン認証も常駐アプリも不要です。"
         },
         {
+          "id": "demo",
+          "requires": "demo",
           "question": "デモは何ができますか？",
           "answer": "期限なし。挿すたびに最初の 45 秒だけ処理し、あとは挿し直すまで原音のまま通します。設定は保存されません。"
         },
         {
+          "id": "refund",
+          "requires": "purchase",
           "question": "返金は？",
           "answer": "FastSpring が販売主体として、MUED の返金ポリシーに基づき対応します。鍵の配布後は原則返金できません（請求ミス・確認済みの技術的不具合を除く）。動かない場合はまず support@mued.jp へ。"
         }
