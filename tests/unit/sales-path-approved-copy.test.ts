@@ -31,8 +31,8 @@ export const SCOPE_KEYS = [
 
 /** Promise words: binding (frequency, absolutes, "there is no …"). Allowed only when the approved copy itself has them. */
 export const PROMISE = {
-  ja: /年に数通|月に|週に|必ず|絶対|ありません|しません|のみ/,
-  en: /a few emails a year|occasional|\bnever\b|\bonly\b|\balways\b|monthly|weekly/i,
+  ja: /年に数通|月に|週に|必ず|絶対|ありません|しません|のみ|保証|永久|無期限|ずっと/,
+  en: /a few emails a year|occasional|\bnever\b|\bonly\b|\balways\b|monthly|weekly|guarantee|forever|lifetime/i,
 } as const;
 
 export function flatten(o: unknown, prefix = ""): Record<string, string> {
@@ -58,20 +58,29 @@ export function unapprovedPromiseLines(locale: "ja" | "en", mail: { subject: str
     .filter((l) => l && PROMISE[locale].test(l) && !approved.promiseLines.includes(l));
 }
 
+/**
+ * ★The guard itself (CCO #1223): every violation of the approved copy on the selling surfaces. The real
+ *   messages and the positive controls go through THIS function — a control that only checks its own setup
+ *   would stay green even if the guard broke.
+ */
+export function copyViolations(locale: "ja" | "en", messages: unknown, approved: Approved): string[] {
+  const live = scopedCopy(messages);
+  const out: string[] = [];
+  for (const [key, value] of Object.entries(live)) {
+    if (!(key in approved.messages)) out.push(`not approved: ${key}`);
+    else if (approved.messages[key] !== value) out.push(`differs from the approved copy: ${key}`);
+    if (PROMISE[locale].test(value) && approved.messages[key] !== value) out.push(`promise word outside the approved copy: ${key}`);
+  }
+  for (const key of Object.keys(approved.messages)) if (!(key in live)) out.push(`approved copy missing: ${key}`);
+  return out;
+}
+
 type Template = (d: { locale: "ja" | "en"; marketingOptIn?: boolean }) => { subject: string; text: string; html: string };
 const templates = emailTemplates as unknown as Record<string, Template>;
 
 describe.each(Object.entries(LOCALES))("%s — approved copy", (locale, { messages, approved }) => {
-  const live = scopedCopy(messages);
-
-  it("every string on the selling surfaces is the approved string, verbatim", () => {
-    for (const [key, value] of Object.entries(live)) {
-      expect({ key, value }).toEqual({ key, value: approved.messages[key] });
-    }
-  });
-
-  it("the selling surfaces hold no string that is not approved, and no approved string went missing", () => {
-    expect(Object.keys(live).sort()).toEqual(Object.keys(approved.messages).sort());
+  it("the selling surfaces carry exactly the approved copy — verbatim, nothing extra, nothing missing, no stray promise", () => {
+    expect(copyViolations(locale as "ja" | "en", messages, approved)).toEqual([]);
   });
 
   it.each(Object.keys(approved.emails))("email %s: the subject is the approved one", (name) => {
@@ -82,34 +91,39 @@ describe.each(Object.entries(LOCALES))("%s — approved copy", (locale, { messag
     const mail = templates[name]({ locale: locale as "ja" | "en", marketingOptIn: true });
     expect(unapprovedPromiseLines(locale as "ja" | "en", mail, approved)).toEqual([]);
   });
-
-  it("the approved copy itself is the only place a promise word may stand on a selling surface", () => {
-    for (const [key, value] of Object.entries(live)) {
-      if (PROMISE[locale as "ja" | "en"].test(value)) expect(approved.messages[key], key).toBe(value);
-    }
-  });
 });
 
-describe("positive controls — this week's real cases are caught", () => {
-  it("C1: a frequency promise added to a form note fails the verbatim check", () => {
+describe("positive controls — this week's real cases are caught BY THE GUARD", () => {
+  it("C1: a frequency promise added to a form note", () => {
     const tampered = structuredClone(ja) as typeof ja;
     tampered.muedsat.form.note = `${tampered.muedsat.form.note}お知らせは年に数通です。`;
-    const live = scopedCopy(tampered);
-    expect(live["muedsat.form.note"]).not.toBe((approvedJa as Approved).messages["muedsat.form.note"]);
-    expect(PROMISE.ja.test(live["muedsat.form.note"])).toBe(true);
+    expect(copyViolations("ja", tampered, approvedJa as Approved)).toEqual([
+      "differs from the approved copy: muedsat.form.note",
+      "promise word outside the approved copy: muedsat.form.note",
+    ]);
   });
 
-  it("C2: a new 'there is no auto-updater' line on a form fails the coverage check", () => {
+  it("C2: a new 'there is no auto-updater' line on a form", () => {
     const tampered = structuredClone(ja) as unknown as { muedsat: { form: Record<string, string> } };
     tampered.muedsat.form.updatesReason = "自動更新はありません。更新はメールでお知らせします。";
-    const live = scopedCopy(tampered);
-    expect(Object.keys(live)).toContain("muedsat.form.updatesReason");
-    expect(Object.keys((approvedJa as Approved).messages)).not.toContain("muedsat.form.updatesReason");
-    expect(PROMISE.ja.test(live["muedsat.form.updatesReason"])).toBe(true);
+    expect(copyViolations("ja", tampered, approvedJa as Approved)).toEqual([
+      "not approved: muedsat.form.updatesReason",
+      "promise word outside the approved copy: muedsat.form.updatesReason",
+    ]);
+  });
+
+  it("a removed approved string is reported", () => {
+    const tampered = structuredClone(en) as unknown as { muedsp: { buyTry: Record<string, string> } };
+    delete tampered.muedsp.buyTry.try;
+    expect(copyViolations("en", tampered, approvedEn as Approved)).toEqual(["approved copy missing: muedsp.buyTry.try"]);
   });
 
   it("C1 in an email: an 'occasional' line not on the approved list is reported", () => {
     const mail = { subject: "Your download link", text: "Download: x\n\nI'll send occasional updates.\n" };
     expect(unapprovedPromiseLines("en", mail, approvedEn as Approved)).toEqual(["I'll send occasional updates."]);
+  });
+
+  it.each([["ja", "永久にアップデート無料"], ["en", "Lifetime updates guaranteed"]] as const)("%s: the added promise words are caught (%s)", (locale, line) => {
+    expect(unapprovedPromiseLines(locale, { subject: "s", text: line }, (locale === "ja" ? approvedJa : approvedEn) as Approved)).toEqual([line]);
   });
 });
