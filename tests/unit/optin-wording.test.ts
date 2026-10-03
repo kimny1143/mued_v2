@@ -9,9 +9,11 @@ import en from "@/messages/en.json";
  */
 const CONSENT = {
   ja: "このプラグインの更新と、新しい MUEDsp プラグインのお知らせをメールで受け取る（いつでも解除できます）",
-  en: "Email me when this plug-in is updated and when new MUEDsp plug-ins come out (unsubscribe anytime)",
+  en: "Email me when this plugin is updated and when new MUEDsp plugins come out (unsubscribe anytime)",
 } as const;
 
+// Site style is "plugin" (no hyphen) — "plug-in" is KVR's house style, not ours (Chief 10/4).
+const HYPHENATED = /plug-in/i;
 const FREQUENCY = /occasional|now and then|a few times|monthly|weekly|年に|月に|ときどき|たまに/i;
 
 describe.each([["ja", ja], ["en", en]] as const)("%s opt-in wording", (locale, messages) => {
@@ -32,5 +34,7 @@ describe.each([["ja", ja], ["en", en]] as const)("%s opt-in wording", (locale, m
   it.each(Object.keys(forms))("%s: the note promises no frequency", (key) => {
     expect(forms[key as keyof typeof forms].note).not.toMatch(FREQUENCY);
     expect(forms[key as keyof typeof forms].consent).not.toMatch(FREQUENCY);
+    expect(forms[key as keyof typeof forms].note).not.toMatch(HYPHENATED);
+    expect(forms[key as keyof typeof forms].consent).not.toMatch(HYPHENATED);
   });
 });
