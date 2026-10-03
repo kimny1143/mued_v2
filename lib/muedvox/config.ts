@@ -13,6 +13,8 @@ export const MUEDVOX_AUDIO_EXAMPLES: ReadonlyArray<{ label: string; before: stri
  * leaves mued.jp/en/muedvox readable by anyone with the URL, so values not yet checked against the
  * release build (latency, formats) would already be public. Vercel preview and local dev still render it.
  */
-export function muedvoxPageVisible(live: boolean, vercelEnv: string | undefined): boolean {
-  return live || vercelEnv !== "production";
+export function muedvoxPageVisible(live: boolean, vercelEnv: string | undefined, nodeEnv: string | undefined): boolean {
+  // ★Fail-CLOSED (CCO #1216): render before LIVE only on a Vercel preview or in local `next dev` — a missing
+  //   VERCEL_ENV (or any other value) answers 404 rather than publishing.
+  return live || vercelEnv === "preview" || nodeEnv === "development";
 }

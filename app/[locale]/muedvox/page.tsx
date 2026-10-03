@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function MuedvoxPage({ params }: PageProps) {
   const { locale } = await params;
   // ★Not released → 404 in production (preview / dev still render). See muedvoxPageVisible.
-  if (!muedvoxPageVisible(MUEDVOX_LIVE, process.env.VERCEL_ENV)) notFound();
+  if (!muedvoxPageVisible(MUEDVOX_LIVE, process.env.VERCEL_ENV, process.env.NODE_ENV)) notFound();
   setRequestLocale(locale as Locale);
   const t = await getTranslations({ locale, namespace: "muedvox.meta" });
   const softwareStructuredData = {

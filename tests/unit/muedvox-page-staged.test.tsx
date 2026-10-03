@@ -63,7 +63,13 @@ describe("MUEDvox staged product page", () => {
       en: "https://mued.jp/en/muedvox", ja: "https://mued.jp/ja/muedvox",
     });
     expect(metadata.description).not.toMatch(/\$69|demo|デモ/i);
-    const { container } = render(await MuedvoxPage({ params }));
+    const before = process.env.VERCEL_ENV;
+    process.env.VERCEL_ENV = "preview"; // the page renders only on a preview (or local dev) before LIVE
+    let page;
+    try { page = await MuedvoxPage({ params }); } finally {
+      if (before === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = before;
+    }
+    const { container } = render(page);
     expect(container.querySelector('script[type="application/ld+json"]')).toBeNull();
   });
 
@@ -111,10 +117,12 @@ describe("MUEDvox staged product page", () => {
   });
 
   it("is a 404 in production until LIVE; preview and local dev still render (CCO #1216)", async () => {
-    expect(config.muedvoxPageVisible(false, "production")).toBe(false);
-    expect(config.muedvoxPageVisible(false, "preview")).toBe(true);
-    expect(config.muedvoxPageVisible(false, undefined)).toBe(true);
-    expect(config.muedvoxPageVisible(true, "production")).toBe(true);
+    expect(config.muedvoxPageVisible(false, "production", "production")).toBe(false);
+    expect(config.muedvoxPageVisible(false, "preview", "production")).toBe(true);
+    expect(config.muedvoxPageVisible(false, undefined, "development")).toBe(true); // local next dev
+    expect(config.muedvoxPageVisible(false, undefined, "production")).toBe(false); // ★missing VERCEL_ENV → closed
+    expect(config.muedvoxPageVisible(false, undefined, "test")).toBe(false);
+    expect(config.muedvoxPageVisible(true, "production", "production")).toBe(true);
     const before = process.env.VERCEL_ENV;
     process.env.VERCEL_ENV = "production";
     try {
