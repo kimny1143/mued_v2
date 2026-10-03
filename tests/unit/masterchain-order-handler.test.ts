@@ -20,9 +20,10 @@ import { generateKeyPairSync } from "node:crypto";
 
 // vi.hoisted: vi.mock factories are hoisted above ordinary consts, so the spies they close over must
 // be created in a hoisted block too — otherwise the factory runs first and hits a TDZ error.
-const { sendMasterchainLicenseDelivery, trackServerPurchase, addMasterchainContact } = vi.hoisted(
+const { sendMasterchainLicenseDelivery, trackServerPurchase, addMasterchainContact, sendAdminAlert } = vi.hoisted(
   () => ({
     sendMasterchainLicenseDelivery: vi.fn(),
+    sendAdminAlert: vi.fn(() => Promise.resolve({ success: true })),
     trackServerPurchase: vi.fn(() => Promise.resolve()),
     addMasterchainContact: vi.fn(() => Promise.resolve(true)),
   }),
@@ -36,7 +37,7 @@ vi.mock("@/db/schema", () => ({ masterchainPurchases: { orderId: "order_id", lic
 vi.mock("@/lib/masterchain/audience", () => ({ addMasterchainContact }));
 vi.mock("@/lib/analytics/ga4-server", () => ({ trackServerPurchase }));
 vi.mock("@/lib/services/email.service", () => ({
-  emailService: { sendMasterchainLicenseDelivery },
+  emailService: { sendMasterchainLicenseDelivery, sendAdminAlert, isConfigured: () => true },
 }));
 
 import { handleFastspringOrderCompleted, licenseEmailLocale } from "@/lib/masterchain/fastspring-webhook";
@@ -54,6 +55,8 @@ const event = {
     // ★実 shape（2026-09-16 実受信で確定）。★旧 `account: { contact: … }` は
     // ★**実在しない shape**（`data.account` は string）∴ ★fixture を実物に合わせる。
     recipients: [{ recipient: { email: "Buyer@Example.com", first: "Ada", last: "Lovelace" } }],
+    // ★The real shape (measured on every live order, 2026-10-04): one item, the FastSpring product path.
+    items: [{ product: "muedsp-masterchain", quantity: 1 }],
     total: 69,
     changed: Date.parse("2026-09-17T01:02:03.000Z"),
     currency: "USD",
@@ -210,5 +213,47 @@ describe("licenseEmailLocale", () => {
   it("ja / ja-JP / JA → ja; en, de, empty, undefined → en; 'jam' is not ja", () => {
     for (const v of ["ja", "ja-JP", "ja_JP", "JA", " ja "]) expect(licenseEmailLocale(v), v).toBe("ja");
     for (const v of ["en", "de", "", undefined, "jam"]) expect(licenseEmailLocale(v), String(v)).toBe("en");
+  });
+});
+
+/**
+ * ★C9 (docs/paid-line/c9-multi-product-paid-line-design.md · kimny 2026-10-04「鍵を出さず通知」).
+ * Before C9 every order was stamped masterchain. An order we cannot map to exactly ONE product we sell
+ * must get NOTHING — no key (unrevocable), no purchase row, no email — and the operator is alerted.
+ */
+describe("handleFastspringOrderCompleted — only products we sell (C9)", () => {
+  const withItems = (items: unknown) => ({ ...event, data: { ...event.data, items } });
+  const refused: Array<[string, unknown]> = [
+    ["FastSpring's sample product (seen in webhook_events as a test notification)", [{ product: "example-product", quantity: 1 }]],
+    ["a product path not in PAID_PRODUCTS (e.g. MUEDvox before it is added)", [{ product: "muedsp-muedvox", quantity: 1 }]],
+    ["no items at all", []],
+    ["an item with no product", [{ quantity: 1 }]],
+    ["two items", [{ product: "muedsp-masterchain", quantity: 1 }, { product: "muedsp-masterchain", quantity: 1 }]],
+    ["quantity 2", [{ product: "muedsp-masterchain", quantity: 2 }]],
+  ];
+
+  it.each(refused)("%s → unknown_product: no key, no row, no email, operator alerted", async (_label, items) => {
+    process.env.OPERATOR_ALERT_EMAIL = "ops@example.com";
+    const { tx, inserted } = makeTx([]);
+    const result = await handleFastspringOrderCompleted(tx as any, withItems(items));
+    expect(result).toBe("unknown_product");
+    expect(inserted).toHaveLength(0);
+    expect(sendMasterchainLicenseDelivery).not.toHaveBeenCalled();
+    expect(trackServerPurchase).not.toHaveBeenCalled();
+    expect(addMasterchainContact).not.toHaveBeenCalled();
+    expect(sendAdminAlert).toHaveBeenCalledTimes(1);
+    expect(String((sendAdminAlert.mock.calls[0] as unknown[])[1])).toContain("ORDER-777");
+    delete process.env.OPERATOR_ALERT_EMAIL;
+  });
+
+  it("the masterchain order (the measured live shape) is fulfilled exactly as before — scope, product_id, GA4 item", async () => {
+    const { tx, inserted } = makeTx([]);
+    const result = await handleFastspringOrderCompleted(tx as any, withItems([{ product: "muedsp-masterchain", quantity: 1 }]));
+    expect(result).toBe("ok");
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0].productId).toBe("muedsp_masterchain");
+    expect(verifyLicense(inserted[0].licenseKey as string, PUB_PEM)!.scope).toBe("masterchain");
+    expect(sendMasterchainLicenseDelivery).toHaveBeenCalledTimes(1);
+    expect(sendAdminAlert).not.toHaveBeenCalled();
   });
 });

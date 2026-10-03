@@ -32,7 +32,8 @@ const sampleEvent = {
     currency: "USD",
     address: { country: "US" },
     // ★A FastSpring-generated key may still sit here; we deliberately do NOT read it (see below).
-    items: [{ fulfillments: { license: [{ license: "LICENSE-KEY-XYZ" }] } }],
+    // ★`product` / `quantity` are the real shape (every live order, measured 2026-10-04) — C9 routes on them.
+    items: [{ product: "muedsp-masterchain", quantity: 1, fulfillments: { license: [{ license: "LICENSE-KEY-XYZ" }] } }],
     tags: {
       gaClientId: "GA1.1.1.2",
       utmSource: "threads",

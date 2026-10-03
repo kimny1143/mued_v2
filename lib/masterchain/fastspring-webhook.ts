@@ -29,6 +29,7 @@ import { masterchainPurchases } from "@/db/schema";
 import { addMasterchainContact } from "@/lib/masterchain/audience";
 import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 import { issueLicense, LICENSE_VERSION } from "@/lib/masterchain/license";
+import { paidProductByFastspringPath, type PaidProduct } from "@/lib/plugins/paid-products";
 import { emailService } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
 import { and, eq, inArray, isNull } from "drizzle-orm";
@@ -45,7 +46,17 @@ export interface FastspringOrderParsed {
   email: string;
   /** Buyer name for the license payload. Empty string when FastSpring gives us no name. */
   name: string;
-  productId: string;
+  /**
+   * The paid product this order is for — or null when we must NOT fulfil it: the order is not exactly ONE
+   * item of quantity 1 whose `data.items[].product` path is in PAID_PRODUCTS (docs/paid-line/c9-…).
+   * ★Before C9 this was hard-coded to masterchain for EVERY order, so a second product's buyer would have
+   *   been issued a masterchain key — unrevocable (offline verification).
+   */
+  product: PaidProduct | null;
+  /** masterchain_purchases.product_id — `product.productId`, null when `product` is null. */
+  productId: string | null;
+  /** `data.items[].product` as received ("(none)" when missing) — only for the refusal log. */
+  itemPaths: string[];
   amountCents?: number;
   currency?: string;
   buyerCountry?: string;
@@ -132,6 +143,10 @@ export function parseFastspringOrderCompleted(event: unknown): FastspringOrderPa
   const first = asStr(recipient.first) ?? asStr(customer.first) ?? "";
   const last = asStr(recipient.last) ?? asStr(customer.last) ?? "";
   const eulaVersion = asStr(tags.eula_version);
+  // ★The product comes from the order, not from a constant (C9). Measured 2026-10-04 on every live order:
+  //   exactly one item, quantity 1, `product: "muedsp-masterchain"` (the path; `sku` is null).
+  const items = asArr(data.items).map((i) => ({ product: asStr(asObj(i).product), quantity: asNum(asObj(i).quantity) }));
+  const product = items.length === 1 && items[0].quantity === 1 ? paidProductByFastspringPath(items[0].product) : null;
   // `data.changed` is FastSpring's documented order timestamp in milliseconds. Keep event.created as
   // a fallback for non-expanded payload variants; unlike webhook receipt time, both remain stable on
   // retries. `changedInSeconds` is the documented seconds representation of the same order time.
@@ -148,7 +163,9 @@ export function parseFastspringOrderCompleted(event: unknown): FastspringOrderPa
     orderId,
     email: email.toLowerCase().trim(),
     name: [first, last].filter(Boolean).join(" ").trim(),
-    productId: "muedsp_masterchain",
+    product,
+    productId: product?.productId ?? null,
+    itemPaths: items.map((i) => i.product ?? "(none)"),
     amountCents: total !== undefined ? Math.round(total * 100) : undefined,
     currency: asStr(data.currency),
     buyerCountry: asStr(address.country),
@@ -178,15 +195,13 @@ export function parseFastspringOrderCompleted(event: unknown): FastspringOrderPa
 // docs/paid-line/c-plus-fastspring-reflux-webhook-design.md:90 still describes the old model and is
 // SUPERSEDED; the note there points here.
 
-const ITEM_NAME = "MUEDsp masterchain";
-
 /**
  * Build the GA4 purchase event from a parsed FastSpring order. Pure; returns null when there is no
  * GA client_id (GA4 MP requires one) — the caller then skips the event (same guard as #664/dial).
  */
 export function buildMasterchainPurchaseEvent(parsed: FastspringOrderParsed): GA4PurchaseParams | null {
   const gaClientId = parsed.gaClientId?.trim();
-  if (!gaClientId) return null;
+  if (!gaClientId || !parsed.product) return null;
   // ★金額か通貨が欠けた注文は、GA4 へ送らない (freee課 検出 2026-08-04)。
   // 以前は `?? 0` と `|| "usd"` で埋めていたが、どちらも数字を壊す:
   //   - amountCents 欠け → 「purchase・value 0」= 無料で売れたように見える (過小)
@@ -211,8 +226,8 @@ export function buildMasterchainPurchaseEvent(parsed: FastspringOrderParsed): GA
     transactionId: parsed.orderId, // FastSpring order id → GA4 dedup on webhook retry
     value: parsed.amountCents / 100,
     currency: parsed.currency.toUpperCase(),
-    itemName: ITEM_NAME,
-    itemId: parsed.productId,
+    itemName: parsed.product.itemName,
+    itemId: parsed.product.productId,
     utm: hasUtm ? utm : undefined,
   };
 }
@@ -239,7 +254,7 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export async function handleFastspringOrderCompleted(
   tx: Tx,
   event: unknown,
-): Promise<"ok" | "unparseable"> {
+): Promise<"ok" | "unparseable" | "unknown_product"> {
   const parsed = parseFastspringOrderCompleted(event);
   if (!parsed) {
     // ★ここで throw しない（#1039 ではしていた）—— ★CCO レビュー #1039 の指摘。
@@ -257,6 +272,30 @@ export async function handleFastspringOrderCompleted(
     return "unparseable";
   }
 
+  // ── which product — BEFORE anything is issued (C9 · kimny 2026-10-04「鍵を出さず通知」) ─────────────
+  // ★No key, no purchase row, no email for an order we cannot map to exactly one product we sell. A key
+  //   for the wrong product cannot be taken back (offline verification); a missing delivery can be fixed:
+  //   the route records the event as failed and answers 500, FastSpring redelivers, and once the product
+  //   is added to PAID_PRODUCTS (and deployed) the next redelivery fulfils it with no hand work.
+  const product = parsed.product;
+  if (!product) {
+    logger.error("[fastspring] order.completed for a product we do not sell (or not exactly one item) — NOT fulfilled", {
+      orderId: parsed.orderId,
+      items: parsed.itemPaths,
+      next: "add the FastSpring product path to lib/plugins/paid-products.ts; FastSpring's redelivery then fulfils it",
+    });
+    const alertEmail = process.env.OPERATOR_ALERT_EMAIL;
+    if (alertEmail && emailService.isConfigured()) {
+      void emailService
+        .sendAdminAlert(
+          alertEmail,
+          `[fastspring] PAID order ${parsed.orderId} was NOT fulfilled: product ${JSON.stringify(parsed.itemPaths)} is not in PAID_PRODUCTS (or the order is not exactly one item). The buyer has no key yet. Add the path to lib/plugins/paid-products.ts — FastSpring's redelivery will then fulfil it.`,
+        )
+        .catch((err: unknown) => logger.error("[fastspring] operator alert failed", { error: String(err) }));
+    }
+    return "unknown_product";
+  }
+
   // ── issue the license, ONCE per order ───────────────────────────────────────────────────────────
   // ★Idempotency is on the STORED keyfile, not on issueLicense(): the payload carries `issuedAt`, so
   // signing the same order twice yields two different (both valid) keys. FastSpring retries webhooks,
@@ -269,11 +308,12 @@ export async function handleFastspringOrderCompleted(
 
   let licenseKey = existing?.licenseKey ?? null;
   if (!licenseKey) {
-    // Format v2 (product課 frozen). `scope` defaults to "masterchain" — it is what stops a valid
-    // signature for one product from unlocking another.
+    // Format v2 (product課 frozen). `scope` is what stops a valid signature for one product from
+    // unlocking another — so it comes from the product, not from issueLicense's masterchain default (C9).
     licenseKey = issueLicense({
       owner: parsed.email,
       order: parsed.orderId,
+      scope: product.scope,
     });
     if (!licenseKey) {
       // Fail-CLOSED: no signing key configured (or it is malformed). Throwing rolls the tx back and
@@ -296,7 +336,7 @@ export async function handleFastspringOrderCompleted(
       issuedAt: new Date(),
       eulaVersion: parsed.eulaVersion,
       eulaAcceptedAt: parsed.eulaVersion ? parsed.eulaAcceptedAt : undefined,
-      productId: parsed.productId,
+      productId: product.productId,
       amountCents: parsed.amountCents,
       currency: parsed.currency,
       buyerCountry: parsed.buyerCountry,
