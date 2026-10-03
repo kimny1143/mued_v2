@@ -137,3 +137,10 @@ describe("★which download starts — the visitor's OS (masterchain for Windows
     expect(screen.getByRole("link", { name: "demoOtherWindows" })).toHaveAttribute("href", WIN);
   });
 });
+
+describe("the red line is the free form's wording (kimny 10/4「揃えて」)", () => {
+  it.each(["ja", "en"] as const)("%s: muedsp.demo.errors.invalid_email === muedsat.form.errorEmail", async (locale) => {
+    const messages = (await import(`@/messages/${locale}.json`)).default;
+    expect(messages.muedsp.demo.errors.invalid_email).toBe(messages.muedsat.form.errorEmail);
+  });
+});
