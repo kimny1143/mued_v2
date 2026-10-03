@@ -12,10 +12,12 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type DemoError = "invalid_email" | "disposable_email" | "rate_limited" | "generic";
 
 /**
- * masterchain's demo ("Try"). The purchase lives beside masterchain's heading (MasterchainBuyButton —
- * kimny 2026-10-01); this block is the demo only: [Try masterchain] → the email it needs → the updates
- * opt-in (default off) → one short line. Try works only once a well-formed email is in the field, and only
- * once (no second receipt after a successful send).
+ * masterchain's demo ("Try"). The purchase lives beside masterchain's heading (MasterchainBuyButton).
+ * ★Same parts and order as the free three's form (components/features/muedsat-landing/muedsat-signup-form.tsx —
+ *   kimny 2026-10-04: 「無料の方はデカいオレンジのボタンをただ押すだけなら赤いメッセージ…どっちがわかりやすいか、
+ *   押しやすいか明白だ」): [email | filled orange Try] → the updates opt-in (default off) → one short line.
+ *   Try is always pressable; a malformed email answers with the red message instead of a greyed-out button.
+ *   Only once: no second receipt after a successful send.
  */
 export function MasterchainTry() {
   const t = useTranslations("muedsp.buyTry");
@@ -29,15 +31,19 @@ export function MasterchainTry() {
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [error, setError] = useState<DemoError>("generic");
   const [offer, setOffer] = useState<DemoDownloadPlan["offer"]>([]);
-  const emailOk = EMAIL_RE.test(email.trim());
   // ★Once the demo has been sent, Try stays done (CCO #1187): a second press would send a second receipt.
-  const canTry = MASTERCHAIN_DEMO_LIVE && emailOk && status !== "submitting" && status !== "success";
+  const busy = status === "submitting" || status === "success";
 
   if (!MASTERCHAIN_DEMO_LIVE) return null;
 
   async function tryDemo(event: React.FormEvent) {
     event.preventDefault();
-    if (!canTry) return;
+    if (busy) return;
+    if (!EMAIL_RE.test(email.trim())) {
+      setError("invalid_email");
+      setStatus("error");
+      return;
+    }
     setStatus("submitting");
     // ★Same GA4 event as the free three's forms (cta_click / download_form); GA4 ties it to the session's utm.
     trackCtaClick("masterchain", "demo_form", "download_form");
@@ -75,18 +81,6 @@ export function MasterchainTry() {
 
   return (
     <form id="demo" onSubmit={tryDemo} noValidate className="max-w-xl scroll-mt-20 space-y-4" aria-busy={status === "submitting"}>
-      <button
-        type="submit"
-        disabled={!canTry}
-        aria-disabled={!canTry}
-        className={
-          canTry
-            ? "rounded-[var(--radius-sm)] border border-[#f5a524]/60 px-5 py-3 font-semibold text-[#f5a524] transition hover:bg-[#f5a524]/10"
-            : "cursor-not-allowed rounded-[var(--radius-sm)] border border-white/15 px-5 py-3 font-semibold text-white/35"
-        }
-      >
-        {t("try")}
-      </button>
       <div style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
         <label htmlFor="masterchain-demo-website">{locale === "ja" ? "この欄は空欄のままにしてください" : "Leave this field empty"}</label>
         <input id="masterchain-demo-website" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
@@ -108,24 +102,36 @@ export function MasterchainTry() {
         </div>
       ) : (
         <>
-          <input
-            id="masterchain-demo-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            aria-label={t("emailLabel")}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={t("emailPlaceholder")}
-            aria-invalid={status === "error" && error === "invalid_email"}
-            aria-describedby={status === "error" ? "masterchain-demo-error" : "masterchain-demo-note"}
-            className="w-full rounded-[var(--radius-sm)] border border-white/15 bg-white/[0.04] px-4 py-3 font-mono text-white focus:outline-none focus:ring-2 focus:ring-[#f5a524]"
-          />
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              id="masterchain-demo-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              aria-label={t("emailLabel")}
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (status === "error") setStatus("idle");
+              }}
+              placeholder={t("emailPlaceholder")}
+              aria-invalid={status === "error" && error === "invalid_email"}
+              aria-describedby={status === "error" ? "masterchain-demo-error" : "masterchain-demo-note"}
+              className="min-w-0 flex-1 rounded-[var(--radius-lg)] border border-white/15 bg-white/[0.04] px-4 py-3.5 font-mono text-white placeholder:text-white/30 transition-colors focus:border-[#f5a524]/60 focus:outline-none focus:ring-1 focus:ring-[#f5a524]/40"
+            />
+            <button
+              type="submit"
+              disabled={busy}
+              className="shrink-0 rounded-[var(--radius-lg)] bg-[#f5a524] px-6 py-3.5 font-semibold text-black transition-colors hover:bg-[#ffb638] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {t("try")}
+            </button>
+          </div>
+          {status === "error" && <p id="masterchain-demo-error" role="alert" className="text-sm text-red-400">{td(`errors.${error}`)}</p>}
           <label className="flex items-start gap-2 text-sm text-white/65">
             <input type="checkbox" checked={marketingOptIn} onChange={(e) => setMarketingOptIn(e.target.checked)} className="mt-1 accent-[#f5a524]" />
             {td("consent")}
           </label>
-          {status === "error" && <p id="masterchain-demo-error" role="alert" className="text-sm text-red-400">{td(`errors.${error}`)}</p>}
         </>
       )}
       <p id="masterchain-demo-note" className="text-xs leading-relaxed text-white/50">{t("demoNote")}</p>

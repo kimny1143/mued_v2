@@ -81,7 +81,8 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
   }
 
   return (
-    <div className="flex max-w-xs flex-col items-start gap-2">
+    <div className="flex max-w-xl flex-col items-stretch gap-2 sm:items-start">
+      {/* ★Same weight as the demo's Try and the free three's button (kimny 2026-10-04): filled orange, full width on a phone, its own width beside the text on a wider screen — exactly the free form's button. */}
       <button
         ref={opener}
         type="button"
@@ -91,7 +92,7 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
         onClick={() => setOpen(true)}
         className={
           PURCHASE_OPEN
-            ? "rounded-[var(--radius-sm)] bg-[var(--accent)] px-5 py-3 font-semibold text-black transition hover:brightness-110"
+            ? "w-full sm:w-auto rounded-[var(--radius-lg)] bg-[#f5a524] px-6 py-3.5 font-semibold text-black transition-colors hover:bg-[#ffb638]"
             : "cursor-not-allowed rounded-[var(--radius-sm)] border border-white/15 bg-white/[0.04] px-5 py-3 font-semibold text-white/40"
         }
       >
