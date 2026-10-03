@@ -5,13 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MUEDSP_AUDIENCE_ID } from "@/lib/plugins/registry";
 import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_URL } from "@/lib/masterchain/config";
 
-const m = vi.hoisted(() => ({ live: true, windows: true, create: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn(), alert: vi.fn() }));
+const m = vi.hoisted(() => ({ live: true, windows: true, create: vi.fn(), get: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn(), alert: vi.fn() }));
 vi.mock("@/lib/masterchain/config", async (original) => ({
   ...await original<typeof import("@/lib/masterchain/config")>(),
   get MASTERCHAIN_DEMO_LIVE() { return m.live; },
   get MASTERCHAIN_WINDOWS_LIVE() { return m.windows; },
 }));
-vi.mock("resend", () => ({ Resend: class { contacts = { create: m.create }; } }));
+vi.mock("resend", () => ({ Resend: class { contacts = { create: m.create, get: m.get }; } }));
 vi.mock("@/lib/services/email.service", () => ({ emailService: { sendMasterchainDemoDownload: m.send, isConfigured: () => true, sendAdminAlert: m.alert } }));
 vi.mock("@/lib/middleware/rate-limit", () => ({ rateLimit: m.ip, checkRateLimit: m.emailLimit }));
 vi.mock("@/lib/utils/logger", () => ({ logger: { error: m.error } }));
@@ -31,6 +31,7 @@ beforeEach(() => {
   m.ip.mockResolvedValue(null);
   m.emailLimit.mockResolvedValue(null);
   m.create.mockResolvedValue({ data: { id: "contact" }, error: null });
+  m.get.mockResolvedValue({ data: null, error: { statusCode: 404, name: "not_found", message: "Contact not found" } }); // Resend's measured "no such contact" (2026-10-04)
   m.send.mockResolvedValue({ success: true });
   m.alert.mockResolvedValue({ success: true });
   vi.stubEnv("OPERATOR_ALERT_EMAIL", "ops@example.com");
@@ -134,4 +135,23 @@ it("★with masterchain for Windows off, the response is exactly the Mac-only on
   m.windows = false;
   const res = await handleMasterchainDemo(request());
   expect(await res.json()).toEqual({ ok: true, downloadUrl: MASTERCHAIN_DOWNLOAD_URL });
+});
+
+describe("an existing contact is never touched (CCO #1221)", () => {
+  it.each([true, false])("already on the list (unsubscribed: %s) → no create, no alert, the receipt still goes", async (unsubscribed) => {
+    m.get.mockResolvedValue({ data: { id: "c1", email: "person@example.com", unsubscribed }, error: null });
+    const res = await handleMasterchainDemo(request({ email: "person@example.com" }));
+    expect(await res.json()).toEqual(success);
+    expect(m.get).toHaveBeenCalledExactlyOnceWith({ audienceId: MUEDSP_AUDIENCE_ID, email: "person@example.com" });
+    expect(m.create).not.toHaveBeenCalled();
+    expect(m.alert).not.toHaveBeenCalled();
+    expect(m.send).toHaveBeenCalledTimes(1);
+  });
+  it("a lookup error other than not_found → no create (never risk re-subscribing), logged + alerted", async () => {
+    m.get.mockResolvedValue({ data: null, error: { statusCode: 500, name: "internal_server_error", message: "boom" } });
+    await handleMasterchainDemo(request({ email: "person@example.com" }));
+    expect(m.create).not.toHaveBeenCalled();
+    expect(m.error).toHaveBeenCalled();
+    expect(m.alert).toHaveBeenCalledTimes(1);
+  });
 });

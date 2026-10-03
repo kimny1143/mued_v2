@@ -41,9 +41,10 @@ vi.mock("@/lib/utils/logger", () => ({
 }));
 
 const create = vi.fn();
+const get = vi.fn(async () => ({ data: null, error: { statusCode: 404, name: "not_found", message: "Contact not found" } }));
 const update = vi.fn();
 vi.mock("resend", () => ({
-  Resend: vi.fn(() => ({ contacts: { create, update } })),
+  Resend: vi.fn(() => ({ contacts: { create, update, get } })),
 }));
 
 /** What the SDK actually resolves when the API says no. */
@@ -83,6 +84,20 @@ describe("Resend API rejection ≠ success", () => {
     const { addPluginSubscriber } = await import("@/lib/plugins/audience");
     create.mockResolvedValueOnce(REJECTION);
     await expect(addPluginSubscriber("muedsat", { email: "lead@example.com" })).resolves.toBe(false);
+  });
+
+  it.each([true, false])("★addPluginSubscriber leaves an existing contact alone (unsubscribed: %s) — no create, reported as on the list (CCO #1221)", async (unsubscribed) => {
+    const { addPluginSubscriber } = await import("@/lib/plugins/audience");
+    get.mockResolvedValueOnce({ data: { id: "c1", email: "lead@example.com", unsubscribed }, error: null } as never);
+    await expect(addPluginSubscriber("muedsat", { email: "lead@example.com" })).resolves.toBe(true);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("★addPluginSubscriber does not create when the lookup fails for any reason other than not_found", async () => {
+    const { addPluginSubscriber } = await import("@/lib/plugins/audience");
+    get.mockResolvedValueOnce({ data: null, error: { statusCode: 500, name: "internal_server_error", message: "boom" } } as never);
+    await expect(addPluginSubscriber("muedsat", { email: "lead@example.com" })).resolves.toBe(false);
+    expect(create).not.toHaveBeenCalled();
   });
 
   it("★addPluginSubscriber returns true when the API accepts", async () => {

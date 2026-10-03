@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { addContactIfAbsent } from "@/lib/plugins/audience";
 import { z } from "zod";
 import { rateLimit, checkRateLimit } from "@/lib/middleware/rate-limit";
 import { MUEDSP_AUDIENCE_ID, isHoneypotTripped } from "@/lib/plugins/registry";
@@ -25,22 +26,8 @@ const schema = z.object({
 /** true = the person is on the list. ★false is logged by the caller AND alerted (same as the free three). */
 async function addDemoContact(email: string): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) return false;
-  try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const { error } = await resend.contacts.create({
-      audienceId: MUEDSP_AUDIENCE_ID,
-      email,
-      unsubscribed: false,
-    });
-    if (error) {
-      logger.error("[masterchain/demo] Resend REJECTED the add", { error: error.message ?? String(error) });
-      return false;
-    }
-    return true;
-  } catch (error) {
-    logger.error("[masterchain/demo] could not reach Resend to add", { error: String(error) });
-    return false;
-  }
+  // ★Lookup first, never touching an existing (possibly unsubscribed) contact — see addContactIfAbsent.
+  return addContactIfAbsent(new Resend(process.env.RESEND_API_KEY), MUEDSP_AUDIENCE_ID, email, "masterchain/demo");
 }
 
 export async function handleMasterchainDemo(request: NextRequest) {
