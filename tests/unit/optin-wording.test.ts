@@ -2,50 +2,27 @@ import { describe, expect, it } from "vitest";
 import ja from "@/messages/ja.json";
 import en from "@/messages/en.json";
 
-/**
- * The opt-in wording (kimny 2026-10-04, via Chief): one sentence for every form that has the box — the three
- * free plugins and the masterchain demo. ★It does not list WHAT we send (kimny「Dだよ。当然だろ」— an enumerated
- * scope was narrower than the newsletters actually sent), and promises no frequency
- * (kimny「いちいち入れたらこっちの手が減るだろ」). The default stays OFF (pinned in the form tests).
- */
-const CONSENT = {
-  ja: "MUEDsp のお知らせをメールで受け取る（いつでも解除できます）",
-  en: "Email me news from MUEDsp (unsubscribe anytime)",
+// kimny 2026-10-04: #1166 reverted to form notice + news and unsubscribe in every mail.
+const NOTICE = {
+  ja: "ダウンロードリンクの送付と、MUEDsp のお知らせにメールアドレスを使用します。配信はいつでも解除できます。",
+  en: "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
 } as const;
-
-// The note under each free form explains the same consent — same scope as the box (CCO #1221).
-const NOTE = {
-  ja: "ダウンロードリンクをメールでお送りします。チェックを入れた場合は、MUEDsp のお知らせもお送りします。配信はいつでも解除できます。",
-  en: "I'll email you the download link. If you tick the box, I'll also email you news from MUEDsp. Unsubscribe anytime.",
-} as const;
-
-// Site style is "plugin" (no hyphen) — "plug-in" is KVR's house style, not ours (Chief 10/4).
-const HYPHENATED = /plug-in/i;
 const FREQUENCY = /occasional|now and then|a few times|monthly|weekly|年に|月に|ときどき|たまに/i;
 
-describe.each([["ja", ja], ["en", en]] as const)("%s opt-in wording", (locale, messages) => {
-  const forms = {
-    muedsat: messages.muedsat.form,
-    muedlim: messages.muedlim.form,
-    muedrive: messages.muedrive.form,
-  };
-
-  it.each(Object.keys(forms))("%s: the checkbox says the approved sentence", (key) => {
-    expect(forms[key as keyof typeof forms].consent).toBe(CONSENT[locale]);
-  });
-
-  it.each(Object.keys(forms))("%s: the note says the approved sentence", (key) => {
-    expect(forms[key as keyof typeof forms].note).toBe(NOTE[locale]);
-  });
-
-  it("masterchain demo: the same sentence", () => {
-    expect(messages.muedsp.demo.consent).toBe(CONSENT[locale]);
-  });
-
-  it.each(Object.keys(forms))("%s: the note promises no frequency", (key) => {
-    expect(forms[key as keyof typeof forms].note).not.toMatch(FREQUENCY);
-    expect(forms[key as keyof typeof forms].consent).not.toMatch(FREQUENCY);
-    expect(forms[key as keyof typeof forms].note).not.toMatch(HYPHENATED);
-    expect(forms[key as keyof typeof forms].consent).not.toMatch(HYPHENATED);
+describe.each([["ja", ja], ["en", en]] as const)("%s email notice wording", (locale, messages) => {
+  const notices = [
+    { name: "muedsat", namespace: messages.muedsat.form, text: messages.muedsat.form.note },
+    { name: "muedlim", namespace: messages.muedlim.form, text: messages.muedlim.form.note },
+    { name: "muedrive", namespace: messages.muedrive.form, text: messages.muedrive.form.note },
+    { name: "masterchain demo", namespace: messages.muedsp.demo, text: messages.muedsp.demo.emailNotice },
+  ];
+  it.each(notices)("$name: exact approved notice, both uses and unsubscribe, no consent key or frequency", ({ namespace, text }) => {
+    expect(text).toBe(NOTICE[locale]);
+    expect(namespace).not.toHaveProperty("consent");
+    expect(text).toContain(locale === "ja" ? "ダウンロードリンクの送付" : "send the download link");
+    expect(text).toContain(locale === "ja" ? "MUEDsp のお知らせ" : "news from MUEDsp");
+    expect(text).toContain(locale === "ja" ? "配信はいつでも解除できます" : "Unsubscribe anytime");
+    expect(text).not.toMatch(FREQUENCY);
+    expect(text).not.toMatch(/plug-in/i);
   });
 });

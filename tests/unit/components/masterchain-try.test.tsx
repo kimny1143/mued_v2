@@ -65,7 +65,8 @@ describe("TRY — works only with a well-formed email", () => {
     fireEvent.click(tryBtn);
     expect(await screen.findByRole("alert")).toHaveTextContent("errors.invalid_email");
     expect(m.fetch).not.toHaveBeenCalled();
-    expect(screen.getByRole("checkbox", { name: "consent" })).not.toBeChecked();
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.getByText("emailNotice")).toBeVisible();
   });
 
   it("TRY is the filled orange button of the free form, beside the email (not an outline above it)", async () => {
@@ -78,18 +79,23 @@ describe("TRY — works only with a well-formed email", () => {
     expect(email.compareDocumentPosition(tryBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // email first
   });
 
-  it.each([false, true])("posts the demo with explicit consent (ticked: %s) and starts the download", async (tick) => {
+  it("posts the demo without the legacy field and starts the download", async () => {
     await renderBlock(true);
-    if (tick) fireEvent.click(screen.getByRole("checkbox", { name: "consent" }));
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.getByText("emailNotice")).toBeVisible();
+    expect(screen.getByLabelText("emailLabel").parentElement?.nextElementSibling).toBe(screen.getByText("emailNotice"));
     fireEvent.change(screen.getByLabelText("emailLabel"), { target: { value: "person@example.com" } });
     fireEvent.click(screen.getByRole("button", { name: "try" }));
     await waitFor(() => expect(m.assign).toHaveBeenCalledWith("https://mued.jp/downloads/demo.pkg"));
     expect(m.fetch.mock.calls[0][0]).toBe("/api/masterchain/demo");
     expect(JSON.parse(m.fetch.mock.calls[0][1].body)).toEqual({
-      email: "person@example.com", locale: "en", marketingOptIn: tick, website: "",
+      email: "person@example.com", locale: "en", website: "",
       utm_source: "news", utm_term: "audio", utm_medium: "email", utm_campaign: "launch", utm_content: "cta",
     });
     expect(screen.getByRole("status")).toHaveTextContent("success");
+    expect(screen.getByText("emailNotice")).toBeVisible();
+    expect(screen.getByText("demoNote")).toBeVisible();
+    expect(JSON.parse(m.fetch.mock.calls[0][1].body)).not.toHaveProperty("marketingOptIn");
     expect(screen.queryByRole("button", { name: "try" })).toBeNull(); // ★no second send after success
   });
 

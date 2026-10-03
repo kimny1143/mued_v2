@@ -1,5 +1,5 @@
-import { expect, it } from "vitest";
-import { emailTemplates } from "@/lib/services/email.service";
+import { expect, it, vi } from "vitest";
+import { emailService, emailTemplates } from "@/lib/services/email.service";
 import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 
 it.each(["ja", "en"] as const)("renders the %s receipt with the download and demo limits, without marketing", (locale) => {
@@ -35,4 +35,18 @@ it.each(["ja", "en"] as const)("★%s: with consent the receipt also says how to
     expect(body).toContain("/l/mc-demo-mail");
     expect(body).toContain(locale === "ja" ? "購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。" : "sign in to mued.jp with the email you used at checkout");
   }
+});
+
+// kimny 2026-10-04: handlers always pass true after showing the email-use notice.
+it.each(["ja", "en"] as const)("%s: the notice-based receipt service sends unsubscribe in HTML, text and headers", async (locale) => {
+  const send = vi.spyOn(emailService, "send").mockResolvedValue({ success: true });
+  await emailService.sendMasterchainDemoDownload({ email: "listener@example.com" }, { locale, marketingOptIn: true });
+  expect(send).toHaveBeenCalledTimes(1);
+  const sent = send.mock.calls[0][0];
+  expect(sent.html).toContain("/api/plugins/unsubscribe?");
+  expect(sent.text).toContain("/api/plugins/unsubscribe?");
+  expect(sent.headers).toEqual({
+    "List-Unsubscribe": expect.stringContaining("/api/plugins/unsubscribe?"),
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  });
 });

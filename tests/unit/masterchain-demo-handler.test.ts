@@ -62,19 +62,19 @@ describe("masterchain demo", () => {
     expect(m.create).not.toHaveBeenCalled();
     expect(m.send).not.toHaveBeenCalled();
   });
-  it.each([false, undefined])("sends one receipt with no list access when consent is %s", async (marketingOptIn) => {
+  it.each([false, undefined])("adds to the audience and sends an unsubscribe-enabled receipt with legacy value %s", async (marketingOptIn) => {
     const res = await handleMasterchainDemo(request({ email: " Person@Example.com ", marketingOptIn }));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(success);
-    expect(m.create).not.toHaveBeenCalled();
-    expect(m.send).toHaveBeenCalledExactlyOnceWith({ email: "person@example.com" }, { locale: "en", marketingOptIn: false });
+    expect(m.create).toHaveBeenCalledExactlyOnceWith({ audienceId: MUEDSP_AUDIENCE_ID, email: "person@example.com", unsubscribed: false });
+    expect(m.send).toHaveBeenCalledExactlyOnceWith({ email: "person@example.com" }, { locale: "en", marketingOptIn: true });
     expect(m.emailLimit).toHaveBeenCalledWith("plugin-email", "plugin-email:person@example.com");
     expect(m.ip).toHaveBeenCalledWith(expect.any(NextRequest), "research");
   });
-  it("adds consented contacts only to the shared MUEDsp audience", async () => {
+  it("adds subscribers only to the shared MUEDsp audience", async () => {
     await handleMasterchainDemo(request({ email: "person@example.com", locale: "ja", marketingOptIn: true }));
     expect(m.create).toHaveBeenCalledExactlyOnceWith({ audienceId: MUEDSP_AUDIENCE_ID, email: "person@example.com", unsubscribed: false });
-    // ★Consent reaches the receipt, which then carries the unsubscribe link (conductor 2026-09-30).
+    // ★The server enables marketing on the receipt, which then carries the unsubscribe link (conductor 2026-09-30).
     expect(m.send).toHaveBeenCalledExactlyOnceWith({ email: "person@example.com" }, { locale: "ja", marketingOptIn: true });
   });
   it.each(["rejection", "throw", "unset"])("list failure %s is best-effort", async (mode) => {
@@ -86,7 +86,7 @@ describe("masterchain demo", () => {
     expect(m.send).toHaveBeenCalledTimes(1);
     if (mode === "unset") expect(m.create).not.toHaveBeenCalled();
     else expect(m.error).toHaveBeenCalled();
-    // ★(2) conductor 2026-09-30: a consenting person who did not reach the list alerts the operator (configured only).
+    // ★(2) conductor 2026-09-30: a subscriber who did not reach the list alerts the operator (configured only).
     if (mode === "unset") expect(m.alert).not.toHaveBeenCalled();
     else expect(m.alert).toHaveBeenCalledTimes(1);
   });
@@ -124,7 +124,7 @@ describe("masterchain demo", () => {
   });
 });
 
-it("does not alert when the consenting person reached the list", async () => {
+it("does not alert when the subscriber reached the list", async () => {
   m.create.mockResolvedValue({ data: { id: "contact" }, error: null });
   await handleMasterchainDemo(request({ email: "person@example.com", marketingOptIn: true }));
   expect(m.alert).not.toHaveBeenCalled();
