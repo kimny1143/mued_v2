@@ -4,7 +4,7 @@
  *   (#1166, 9/30) took new contacts to 0, and this alert fires on 10/2 — it was found on 10/2 only by chance.
  */
 import { describe, expect, it } from "vitest";
-import { denominatorTrend, DENOMINATOR_ALERT_RATIO, type DailyNetNew } from "@/lib/funnel/denominator-trend";
+import { denominatorTrend, DENOMINATOR_ALERT_RATIO, CLIFF_MIN_PRIOR_AVG, type DailyNetNew } from "@/lib/funnel/denominator-trend";
 
 // Measured 2026-10-04 from data/plugin-funnel-reports (UTC report days).
 const REAL: DailyNetNew[] = Object.entries({
@@ -25,6 +25,32 @@ describe("denominatorTrend — the real reports", () => {
     const t = denominatorTrend(REAL, "2026-09-29");
     expect(t.alert).toBe(false);
     expect(t.ratio).toBeGreaterThanOrEqual(DENOMINATOR_ALERT_RATIO);
+  });
+});
+
+describe("denominatorTrend — the cliff (CCO #1225: the ratio alone is too slow)", () => {
+  it("★the real 9/30 (the day #1166 shipped, 0 new) alerts that morning — by the cliff rule", () => {
+    const t = denominatorTrend(REAL, "2026-09-30");
+    expect(t).toMatchObject({ alert: true, reason: "cliff" });
+    expect(t.ratio).toBeGreaterThanOrEqual(DENOMINATOR_ALERT_RATIO); // the ratio alone would have stayed quiet
+  });
+
+  it("a clean 14 → 0 drop alerts on day 1 (the ratio alone would wait until day 4)", () => {
+    const series: DailyNetNew[] = Array.from({ length: 21 }, (_, i) => {
+      const d = new Date("2026-11-01T00:00:00Z");
+      d.setUTCDate(d.getUTCDate() + i);
+      return { date: d.toISOString().slice(0, 10), netNew: i === 20 ? 0 : 14 };
+    });
+    expect(denominatorTrend(series, series[20].date)).toMatchObject({ alert: true, reason: "cliff" });
+  });
+
+  it(`a quiet list (prior avg < ${CLIFF_MIN_PRIOR_AVG}) with one 0 day does not trip the cliff`, () => {
+    const series: DailyNetNew[] = Array.from({ length: 21 }, (_, i) => {
+      const d = new Date("2026-11-01T00:00:00Z");
+      d.setUTCDate(d.getUTCDate() + i);
+      return { date: d.toISOString().slice(0, 10), netNew: i === 20 ? 0 : 2 };
+    });
+    expect(denominatorTrend(series, series[20].date)).toMatchObject({ alert: false, reason: null });
   });
 });
 

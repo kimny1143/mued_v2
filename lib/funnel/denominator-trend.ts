@@ -13,6 +13,13 @@
  *   `missing`), never a number computed from a partial window.
  */
 export const DENOMINATOR_ALERT_RATIO = 0.5;
+/**
+ * ★The cliff rule (CCO #1225): the ratio alone is too slow for a drop to zero — 14 → 0 every day gives
+ *   0.86 / 0.71 / 0.57 and first fires on the 4th day. So also: if the prior 14 days averaged at least this many
+ *   new contacts a day and the report day itself has 0, alert that morning. On the real reports this fires on
+ *   9/30 (prior avg ≈ 13, then 0) — i.e. the morning of 10/1, the day after #1166.
+ */
+export const CLIFF_MIN_PRIOR_AVG = 5;
 
 export interface DailyNetNew {
   date: string; // YYYY-MM-DD (UTC day of the report)
@@ -26,6 +33,8 @@ export interface DenominatorTrend {
   prior14_avg: number | null;
   ratio: number | null;
   alert: boolean;
+  /** Which rule raised the alert ("ratio" | "cliff"), or null. */
+  reason: "ratio" | "cliff" | null;
   threshold: number;
   /** Days in the 21-day window with no readable figure — when non-empty, ratio is null. */
   missing: string[];
@@ -47,18 +56,22 @@ export function denominatorTrend(series: readonly DailyNetNew[], asOf: string): 
     return typeof v !== "number" || !Number.isFinite(v);
   });
   if (missing.length > 0) {
-    return { as_of: asOf, last7_avg: null, prior14_avg: null, ratio: null, alert: false, threshold: DENOMINATOR_ALERT_RATIO, missing };
+    // ★Not 0 and not "fine": the reader shows `missing` as unknown (yellow), so a gap is visible, not silent.
+    return { as_of: asOf, last7_avg: null, prior14_avg: null, ratio: null, alert: false, reason: null, threshold: DENOMINATOR_ALERT_RATIO, missing };
   }
   const values = days.map((d) => byDate.get(d) as number);
   const prior14 = avg(values.slice(0, 14));
   const last7 = avg(values.slice(14));
   const ratio = prior14 > 0 ? Math.round((last7 / prior14) * 100) / 100 : null;
+  const cliff = prior14 >= CLIFF_MIN_PRIOR_AVG && values[20] === 0;
+  const low = ratio !== null && ratio < DENOMINATOR_ALERT_RATIO;
   return {
     as_of: asOf,
     last7_avg: last7,
     prior14_avg: prior14,
     ratio,
-    alert: ratio !== null && ratio < DENOMINATOR_ALERT_RATIO,
+    alert: cliff || low,
+    reason: cliff ? "cliff" : low ? "ratio" : null,
     threshold: DENOMINATOR_ALERT_RATIO,
     missing: [],
   };
