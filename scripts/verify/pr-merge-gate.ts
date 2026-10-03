@@ -559,7 +559,7 @@ function main(): void {
   const salesVoid = salesImpactVoidReason(meta.files.map((f) => f.path), meta.body);
   if (salesVoid) {
     console.error(`\n★VOID: ${salesVoid}`);
-    console.error("  → 次の一歩: PR 本文に 1 行を足す（例 `sales-impact: 変わらない: 文言だけ`）。値は 増える／変わらない／法の明文: <条文名>。「減る」は書けない。");
+    console.error("  → 次の一歩: PR 本文に 1 行を足す（例 `sales-impact: 変わらない: 文言だけ`）。値は 増える／変わらない／法の明文: <条文名>／kimny の判断: <逐語の要旨> <YYYY-MM-DD>。「減る」は書けない（減ると分かって出すなら kimny の判断の行）。");
     process.exitCode = 2;
     return;
   }

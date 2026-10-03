@@ -13,6 +13,7 @@ describe("parseSalesImpact", () => {
     ["sales-impact：変わらない：全角のコロン", "変わらない"],
     ["sales-impact: 法の明文: 特定電子メール法 4 条", "法の明文"],
     ["> sales-impact: 増える: 引用の中", "増える"],
+    ["sales-impact: kimny の判断: 「チェック必須はやめる」 2026-10-04", "kimny の判断"],
   ])("accepts %j", (body, kind) => {
     expect(parseSalesImpact(body)).toMatchObject({ ok: true, kind });
   });
@@ -27,6 +28,7 @@ describe("parseSalesImpact", () => {
     ["sales-impact: たぶん増える: 理由", "のどれか"],
     ["sales-impact: 変わらない: ", "理由"],
     ["sales-impact: 増える: a\nsales-impact: 変わらない: b", "2 行"],
+    ["sales-impact: kimny の判断: 減るが出す", "日付"],
   ])("rejects %j", (body, why) => {
     const r = parseSalesImpact(body);
     expect(r.ok).toBe(false);
