@@ -32,6 +32,7 @@ describe("sales-path trigger", () => {
     "lib/muedvox/config.ts",
     "lib/muedsat/config.ts",
     "lib/plugins/registry.ts",
+    "docs/copy/approved-ja.json",
   ])("%s → customer path", (file) => {
     expect(touchesSalesPath([file])).toBe(true);
   });

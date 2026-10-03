@@ -38,6 +38,7 @@ export const SALES_PATH_PATTERNS = [
   /^lib\/(muedsat|muedlim|muedrive|muedsp|muedvox|masterchain)\/config\.ts$/,
   /^lib\/plugins\/(registry|windows-beta)\.ts$/,
   /^lib\/i18n\//,
+  /^docs\/copy\//, // G3: the approved copy
   /^e2e\/sales-path\//,
   /^playwright\.sales-path\.config\.ts$/,
   /^scripts\/ci\/sales-path\.mjs$/,
