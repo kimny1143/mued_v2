@@ -62,6 +62,7 @@ const NON_LEGAL_LOCALE_PAGES: Record<string, string> = {
   muedial: "製品 LP。法定表記は /tokushoho が担う",
   muedlim: "製品 LP（無料プラグイン）",
   muedrive: "製品 LP（無料プラグイン）",
+  muedvox: "製品 LP（有料プラグイン・公開前）",
   muedsat: "製品 LP（無料プラグイン）",
   muedsp: "製品 LP（プラグイン群のハブ）",
   redesign: "noindex の preview route。公開面ではない（bare-paths 側でも EXEMPT）",

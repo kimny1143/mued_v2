@@ -35,6 +35,7 @@ const TAILS: Record<string, string> = { muedsat: "sat", muedlim: "lim", muedrive
  * what a future reader needs in order to decide whether the exemption still holds.
  */
 const EXEMPT: Record<string, string> = {
+  muedvox: "shared BrandMark renders its wordmark; hero is a sentence, checked in muedvox-page-staged.test.tsx",
   muedsp: "catalogue page — it lists every module, so every tail appears there legitimately",
   advisory: "not a plugin; no MUED+tail wordmark",
   muedear: "not part of the MUEDsp plugin family; its own wordmark",
