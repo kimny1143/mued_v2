@@ -96,6 +96,17 @@ const MUTATIONS: Mutation[] = [
     observe: (m) => m.classify([ok("Validate"), done("Test", "skipped"), ok("Build")]).kind,
     expectGood: "void",
   },
+  {
+    // ⑥ G1 of the sales-path guard (CCO #1224): without the sales-impact check, a customer-path PR with no line
+    //   would reach "ready". The observable is the reason string's presence for such a PR.
+    name: "sales-impact-unchecked",
+    property: "a PR on the customer path without a sales-impact line must not be mergeable",
+    find: "  if (!touchesSalesPath([...paths]) && paths.length < 100) return null;",
+    replace: "  return null;",
+    observe: (m) =>
+      m.salesImpactVoidReason(["components/features/muedsp-landing/masterchain-try.tsx"], "## no line") === null ? "ready" : "void",
+    expectGood: "void",
+  },
 ];
 
 async function main(): Promise<void> {
