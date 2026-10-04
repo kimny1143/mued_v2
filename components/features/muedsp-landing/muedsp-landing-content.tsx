@@ -167,25 +167,9 @@ export function MuedspLandingContent() {
               <MasterchainBuyButton buyLabel={tmc(MASTERCHAIN_PURCHASE_LIVE ? "buyLabelLive" : "buyLabel")} />
             </div>
 
-            {/* the planned controls — shown as "こうなります", not editable here */}
-            <p className="mt-10 text-lg font-medium leading-snug text-white/85">
-              {tmc("controlsLead")}
-            </p>
-            <dl className="mt-5 divide-y divide-white/5 border-y border-white/5">
-              {MC_CONTROLS.map((key) => (
-                <div key={key} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr] sm:gap-5">
-                  <dt className="font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">
-                    {tmc(`controls.${key}.name`)}
-                  </dt>
-                  <dd className="text-[15px] leading-relaxed text-white/70">
-                    {tmc(`controls.${key}.desc`)}
-                  </dd>
-                </div>
-              ))}
-            </dl>
 
-            {/* ★Buy + demo in one block (kimny 2026-10-01): [BUY $69] [TRY] on one row, the email for TRY below,
-                then one short demo line. The FastSpring tag contract lives in lib/masterchain/fastspring-checkout.ts
+            {/* ★The demo directly under Buy, before the controls table (kimny 2026-10-04 via Chief:「一番売りたいものを
+                一番先に見えるように」). On a phone it moved from 2.05 to about 1.4 screens; e2e/sales-path pins it within 2. The FastSpring tag contract lives in lib/masterchain/fastspring-checkout.ts
                 (CHECKOUT_TAG_NAMES, pinned by tests/unit/fastspring-tag-contract.test.ts). NEXT_PUBLIC_* are inlined
                 at build time — check the rendered button, not just the env. */}
             <div className="mt-8 space-y-4 border-t border-white/8 pt-6">
@@ -202,6 +186,23 @@ export function MuedspLandingContent() {
                 <MasterchainTry />
               </Suspense>
             </div>
+
+            {/* the planned controls — shown as "こうなります", not editable here */}
+            <p className="mt-10 text-lg font-medium leading-snug text-white/85">
+              {tmc("controlsLead")}
+            </p>
+            <dl className="mt-5 divide-y divide-white/5 border-y border-white/5">
+              {MC_CONTROLS.map((key) => (
+                <div key={key} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr] sm:gap-5">
+                  <dt className="font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">
+                    {tmc(`controls.${key}.name`)}
+                  </dt>
+                  <dd className="text-[15px] leading-relaxed text-white/70">
+                    {tmc(`controls.${key}.desc`)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
             {!MASTERCHAIN_PURCHASE_LIVE && (
               <a
                 href="#get"
