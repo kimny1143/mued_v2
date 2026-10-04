@@ -54,17 +54,28 @@ afterEach(() => {
 });
 
 describe("TRY — works only with a well-formed email", () => {
-  it("★TRY is disabled until the email is well formed; the consent to updates defaults off", async () => {
+  it("★TRY is always pressable (the free three's form — kimny 10/4); a malformed email answers in red and sends nothing", async () => {
     await renderBlock(true);
     const tryBtn = screen.getByRole("button", { name: "try" });
-    expect(tryBtn).toBeDisabled();
+    expect(tryBtn).toBeEnabled(); // ★never greyed out before typing
+    fireEvent.click(tryBtn); // empty
+    expect(await screen.findByRole("alert")).toHaveTextContent("errors.invalid_email");
     fireEvent.change(screen.getByLabelText("emailLabel"), { target: { value: "person@" } });
-    expect(tryBtn).toBeDisabled();
+    expect(screen.queryByRole("alert")).toBeNull(); // typing clears the red line
     fireEvent.click(tryBtn);
+    expect(await screen.findByRole("alert")).toHaveTextContent("errors.invalid_email");
     expect(m.fetch).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText("emailLabel"), { target: { value: "person@example.com" } });
-    expect(tryBtn).toBeEnabled();
     expect(screen.getByRole("checkbox", { name: "consent" })).not.toBeChecked();
+  });
+
+  it("TRY is the filled orange button of the free form, beside the email (not an outline above it)", async () => {
+    await renderBlock(true);
+    const tryBtn = screen.getByRole("button", { name: "try" });
+    expect(tryBtn.className).toContain("bg-[#f5a524]");
+    expect(tryBtn.className).not.toContain("border-[#f5a524]/60");
+    const email = screen.getByLabelText("emailLabel");
+    expect(email.parentElement).toBe(tryBtn.parentElement); // same row
+    expect(email.compareDocumentPosition(tryBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // email first
   });
 
   it.each([false, true])("posts the demo with explicit consent (ticked: %s) and starts the download", async (tick) => {
@@ -79,7 +90,7 @@ describe("TRY — works only with a well-formed email", () => {
       utm_source: "news", utm_term: "audio", utm_medium: "email", utm_campaign: "launch", utm_content: "cta",
     });
     expect(screen.getByRole("status")).toHaveTextContent("success");
-    expect(screen.getByRole("button", { name: "try" })).toBeDisabled(); // ★no second send after success
+    expect(screen.queryByRole("button", { name: "try" })).toBeNull(); // ★no second send after success
   });
 
   it.each(["invalid_email", "disposable_email", "rate_limited", "unexpected"])("maps API error %s", async (error) => {
@@ -124,5 +135,12 @@ describe("★which download starts — the visitor's OS (masterchain for Windows
     expect(screen.getByRole("status")).not.toHaveTextContent("success"); // kimny: 「事実と違うことは書かないで」
     expect(screen.getByRole("link", { name: "demoOtherMac" })).toHaveAttribute("href", MAC);
     expect(screen.getByRole("link", { name: "demoOtherWindows" })).toHaveAttribute("href", WIN);
+  });
+});
+
+describe("the red line is the free form's wording (kimny 10/4「揃えて」)", () => {
+  it.each(["ja", "en"] as const)("%s: muedsp.demo.errors.invalid_email === muedsat.form.errorEmail", async (locale) => {
+    const messages = (await import(`@/messages/${locale}.json`)).default;
+    expect(messages.muedsp.demo.errors.invalid_email).toBe(messages.muedsat.form.errorEmail);
   });
 });
