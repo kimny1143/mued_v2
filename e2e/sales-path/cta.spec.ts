@@ -148,5 +148,33 @@ for (const locale of Object.keys(LOCALES) as Locale[]) {
       expectSameShape(shape, model);
       await expectBelowEmail(page, shape, "#masterchain-demo-email");
     });
+
+    /**
+     * The cart's product line on a phone (Chief 2026-10-04 (c), #1232): name → price → formats, the price UNDER the
+     * name — a figure beside the name squeezed the name to 2 lines and the formats to 3 with a yen quote (¥12,404).
+     * ★Positive control: the #1231 layout (price in a right-hand column) puts the price beside the name → red.
+     * FastSpring is aborted here, so the line shows the "$69" fallback after the quote wait (QUOTE_WAIT_MS).
+     */
+    test("cart: product line order on a phone", async ({ page }) => {
+      await open(page, `/${locale}/muedsp`);
+      const buy = page.getByRole("button", { name: m.muedsp.masterchain.buyLabelLive, exact: true });
+      await buy.scrollIntoViewIfNeeded();
+      await buy.click();
+      const cart = page.getByTestId("cart");
+      await expect(cart).toBeVisible();
+      const price = cart.getByTestId("cart-line-price");
+      await expect(price).toHaveText(m.muedsp.buyTry.orderPrice, { timeout: 15_000 });
+      const box = async (el: Locator) => {
+        const b = await el.boundingBox();
+        if (!b) throw new Error("not rendered");
+        return b;
+      };
+      const name = await box(cart.getByTestId("cart-line-name"));
+      const fig = await box(price);
+      const formats = await box(cart.getByText(m.muedsp.buyTry.orderFormats, { exact: true }));
+      expect(fig.y, "price under the name").toBeGreaterThanOrEqual(name.y + name.height - 1);
+      expect(formats.y, "formats under the price").toBeGreaterThanOrEqual(fig.y + fig.height - 1);
+      expect(fig.x, "price in the name's column, not beside it").toBeLessThan(name.x + name.width);
+    });
   });
 }
