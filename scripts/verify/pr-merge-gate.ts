@@ -88,7 +88,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { touchesSalesPath } from "../ci/sales-path.mjs";
-import { parseSalesImpact, parseCopyApproval } from "../ci/sales-impact.mjs";
+import { parseSalesImpact, parseCopyApproval, parseGuardChange, touchesGuard } from "../ci/sales-impact.mjs";
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -364,11 +364,18 @@ class GhError extends Error {
  *   path, so a long PR cannot slip past by hiding the file in the part we did not see.
  */
 export function salesImpactVoidReason(paths: readonly string[], body: string | null | undefined): string | null {
-  if (!touchesSalesPath([...paths]) && paths.length < 100) return null;
+  const truncated = paths.length >= 100;
+  // ★A PR that edits a guard (G1–G4 or this gate) says who approved the guard change (CCO #1227) — else a PR can
+  //   loosen the guard that would have stopped it. Checked even off the customer path: some guard files are not on it.
+  if (touchesGuard(paths) || truncated) {
+    const change = parseGuardChange(body ?? "");
+    if (!change.ok) return `守りの変更の出所: ${change.reason}`;
+  }
+  if (!touchesSalesPath([...paths]) && !truncated) return null;
   const parsed = parseSalesImpact(body ?? "");
   if (!parsed.ok) return `客の経路を触る PR の sales-impact 行: ${parsed.reason}`;
   // ★An approved-copy change also says who approved the words (CCO #1223) — else the PR approves itself.
-  if (paths.some((p) => p.startsWith("docs/copy/")) || paths.length >= 100) {
+  if (paths.some((p) => p.startsWith("docs/copy/")) || truncated) {
     const approval = parseCopyApproval(body ?? "");
     if (!approval.ok) return `承認文の出所: ${approval.reason}`;
   }
@@ -559,7 +566,12 @@ function main(): void {
   const salesVoid = salesImpactVoidReason(meta.files.map((f) => f.path), meta.body);
   if (salesVoid) {
     console.error(`\n★VOID: ${salesVoid}`);
-    console.error("  → 次の一歩: PR 本文に 1 行を足す（例 `sales-impact: 変わらない: 文言だけ`）。値は 増える／変わらない／法の明文: <条文名>／kimny の判断: <逐語の要旨> <YYYY-MM-DD>。「減る」は書けない（減ると分かって出すなら kimny の判断の行）。");
+    if (salesVoid.startsWith("守りの変更の出所") || salesVoid.startsWith("承認文の出所")) {
+      const key = salesVoid.startsWith("守り") ? "guard-change" : "copy-approval";
+      console.error(`  → 次の一歩: PR 本文に 1 行を足す（例 \`${key}: kimny 2026-10-04 conductor の窓\`）＝誰が・いつ・どの経路で認めたか。`);
+    } else {
+      console.error("  → 次の一歩: PR 本文に 1 行を足す（例 `sales-impact: 変わらない: 文言だけ`）。値は 増える／変わらない／法の明文: <条文名>／kimny の判断: <逐語の要旨> <YYYY-MM-DD>。「減る」は書けない（減ると分かって出すなら kimny の判断の行）。");
+    }
     process.exitCode = 2;
     return;
   }

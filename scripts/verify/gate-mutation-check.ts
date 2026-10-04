@@ -101,10 +101,20 @@ const MUTATIONS: Mutation[] = [
     //   would reach "ready". The observable is the reason string's presence for such a PR.
     name: "sales-impact-unchecked",
     property: "a PR on the customer path without a sales-impact line must not be mergeable",
-    find: "  if (!touchesSalesPath([...paths]) && paths.length < 100) return null;",
+    find: "  if (!touchesSalesPath([...paths]) && !truncated) return null;",
     replace: "  return null;",
     observe: (m) =>
       m.salesImpactVoidReason(["components/features/muedsp-landing/masterchain-try.tsx"], "## no line") === null ? "ready" : "void",
+    expectGood: "void",
+  },
+  {
+    // ⑥ guard-change (CCO #1227): without it, a PR could loosen a sales-path guard in the same PR as the change the
+    //   guard would have stopped. Observed on a guard file that is NOT on the customer path (the unit tests).
+    name: "guard-change-unchecked",
+    property: "a PR that edits a sales-path guard without a guard-change line must not be mergeable",
+    find: "  if (touchesGuard(paths) || truncated) {",
+    replace: "  if (false) {",
+    observe: (m) => (m.salesImpactVoidReason(["tests/unit/sales-impact-line.test.ts"], "## no line") === null ? "ready" : "void"),
     expectGood: "void",
   },
 ];
