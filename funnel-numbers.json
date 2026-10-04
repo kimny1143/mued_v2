@@ -1,22 +1,22 @@
 {
-  "reachable_contacts": 1027,
-  "net_new_day": 1,
+  "reachable_contacts": 1031,
+  "net_new_day": 4,
   "target": 5000,
-  "remaining_to_target": 3973,
-  "remaining_to_1000": -27,
+  "remaining_to_target": 3969,
+  "remaining_to_1000": -31,
   "portal_registrations": 134,
-  "measured_at": "2026-10-03T16:31:25.487Z",
-  "trigger": "workflow_dispatch",
-  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/37137055977",
-  "source_report": "reports/plugin-funnel/2026-10-02.json",
+  "measured_at": "2026-10-04T07:19:37.939Z",
+  "trigger": "schedule",
+  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/37185363474",
+  "source_report": "reports/plugin-funnel/2026-10-03.json",
   "newsletters": [
     {
       "id": "6ff80645-34af-4cd7-8d1f-d20a16e863b6",
       "name": "MUEDsp on Windows — masterchain + free 3 (2026-10-01)",
       "sent_at": "2026-10-01T08:31:35.053Z",
       "delivered": 982,
-      "unique_opened": 286,
-      "unique_clicked": 49,
+      "unique_opened": 290,
+      "unique_clicked": 51,
       "unsubscribed": 10,
       "bounced": 29,
       "complained": 0,
@@ -27,7 +27,7 @@
       "name": "Untitled",
       "sent_at": "2026-09-30T22:13:13.198Z",
       "delivered": 1000,
-      "unique_opened": 272,
+      "unique_opened": 274,
       "unique_clicked": 54,
       "unsubscribed": 11,
       "bounced": 21,
@@ -39,7 +39,7 @@
       "name": "MUEDsp NL #1 — The −0.3 dB (2026-09-16)",
       "sent_at": "2026-09-16T05:24:27.479Z",
       "delivered": 866,
-      "unique_opened": 353,
+      "unique_opened": 354,
       "unique_clicked": 0,
       "unsubscribed": 27,
       "bounced": 27,
@@ -75,80 +75,106 @@
     "since": "2026-09-23T06:51:00.000Z",
     "all_time": {
       "from": "2026-09-23T06:51:00.000Z",
-      "until": "2026-10-03T16:31:10.384Z",
+      "until": "2026-10-04T07:19:21.497Z",
       "total": {
-        "sent": 175,
-        "bounced": 3,
-        "reached": 170,
-        "clicked": 125,
+        "sent": 184,
+        "bounced": 4,
+        "reached": 179,
+        "clicked": 134,
         "opened": 23,
         "delivered": 22,
         "complained": 0,
-        "other": 2,
-        "unique_recipients": 121,
-        "unique_clicked_recipients": 96,
-        "unique_opened_or_clicked_recipients": 104
+        "other": 1,
+        "unique_recipients": 129,
+        "unique_clicked_recipients": 104,
+        "unique_opened_or_clicked_recipients": 112
       },
       "by_product": {
         "muedsat": {
-          "sent": 44,
+          "sent": 46,
           "bounced": 1,
-          "reached": 43,
-          "clicked": 30,
+          "reached": 45,
+          "clicked": 32,
           "opened": 7,
           "delivered": 6,
           "complained": 0,
           "other": 0,
-          "unique_recipients": 43,
-          "unique_clicked_recipients": 30,
-          "unique_opened_or_clicked_recipients": 37
+          "unique_recipients": 45,
+          "unique_clicked_recipients": 32,
+          "unique_opened_or_clicked_recipients": 39
         },
         "muedlim": {
-          "sent": 94,
-          "bounced": 2,
-          "reached": 91,
-          "clicked": 68,
+          "sent": 100,
+          "bounced": 3,
+          "reached": 97,
+          "clicked": 74,
           "opened": 10,
           "delivered": 13,
           "complained": 0,
-          "other": 1,
-          "unique_recipients": 88,
-          "unique_clicked_recipients": 67,
-          "unique_opened_or_clicked_recipients": 75
+          "other": 0,
+          "unique_recipients": 94,
+          "unique_clicked_recipients": 73,
+          "unique_opened_or_clicked_recipients": 81
         },
         "muedrive": {
-          "sent": 37,
+          "sent": 38,
           "bounced": 0,
-          "reached": 36,
-          "clicked": 27,
+          "reached": 37,
+          "clicked": 28,
           "opened": 6,
           "delivered": 3,
           "complained": 0,
           "other": 1,
-          "unique_recipients": 36,
-          "unique_clicked_recipients": 27,
-          "unique_opened_or_clicked_recipients": 33
+          "unique_recipients": 37,
+          "unique_clicked_recipients": 28,
+          "unique_opened_or_clicked_recipients": 34
         }
       }
     },
     "last_24h": {
-      "from": "2026-10-02T16:31:10.384Z",
-      "until": "2026-10-03T16:31:10.384Z",
+      "from": "2026-10-03T07:19:21.497Z",
+      "until": "2026-10-04T07:19:21.497Z",
       "total": {
-        "sent": 11,
+        "sent": 14,
         "bounced": 0,
-        "reached": 10,
-        "clicked": 9,
+        "reached": 14,
+        "clicked": 13,
         "opened": 1,
         "delivered": 0,
         "complained": 0,
-        "other": 1,
-        "unique_recipients": 8,
-        "unique_clicked_recipients": 7,
-        "unique_opened_or_clicked_recipients": 8
+        "other": 0,
+        "unique_recipients": 11,
+        "unique_clicked_recipients": 10,
+        "unique_opened_or_clicked_recipients": 11
       },
       "by_product": {
         "muedsat": {
+          "sent": 3,
+          "bounced": 0,
+          "reached": 3,
+          "clicked": 3,
+          "opened": 0,
+          "delivered": 0,
+          "complained": 0,
+          "other": 0,
+          "unique_recipients": 3,
+          "unique_clicked_recipients": 3,
+          "unique_opened_or_clicked_recipients": 3
+        },
+        "muedlim": {
+          "sent": 9,
+          "bounced": 0,
+          "reached": 9,
+          "clicked": 8,
+          "opened": 1,
+          "delivered": 0,
+          "complained": 0,
+          "other": 0,
+          "unique_recipients": 9,
+          "unique_clicked_recipients": 8,
+          "unique_opened_or_clicked_recipients": 9
+        },
+        "muedrive": {
           "sent": 2,
           "bounced": 0,
           "reached": 2,
@@ -160,32 +186,6 @@
           "unique_recipients": 2,
           "unique_clicked_recipients": 2,
           "unique_opened_or_clicked_recipients": 2
-        },
-        "muedlim": {
-          "sent": 8,
-          "bounced": 0,
-          "reached": 7,
-          "clicked": 6,
-          "opened": 1,
-          "delivered": 0,
-          "complained": 0,
-          "other": 1,
-          "unique_recipients": 7,
-          "unique_clicked_recipients": 6,
-          "unique_opened_or_clicked_recipients": 7
-        },
-        "muedrive": {
-          "sent": 1,
-          "bounced": 0,
-          "reached": 1,
-          "clicked": 1,
-          "opened": 0,
-          "delivered": 0,
-          "complained": 0,
-          "other": 0,
-          "unique_recipients": 1,
-          "unique_clicked_recipients": 1,
-          "unique_opened_or_clicked_recipients": 1
         }
       }
     }
@@ -195,13 +195,13 @@
     "launch_at": "2026-09-30T22:13:13.198Z",
     "all_time": {
       "from": "2026-09-30T22:13:13.198Z",
-      "until": "2026-10-03T16:31:10.384Z",
+      "until": "2026-10-04T07:19:21.497Z",
       "demo_downloads": 4,
       "purchases": 1
     },
     "last_24h": {
-      "from": "2026-10-02T16:31:10.384Z",
-      "until": "2026-10-03T16:31:10.384Z",
+      "from": "2026-10-03T07:19:21.497Z",
+      "until": "2026-10-04T07:19:21.497Z",
       "demo_downloads": 0,
       "purchases": 0
     },
@@ -209,8 +209,18 @@
       "id": "a615f3f2-4bd5-4e52-9e74-32a2ec67cbef",
       "name": "Untitled",
       "sent_at": "2026-09-30T22:13:13.198Z",
-      "unique_opened": 272,
+      "unique_opened": 274,
       "unique_clicked": 54
     }
+  },
+  "denominator_trend": {
+    "as_of": "2026-10-03",
+    "last7_avg": 5.57,
+    "prior14_avg": 13.5,
+    "ratio": 0.41,
+    "alert": true,
+    "reason": "ratio",
+    "threshold": 0.5,
+    "missing": []
   }
 }
