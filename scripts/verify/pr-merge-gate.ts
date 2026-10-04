@@ -87,6 +87,8 @@
  *   npm run verify:pr-gate -- 968 --merge    # merge only if the verdict is ready
  */
 import { execFileSync } from "node:child_process";
+import { touchesSalesPath } from "../ci/sales-path.mjs";
+import { parseSalesImpact, parseCopyApproval } from "../ci/sales-impact.mjs";
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -356,6 +358,23 @@ class GhError extends Error {
 // lookup has told us nothing — the name may have been renamed out from under us. ★That is a failed
 // measurement, not a clean one, and it VOIDs (the 0/1/2 discipline this file already uses).
 
+/**
+ * ⑥ G1 (sales-path guard, kimny 2026-10-04): null when the PR is fine, else the reason it may not merge.
+ * ★A file list of exactly 100 is truncated by the API (see the print above) — treated as touching the customer
+ *   path, so a long PR cannot slip past by hiding the file in the part we did not see.
+ */
+export function salesImpactVoidReason(paths: readonly string[], body: string | null | undefined): string | null {
+  if (!touchesSalesPath([...paths]) && paths.length < 100) return null;
+  const parsed = parseSalesImpact(body ?? "");
+  if (!parsed.ok) return `客の経路を触る PR の sales-impact 行: ${parsed.reason}`;
+  // ★An approved-copy change also says who approved the words (CCO #1223) — else the PR approves itself.
+  if (paths.some((p) => p.startsWith("docs/copy/")) || paths.length >= 100) {
+    const approval = parseCopyApproval(body ?? "");
+    if (!approval.ok) return `承認文の出所: ${approval.reason}`;
+  }
+  return null;
+}
+
 /** Job/step names a workflow file declares. Deliberately includes step names: over-matching here costs a VOID, under-matching costs a false green. */
 export function declaredNames(source: string): Set<string> {
   return new Set([...source.matchAll(/^\s*-?\s*name:\s*(.+?)\s*$/gm)].map((m) => m[1].replace(/^["']|["']$/g, "")));
@@ -485,6 +504,7 @@ interface PrMeta {
   mergeable: string;
   mergeStateStatus: string;
   files: Array<{ path: string; additions: number; deletions: number }>;
+  body: string;
   statusCheckRollup: Array<Record<string, unknown>>;
 }
 
@@ -517,7 +537,7 @@ function main(): void {
   const meta = JSON.parse(
     gh([
       "pr", "view", pr, "--json",
-      "headRefOid,headRefName,state,title,mergeable,mergeStateStatus,files,statusCheckRollup",
+      "headRefOid,headRefName,state,title,mergeable,mergeStateStatus,files,body,statusCheckRollup",
     ])
   ) as PrMeta;
 
@@ -532,6 +552,15 @@ function main(): void {
   if (meta.state !== "OPEN") {
     console.error(`\n★FAIL: PR is ${meta.state}, not OPEN.`);
     process.exitCode = 1;
+    return;
+  }
+
+  // ⑥ G1 of the sales-path guard (kimny 2026-10-04): a PR on the customer path says what it does to sales.
+  const salesVoid = salesImpactVoidReason(meta.files.map((f) => f.path), meta.body);
+  if (salesVoid) {
+    console.error(`\n★VOID: ${salesVoid}`);
+    console.error("  → 次の一歩: PR 本文に 1 行を足す（例 `sales-impact: 変わらない: 文言だけ`）。値は 増える／変わらない／法の明文: <条文名>／kimny の判断: <逐語の要旨> <YYYY-MM-DD>。「減る」は書けない（減ると分かって出すなら kimny の判断の行）。");
+    process.exitCode = 2;
     return;
   }
 

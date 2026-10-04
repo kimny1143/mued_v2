@@ -96,10 +96,24 @@ const MUTATIONS: Mutation[] = [
     observe: (m) => m.classify([ok("Validate"), done("Test", "skipped"), ok("Build")]).kind,
     expectGood: "void",
   },
+  {
+    // ⑥ G1 of the sales-path guard (CCO #1224): without the sales-impact check, a customer-path PR with no line
+    //   would reach "ready". The observable is the reason string's presence for such a PR.
+    name: "sales-impact-unchecked",
+    property: "a PR on the customer path without a sales-impact line must not be mergeable",
+    find: "  if (!touchesSalesPath([...paths]) && paths.length < 100) return null;",
+    replace: "  return null;",
+    observe: (m) =>
+      m.salesImpactVoidReason(["components/features/muedsp-landing/masterchain-try.tsx"], "## no line") === null ? "ready" : "void",
+    expectGood: "void",
+  },
 ];
 
 async function main(): Promise<void> {
-  const src = readFileSync(GATE, "utf8");
+  // ★The copies live in a temp dir, so the gate's relative imports of its sibling helpers (scripts/ci/*.mjs —
+  //   the sales-path guard ⑥) are pointed at the real files. Only the import specifiers change; the code under
+  //   mutation is the gate's own.
+  const src = readFileSync(GATE, "utf8").replace(/from "\.\.\/ci\//g, `from "${resolve("scripts/ci")}/`);
   const dir = mkdtempSync(join(tmpdir(), "gate-mutation-"));
   const problems: string[] = [];
 
