@@ -3,14 +3,14 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: ★★**(2026-10-04T14:10:58+09:00) カートのスマホの商品行（Chief (c)＝スマホだけ 名前→価格→形式・PC は右の列のまま）の小 PR・merge は kimny の許可。** 購入の画面はカートになった（#1231・8deb600d・05:06Z merge・kimny 許可・CCO PASS・conductor Tier 3 OK・本番で ¥12,404 税込・チェック 0・ボタン有効を実測）。売る経路の仕組み G1〜G4・購入ボタンの色（#1227）・guard-change 行（#1229）は本番。★客の経路の PR は `sales-impact:`、守りの file は `guard-change:`（誰＝認めた人）、承認文は `copy-approval:` が無いと gate が VOID。MUEDvox は #1216・#1218 が本番（ページは本番で 404）。#1208（Cookie の同意）は 10/8 の後。
-next_action: ★★**(手番 2026-10-04T14:10:58+09:00) ① この PR の CI → CCO → kimny の許可で merge → 本番のスマホで商品行を見る。** ② kimny の言葉待ち（Chief 経由）: (a) カートの形式の行に Windows を足すか（masterchain の Windows は LIVE なのに macOS だけ）(b) 購入者を audience に入れる注記の文（今は marketingConsent が常に false で購入者は 1 人も入っていない＝webhook の条件を外す＋カートに 1 行）。③ 次に守りを触る PR で HTML コメントの中の行を数えない（W34）。④ MUEDvox の発売の PR の条件: 表の muedvox 行・muedvox.* を G3 へ・EULA・特商法・Buy（BUY_BUTTON_CLASS・カート）・デモ・鍵の画面。⑤ #1208 は 10/8 の後。⑥ W30・W31 は事象待ち。★merge は gate だけ。本番に出る PR は kimny の許可。★実ブラウザの試験は GA の collect を abort。
+current_task: ★★**(2026-10-04T22:18:42+09:00) peer-checkout（conductor 10/4: kimny は利用枠が戻る 10/6 12:00 頃まで休み）。いま走っている PR・未保存の作業は無い（worktree 6 つとも未 commit 0・push 済み）。** 今日 merge した物（すべて gate・kimny の許可）: 売る経路の仕組み G1〜G4（#1220〜#1225）・購入ボタンの色（#1227）・guard-change 行（#1229）・カート（#1231・conductor Tier 3 OK）・カートのスマホの並び（#1232）・その試験（#1233）。本番で実測: カートは ¥12,404 税込・チェック 0・ボタン有効・スマホは名前→価格→形式。★客の経路の PR は `sales-impact:`、守りの file は `guard-change:`（誰＝認めた人）、承認文は `copy-approval:` が無いと gate が VOID。MUEDvox は #1216・#1218 が本番（ページは本番で 404）。
+next_action: ★★**(手番 2026-10-04T22:18:42+09:00) ① kimny が戻るまで、kimny の許可が要る merge は止める（conductor 10/4）。** ② kimny の言葉待ち（Chief 経由）: (a) カートの形式の行に Windows を足すか（masterchain の Windows は LIVE・行は macOS だけ）(b) 購入者を audience に入れる注記の文（marketingConsent が常に false で購入者は 0 人＝webhook の条件を外す＋カートに 1 行）。③ #1208（Cookie の同意）は 10/8 の集計の後に kimny の許可で。#1062 は開店後（W14）。④ 次に守りを触る PR で HTML コメントの中の行を数えない（W34）。⑤ MUEDvox の発売の PR の条件: 表の muedvox 行・muedvox.* を G3 へ・EULA・特商法・Buy（BUY_BUTTON_CLASS・カート）・デモ・鍵の画面。⑥ W30・W31 は事象待ち。★status は中身の PR と分ける（CCO #1232）。★merge は gate だけ。本番に出る PR は kimny の許可。★実ブラウザの試験は GA の collect を abort。
 blocked_by: ★★**(W34・2026-10-04T12:28:19+09:00) gate の 3 つの行（sales-impact・copy-approval・guard-change）は HTML コメントの中の行も数える**（CCO #1229 の注記）＝`<!-- guard-change: … -->` だけで ok になり、画面では見えない。次に守りを触る PR で withoutFences と同じ所で <!-- --> も除く（guard-change 行は kimny の承認が要る）。** ★★**(W32 閉じた・2026-10-02T00:32:46+09:00) #1207 は本番に出た（22:27 JST・ja/en の新しい文あり・旧文 0 件・どの deploy で出たかは未確認）。** ★★**(W33・2026-10-01T22:19:20+09:00) #1208 Cookie の同意は 10/8 の後に merge**（発売の 7 日集計の連続性・conductor）。** ★★**(W30・2026-10-01T14:54:22+09:00) ポータルの masterchain の Windows のボタンは本番で未確認**（購入者でないと見えない・今ある購入は kimny の確認購入 1 件で返金済み＝ボタンを出さない行）。★最初の本当の購入が入った時に、購入者の画面で「Windows 版」のボタン・同じ鍵の注記を確かめる（conductor 10/1）。コードは test 済み（windows-launch-prep）。** ★★**(W31・2026-10-01T14:54:22+09:00) masterchain の Windows の倍率の切り替え（開いたまま 50→100→150→75）は未確認のまま出した**（kimny 逐語「いや、もう縮尺はいいから。デプロイすすめて」）。効かない報告が来たら PLUG_HOST_RESIZE 1＋ConstrainEditorResize で新しい zip（lib/masterchain/config.ts の注釈）。** ★★**(W28) 閉じた: 発売便は 2026-09-30T22:13:13.198Z に送信（07:13:06 の queued は送信の直前）。**（created 21:54:16Z・sent_at null・07:13 JST に 2 回確認）。送信の操作は kimny の手番。LAUNCH_AT はこれ待ち。** ★★**(W26) content課への canonical 通知が未送信**（セッションが居ない）。送る内容: EULA 2026.10・返金ポリシー・masterchain 1.0.1（keyentry の版）・MUEDsat 1.0.1（THD の実測・画像）・FAQ q11・購入の開始と購入の流れ（#1191）・llms.txt（#1188）・案内メールの言語（#1193）・鍵の入れ方（ドロップが主）。** ★★**(W29) 返金で本番未確認の形: partial・chargeback・「作成」の後の Cancel**（台帳 2a）。#1197 以降、completed でない return.created は記録だけ（processed＋注記）＝最初の 1 件で、Confirm の後に別の event が来るかを照らす。** ★★**(W27) サポートの注意: 同じファイル名の版が複数（/downloads/・ui-2026.10・keyentry-2026.10）。見分けは URL。** ★★**(W0c) 特商法の表示価格と FastSpring の突き合わせ（conductor / kimny）。** ★★**(W22) remaining_to_1000 の削除（次の funnel PR）。** ★★**(W16) 【保留】有料 final の R2 URL。** ★★**(W15) 版の parser の 1 本化。** ★★**(W0b) 旧版の file を消さない。** ★全文＝退避ファイル。
-urgency: mid
-action_owner: peer
+urgency: low
+action_owner: kimny
 deadline: null
 expected_next_check_at: null
-last_update: 2026-10-04T14:10:58+09:00
+last_update: 2026-10-04T22:18:42+09:00
 evidence: #1207 merged 487bae6b（13:05:04Z）・本番の /ja/privacy・/en/privacy で NEXT_LOCALE・2026-10-01 を確認、旧文 0 件（22:27 JST）。#1208 head 4d734ff9・CCO review 5379897935（PASS・条件つき）。#1206 merged（09:39:04Z）。Resend の audience 1,087 件（09:21Z 取得・funnel の値と一致）。
 confidence: high
 lane: delivery
@@ -19,6 +19,7 @@ lane: delivery
 
 
 ## Recent events
+- 2026-10-04T22:18:42+09:00 10/4 夕: #1232（スマホの商品行・本番で実測）・#1233（その試験・陽性対照で赤を確認）を merge。peer-checkout（kimny 休み・未保存 0・push 済み）。
 - 2026-10-04T14:10:58+09:00 10/4 午後: 実購入 2 行とも eula_version・eula_accepted_at あり（本番 DB を 1 回読み・kimny 承認）。#1231（カート）を merge・本番で実測。スマホの商品行を Chief (c) で直す PR を出した。
 - 2026-10-04T12:28:19+09:00 10/4 昼: #1229（guard-change 行・CCO PASS・kimny「認める・通ったら merge」）を gate で merge。#1228（status）を merge。status.md の Recent events 66 件（8/1〜9/21）を docs/status-archive/ へ退避（144KB→約 11KB）。
 - 2026-10-04T11:27:53+09:00 10/4 昼: #1227（購入ボタンだけ #ffbe3d＋glow・kimny 決定・CCO PASS・kimny 許可）を gate で merge・本番で色を実測。#1229（guard-change 行）を出した。
