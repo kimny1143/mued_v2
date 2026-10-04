@@ -1,9 +1,8 @@
 /**
- * masterchain's Buy beside the heading (kimny 2026-10-01): always pressable while purchase is open; opens a
- * two-column modal — the order (version, formats, $69, the EULA consent check, 「購入へ進む」) and the EULA
- * scrolling in its own column. No scroll condition (kimny: forcing a full read loses buyers); the check is the
- * consent (kimny 10/1 「同意チェックありで」) and 「購入へ進む」 goes straight to the FastSpring popup. No totals.
- * ×, Esc and the backdrop close it.
+ * masterchain's Buy beside the heading (kimny 2026-10-01): always pressable while purchase is open; opens the
+ * CART (kimny 2026-10-04): the order — product image, name, formats, FastSpring's price, the total, where the key
+ * comes from — the EULA as one line that opens in place, and 「EULA に同意して購入手続きに進む」, whose words are the
+ * consent (no checkbox), straight to the FastSpring popup. ×, Esc and the backdrop close it.
  */
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { AnchorHTMLAttributes } from "react";
@@ -83,51 +82,44 @@ describe("the Buy button", () => {
   });
 });
 
-describe("the EULA modal", () => {
-  it("★opens on Buy; 「購入へ進む」 waits for the consent check (no scroll condition), then opens checkout with consent", async () => {
+describe("the cart", () => {
+  it("★opens on Buy; no checkbox — the button's words are the consent and it opens checkout with the EULA accepted", async () => {
     await renderButton();
     await waitFor(() => expect(loadCheckoutScript).toHaveBeenCalled());
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(screen.getByText("Body text.")).toBeInTheDocument(); // the EULA text itself
-    const go = await screen.findByRole("button", { name: "continueToCheckout" });
-    // The check is labelled for both layouts (left on a wide screen, below on a phone) and starts unchecked.
-    const check = screen.getByRole("checkbox");
-    // (jsdom has no CSS, so both spans count; in a browser one of them is display:none.)
-    expect(check).toHaveAccessibleName(/agreeCheckBelow/);
-    expect(check).toHaveAccessibleName(/agreeCheckLeft/);
-    expect(check).not.toBeChecked();
-    expect(go).toBeDisabled();
-    fireEvent.click(go);
-    expect(openCheckout).not.toHaveBeenCalled();
-    // ★Both controls sit outside the scrolling EULA — nothing has to be scrolled to reach them.
-    expect(screen.getByTestId("eula-modal-body")).not.toContainElement(go);
-    expect(screen.getByTestId("eula-modal-body")).not.toContainElement(check);
-    fireEvent.click(check);
+    expect(dialog).toHaveAccessibleName("cartTitle");
+    expect(within(dialog).queryByRole("checkbox")).toBeNull();
+    const go = await screen.findByRole("button", { name: "agreeAndContinue" });
     expect(go).toBeEnabled();
+    // ★The button sits outside the EULA text — nothing has to be opened or scrolled to reach it.
+    expect(screen.getByTestId("eula-modal-body")).not.toContainElement(go);
     fireEvent.click(go);
     expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true });
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("the check is fresh every time the modal opens", async () => {
+  it("★the EULA is one line that opens in place (closed at first), with the full text inside", async () => {
     await renderButton();
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
-    fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.keyDown(document, { key: "Escape" });
-    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
-    expect(screen.getByRole("checkbox")).not.toBeChecked();
+    const eula = screen.getByTestId("cart-eula");
+    expect(eula.tagName).toBe("DETAILS");
+    expect(eula).not.toHaveAttribute("open");
+    expect(within(eula).getByText("cartEula").closest("summary")).not.toBeNull();
+    expect(within(eula).getByText("Body text.")).toBeInTheDocument(); // the EULA text itself
+    expect(eula).toHaveTextContent("Version: 2026.10");
   });
 
-  it("the order panel says what you get — product (no version: kimny 10/1), formats, where the key is", async () => {
+  it("the order says what you get — product, formats, the product's own screen, where the key is, the next screen", async () => {
     await renderButton();
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     const order = screen.getByTestId("order-panel");
-    expect(screen.getByRole("dialog")).toHaveAccessibleName("orderProduct");
-    for (const key of ["orderFormats", "orderKeyNote"]) expect(order).toHaveTextContent(key);
-    expect(screen.getByTestId("eula-modal-body")).not.toContainElement(order);
+    for (const key of ["orderProduct", "orderFormats", "orderKeyNote", "cartTotal", "cartNextScreen"]) expect(order).toHaveTextContent(key);
+    expect(order.querySelector("img")?.getAttribute("src")).toContain("masterchain-1.0.1-demo.webp");
+    expect(screen.getByTestId("eula-modal-body")).not.toContainElement(screen.getByTestId("order-price"));
   });
+
   it("while the checkout script loads, the button says so and waits", async () => {
     loadCheckoutScript.mockImplementationOnce(() => new Promise(() => {}));
     await renderButton();
@@ -222,7 +214,7 @@ describe("★the price — FastSpring's own figure for this session (kimny 10/1:
       await open();
       act(() => void vi.advanceTimersByTime(5000));
       const price = screen.getByTestId("order-price");
-      expect(within(price).getByText("orderPrice")).toBeInTheDocument(); // exact — not "orderPriceLoading"
+      expect(within(price).getAllByText("orderPrice")).toHaveLength(2); // the line and the total — exact, not "orderPriceLoading"
       expect(within(price).getByText("orderTaxNote")).toBeInTheDocument();
       expect(price).not.toHaveAttribute("aria-busy");
     } finally {
@@ -230,9 +222,11 @@ describe("★the price — FastSpring's own figure for this session (kimny 10/1:
     }
   });
 
-  it("★no total or subtotal wording of our own — the figure is FastSpring's", async () => {
+  it("★one figure — the line and the total are FastSpring's same number (masterchain × 1), no subtotal of our own", async () => {
     await open();
     act(() => void window.dispatchEvent(new CustomEvent("muedsp:fastspring-quote", { detail: JP_QUOTE })));
-    expect(screen.getByTestId("order-panel").textContent).not.toMatch(/total|合計|小計/i);
+    const price = screen.getByTestId("order-price");
+    expect(within(price).getAllByText("¥12,364")).toHaveLength(2);
+    expect(price.textContent).not.toMatch(/subtotal|小計/i);
   });
 });

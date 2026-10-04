@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -31,12 +32,12 @@ const PURCHASE_OPEN = MASTERCHAIN_PURCHASE_LIVE && EULA_CONSENT_LIVE;
  * スクロールしてさ、しかもEULA押すまで暗転してるボタンなんて誰も押さないわ」).
  *
  * The button sits right under masterchain's screen image and is always pressable while purchase is open. Pressing it
- * opens a two-column modal (kimny 10/1 「やってみよう」): the order on the right — what you get, $69, the EULA
- * consent check and 「購入へ進む」 (pressable once checked) straight to the FastSpring popup, passing the EULA version as before (the tag contract in
- * fastspring-checkout.ts) — and the EULA (2026.10) on the left, scrolling in its own column. On a phone the
- * order is on top and the EULA below it. The price is FastSpring's own figure for the buyer's session — their
+ * opens the CART (kimny 2026-10-04): the order — product image, name, formats, FastSpring's price, the total, where
+ * the key comes from — with the EULA as one line that opens in place, and 「EULA に同意して購入手続きに進む」, whose
+ * words are the consent (no checkbox), straight to the FastSpring popup, passing the EULA version as before (the tag
+ * contract in fastspring-checkout.ts). The price is FastSpring's own figure for the buyer's session — their
  * currency, tax included where the country includes it (kimny 10/1) — so it matches the popup that follows.
- * Closing the modal (×, Esc, the backdrop) does nothing. After FastSpring reports a COMPLETED order, the
+ * Closing the cart (×, Esc, the backdrop) does nothing. After FastSpring reports a COMPLETED order, the
  * button becomes the thank-you + portal link.
  */
 export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
@@ -103,7 +104,7 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
         <p data-testid="masterchain-signin-note" className="text-xs leading-relaxed text-white/50">{t("signInNote")}</p>
       )}
       {PURCHASE_OPEN && open && (
-        <EulaModal
+        <CartModal
           onClose={close}
           checkoutReady={checkoutReady}
           onAgree={() => {
@@ -124,14 +125,16 @@ export const QUOTE_WAIT_MS = 5000;
 
 const JA_TAX_NAMES: Record<string, string> = { JCT: "消費税", VAT: "付加価値税（VAT）" };
 
+type QuoteState = { kind: "quote"; quote: CheckoutQuote } | { kind: "fallback" } | { kind: "loading" };
+
 /**
  * The price, as FastSpring will charge it (see CheckoutQuote in fastspring-checkout.ts). While the figure is on
  * its way: a placeholder, not "$69" (a Japanese buyer would see $69 flip to ¥12,364). If it never comes (script
  * blocked, store unreachable): "$69" and "tax and currency are confirmed on the next screen", as before.
+ * ★One figure for the line and the total: the cart holds masterchain × 1, so they are the same number by
+ *   construction (readQuote returns null for anything else).
  */
-function OrderPrice({ checkoutReady }: { checkoutReady: boolean }) {
-  const tb = useTranslations("muedsp.buyTry");
-  const locale = useLocale();
+function useOrderQuote(checkoutReady: boolean): QuoteState {
   const [quote, setQuote] = useState<CheckoutQuote | null>(() => currentQuote());
   const [gaveUp, setGaveUp] = useState(false);
 
@@ -146,46 +149,32 @@ function OrderPrice({ checkoutReady }: { checkoutReady: boolean }) {
     };
   }, [checkoutReady]);
 
-  if (quote) {
-    const taxName = locale === "ja" ? (JA_TAX_NAMES[quote.taxType] ?? quote.taxType) : quote.taxType;
-    return (
-      <div data-testid="order-price">
-        <p className="text-3xl font-semibold tabular-nums text-[#356eec]">{quote.total}</p>
-        <p className="mt-1 text-xs text-[#767676]">
-          {quote.taxPriceType === "included"
-            ? tb("orderTaxIncluded", { taxName, tax: quote.tax, rate: quote.taxRate })
-            : tb("orderTaxAdded")}
-        </p>
-      </div>
-    );
-  }
-  if (gaveUp) {
-    return (
-      <div data-testid="order-price">
-        <p className="text-3xl font-semibold tabular-nums text-[#356eec]">{tb("orderPrice")}</p>
-        <p className="mt-1 text-xs text-[#767676]">{tb("orderTaxNote")}</p>
-      </div>
-    );
-  }
-  return (
-    <div data-testid="order-price" aria-busy="true">
-      <span className="sr-only">{tb("orderPriceLoading")}</span>
-      <div aria-hidden className="h-9 w-32 animate-pulse rounded bg-[#eeeeee]" />
-      <div aria-hidden className="mt-2 h-3 w-44 animate-pulse rounded bg-[#f3f3f3]" />
-    </div>
-  );
+  if (quote) return { kind: "quote", quote };
+  return gaveUp ? { kind: "fallback" } : { kind: "loading" };
 }
 
-function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; onAgree: () => void; checkoutReady: boolean }) {
+// The product image is masterchain 1.0.1's own screen (kimny 10/4: 「製品の画像はUIスクショを使って欲しい」) — the
+// same file the product page shows (2186×912), shown whole at thumbnail size.
+const CART_THUMB = "/muedsp/masterchain-1.0.1-demo.webp";
+
+/**
+ * The cart (kimny 2026-10-04, Chief plan-cart-flow-20261004 + mock cart-mock/ @ _chief 01616db): the ORDER is the
+ * screen — product (the UI screenshot, name, formats, price), the tax note, the total, where the key comes from —
+ * and the EULA is one line that opens in place. Consent is the button's own words 「EULA に同意して購入手続きに進む」
+ * (no checkbox: kimny 10/4). The EULA version still goes to FastSpring as the order tag (openCheckout → the tag
+ * contract in fastspring-checkout.ts); the FastSpring popup and the quote are unchanged.
+ * ★White, in FastSpring's colours (kimny 10/1 「購入ページのカラグレがこっち系だと違和感ある」, kept on 10/4 「モーダル
+ *   からは白地でお願いします」): measured from the live popup (2026-10-01) — white panel, total #356eec, secondary
+ *   #767676, divider #eeeeee, system fonts. Sizes are the mock's (cart-ja.html).
+ */
+function CartModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; onAgree: () => void; checkoutReady: boolean }) {
   const t = useTranslations("eula");
   const tb = useTranslations("muedsp.buyTry");
   const locale = useLocale();
   const isJa = locale === "ja";
   const titleId = useId();
-  const checkId = useId();
-  // ★Consent is an explicit check (kimny 10/1: 「同意チェックありで」) — unchecked every time the modal opens.
-  const [agreed, setAgreed] = useState(false);
   const dialog = useRef<HTMLDivElement>(null);
+  const price = useOrderQuote(checkoutReady);
   const content = parseEulaContent({
     intro: t.raw("intro"),
     articles: t.raw("articles"),
@@ -208,7 +197,9 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
         return;
       }
       if (e.key !== "Tab" || !root) return;
-      const focusables = [...root.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+      const focusables = [
+        ...root.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'),
+      ].filter((el) => el.offsetParent !== null || el === document.activeElement);
       if (focusables.length === 0) return;
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
@@ -229,6 +220,21 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
     };
   }, [onClose]);
 
+  const figure =
+    price.kind === "quote" ? price.quote.total : price.kind === "fallback" ? tb("orderPrice") : null;
+  const taxNote =
+    price.kind === "quote"
+      ? price.quote.taxPriceType === "included"
+        ? tb("orderTaxIncluded", {
+            taxName: isJa ? (JA_TAX_NAMES[price.quote.taxType] ?? price.quote.taxType) : price.quote.taxType,
+            tax: price.quote.tax,
+            rate: price.quote.taxRate,
+          })
+        : tb("orderTaxAdded")
+      : price.kind === "fallback"
+        ? tb("orderTaxNote")
+        : null;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 md:p-6"
@@ -237,76 +243,97 @@ function EulaModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
       }}
       data-testid="eula-modal-backdrop"
     >
-      {/* ★Light, in FastSpring's colours (kimny 10/1: 「購入ページのカラグレがこっち系だと違和感ある」): the next
-          screen is FastSpring's white popup with a blue button, so this one hands over to it without a jump. The
-          values are measured from the live popup (mued.jp, 2026-10-01): white panel, button #286090, total
-          #356eec, secondary text #767676, input border #cccccc, divider #eeeeee; system fonts like the popup's.
-          DOM order = the phone order (the order on top, the EULA below) and the focus order (× → purchase →
-          the EULA's links); md:flex-row-reverse puts the EULA on the left on a wide screen. */}
       <div
         ref={dialog}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-md bg-white text-[#222] shadow-2xl md:h-[min(88vh,720px)] md:flex-row-reverse"
+        data-testid="cart"
+        className="flex max-h-[92vh] w-full max-w-[656px] flex-col overflow-hidden rounded-[12px] bg-white text-[#222] shadow-2xl"
         style={{ fontFamily: FASTSPRING_LIKE_FONT }}
       >
-        <section data-testid="order-panel" className="flex shrink-0 flex-col gap-4 border-b border-[#eeeeee] p-5 md:w-[340px] md:border-b-0 md:border-l md:p-6">
-          <div className="flex items-start justify-between gap-3">
-            <h2 id={titleId} className="text-lg font-semibold leading-snug text-[#222]">
-              {tb("orderProduct")}
-            </h2>
-            <button
-              type="button"
-              data-autofocus
-              onClick={onClose}
-              aria-label={tb("modalClose")}
-              className="-mr-1 -mt-1 rounded p-1 text-2xl leading-none text-[#181818]/70 hover:text-[#181818]"
-            >
-              ×
-            </button>
-          </div>
-          <p className="-mt-2 text-sm text-[#767676]">{tb("orderFormats")}</p>
-          <OrderPrice checkoutReady={checkoutReady} />
-          <p className="text-sm leading-relaxed text-[#444]">{tb("orderKeyNote")}</p>
-          <div className="flex flex-col gap-3 md:mt-auto">
-            {/* Where the EULA is depends on the layout: left on a wide screen, below on a phone. */}
-            <label htmlFor={checkId} className="flex cursor-pointer items-start gap-2.5 text-sm leading-snug text-[#222]">
-              <input
-                id={checkId}
-                type="checkbox"
-                checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-[#286090]"
+        <header className="flex shrink-0 items-center justify-between border-b border-[#eeeeee] px-5 py-4">
+          <h2 id={titleId} className="text-[17px] font-semibold leading-snug text-[#222]">
+            {tb("cartTitle")}
+          </h2>
+          <button
+            type="button"
+            data-autofocus
+            onClick={onClose}
+            aria-label={tb("modalClose")}
+            className="rounded px-1 text-[26px] leading-none text-[#181818]/60 hover:text-[#181818]"
+          >
+            ×
+          </button>
+        </header>
+        <div data-testid="order-panel" className="min-h-0 overflow-y-auto p-5">
+          <div data-testid="order-price" aria-busy={price.kind === "loading" ? "true" : undefined}>
+            {price.kind === "loading" && <span className="sr-only">{tb("orderPriceLoading")}</span>}
+            <div className="grid grid-cols-[112px_1fr_auto] items-start gap-3.5">
+              <Image
+                src={CART_THUMB}
+                alt=""
+                width={112}
+                height={47}
+                className="h-[47px] w-[112px] rounded-[6px] border border-[#eeeeee] bg-[#0a0a0a] object-contain"
               />
-              <span>
-                <span className="md:hidden">{tb("agreeCheckBelow")}</span>
-                <span className="hidden md:inline">{tb("agreeCheckLeft")}</span>
-              </span>
-            </label>
-            <button
-              type="button"
-              onClick={onAgree}
-              disabled={!checkoutReady || !agreed}
-              aria-disabled={!checkoutReady || !agreed}
-              className="w-full rounded bg-[#286090] px-5 py-3.5 text-base font-semibold text-white transition hover:bg-[#1f4d73] disabled:cursor-not-allowed disabled:opacity-40"
+              <div className="min-w-0">
+                <p className="text-[15px] font-semibold leading-snug text-[#222]">{tb("orderProduct")}</p>
+                <p className="mt-1 font-mono text-[11px] tracking-[0.08em] text-[#767676]">{tb("orderFormats")}</p>
+              </div>
+              {figure !== null ? (
+                <p className="font-semibold tabular-nums text-[#222]">{figure}</p>
+              ) : (
+                <div aria-hidden className="h-5 w-16 animate-pulse rounded bg-[#eeeeee]" />
+              )}
+            </div>
+            {taxNote !== null ? (
+              <p className="mt-2.5 text-xs text-[#767676]">{taxNote}</p>
+            ) : (
+              <div aria-hidden className="mt-3 h-3 w-44 animate-pulse rounded bg-[#f3f3f3]" />
+            )}
+            <div className="mt-[18px] flex items-baseline justify-between border-t border-[#eeeeee] pt-4">
+              <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#767676]">{tb("cartTotal")}</span>
+              {figure !== null ? (
+                <span className="text-2xl font-semibold tabular-nums text-[#356eec]">{figure}</span>
+              ) : (
+                <div aria-hidden className="h-7 w-24 animate-pulse rounded bg-[#eeeeee]" />
+              )}
+            </div>
+          </div>
+          <p className="mt-3.5 text-[13px] leading-[1.7] text-[#444]">{tb("orderKeyNote")}</p>
+          {/* ★The EULA is one line here and opens in place (kimny 10/4); the full text is the same as /eula. ja: the
+              title itself says （参考訳）; the English text governs (EULA §16). */}
+          <details data-testid="cart-eula" className="group mt-4 border-y border-[#eeeeee]">
+            <summary className="flex cursor-pointer list-none items-center justify-between py-3.5 text-sm text-[#222] [&::-webkit-details-marker]:hidden">
+              {tb("cartEula")}
+              <svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#767676] transition-transform group-open:rotate-180">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </summary>
+            <div
+              data-testid="eula-modal-body"
+              className="max-h-[220px] overflow-y-auto pb-3.5 text-xs leading-[1.7] text-[#555] [&_a]:text-[#356eec] [&_h2]:mb-2 [&_h2]:text-[13px] [&_h2]:text-[#222] [&_ol]:mb-2.5 [&_ol]:text-[#555] [&_p]:mb-2.5 [&_p]:text-[#555] [&_section]:mb-4 [&_strong]:text-[#222] [&_ul]:mb-2.5 [&_ul]:text-[#555]"
             >
-              {checkoutReady ? tb("continueToCheckout") : tb("checkoutLoading")}
-            </button>
-          </div>
-        </section>
-        <section className="flex min-h-0 flex-1 flex-col" aria-label={t("title")}>
-          <div className="border-b border-[#eeeeee] bg-[#fafafa] px-5 py-3">
-            <h3 className="text-sm font-semibold text-[#222]">{t("title")}</h3>
-            <p className="mt-0.5 text-xs text-[#767676]">{meta.join(" · ")}</p>
-          </div>
-          {/* The EULA scrolls in its own column, in smaller type. The consent check sits with the order. ja: the
-              title itself says （参考訳）; the English text governs (EULA §16) — no separate note box (kimny 10/1). */}
-          <div className="min-h-0 flex-1 overflow-y-auto bg-[#fafafa] px-5 py-4 text-[13px] leading-relaxed [&_a]:text-[#356eec] [&_h2]:mb-2 [&_h2]:text-sm [&_h2]:text-[#222] [&_ol]:text-[#555] [&_p]:mb-3 [&_p]:text-[#555] [&_section]:mb-5 [&_strong]:text-[#222] [&_ul]:text-[#555]" data-testid="eula-modal-body">
-            <EulaBlocks blocks={content.intro} newTab />
-            <EulaArticles articles={content.articles} newTab />
-          </div>
-        </section>
+              <p className="font-semibold text-[#222]">{t("title")}</p>
+              <p className="text-[#767676]">{meta.join(" · ")}</p>
+              <EulaBlocks blocks={content.intro} newTab />
+              <EulaArticles articles={content.articles} newTab />
+            </div>
+          </details>
+          {/* ★The buy colour (BUY_BUTTON_CLASS: #ffbe3d — kimny 10/4 「購入とデモ（および無料）とで区別したい」), full width;
+              no glow on the white panel. The words are the consent. */}
+          <button
+            type="button"
+            onClick={onAgree}
+            disabled={!checkoutReady}
+            aria-disabled={!checkoutReady}
+            className="mt-5 block w-full rounded-[6px] bg-[#ffbe3d] px-5 py-3.5 text-[15px] font-semibold text-black transition-colors hover:bg-[#ffc95e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffbe3d] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {checkoutReady ? tb("agreeAndContinue") : tb("checkoutLoading")}
+          </button>
+          <p className="mt-2.5 text-xs leading-[1.6] text-[#767676]">{tb("cartNextScreen")}</p>
+        </div>
       </div>
     </div>
   );
