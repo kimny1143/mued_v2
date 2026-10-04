@@ -1,3 +1,11 @@
+# Current policy — 2026-10-05
+
+kimny approved retaining new leads on the LP while giving the existing 73 subscribers direct links. The LP uses the existing one-email-field form and `/api/masterchain/demo`: no account, verification or checkout, OS download starts from the successful response, and a receipt is best-effort. The email-use/unsubscribe notice remains visible. This restores the existing lead capture; it does not measure installer completion or plugin use.
+
+The follow-up explains that **this email** contains direct downloads and requires no email re-entry. It does not claim that the public LP is email-free. Keep the native Resend delivery scheduled for 2026-10-05 22:00 JST (13:00 UTC). Restore KVR's demo route to the LP and remove its direct file links and email-free claim. No new forum thread is authorized.
+
+The material below records the initial 2026-10-04 implementation and preparation; its public-LP/no-form instructions are superseded by this policy.
+
 # masterchain direct demo and follow-up — 2026-10-04
 
 Requested by kimny in the conductor Codex session, adopting Gemini's direct-demo proposal. Scope: remove the masterchain demo's email form, prepare a follow-up, and prepare KVR updates. Sending the follow-up is not part of this change.
@@ -33,7 +41,7 @@ Live read at 2026-10-04 23:24 JST: 96 distinct clicked recipients across the two
 | Download the Windows demo / Windows 版デモをダウンロード (VST3) | https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-win-x64-a2678157.zip | Same paragraph, second OS option |
 | Unsubscribe / 配信停止 | `{{{RESEND_UNSUBSCRIBE_URL}}}` | Footer |
 
-## KVR update, after LP deployment
+## Historical KVR instructions — superseded 2026-10-05
 
 Product: https://www.kvraudio.com/product/muedsp-masterchain-by-glasswerks
 
