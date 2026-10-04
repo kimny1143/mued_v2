@@ -3,7 +3,7 @@
  * 増える／変わらない／法の明文: <条文名>. "減る" cannot be written. Enforced by the merge gate (⑥).
  */
 import { describe, expect, it } from "vitest";
-import { parseSalesImpact, parseCopyApproval } from "../../scripts/ci/sales-impact.mjs";
+import { parseSalesImpact, parseCopyApproval, parseGuardChange, touchesGuard } from "../../scripts/ci/sales-impact.mjs";
 import { salesImpactVoidReason } from "../../scripts/verify/pr-merge-gate";
 
 describe("parseSalesImpact", () => {
@@ -57,9 +57,10 @@ describe("gate ⑥ salesImpactVoidReason", () => {
     expect(salesImpactVoidReason(["components/features/muedsat-landing/muedsat-signup-form.tsx"], "sales-impact: 減る: 同意のため")).toContain("減る");
   });
 
-  it("a truncated file list (100) counts as the customer path — nothing hides in the part not seen", () => {
+  it("a truncated file list (100) counts as the customer path AND as a guard change — nothing hides in the part not seen", () => {
     const hundred = Array.from({ length: 100 }, (_, i) => `docs/f${i}.md`);
-    expect(salesImpactVoidReason(hundred, "")).toContain("sales-impact");
+    expect(salesImpactVoidReason(hundred, "")).toContain("guard-change");
+    expect(salesImpactVoidReason(hundred, "guard-change: kimny 2026-10-04 conductor の窓")).toContain("sales-impact");
   });
 });
 
@@ -81,5 +82,49 @@ describe("approved-copy provenance (CCO #1223)", () => {
 
   it("a copy change elsewhere on the path (no docs/copy) needs only sales-impact", () => {
     expect(salesImpactVoidReason(["messages/ja.json"], OK_IMPACT)).toBeNull();
+  });
+});
+
+describe("guard-change provenance (CCO #1227)", () => {
+  const IMPACT = "sales-impact: kimny の判断: 「購入とデモを区別」 2026-10-04";
+  const GUARD = "guard-change: kimny 2026-10-04 conductor の窓（購入ボタンだけ別の色）";
+
+  it.each([
+    "e2e/sales-path/cta.spec.ts",
+    "playwright.sales-path.config.ts",
+    ".github/workflows/sales-path.yml",
+    "scripts/ci/sales-path.mjs",
+    "scripts/ci/sales-impact.mjs",
+    "scripts/verify/pr-merge-gate.ts",
+    "scripts/verify/gate-mutation-check.ts",
+    "lib/funnel/denominator-trend.ts",
+    "tests/unit/sales-path-trigger.test.ts",
+    "tests/unit/sales-path-approved-copy.test.ts",
+    "tests/unit/sales-impact-line.test.ts",
+    "tests/unit/funnel-denominator-trend.test.ts",
+  ])("%s is a guard file", (p) => {
+    expect(touchesGuard([p])).toBe(true);
+  });
+
+  it.each(["components/features/muedsp-landing/masterchain-try.tsx", "tests/unit/other.test.ts", "docs/copy/approved-ja.json", "status.md"])(
+    "%s is not a guard file",
+    (p) => {
+      expect(touchesGuard([p])).toBe(false);
+    },
+  );
+
+  it("★#1227's shape: the guard and the guarded change in one PR — VOID without guard-change, fine with it", () => {
+    const paths = ["components/features/muedsp-landing/masterchain-buy-button.tsx", "e2e/sales-path/cta.spec.ts"];
+    expect(salesImpactVoidReason(paths, IMPACT)).toContain("guard-change");
+    expect(salesImpactVoidReason(paths, `${IMPACT}\n${GUARD}`)).toBeNull();
+  });
+
+  it("★a guard file OFF the customer path still needs guard-change (the unit tests are not on the customer path)", () => {
+    expect(salesImpactVoidReason(["tests/unit/sales-impact-line.test.ts"], "")).toContain("guard-change");
+    expect(salesImpactVoidReason(["tests/unit/sales-impact-line.test.ts"], GUARD)).toBeNull();
+  });
+
+  it.each(["guard-change: kimny", "guard-change: kimny 10/4 conductor", "guard-change: 2026-10-04 conductor", `${GUARD}\n${GUARD}`])("malformed %j → rejected", (body) => {
+    expect(parseGuardChange(body).ok).toBe(false);
   });
 });

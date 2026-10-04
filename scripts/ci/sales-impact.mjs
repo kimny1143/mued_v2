@@ -53,10 +53,54 @@ export function parseSalesImpact(body) {
  * @returns {{ ok: true, who: string, date: string, via: string } | { ok: false, reason: string }}
  */
 export function parseCopyApproval(body) {
-  const lines = [...String(body ?? "").matchAll(/^[ \t>*-]*copy-approval[ \t]*[:：][ \t]*(.*)$/gim)].map((m) => m[1].trim());
-  if (lines.length === 0) return { ok: false, reason: "承認文（docs/copy/）を変える PR の本文に `copy-approval:` 行が無い" };
-  if (lines.length > 1) return { ok: false, reason: `\`copy-approval:\` 行が ${lines.length} 行ある（1 行だけにする）` };
+  return parseProvenance(body, "copy-approval", "承認文（docs/copy/）を変える PR");
+}
+
+/**
+ * Provenance of a guard change (CCO #1227): the sales-path guards can be loosened in the same PR as the change
+ * they guard, so a PR that edits a guard must say who approved the guard change, when and how:
+ *
+ *   guard-change: kimny 2026-10-04 conductor の窓（購入ボタンだけ別の色）
+ *
+ * Same format as copy-approval. The guard files are GUARD_FILES below.
+ * @param {string} body
+ * @returns {{ ok: true, who: string, date: string, via: string } | { ok: false, reason: string }}
+ */
+export function parseGuardChange(body) {
+  return parseProvenance(body, "guard-change", "売る経路の守り（G1〜G4・merge の gate）を変える PR");
+}
+
+/**
+ * The files that ARE the sales-path guards (G1–G4 and the gate that enforces G1). Editing one of them can loosen
+ * a guard, so it needs a guard-change line. ★The tests count too: weakening an assertion is loosening the guard.
+ */
+export const GUARD_FILES = [
+  /^e2e\/sales-path\//,
+  /^playwright\.sales-path\.config\.ts$/,
+  /^\.github\/workflows\/sales-path\.yml$/,
+  /^scripts\/ci\/sales-(path|impact)\.mjs$/,
+  /^scripts\/verify\/pr-merge-gate\.ts$/,
+  /^scripts\/verify\/gate-mutation-check\.ts$/,
+  /^lib\/funnel\/denominator-trend\.ts$/,
+  /^tests\/unit\/(sales-path-[^/]+|sales-impact-line|funnel-denominator-trend)\.test\.ts$/,
+];
+
+/** @param {readonly string[]} paths */
+export function touchesGuard(paths) {
+  return paths.some((p) => GUARD_FILES.some((re) => re.test(p)));
+}
+
+/**
+ * @param {string} body
+ * @param {string} key
+ * @param {string} what
+ * @returns {{ ok: true, who: string, date: string, via: string } | { ok: false, reason: string }}
+ */
+function parseProvenance(body, key, what) {
+  const lines = [...String(body ?? "").matchAll(new RegExp(`^[ \\t>*-]*${key}[ \\t]*[:：][ \\t]*(.*)$`, "gim"))].map((m) => m[1].trim());
+  if (lines.length === 0) return { ok: false, reason: `${what} の本文に \`${key}:\` 行が無い` };
+  if (lines.length > 1) return { ok: false, reason: `\`${key}:\` 行が ${lines.length} 行ある（1 行だけにする）` };
   const m = lines[0].match(/^(\S+)\s+(\d{4}-\d{2}-\d{2})\s+(\S.*)$/);
-  if (!m) return { ok: false, reason: `書式は「copy-approval: <誰> <YYYY-MM-DD> <経路>」（今: ${JSON.stringify(lines[0])}）` };
+  if (!m) return { ok: false, reason: `書式は「${key}: <誰> <YYYY-MM-DD> <経路>」（今: ${JSON.stringify(lines[0])}）` };
   return { ok: true, who: m[1], date: m[2], via: m[3].trim() };
 }
