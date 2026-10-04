@@ -4,7 +4,9 @@
  *
  * ★The TEMPLATE is the free download button (MUEDsat). Every other main CTA must:
  *   1. not be disabled (a greyed-out button before typing is what lost the demo, #1220)
- *   2. have the template's computed style (fill colour, text colour, radius, padding, weight) — no outline variant
+ *   2. have the template's computed style (fill colour, text colour, radius, padding, weight) — no outline variant.
+ *      ★Except the paid BUY button: same shape, but its own brighter fill and a glow, so a purchase is told apart
+ *      from the demo and the free downloads (kimny 2026-10-04「購入とデモ（および無料）とで区別したい」).
  *   3. be as wide as the template (full width on a phone)
  *   4. sit below its email field when it has one (not above it)
  *   5. be within the first two screens (top < 2 × 844 px) — "一番売りたいものを一番先に見えるように"
@@ -32,6 +34,7 @@ type Shape = {
   fontSize: string;
   height: number;
   borderStyle: string;
+  boxShadow: string;
 };
 
 async function shapeOf(button: Locator): Promise<Shape> {
@@ -52,6 +55,7 @@ async function shapeOf(button: Locator): Promise<Shape> {
       fontSize: cs.fontSize,
       height: Math.round(r.height),
       borderStyle: cs.borderStyle,
+      boxShadow: cs.boxShadow,
     };
   });
 }
@@ -70,6 +74,9 @@ async function open(page: Page, path: string) {
 const TEMPLATE_FILL = "rgb(245, 165, 36)";
 const TEMPLATE_TEXT = "rgb(0, 0, 0)";
 const MIN_WIDTH = Math.floor(390 * 0.85);
+/** The paid buy button (components/features/muedsp-landing/buy-button-style.ts): #ffbe3d + glow 0 0 18px rgba(255,190,61,.55). */
+const BUY_FILL = "rgb(255, 190, 61)";
+const BUY_GLOW = "rgba(255, 190, 61, 0.55) 0px 0px 18px";
 
 async function template(page: Page, locale: Locale): Promise<Shape> {
   await open(page, `/${locale}/muedsat`);
@@ -78,15 +85,25 @@ async function template(page: Page, locale: Locale): Promise<Shape> {
   expect(model.backgroundColor, "template: filled amber").toBe(TEMPLATE_FILL);
   expect(model.color, "template: black text").toBe(TEMPLATE_TEXT);
   expect(model.width, `template: at least ${MIN_WIDTH}px wide`).toBeGreaterThanOrEqual(MIN_WIDTH);
+  expect(model.boxShadow, "template: no glow (the glow is the buy button's alone)").toBe("none");
   return model;
 }
 
-function expectSameShape(actual: Shape, model: Shape) {
+/** `buy`: the paid buy button — the template's shape, but its own fill and a glow (checked separately). */
+function expectSameShape(actual: Shape, model: Shape, { buy = false } = {}) {
   expect(actual.disabled, "the CTA must be pressable (no greyed-out button)").toBe(false);
   expect(
-    { backgroundColor: actual.backgroundColor, color: actual.color, borderRadius: actual.borderRadius, padding: actual.padding, fontWeight: actual.fontWeight, fontSize: actual.fontSize, borderStyle: actual.borderStyle },
-    "the CTA must look exactly like the free download button",
-  ).toEqual({ backgroundColor: model.backgroundColor, color: model.color, borderRadius: model.borderRadius, padding: model.padding, fontWeight: model.fontWeight, fontSize: model.fontSize, borderStyle: model.borderStyle });
+    { color: actual.color, borderRadius: actual.borderRadius, padding: actual.padding, fontWeight: actual.fontWeight, fontSize: actual.fontSize, borderStyle: actual.borderStyle },
+    "the CTA must have the free download button's shape",
+  ).toEqual({ color: model.color, borderRadius: model.borderRadius, padding: model.padding, fontWeight: model.fontWeight, fontSize: model.fontSize, borderStyle: model.borderStyle });
+  if (buy) {
+    expect(actual.backgroundColor, "buy: its own brighter fill").toBe(BUY_FILL);
+    expect(actual.backgroundColor, "buy: told apart from the demo / free fill").not.toBe(model.backgroundColor);
+    expect(actual.boxShadow, "buy: glows").toContain(BUY_GLOW);
+  } else {
+    expect(actual.backgroundColor, "the template's fill").toBe(model.backgroundColor);
+    expect(actual.boxShadow, "no glow — only the buy button glows").toBe(model.boxShadow);
+  }
   expect(Math.abs(actual.height - model.height), `height ${actual.height} vs template ${model.height}`).toBeLessThanOrEqual(1);
   expect(Math.abs(actual.width - model.width), `width ${actual.width} vs template ${model.width}`).toBeLessThanOrEqual(1);
   expect(actual.top, `top ${Math.round(actual.top)} px must be within the first two screens (${2 * VIEW_HEIGHT})`).toBeLessThan(2 * VIEW_HEIGHT);
@@ -121,7 +138,7 @@ for (const locale of Object.keys(LOCALES) as Locale[]) {
       const model = await template(page, locale);
       await open(page, `/${locale}/muedsp`);
       const shape = await shapeOf(page.getByRole("button", { name: m.muedsp.masterchain.buyLabelLive, exact: true }));
-      expectSameShape(shape, model);
+      expectSameShape(shape, model, { buy: true });
     });
 
     test("demo (try)", async ({ page }) => {

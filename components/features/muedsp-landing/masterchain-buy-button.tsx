@@ -17,6 +17,7 @@ import { MASTERCHAIN_PURCHASE_LIVE } from "@/lib/masterchain/config";
 import { EULA_VERSION } from "@/lib/legal/eula";
 import { parseEulaContent } from "@/lib/legal/eula-content";
 import { EulaArticles, EulaBlocks } from "@/components/legal/eula-body";
+import { BUY_BUTTON_CLASS } from "./buy-button-style";
 
 // Client gate: NEXT_PUBLIC_EULA_LIVE is read directly so Next.js inlines it at build time. Do not
 // replace this with the server-only EULA_LIVE flag; both flags must be enabled for publication.
@@ -82,7 +83,7 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
 
   return (
     <div className="flex max-w-xl flex-col items-stretch gap-2 sm:items-start">
-      {/* ★Same weight as the demo's Try and the free three's button (kimny 2026-10-04): filled orange, full width on a phone, its own width beside the text on a wider screen — exactly the free form's button. */}
+      {/* ★The free form's button shape (kimny 2026-10-04: filled, full width on a phone), but brighter and glowing so a purchase is told apart from the demo and the free downloads (kimny 2026-10-04 「購入とデモ（および無料）とで区別したい」) — BUY_BUTTON_CLASS. */}
       <button
         ref={opener}
         type="button"
@@ -92,7 +93,7 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
         onClick={() => setOpen(true)}
         className={
           PURCHASE_OPEN
-            ? "w-full sm:w-auto rounded-[var(--radius-lg)] bg-[#f5a524] px-6 py-3.5 font-semibold text-black transition-colors hover:bg-[#ffb638]"
+            ? BUY_BUTTON_CLASS
             : "cursor-not-allowed rounded-[var(--radius-sm)] border border-white/15 bg-white/[0.04] px-5 py-3 font-semibold text-white/40"
         }
       >
