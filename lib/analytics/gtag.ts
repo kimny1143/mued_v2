@@ -74,6 +74,7 @@ export type CtaDestination =
   | "external_site"  // 別ホストの web へ出る（dial.mued.jp 等）
   | "internal_page"  // 同一サイト内の別ページ
   | "signup"         // サインアップ / サインイン
+  | "download_link"  // 直接インストーラーをダウンロード
   | "download_form"; // その場の DL フォーム（ページ遷移しない）
 
 /**

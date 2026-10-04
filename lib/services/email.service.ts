@@ -224,7 +224,8 @@ export interface GlasswerksInquiryConfirmEmailData {
 // Template Generators
 // ========================================
 
-function baseTemplate(content: string): string {
+function baseTemplate(content: string, plainLocale?: 'ja' | 'en'): string {
+  if (plainLocale) return `<!DOCTYPE html><html lang="${plainLocale}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>MUED</title></head><body style="font-family: sans-serif; line-height: 1.7; color: #333; max-width: 600px; margin: 0 auto; padding: 24px;">${content}</body></html>`;
   return `
 <!DOCTYPE html>
 <html lang="ja">
@@ -929,6 +930,32 @@ Hoo MCP経由の自動送信
    * Demo receipt. ★With consent (the person is now on the shared MUEDsp list) it carries an unsubscribe
    * link, like the free three; without consent it is purely transactional and has none (conductor 2026-09-30).
    */
+  /** Broadcast preparation only. Resend replaces the unsubscribe placeholder when sending. */
+  masterchainDemoFollowup(locale: 'ja' | 'en'): { subject: string; html: string; text: string } {
+    const ja = locale === 'ja';
+    const subject = ja ? 'masterchainデモ版のダウンロード手順を改善しました' : 'We made the masterchain demo easier to download.';
+    const paragraphs = ja ? [
+      '先日リリースした「MUEDsp masterchain」についてお知らせです。',
+      'デモ版の入手にメールアドレスの入力が必要だったため、手順を見直し、登録不要のダイレクトリンクに変更しました。',
+      'お使いのOSのリンクから、1クリックでデモ版をダウンロードできます。',
+    ] : [
+      'Hi,',
+      'Our MUEDsp masterchain demo download asked for your email address. We want you to spend time mixing, not filling out forms.',
+      "We've updated our site so you can now download the demo with a single click, with no registration required. Choose your OS below.",
+    ];
+    const links = [{ label: ja ? 'Mac 版デモをダウンロード（AU / VST3 / AAX）' : 'Download the Mac demo (AU / VST3 / AAX)', url: MASTERCHAIN_DOWNLOAD_URL }];
+    const windows = masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION);
+    if (windows) links.push({ label: ja ? 'Windows 版デモをダウンロード（VST3）' : 'Download the Windows demo (VST3)', url: windows.url });
+    const limits = ja ? 'デモは期限なし。挿すたびに最初の45秒分の音声を処理し、その後は原音を通します。設定・プリセットは保存できません。' : "The demo has no time limit. Each insert processes the first 45 seconds of audio, then passes audio through unprocessed. Settings and presets aren't saved.";
+    const closing = ja ? '引き続き、よろしくお願いいたします。' : 'Happy mixing,';
+    const unsubscribe = ja ? '配信停止' : 'Unsubscribe';
+    return {
+      subject,
+      html: baseTemplate(`${paragraphs.map(p => `<p>${p}</p>`).join('')}<p>${links.map(l => `<a href="${l.url}">${l.label}</a>`).join('<br>')}</p><p>${limits}</p><p>${closing}<br>glasswerks / MUED</p><p><a href="{{{RESEND_UNSUBSCRIBE_URL}}}">${unsubscribe}</a></p>`, locale),
+      text: [...paragraphs, ...links.map(l => `${l.label}: ${l.url}`), limits, `${closing}\nglasswerks / MUED`, `${unsubscribe}: {{{RESEND_UNSUBSCRIBE_URL}}}`].join('\n\n'),
+    };
+  },
+
   masterchainDemoDownload(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string; windowsUrl?: string | null }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const subject = isJa ? 'MUEDsp masterchain デモのダウンロード' : 'Your MUEDsp masterchain demo download';
