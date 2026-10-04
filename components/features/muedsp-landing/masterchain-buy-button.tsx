@@ -269,23 +269,28 @@ function CartModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
         <div data-testid="order-panel" className="min-h-0 overflow-y-auto p-5">
           <div data-testid="order-price" aria-busy={price.kind === "loading" ? "true" : undefined}>
             {price.kind === "loading" && <span className="sr-only">{tb("orderPriceLoading")}</span>}
-            <div className="grid grid-cols-[112px_1fr_auto] items-start gap-3.5">
+            {/* ★Phone: name → price → formats under the image's right edge (Chief 10/4 (c): a yen figure beside the name
+                squeezed the name to 2 lines and the formats to 3). From sm up: the price in its own column on the right,
+                as in the mock. One price element, placed by the grid. */}
+            <div className="grid grid-cols-[112px_minmax(0,1fr)] items-start gap-x-3.5 gap-y-1 sm:grid-cols-[112px_minmax(0,1fr)_auto]">
               <Image
                 src={CART_THUMB}
                 alt=""
                 width={112}
                 height={47}
-                className="h-[47px] w-[112px] rounded-[6px] border border-[#eeeeee] bg-[#0a0a0a] object-contain"
+                className="row-span-3 h-[47px] w-[112px] rounded-[6px] border border-[#eeeeee] bg-[#0a0a0a] object-contain sm:row-span-2"
               />
-              <div className="min-w-0">
-                <p className="text-[15px] font-semibold leading-snug text-[#222]">{tb("orderProduct")}</p>
-                <p className="mt-1 font-mono text-[11px] tracking-[0.08em] text-[#767676]">{tb("orderFormats")}</p>
-              </div>
+              <p data-testid="cart-line-name" className="col-start-2 row-start-1 text-[15px] font-semibold leading-snug text-[#222]">
+                {tb("orderProduct")}
+              </p>
               {figure !== null ? (
-                <p className="font-semibold tabular-nums text-[#222]">{figure}</p>
+                <p data-testid="cart-line-price" className="col-start-2 row-start-2 font-semibold tabular-nums text-[#222] sm:col-start-3 sm:row-start-1 sm:text-right">
+                  {figure}
+                </p>
               ) : (
-                <div aria-hidden className="h-5 w-16 animate-pulse rounded bg-[#eeeeee]" />
+                <div aria-hidden data-testid="cart-line-price" className="col-start-2 row-start-2 h-5 w-16 animate-pulse rounded bg-[#eeeeee] sm:col-start-3 sm:row-start-1" />
               )}
+              <p className="col-start-2 row-start-3 font-mono text-[11px] tracking-[0.08em] text-[#767676] sm:row-start-2">{tb("orderFormats")}</p>
             </div>
             {taxNote !== null ? (
               <p className="mt-2.5 text-xs text-[#767676]">{taxNote}</p>
