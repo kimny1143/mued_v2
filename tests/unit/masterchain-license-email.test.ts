@@ -33,6 +33,8 @@ describe("masterchain purchase email — portal-only keys", () => {
         expect(surface).toContain(PORTAL);
         expect(surface).toContain("Load license file…");
         expect(surface).toContain("Drop license.key here");
+        expect(surface).toContain(locale === "ja" ? "ポータルで鍵のファイル（.key）をダウンロード" : "In the portal: download your key file (.key)");
+        expect(surface).not.toMatch(/download license\.key|license\.key をダウンロード/i);
         expect(surface).toContain("Paste license key");
         expect(surface).not.toContain("Paste license from clipboard");
         expect(surface).toContain(locale === "ja" ? "このメールアドレスでサインイン" : "sign in with this email address");

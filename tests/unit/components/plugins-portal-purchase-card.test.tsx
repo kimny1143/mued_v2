@@ -48,6 +48,9 @@ const KEY = [
 ].join("\n");
 
 const purchase = {
+  productKey: "masterchain" as const,
+  displayName: "masterchain",
+  keyFileName: "MUEDsp-masterchain.license.key",
   version: "0.1.3",
   downloadUrl: "https://mued.jp/downloads/MUEDsp-masterchain-0.1.3-installer.pkg",
   licenseKey: KEY,
@@ -126,4 +129,35 @@ describe("purchase card — the buyer can actually get the key", () => {
     const again = render(<PluginsPortalView items={[]} purchases={[purchase]} />);
     expect(again.container.textContent).toContain("MUEDSP-LICENSE");
   });
+});
+
+it("MUEDvox card uses its name and filename without a masterchain faceplate or Windows note", async () => {
+  const revokeObjectURL = vi.fn();
+  vi.stubGlobal("URL", { createObjectURL: vi.fn(() => "blob:key"), revokeObjectURL });
+  try {
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
+      expect(this.download).toBe("MUEDvox.license.key");
+    });
+    const { container } = render(<PluginsPortalView items={[]} purchases={[{
+      ...purchase, productKey: "muedvox", displayName: "MUEDvox", keyFileName: "MUEDvox.license.key",
+      windows: { url: "https://mued.jp/vox.zip", version: "1.0.0" },
+    }]} />);
+    expect(screen.getByRole("heading", { name: "MUEDvox" })).toBeTruthy();
+    expect(container.querySelector(".faceplate")).toBeNull();
+    expect(screen.queryByTestId("portal-masterchain-windows-note")).toBeNull();
+    expect(screen.getByTestId("portal-masterchain-windows")).toHaveTextContent("MUEDvox 1.0.0");
+    fireEvent.click(screen.getByRole("button", { name: "purchased.download" }));
+    expect(click).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith("blob:key"), { timeout: 2500 });
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+it("a recorded MUEDvox purchase with no installer URL keeps its key but has no empty download link", () => {
+  render(<PluginsPortalView items={[]} purchases={[{
+    ...purchase, productKey: "muedvox", displayName: "MUEDvox", keyFileName: "MUEDvox.license.key", downloadUrl: "", version: null,
+  }]} />);
+  expect(document.querySelector("pre")?.textContent).toBe(KEY);
+  expect(document.querySelector('a[href=""]')).toBeNull();
 });

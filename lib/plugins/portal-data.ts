@@ -16,6 +16,8 @@ import {
   type ClerkUserLike,
 } from "@/lib/plugins/portal";
 import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION } from "@/lib/masterchain/config";
+import { paidProductByProductId } from "@/lib/plugins/paid-products";
+import { MUEDVOX_DOWNLOAD_URL, MUEDVOX_WINDOWS_URL, MUEDVOX_WINDOWS_VERSION } from "@/lib/muedvox/config";
 import { masterchainWindowsBuild } from "@/lib/plugins/windows-beta";
 
 /** Trial ownership requires BOTH a verified email and the issuing Clerk account. */
@@ -79,13 +81,13 @@ export async function markPortalRegistered(user: ClerkUserLike | null | undefine
 }
 
 /**
- * P-4 — the masterchain purchases owned by `user`, resolved by the user's VERIFIED emails only.
+ * P-4 — the paid purchases owned by `user`, resolved by the user's VERIFIED emails only.
  *
  * ★SAME authorization boundary as getPortalItemsForUser, deliberately: one seam, one place to get it
  * wrong, one place the Tier-3 test points at. A second path "just for the paid line" is how the two
  * drift until only one of them checks verification.
  * ★Fail-closed: with no verified email the query is NOT run and [] is returned (never "everything").
- * ★Selects only licenseKey + createdAt. The row also carries amount / order id / EULA columns; none of
+ * ★Selects only productId + licenseKey + createdAt + refundedAt. The row also carries amount / order id / EULA columns; none of
  * them belong on this screen, and not selecting them means a future view change cannot leak them.
  */
 export async function getPurchaseItemsForUser(user: ClerkUserLike | null | undefined): Promise<PurchaseItem[]> {
@@ -94,6 +96,7 @@ export async function getPurchaseItemsForUser(user: ClerkUserLike | null | undef
 
   const rows = await db
     .select({
+      productId: masterchainPurchases.productId,
       licenseKey: masterchainPurchases.licenseKey,
       createdAt: masterchainPurchases.createdAt,
       refundedAt: masterchainPurchases.refundedAt,
@@ -101,9 +104,20 @@ export async function getPurchaseItemsForUser(user: ClerkUserLike | null | undef
     .from(masterchainPurchases)
     .where(inArray(masterchainPurchases.email, emails)); // scoped to the caller's verified emails ONLY
 
-  return buildPurchaseItems(
-    rows,
-    MASTERCHAIN_DOWNLOAD_URL,
-    masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION),
-  );
+  return buildPurchaseItems(rows, (productId) => {
+    const product = paidProductByProductId(productId);
+    if (!product) return null;
+    switch (product.key) {
+      case "masterchain":
+        return { product, downloadUrl: MASTERCHAIN_DOWNLOAD_URL,
+          windows: masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION) };
+      case "muedvox":
+        return { product, downloadUrl: MUEDVOX_DOWNLOAD_URL,
+          windows: MUEDVOX_WINDOWS_URL ? { url: MUEDVOX_WINDOWS_URL, version: MUEDVOX_WINDOWS_VERSION } : null };
+      default: {
+        const exhaustive: never = product.key;
+        throw new Error(`Unhandled paid product: ${exhaustive}`);
+      }
+    }
+  });
 }

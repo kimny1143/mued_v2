@@ -10,6 +10,7 @@ vi.mock("@/db", () => ({ db: {} }));
 vi.mock("@/lib/utils/logger", () => ({ logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() } }));
 
 import { handleFastspringReturnCreated, parseFastspringReturnCreated } from "@/lib/masterchain/fastspring-webhook";
+import { PAID_PRODUCTS } from "@/lib/plugins/paid-products";
 import { buildPurchaseItems } from "@/lib/plugins/portal";
 
 const ev = (data: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({
@@ -115,15 +116,15 @@ describe("handleFastspringReturnCreated", () => {
 describe("portal: a refunded purchase", () => {
   it("stays on the shelf, marked, and its key does not reach the client", () => {
     const [item] = buildPurchaseItems(
-      [{ licenseKey: "MUEDSP-LICENSE-v2\nsig=x\n", createdAt: new Date("2026-10-01"), refundedAt: new Date("2026-10-02") }],
-      "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-installer.pkg",
+      [{ productId: "muedsp_masterchain", licenseKey: "MUEDSP-LICENSE-v2\nsig=x\n", createdAt: new Date("2026-10-01"), refundedAt: new Date("2026-10-02") }],
+      () => ({ product: PAID_PRODUCTS.masterchain, downloadUrl: "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-installer.pkg", windows: null }),
     );
     expect(item.licenseKey).toBeNull();
     expect(item.refundedAt).toEqual(new Date("2026-10-02"));
   });
   it("positive control: a paid, unrefunded purchase still carries its key verbatim", () => {
     const KEY = "MUEDSP-LICENSE-v2\nsig=x\n";
-    const [item] = buildPurchaseItems([{ licenseKey: KEY, createdAt: new Date("2026-10-01") }], "https://mued.jp/downloads/x-1.0.1-installer.pkg");
+    const [item] = buildPurchaseItems([{ productId: "muedsp_masterchain", licenseKey: KEY, createdAt: new Date("2026-10-01") }], () => ({ product: PAID_PRODUCTS.masterchain, downloadUrl: "https://mued.jp/downloads/x-1.0.1-installer.pkg", windows: null }));
     expect(item.licenseKey).toBe(KEY);
     expect(item.refundedAt).toBeNull();
   });

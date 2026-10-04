@@ -20,9 +20,10 @@ import { generateKeyPairSync } from "node:crypto";
 
 // vi.hoisted: vi.mock factories are hoisted above ordinary consts, so the spies they close over must
 // be created in a hoisted block too — otherwise the factory runs first and hits a TDZ error.
-const { sendMasterchainLicenseDelivery, trackServerPurchase, addMasterchainContact, sendAdminAlert } = vi.hoisted(
+const { sendMuedvoxLicenseDelivery, sendMasterchainLicenseDelivery, trackServerPurchase, addMasterchainContact, sendAdminAlert } = vi.hoisted(
   () => ({
     sendMasterchainLicenseDelivery: vi.fn(),
+    sendMuedvoxLicenseDelivery: vi.fn(),
     sendAdminAlert: vi.fn(() => Promise.resolve({ success: true })),
     trackServerPurchase: vi.fn(() => Promise.resolve()),
     addMasterchainContact: vi.fn(() => Promise.resolve(true)),
@@ -37,10 +38,11 @@ vi.mock("@/db/schema", () => ({ masterchainPurchases: { orderId: "order_id", lic
 vi.mock("@/lib/masterchain/audience", () => ({ addMasterchainContact }));
 vi.mock("@/lib/analytics/ga4-server", () => ({ trackServerPurchase }));
 vi.mock("@/lib/services/email.service", () => ({
-  emailService: { sendMasterchainLicenseDelivery, sendAdminAlert, isConfigured: () => true },
+  emailService: { sendMuedvoxLicenseDelivery, sendMasterchainLicenseDelivery, sendAdminAlert, isConfigured: () => true },
 }));
 
 import { handleFastspringOrderCompleted, licenseEmailLocale } from "@/lib/masterchain/fastspring-webhook";
+import * as paidProducts from "@/lib/plugins/paid-products";
 import { verifyLicense } from "@/lib/masterchain/license";
 
 const { publicKey, privateKey } = generateKeyPairSync("ed25519");
@@ -85,6 +87,7 @@ function makeTx(existingRows: Array<{ licenseKey: string | null }>) {
 const originalEnv = process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY;
 beforeEach(() => {
   vi.clearAllMocks();
+  sendMuedvoxLicenseDelivery.mockResolvedValue({ success: true });
   sendMasterchainLicenseDelivery.mockResolvedValue({ success: true, messageId: "m1" });
   process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = PRIV_PEM;
 });
@@ -115,6 +118,7 @@ describe("handleFastspringOrderCompleted — issuance", () => {
     expect(row.licenseKey as string).toContain("MUEDSP-LICENSE-v2");
 
     expect(sendMasterchainLicenseDelivery).toHaveBeenCalledTimes(1);
+    expect(sendMuedvoxLicenseDelivery).not.toHaveBeenCalled();
     const [to, data] = sendMasterchainLicenseDelivery.mock.calls[0];
     expect(to).toEqual({ email: "buyer@example.com" });
     expect(data).toEqual({ locale: "en" });
@@ -143,6 +147,7 @@ describe("handleFastspringOrderCompleted — issuance", () => {
     // never a freshly signed one, which would disagree with what the buyer already holds.
     expect(inserted[0].licenseKey).toBe(alreadyIssued);
     expect(sendMasterchainLicenseDelivery).not.toHaveBeenCalled();
+    expect(sendMuedvoxLicenseDelivery).not.toHaveBeenCalled();
   });
 
   it("★leaves EULA columns unset when the checkout tag is absent", async () => {
@@ -165,6 +170,7 @@ describe("handleFastspringOrderCompleted — fail-closed", () => {
 
     expect(inserted).toHaveLength(0);
     expect(sendMasterchainLicenseDelivery).not.toHaveBeenCalled();
+    expect(sendMuedvoxLicenseDelivery).not.toHaveBeenCalled();
   });
 
   it("★throws when delivery fails — portal instructions remain fail-closed", async () => {
@@ -197,7 +203,8 @@ describe("handleFastspringOrderCompleted — fail-closed", () => {
     });
     expect(r).toBe("unparseable");
     expect(inserted).toHaveLength(0); // ★売上行を作らない
-    expect(sendMasterchainLicenseDelivery).not.toHaveBeenCalled(); // ★メールも出さない
+    expect(sendMasterchainLicenseDelivery).not.toHaveBeenCalled();
+    expect(sendMuedvoxLicenseDelivery).not.toHaveBeenCalled(); // ★メールも出さない
   });
 
   it("does not leak key material in the thrown message", async () => {
@@ -226,6 +233,7 @@ describe("handleFastspringOrderCompleted — only products we sell (C9)", () => 
   const refused: Array<[string, unknown]> = [
     ["FastSpring's sample product (seen in webhook_events as a test notification)", [{ product: "example-product", quantity: 1 }]],
     ["a product path not in PAID_PRODUCTS (e.g. MUEDvox before it is added)", [{ product: "muedsp-muedvox", quantity: 1 }]],
+    ["disabled MUEDvox", [{ product: "muedsp-vox", quantity: 1 }]],
     ["no items at all", []],
     ["an item with no product", [{ quantity: 1 }]],
     ["two items", [{ product: "muedsp-masterchain", quantity: 1 }, { product: "muedsp-masterchain", quantity: 1 }]],
@@ -239,6 +247,7 @@ describe("handleFastspringOrderCompleted — only products we sell (C9)", () => 
     expect(result).toBe("unknown_product");
     expect(inserted).toHaveLength(0);
     expect(sendMasterchainLicenseDelivery).not.toHaveBeenCalled();
+    expect(sendMuedvoxLicenseDelivery).not.toHaveBeenCalled();
     expect(trackServerPurchase).not.toHaveBeenCalled();
     expect(addMasterchainContact).not.toHaveBeenCalled();
     expect(sendAdminAlert).toHaveBeenCalledTimes(1);
@@ -254,6 +263,21 @@ describe("handleFastspringOrderCompleted — only products we sell (C9)", () => 
     expect(inserted[0].productId).toBe("muedsp_masterchain");
     expect(verifyLicense(inserted[0].licenseKey as string, PUB_PEM)!.scope).toBe("masterchain");
     expect(sendMasterchainLicenseDelivery).toHaveBeenCalledTimes(1);
+    expect(sendMuedvoxLicenseDelivery).not.toHaveBeenCalled();
     expect(sendAdminAlert).not.toHaveBeenCalled();
   });
+});
+
+it("enabled MUEDvox issues only its scoped key and product delivery", async () => {
+  vi.spyOn(paidProducts, "paidProductByFastspringPath").mockImplementation((path) =>
+    path === "muedsp-vox" ? { ...paidProducts.PAID_PRODUCTS.muedvox, enabled: true } : null);
+  const { tx, inserted } = makeTx([]);
+  expect(await handleFastspringOrderCompleted(tx as never, {
+    ...event, data: { ...event.data, items: [{ product: "muedsp-vox", quantity: 1 }] },
+  })).toBe("ok");
+  expect(inserted).toHaveLength(1);
+  expect(inserted[0].productId).toBe("muedsp_vox");
+  expect(verifyLicense(inserted[0].licenseKey as string, PUB_PEM)).toMatchObject({ scope: "muedvox", product: "MUEDsp" });
+  expect(sendMuedvoxLicenseDelivery).toHaveBeenCalledExactlyOnceWith({ email: "buyer@example.com" }, { locale: "en" });
+  expect(sendMasterchainLicenseDelivery).not.toHaveBeenCalled();
 });

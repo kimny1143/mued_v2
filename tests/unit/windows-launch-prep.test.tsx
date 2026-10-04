@@ -18,6 +18,7 @@ import {
   withWindowsSentence,
 } from "@/lib/plugins/windows-beta";
 import { detectDemoOs, planDemoDownload } from "@/lib/masterchain/demo-download";
+import { PAID_PRODUCTS } from "@/lib/plugins/paid-products";
 import { buildPurchaseItems } from "@/lib/plugins/portal";
 
 vi.mock("@/app/dashboard/plugins/plugins-portal.module.css", () => ({
@@ -112,7 +113,7 @@ describe("masterchain for Windows — the product page status", () => {
 });
 
 describe("masterchain for Windows — portal", () => {
-  const row = { licenseKey: "MUEDSP-LICENSE-v2\nsig=x\n", createdAt: new Date("2026-10-02") };
+  const row = { productId: "muedsp_masterchain", licenseKey: "MUEDSP-LICENSE-v2\nsig=x\n", createdAt: new Date("2026-10-02") };
   const win = { url: "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-win-x64.zip", version: "1.0.1" };
 
   it("masterchainWindowsBuild needs both the flag and a URL", () => {
@@ -122,13 +123,13 @@ describe("masterchain for Windows — portal", () => {
   });
 
   it("a purchase carries the Windows build only when given one, and never once refunded", () => {
-    expect(buildPurchaseItems([row], "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-installer.pkg")[0].windows).toBeNull();
-    expect(buildPurchaseItems([row], "https://mued.jp/x-1.0.1-installer.pkg", win)[0].windows).toEqual(win);
-    expect(buildPurchaseItems([{ ...row, refundedAt: new Date("2026-10-03") }], "https://mued.jp/x-1.0.1-installer.pkg", win)[0].windows).toBeNull();
+    expect(buildPurchaseItems([row], () => ({ product: PAID_PRODUCTS.masterchain, downloadUrl: "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-installer.pkg", windows: null }))[0].windows).toBeNull();
+    expect(buildPurchaseItems([row], () => ({ product: PAID_PRODUCTS.masterchain, downloadUrl: "https://mued.jp/x-1.0.1-installer.pkg", windows: win }))[0].windows).toEqual(win);
+    expect(buildPurchaseItems([{ ...row, refundedAt: new Date("2026-10-03") }], () => ({ product: PAID_PRODUCTS.masterchain, downloadUrl: "https://mued.jp/x-1.0.1-installer.pkg", windows: win }))[0].windows).toBeNull();
   });
 
   it("the card shows the Windows download + same-key note only when the row has one", () => {
-    const base = { version: "1.0.1", downloadUrl: "https://mued.jp/x-1.0.1-installer.pkg", licenseKey: "K\n", purchasedAtISO: "2026-10-02T00:00:00Z" };
+    const base = { productKey: "masterchain" as const, displayName: "masterchain", keyFileName: "MUEDsp-masterchain.license.key", version: "1.0.1", downloadUrl: "https://mued.jp/x-1.0.1-installer.pkg", licenseKey: "K\n", purchasedAtISO: "2026-10-02T00:00:00Z" };
     const { unmount } = render(<PluginsPortalView items={[]} purchases={[base]} />);
     expect(screen.queryByTestId("portal-masterchain-windows")).toBeNull();
     expect(screen.queryByTestId("portal-masterchain-windows-note")).toBeNull();

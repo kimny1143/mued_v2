@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { PluginKey } from "@/lib/plugins/registry";
 import { useTranslations, useLocale } from "next-intl";
 import styles from "./plugins-portal.module.css";
+import type { PaidProductKey } from "@/lib/plugins/paid-products";
 import { MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
 import { LicenseKeyActions } from "@/components/features/license/license-key-actions";
 import { formatUtcMinute } from "@/lib/masterchain/format";
@@ -53,11 +54,14 @@ function fileExt(url: string): string {
 // page carries the email gate that writes the entitlement, and a direct .pkg download would leave the
 // shelf empty forever (see lib/plugins/portal.ts buildAvailableItems).
 /**
- * A masterchain purchase belonging to the signed-in buyer. ★Reaches this component ONLY through
+ * A paid purchase belonging to the signed-in buyer. ★Reaches this component ONLY through
  * getPurchaseItemsForUser, which scopes the query to the caller's Clerk-VERIFIED emails.
  * ★licenseKey is verbatim — the keyfile is signed over its exact bytes, so nothing normalises it.
  */
 export interface PurchaseViewItem {
+  productKey: PaidProductKey;
+  displayName: string;
+  keyFileName: string;
   version: string | null;
   downloadUrl: string;
   /** ★null once the purchase was refunded — the key does not reach the client. */
@@ -322,11 +326,11 @@ function PurchaseCard({
   const t = useTranslations("pluginPortal");
   return (
     <div className={styles.module}>
-      <Faceplate pluginKey="masterchain" />
+      {item.productKey === "masterchain" && <Faceplate pluginKey="masterchain" />}
       <div className={styles.meta}>
         <div className={styles.name}>
-          <h3>masterchain</h3>
-          <span className={styles.kind}>{t("purchased.kind")}</span>
+          <h3>{item.displayName}</h3>
+          <span className={styles.kind}>{item.productKey === "masterchain" ? t("purchased.kind") : t("purchased.kindMuedvox")}</span>
         </div>
         <p className={styles.claimed}>{t("purchased.purchasedOn", { date: fmtDate(item.purchasedAtISO) })}</p>
         {/* ★Refunded: the row stays (it happened), marked, with no Copy / Download of the key (conductor 2026-09-30). */}
@@ -336,11 +340,11 @@ function PurchaseCard({
           </p>
         ) : (
           <>
-            <LicenseKeyActions licenseKey={item.licenseKey} label={t("purchased.licenseLabel")} copyLabel={t("purchased.copy")} copiedLabel={t("purchased.copied")} failedLabel={t("purchased.copyFailed")} downloadLabel={t("purchased.download")} />
-            <p className={styles.howto}>{t("purchased.howto")}</p>
+            <LicenseKeyActions licenseKey={item.licenseKey} fileName={item.keyFileName} label={t("purchased.licenseLabel")} copyLabel={t("purchased.copy")} copiedLabel={t("purchased.copied")} failedLabel={t("purchased.copyFailed")} downloadLabel={t("purchased.download")} />
+            <p className={styles.howto}>{t("purchased.howto", { product: item.displayName, masterchain: item.productKey === "masterchain" ? "yes" : "no" })}</p>
             {item.windows && (
               <>
-                <p className={styles.howto} data-testid="portal-masterchain-windows-note">{t("windows.masterchainSameKey")}</p>
+                {item.productKey === "masterchain" && <p className={styles.howto} data-testid="portal-masterchain-windows-note">{t("windows.masterchainSameKey")}</p>}
                 <p className={styles.howto}>{t("windows.howto")}</p>
               </>
             )}
@@ -354,15 +358,15 @@ function PurchaseCard({
             <span className={styles.vlabel}>{t("versionLabel")}</span> {item.version}
           </span>
         )}
-        <a className={styles.dl} href={item.downloadUrl} download>
+        {item.downloadUrl && <a className={styles.dl} href={item.downloadUrl} download>
           {t("download")}
-          <small>{`masterchain${item.version ? ` ${item.version}` : ""}${fileExt(item.downloadUrl) ? ` · ${fileExt(item.downloadUrl)}` : ""}`}</small>
-        </a>
+          <small>{`${item.displayName}${item.version ? ` ${item.version}` : ""}${fileExt(item.downloadUrl) ? ` · ${fileExt(item.downloadUrl)}` : ""}`}</small>
+        </a>}
         {/* ★Windows: the same license key (conductor 2026-10-01). Shown only once it ships and while not refunded. */}
         {item.windows && (
           <a className={styles.dlAlt} href={item.windows.url} download data-testid="portal-masterchain-windows">
             {t("windows.masterchainDownload")}
-            <small>{`masterchain ${item.windows.version} · VST3 · ${fileExt(item.windows.url)}`}</small>
+            <small>{`${item.displayName} ${item.windows.version} · VST3 · ${fileExt(item.windows.url)}`}</small>
           </a>
         )}
       </div>

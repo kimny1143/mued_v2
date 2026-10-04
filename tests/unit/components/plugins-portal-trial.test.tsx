@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import en from "@/messages/en.json";
+import ja from "@/messages/ja.json";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: AnchorHTMLAttributes<HTMLAnchorElement>) => <a href={String(href)} {...props}>{children}</a>,
@@ -24,6 +25,7 @@ import { PluginsPortalView } from "@/app/dashboard/plugins/plugins-portal-view";
 
 const KEY = "TRIAL-SIGNED-KEY\n";
 const PURCHASE = {
+  productKey: "masterchain", displayName: "masterchain", keyFileName: "MUEDsp-masterchain.license.key",
   licenseKey: "PURCHASED-KEY", purchasedAt: new Date("2026-09-20Z"),
   version: "0.1.3", downloadUrl: "/downloads/masterchain.pkg",
 };
@@ -85,7 +87,21 @@ describe("portal trial card", () => {
     expect(document.body.textContent).not.toContain(KEY.trim());
     expect(document.querySelector("pre")?.textContent).toBe(PURCHASE.licenseKey);
     expect(screen.getAllByRole("button", { name: "Copy key" })).toHaveLength(1);
-    expect(screen.getAllByRole("button", { name: "Download license.key" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Download your key file (.key)" })).toHaveLength(1);
     expect(screen.getByRole("region", { name: "Trial" }).querySelector("button")).toBeNull();
   });
+});
+
+
+it.each([["en", en], ["ja", ja]] as const)("renders product-specific paid instructions in %s", (locale, messages) => {
+  const { container } = render(<NextIntlClientProvider locale={locale} messages={messages}>
+    <PluginsPortalView items={[]} purchases={[{
+      productKey: "muedvox", displayName: "MUEDvox", keyFileName: "MUEDvox.license.key",
+      licenseKey: "VOX-KEY", purchasedAtISO: "2026-10-01T00:00:00Z", downloadUrl: "", version: null,
+    }]} />
+  </NextIntlClientProvider>);
+  expect(screen.getByRole("heading", { name: "MUEDvox" })).toBeTruthy();
+  expect(container.textContent).toContain(locale === "ja" ? "MUEDvox の画面にドラッグ" : "drag it onto MUEDvox.");
+  expect(container.textContent).not.toContain("Drop license.key here");
+  expect(container.textContent).not.toContain("masterchain");
 });

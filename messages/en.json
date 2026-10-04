@@ -3072,13 +3072,14 @@
     "purchased": {
       "label": "Purchased",
       "kind": "Mastering chain",
+      "kindMuedvox": "Vocal harmonizer",
       "licenseLabel": "License key",
       "copy": "Copy key",
       "copied": "Copied",
       "copyFailed": "Could not copy. Select the key and copy it manually.",
-      "download": "Download license.key",
+      "download": "Download your key file (.key)",
       "refunded": "Refunded ({date}). The license key is no longer shown.",
-      "howto": "Download license.key and drag it onto masterchain (\"Drop license.key here\"). If drop doesn't work in your DAW, use \"Load license file…\", or copy the key and press \"Paste license key\".",
+      "howto": "Download your key file (.key) and drag it onto {product}{masterchain, select, yes { (\"Drop license.key here\")} other {}}. If drop doesn't work in your DAW, use \"Load license file…\", or copy the key and press \"Paste license key\".",
       "purchasedOn": "Purchased {date}"
     }
   }

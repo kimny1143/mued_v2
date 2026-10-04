@@ -9,10 +9,13 @@
  *
  * ★Data only — no secrets, no server imports — so the buy button can read it later (PR-C).
  */
-export type PaidProductKey = "masterchain";
+export type PaidProductKey = "masterchain" | "muedvox";
 
 export interface PaidProduct {
   key: PaidProductKey;
+  enabled: boolean;
+  displayName: string;
+  keyFileName: string;
   /** FastSpring product path, as it arrives in `order.completed` `data.items[].product`.
    *  ★Measured, not assumed: every live order (2026-10-01, webhook_events) carried "muedsp-masterchain". */
   fastspringPath: string;
@@ -27,15 +30,35 @@ export interface PaidProduct {
 export const PAID_PRODUCTS: Readonly<Record<PaidProductKey, PaidProduct>> = {
   masterchain: {
     key: "masterchain",
+    enabled: true,
+    displayName: "masterchain",
+    keyFileName: "MUEDsp-masterchain.license.key",
     fastspringPath: "muedsp-masterchain",
     productId: "muedsp_masterchain",
     scope: "masterchain",
     itemName: "MUEDsp masterchain",
+  },
+  // Disabled until the launch PR (conductor 2026-10-04): enable → deploy → kimny publishes
+  // the store; enabling early would sell a product whose download does not exist.
+  muedvox: {
+    key: "muedvox",
+    fastspringPath: "muedsp-vox",
+    productId: "muedsp_vox",
+    scope: "muedvox",
+    itemName: "MUEDvox",
+    displayName: "MUEDvox",
+    keyFileName: "MUEDvox.license.key",
+    enabled: false,
   },
 };
 
 /** The paid product for a FastSpring product path, or null when we do not sell it (yet). */
 export function paidProductByFastspringPath(path: string | undefined): PaidProduct | null {
   if (!path) return null;
-  return Object.values(PAID_PRODUCTS).find((p) => p.fastspringPath === path) ?? null;
+  return Object.values(PAID_PRODUCTS).find((p) => p.enabled && p.fastspringPath === path) ?? null;
+}
+
+/** Recorded purchases render even when fulfillment is disabled. */
+export function paidProductByProductId(productId: string): PaidProduct | null {
+  return Object.values(PAID_PRODUCTS).find((p) => p.productId === productId) ?? null;
 }

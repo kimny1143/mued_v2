@@ -13,6 +13,7 @@ import { logger } from '@/lib/utils/logger';
 import { MUEDSAT_DOWNLOAD_URL } from '@/lib/muedsat/config';
 import { MUEDLIM_DOWNLOAD_URL } from '@/lib/muedlim/config';
 import { MUEDRIVE_DOWNLOAD_URL } from '@/lib/muedrive/config';
+import { MUEDVOX_DOWNLOAD_URL } from '@/lib/muedvox/config';
 import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION } from '@/lib/masterchain/config';
 import { masterchainWindowsBuild } from '@/lib/plugins/windows-beta';
 import { formatUtcMinute } from '@/lib/masterchain/format';
@@ -35,8 +36,8 @@ function masterchainPortalInstructions(isJa: boolean) {
       ? 'ライセンスキーはポータルで確認できます。このメールアドレスでサインインしてください。'
       : 'Your license key is waiting in your portal — sign in with this email address:',
     howTo: isJa
-      ? 'ポータルで license.key をダウンロードし、masterchain の画面（「Drop license.key here」）にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをワンクリックでコピーして「Paste license key」を押してください。'
-      : 'In the portal: download license.key and drag it onto masterchain ("Drop license.key here"). If drop doesn\'t work in your DAW, use "Load license file…", or copy the key in one click and press "Paste license key".',
+      ? 'ポータルで鍵のファイル（.key）をダウンロードし、masterchain の画面（「Drop license.key here」）にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをワンクリックでコピーして「Paste license key」を押してください。'
+      : 'In the portal: download your key file (.key) and drag it onto masterchain ("Drop license.key here"). If drop doesn\'t work in your DAW, use "Load license file…", or copy the key in one click and press "Paste license key".',
   };
 }
 
@@ -1037,6 +1038,61 @@ Hoo MCP経由の自動送信
   },
 
 
+  /** Transactional MUEDvox delivery; keys remain in the buyer portal. */
+  muedvoxLicenseDelivery(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
+    const isJa = data.locale === 'ja';
+    const hasLink = !!MUEDVOX_DOWNLOAD_URL;
+    const subject = hasLink
+      ? isJa
+        ? '[MUEDsp] MUEDvox のダウンロードとライセンスの受け取り'
+        : '[MUEDsp] Your MUEDvox download and how to get your license'
+      : isJa
+        ? '[MUEDsp] MUEDvox のライセンスはポータルで受け取れます'
+        : '[MUEDsp] Your MUEDvox license is ready in your portal';
+
+    const intro = isJa
+      ? 'MUEDvox をご購入いただきありがとうございます。'
+      : 'Thank you for buying MUEDvox.';
+    const { portal } = masterchainPortalInstructions(isJa);
+    const howTo = isJa
+      ? 'ポータルで鍵のファイル（.key）をダウンロードし、MUEDvox の画面にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをコピーして「Paste license key」を押してください。'
+      : 'In the portal: download your key file (.key) and drag it onto MUEDvox. If drop doesn\'t work in your DAW, use "Load license file…", or copy the key and press "Paste license key".';
+    const formats = isJa ? 'macOS: AU・VST3・AAX。Windows: VST3。' : 'macOS: AU, VST3 and AAX. Windows: VST3.';
+
+    // Install first, then open the portal to retrieve the license.
+    const downloadHtml = hasLink
+      ? `<p style="text-align: center;">
+           <a href="${MUEDVOX_DOWNLOAD_URL}" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
+             ${isJa ? 'MUEDvox をダウンロード' : 'Download MUEDvox'}
+           </a>
+         </p>
+         <p style="color: #6b7280; font-size: 13px; text-align: center;">${formats}</p>`
+      : `<div class="info-box">
+           <p style="margin: 0;">${isJa
+             ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
+             : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you."}</p>
+         </div>`;
+    const downloadText = hasLink
+      ? `${isJa ? 'ダウンロード' : 'Download'}: ${MUEDVOX_DOWNLOAD_URL}\n${formats}`
+      : (isJa
+        ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
+        : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you.");
+
+    const html = `
+      <h2 style="color: #f5a524; margin-top: 0;">${isJa ? 'MUEDsp MUEDvox' : 'MUEDsp MUEDvox'}</h2>
+      <p>${intro}</p>
+      ${downloadHtml}
+      <p>${portal} <a href="${MASTERCHAIN_PORTAL_URL}">${MASTERCHAIN_PORTAL_URL}</a></p>
+      <p>${howTo}</p>
+      <p style="color: #9ca3af; font-size: 12px;">glasswerks inc. — mued.jp</p>
+    `;
+
+    const text = `${intro}\n\n${downloadText}\n\n${portal} ${MASTERCHAIN_PORTAL_URL}\n${howTo}\n\nglasswerks inc. — mued.jp`;
+
+    return { subject, html, text };
+  },
+
+
   /** Transactional trial instructions; expiry is shown explicitly in UTC. */
   masterchainTrialDelivery(data: { locale: 'ja' | 'en'; expiresAt: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
@@ -1689,6 +1745,18 @@ class EmailService {
       to,
       ...template,
       tags: [{ name: 'type', value: 'masterchain_license_delivery' }],
+    });
+  }
+
+  async sendMuedvoxLicenseDelivery(
+    to: EmailRecipient,
+    data: { locale: 'ja' | 'en' }
+  ): Promise<EmailResult> {
+    const template = emailTemplates.muedvoxLicenseDelivery(data);
+    return this.send({
+      to,
+      ...template,
+      tags: [{ name: 'type', value: 'muedvox_license_delivery' }],
     });
   }
 
