@@ -1,0 +1,94 @@
+{
+  "_about": "Customer-facing copy approved by kimny, verbatim (sales-path guard G3 — brief-sales-path-guard-20261004). messages/{locale}.json must equal this for every key in scope, and the scope may not hold a key that is not listed here. Change both in the same PR.",
+  "as_of": "2026-10-04",
+  "messages": {
+    "muedlim.form.emailLabel": "Email",
+    "muedlim.form.emailPlaceholder": "your@email",
+    "muedlim.form.errorEmail": "Please enter a valid email address.",
+    "muedlim.form.errorEmailFailed": "We couldn't send the download email. Please try again, or contact support@mued.jp.",
+    "muedlim.form.errorGeneric": "Something went wrong. Please try again.",
+    "muedlim.form.note": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
+    "muedlim.form.submit": "Download MUEDlim",
+    "muedlim.form.submitting": "Sending…",
+    "muedlim.form.successBody": "I've emailed you the download link. If it doesn't arrive, check your spam folder.",
+    "muedlim.form.successTitle": "Check your email.",
+    "muedrive.form.emailLabel": "Email",
+    "muedrive.form.emailPlaceholder": "your@email",
+    "muedrive.form.errorEmail": "Please enter a valid email address.",
+    "muedrive.form.errorEmailFailed": "We couldn't send the download email. Please try again, or contact support@mued.jp.",
+    "muedrive.form.errorGeneric": "Something went wrong. Please try again.",
+    "muedrive.form.note": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
+    "muedrive.form.submit": "Download MUEDrive",
+    "muedrive.form.submitting": "Sending…",
+    "muedrive.form.successBody": "I've emailed you the download link. If it doesn't arrive, check your spam folder.",
+    "muedrive.form.successTitle": "Check your email.",
+    "muedsat.form.emailLabel": "Email address",
+    "muedsat.form.emailPlaceholder": "your@email",
+    "muedsat.form.errorEmail": "Please enter a valid email address.",
+    "muedsat.form.errorEmailFailed": "We couldn't send the download email. Please try again, or contact support@mued.jp.",
+    "muedsat.form.errorGeneric": "Something went wrong. Please try again.",
+    "muedsat.form.note": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
+    "muedsat.form.submit": "Download MUEDsat",
+    "muedsat.form.submitting": "Sending…",
+    "muedsat.form.successBody": "We've sent your download link. If it's not there, check your spam folder.",
+    "muedsat.form.successTitle": "Check your inbox.",
+    "muedsp.buyTry.agreeCheckBelow": "I agree to the End-User License Agreement (EULA) below",
+    "muedsp.buyTry.agreeCheckLeft": "I agree to the End-User License Agreement (EULA) on the left",
+    "muedsp.buyTry.checkoutLoading": "Preparing checkout…",
+    "muedsp.buyTry.continueToCheckout": "Continue to checkout",
+    "muedsp.buyTry.demoNote": "The demo has no time limit. Each insert runs for the first 45 seconds. Settings aren't saved. \"Try masterchain\" starts the download and sends one receipt email.",
+    "muedsp.buyTry.emailLabel": "Email (to try it)",
+    "muedsp.buyTry.emailPlaceholder": "you@example.com",
+    "muedsp.buyTry.eulaConsentPrefix": "I have read and agree to the",
+    "muedsp.buyTry.eulaLabel": "EULA",
+    "muedsp.buyTry.modalClose": "Close",
+    "muedsp.buyTry.orderFormats": "macOS · VST3 · AU · AAX (Pro Tools)",
+    "muedsp.buyTry.orderKeyNote": "Get your license key from your mued.jp portal, using the email you buy with.",
+    "muedsp.buyTry.orderPrice": "$69",
+    "muedsp.buyTry.orderPriceLoading": "Checking the price…",
+    "muedsp.buyTry.orderProduct": "MUEDsp masterchain",
+    "muedsp.buyTry.orderTaxAdded": "Any sales tax is calculated on the next screen from your address",
+    "muedsp.buyTry.orderTaxIncluded": "Includes {taxName} {tax} ({rate})",
+    "muedsp.buyTry.orderTaxNote": "Tax and currency are confirmed on the next screen",
+    "muedsp.buyTry.signInNote": "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
+    "muedsp.buyTry.thanks": "Thank you for your purchase. Instructions will arrive shortly at the email you used at checkout. You can also get the download and your license key in your portal (mued.jp/dashboard/plugins).",
+    "muedsp.buyTry.thanksPortal": "Open your portal",
+    "muedsp.buyTry.try": "Try masterchain",
+    "muedsp.demo.emailLabel": "Email",
+    "muedsp.demo.emailNotice": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
+    "muedsp.demo.emailPlaceholder": "you@example.com",
+    "muedsp.demo.errors.disposable_email": "Please use an email address that isn't disposable.",
+    "muedsp.demo.errors.generic": "Couldn't start the download. Please try again.",
+    "muedsp.demo.errors.invalid_email": "Please enter a valid email address.",
+    "muedsp.demo.errors.rate_limited": "Please wait a moment and try again.",
+    "muedsp.demo.note": "The download starts right away. I'll send one email with the download link to this address as a receipt.",
+    "muedsp.demo.submit": "Download the demo",
+    "muedsp.demo.success": "Your download has started. If it didn't, use the link in the email.",
+    "muedsp.masterchain.buyLabel": "Coming soon",
+    "muedsp.masterchain.buyLabelLive": "Buy masterchain",
+    "muedsp.masterchain.priceLive": "One-time $69 (USD)",
+    "muedsp.windows.demoChoose": "Choose the one for your computer below. The confirmation email has both links too.",
+    "muedsp.windows.demoOtherMac": "Get the Mac version",
+    "muedsp.windows.demoOtherWindows": "Get the Windows version"
+  },
+  "emails": {
+    "muedsatDownloadWelcome": {
+      "subject": "[MUEDsat] Your download link"
+    },
+    "muedlimDownloadWelcome": {
+      "subject": "Your MUEDlim download link"
+    },
+    "muedriveDownloadWelcome": {
+      "subject": "Your MUEDrive download link"
+    },
+    "masterchainDemoDownload": {
+      "subject": "Your MUEDsp masterchain demo download"
+    },
+    "masterchainLicenseDelivery": {
+      "subject": "[MUEDsp] Your masterchain download and how to get your license"
+    }
+  },
+  "promiseLines": [
+    "Everything you've grabbed lives in your portal — always the latest build, one click away."
+  ]
+}

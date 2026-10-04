@@ -1,0 +1,92 @@
+{
+  "_about": "Customer-facing copy approved by kimny, verbatim (sales-path guard G3 — brief-sales-path-guard-20261004). messages/{locale}.json must equal this for every key in scope, and the scope may not hold a key that is not listed here. Change both in the same PR.",
+  "as_of": "2026-10-04",
+  "messages": {
+    "muedlim.form.emailLabel": "メールアドレス",
+    "muedlim.form.emailPlaceholder": "your@email",
+    "muedlim.form.errorEmail": "有効なメールアドレスを入力してください。",
+    "muedlim.form.errorEmailFailed": "ダウンロードメールを送信できませんでした。もう一度お試しいただくか、support@mued.jp までご連絡ください。",
+    "muedlim.form.errorGeneric": "エラーが発生しました。もう一度お試しください。",
+    "muedlim.form.note": "ダウンロードリンクの送付と、MUEDsp のお知らせにメールアドレスを使用します。配信はいつでも解除できます。",
+    "muedlim.form.submit": "MUEDlim をダウンロード",
+    "muedlim.form.submitting": "送信中…",
+    "muedlim.form.successBody": "ダウンロードリンクをメールでお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
+    "muedlim.form.successTitle": "メールをご確認ください。",
+    "muedrive.form.emailLabel": "メールアドレス",
+    "muedrive.form.emailPlaceholder": "your@email",
+    "muedrive.form.errorEmail": "有効なメールアドレスを入力してください。",
+    "muedrive.form.errorEmailFailed": "ダウンロードメールを送信できませんでした。もう一度お試しいただくか、support@mued.jp までご連絡ください。",
+    "muedrive.form.errorGeneric": "エラーが発生しました。もう一度お試しください。",
+    "muedrive.form.note": "ダウンロードリンクの送付と、MUEDsp のお知らせにメールアドレスを使用します。配信はいつでも解除できます。",
+    "muedrive.form.submit": "MUEDrive をダウンロード",
+    "muedrive.form.submitting": "送信中…",
+    "muedrive.form.successBody": "ダウンロードリンクをメールでお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
+    "muedrive.form.successTitle": "メールをご確認ください。",
+    "muedsat.form.emailLabel": "メールアドレス",
+    "muedsat.form.emailPlaceholder": "your@email",
+    "muedsat.form.errorEmail": "有効なメールアドレスを入力してください。",
+    "muedsat.form.errorEmailFailed": "ダウンロードメールを送信できませんでした。もう一度お試しいただくか、support@mued.jp までご連絡ください。",
+    "muedsat.form.errorGeneric": "エラーが発生しました。もう一度お試しください。",
+    "muedsat.form.note": "ダウンロードリンクの送付と、MUEDsp のお知らせにメールアドレスを使用します。配信はいつでも解除できます。",
+    "muedsat.form.submit": "MUEDsat をダウンロード",
+    "muedsat.form.submitting": "送信中…",
+    "muedsat.form.successBody": "ダウンロードリンクをメールでお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
+    "muedsat.form.successTitle": "メールをご確認ください。",
+    "muedsp.buyTry.agreeCheckBelow": "下の使用許諾契約（EULA）に同意します",
+    "muedsp.buyTry.agreeCheckLeft": "左の使用許諾契約（EULA）に同意します",
+    "muedsp.buyTry.checkoutLoading": "購入画面を準備しています…",
+    "muedsp.buyTry.continueToCheckout": "購入へ進む",
+    "muedsp.buyTry.demoNote": "デモは期限なし。挿すたびに最初の 45 秒だけ効きます。設定は保存されません。「masterchain を試す」でダウンロードが始まり、控えのメールを 1 通お送りします。",
+    "muedsp.buyTry.emailLabel": "メールアドレス（試す時に使います）",
+    "muedsp.buyTry.emailPlaceholder": "you@example.com",
+    "muedsp.buyTry.eulaConsentPrefix": "EULA を読み、内容に同意します:",
+    "muedsp.buyTry.eulaLabel": "使用許諾契約",
+    "muedsp.buyTry.modalClose": "閉じる",
+    "muedsp.buyTry.orderFormats": "macOS · VST3 · AU · AAX（Pro Tools）",
+    "muedsp.buyTry.orderKeyNote": "鍵は、購入時のメールアドレスで mued.jp のポータルから受け取れます。",
+    "muedsp.buyTry.orderPrice": "$69",
+    "muedsp.buyTry.orderPriceLoading": "価格を確認しています…",
+    "muedsp.buyTry.orderProduct": "MUEDsp masterchain",
+    "muedsp.buyTry.orderTaxAdded": "税がかかる場合は、次の画面で住所から計算されます",
+    "muedsp.buyTry.orderTaxIncluded": "{taxName} {tax} を含みます（{rate}）",
+    "muedsp.buyTry.orderTaxNote": "税・通貨は次の画面で確定します",
+    "muedsp.buyTry.signInNote": "購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。",
+    "muedsp.buyTry.thanks": "購入ありがとうございます。購入時のメールアドレスに、まもなく案内が届きます。ダウンロードと鍵は、ポータル（mued.jp/dashboard/plugins）でも受け取れます。",
+    "muedsp.buyTry.thanksPortal": "ポータルを開く",
+    "muedsp.buyTry.try": "masterchain を試す",
+    "muedsp.demo.emailLabel": "メールアドレス",
+    "muedsp.demo.emailNotice": "ダウンロードリンクの送付と、MUEDsp のお知らせにメールアドレスを使用します。配信はいつでも解除できます。",
+    "muedsp.demo.emailPlaceholder": "you@example.com",
+    "muedsp.demo.errors.disposable_email": "使い捨てではないメールアドレスでお試しください。",
+    "muedsp.demo.errors.generic": "ダウンロードを始められませんでした。もう一度お試しください。",
+    "muedsp.demo.errors.invalid_email": "有効なメールアドレスを入力してください。",
+    "muedsp.demo.errors.rate_limited": "少し時間をおいて、もう一度お試しください。",
+    "muedsp.demo.note": "ダウンロードはすぐに始まります。入力したアドレスに、ダウンロードリンクの控えを 1 通お送りします。",
+    "muedsp.demo.submit": "デモをダウンロード",
+    "muedsp.demo.success": "ダウンロードを始めました。始まらない場合は、メールのリンクからどうぞ。",
+    "muedsp.masterchain.buyLabel": "近日発売",
+    "muedsp.masterchain.buyLabelLive": "masterchain を購入",
+    "muedsp.masterchain.priceLive": "買い切り $69（USD）",
+    "muedsp.windows.demoChoose": "お使いのパソコンに合わせて、下から選んでください。控えのメールにも両方のリンクがあります。",
+    "muedsp.windows.demoOtherMac": "Mac 版はこちら",
+    "muedsp.windows.demoOtherWindows": "Windows 版はこちら"
+  },
+  "emails": {
+    "muedsatDownloadWelcome": {
+      "subject": "[MUEDsat] ダウンロードリンクをお届けします"
+    },
+    "muedlimDownloadWelcome": {
+      "subject": "MUEDlim のダウンロードリンクです"
+    },
+    "muedriveDownloadWelcome": {
+      "subject": "MUEDrive のダウンロードリンクです"
+    },
+    "masterchainDemoDownload": {
+      "subject": "MUEDsp masterchain デモのダウンロード"
+    },
+    "masterchainLicenseDelivery": {
+      "subject": "[MUEDsp] masterchain のダウンロードとライセンスの受け取り"
+    }
+  },
+  "promiseLines": []
+}
