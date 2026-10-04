@@ -1,0 +1,130 @@
+name: Sales path
+
+# ★G2 of the sales-path guard (kimny 2026-10-04「反省文は必要ないから仕組みを作ってくれ」・Chief brief
+#   `_chief decisions/brief-sales-path-guard-20261004.md`): the buttons that sell are measured in a real browser at
+#   phone width — e2e/sales-path/cta.spec.ts. Template = the free download button; a greyed-out, outlined,
+#   half-width or pushed-down CTA fails.
+# ★Runs on EVERY pull request (the merge gate allows only one skipped check), and does the heavy part only when
+#   the change touches the customer path (scripts/ci/sales-path.mjs) — otherwise it reports success in seconds.
+# ★Self-hosted, like test.yml (no GitHub billing). Analytics and FastSpring requests are aborted by the spec.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: sales-path-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  phone-ctas:
+    name: Sales path (phone CTAs)
+    runs-on: colima-mued-v2
+    timeout-minutes: 25
+    env:
+        # Mock values, as test.yml's Build. ★The Clerk key is a well-formed fake PRODUCTION key (pk_live_ + base64 of
+        #   "clerk.mued.invalid$"): with a pk_test_ key Clerk's middleware sends a first-time visitor through its
+        #   dev-browser handshake to the key's host, and Clerk answered "Invalid host" — every page was that error
+        #   (measured on the first run of this job, 2026-10-04). A live key does no handshake without cookies.
+        DATABASE_URL: "postgresql://build:build@localhost:5432/build"
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_live_Y2xlcmsubXVlZC5pbnZhbGlkJA=="
+        CLERK_SECRET_KEY: "sk_live_build"
+        CLERK_WEBHOOK_SECRET: "whsec_mock"
+        NEXT_PUBLIC_CLERK_SIGN_IN_URL: "/sign-in"
+        NEXT_PUBLIC_CLERK_SIGN_UP_URL: "/sign-up"
+        NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: "/dashboard"
+        NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: "/dashboard"
+        OPENAI_API_KEY: "sk-mock-openai-key-for-build"
+        OPENAI_MODEL: "gpt-4"
+        OPENAI_MAX_TOKENS: "2000"
+        STRIPE_SECRET_KEY: "sk_test_mock_stripe"
+        STRIPE_WEBHOOK_SECRET: "whsec_mock_stripe"
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_mock_stripe"
+        NEXT_PUBLIC_STRIPE_PRICE_BASIC: "price_mock_basic"
+        NEXT_PUBLIC_STRIPE_PRICE_PREMIUM: "price_mock_premium"
+        RESEND_API_KEY: "re_mock_resend"
+        NEXT_PUBLIC_APP_URL: "http://localhost:3100"
+        # ★Production-shaped: the masterchain purchase button renders OPEN only with this flag (as in production).
+        NEXT_PUBLIC_EULA_LIVE: "1"
+
+    steps:
+      # Same isolation check as test.yml (the runner pod must not reach the Mac / LAN / kubelet / k8s API).
+      - if: runner.environment == 'self-hosted'
+        run: |
+          set -u
+          can_reach() { timeout 3 bash -c "exec 3<>/dev/tcp/$1/$2" 2>/dev/null; }
+          if ! can_reach github.com 443; then
+            echo "::error::isolation check is broken: github.com:443 did not answer either"
+            exit 1
+          fi
+          reached=""
+          for target in 192.168.5.2:7000 192.168.5.1:22 192.168.5.1:10250 10.43.0.1:443; do
+            if can_reach "${target%:*}" "${target##*:}"; then reached="$reached $target"; fi
+          done
+          if [ -n "$reached" ]; then
+            echo "::error::隔離が崩れている — the runner reached:$reached"
+            exit 1
+          fi
+          echo "isolation ok"
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Detect customer-path changes
+        id: sales
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Every page of the PR's files (both sides of a rename), fail-closed — same as test.yml.
+          : > "$RUNNER_TEMP/files.txt"
+          page=1
+          while :; do
+            body=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/pulls/$PR/files?per_page=100&page=$page")
+            printf '%s' "$body" | jq -r '.[] | .filename, (.previous_filename // empty)' >> "$RUNNER_TEMP/files.txt"
+            [ "$(printf '%s' "$body" | jq 'length')" -lt 100 ] && break
+            page=$((page + 1))
+            if [ "$page" -gt 30 ]; then echo "more than 30 pages of files — refusing to guess" >&2; exit 1; fi
+          done
+          node scripts/ci/sales-path.mjs < "$RUNNER_TEMP/files.txt" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT" | tail -n 1
+
+      - name: Not the customer path — nothing to measure
+        if: steps.sales.outputs.sales != 'true'
+        run: echo "No customer-path file changed (scripts/ci/sales-path.mjs). This job reports success."
+
+      - run: npm ci --prefer-offline --no-audit
+        if: steps.sales.outputs.sales == 'true'
+
+      - name: Install Chromium
+        if: steps.sales.outputs.sales == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Build (production-shaped flags, mock secrets)
+        if: steps.sales.outputs.sales == 'true'
+        run: npm run build
+
+      - name: Measure the CTAs at phone width
+        if: steps.sales.outputs.sales == 'true'
+        run: npx playwright test -c playwright.sales-path.config.ts
+
+      - name: Failure screenshots
+        if: failure() && steps.sales.outputs.sales == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sales-path-screenshots
+          path: test-results/
+          retention-days: 7
