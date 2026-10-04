@@ -87,6 +87,7 @@ const nextConfig: NextConfig = {
       { source: '/muedsat', destination: '/en/muedsat', permanent: false },
       { source: '/muedlim', destination: '/en/muedlim', permanent: false },
       { source: '/muedrive', destination: '/en/muedrive', permanent: false },
+      { source: '/muedvox', destination: '/en/muedvox', permanent: false },
       { source: '/muedsp', destination: '/en/muedsp', permanent: false },
       // Safety net for the third legal page. The in-page links now carry the locale (the pages themselves
       // are the fix), but bare /tokushoho can still arrive from bookmarks, already-sent email and external
