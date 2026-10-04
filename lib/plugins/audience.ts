@@ -85,8 +85,49 @@ export function pluginAudienceStatus(plugin: PluginKey): boolean | string {
 }
 
 /**
- * Add a subscriber to the plugin's Resend audience. Returns true if a create was attempted, false on
- * no-op (unconfigured). Never throws — a duplicate-on-create or transient Resend error is swallowed.
+ * Put `email` on a Resend audience unless it is already there — ★never touching an existing contact.
+ *
+ * ★Why the lookup first (CCO #1221): since the opt-in box was removed (kimny 2026-10-04) EVERY download goes
+ *   through here, including people who already downloaded and people who later UNSUBSCRIBED. What
+ *   `contacts.create({ unsubscribed: false })` does to an existing contact was never measured here — if it
+ *   upserts, it would re-subscribe someone who opted out; if it errors, every second download would page the
+ *   operator. So: `contacts.get` first; an existing contact (subscribed OR unsubscribed) is left exactly as it
+ *   is; only Resend's `not_found` (measured 2026-10-04: `{ statusCode: 404, name: "not_found" }`) leads to create.
+ * ★Any other lookup error → no create (never risk re-subscribing someone), logged, reported as false.
+ * true = the person is on the list (newly added, or already there). false = not added (error) — the caller
+ * logs + alerts. Never throws.
+ */
+export async function addContactIfAbsent(
+  resend: Resend,
+  audienceId: string,
+  email: string,
+  tag: string,
+): Promise<boolean> {
+  try {
+    const found = await resend.contacts.get({ audienceId, email });
+    if (found.data) return true; // already on the list — subscribed or not, left untouched
+    if (found.error?.name !== "not_found") {
+      logger.error(`[${tag}] could not look the contact up — NOT creating (would risk re-subscribing)`, {
+        error: found.error?.message ?? "no data and no error",
+      });
+      return false;
+    }
+    // ★The SDK RETURNS `{ data, error }` on an API failure rather than throwing (resend@6.12.4).
+    const { error } = await resend.contacts.create({ audienceId, email, unsubscribed: false });
+    if (error) {
+      logger.error(`[${tag}] Resend REJECTED the subscribe`, { error: error.message ?? String(error) });
+      return false;
+    }
+    return true;
+  } catch (err) {
+    logger.error(`[${tag}] could not reach Resend to subscribe`, { err: String(err) });
+    return false;
+  }
+}
+
+/**
+ * Add a subscriber to the plugin's Resend audience (lookup first — see addContactIfAbsent). Returns false on
+ * no-op (unconfigured) or failure. Never throws.
  */
 export async function addPluginSubscriber(
   plugin: PluginKey,
@@ -95,27 +136,7 @@ export async function addPluginSubscriber(
   const audienceId = pluginAudienceId(plugin);
   const resend = getClient();
   if (!resend || !audienceId || !opts.email) return false; // no-op when unconfigured
-  try {
-    // ★The SDK RETURNS `{ data, error }` on an API failure rather than throwing (resend@6.12.4 —
-    //   see lib/masterchain/audience.ts for the measurement and the source line). Without reading
-    //   `error`, the `catch` never fires for an API rejection and `return true` runs regardless.
-    const { error } = await resend.contacts.create({
-      audienceId,
-      email: opts.email,
-      unsubscribed: false,
-    });
-    if (error) {
-      logger.error(`[plugins/audience] Resend REJECTED the subscribe (${plugin})`, {
-        error: error.message ?? String(error),
-      });
-      return false;
-    }
-    return true;
-  } catch (err) {
-    // ★Distinct from the rejection above: this is "could not reach Resend", not "Resend said no".
-    logger.error(`[plugins/audience] could not reach Resend to subscribe (${plugin})`, { err: String(err) });
-    return false;
-  }
+  return addContactIfAbsent(resend, audienceId, opts.email, `plugins/audience ${plugin}`);
 }
 
 /**

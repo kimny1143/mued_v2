@@ -15,7 +15,7 @@ type DemoError = "invalid_email" | "disposable_email" | "rate_limited" | "generi
  * masterchain's demo ("Try"). The purchase lives beside masterchain's heading (MasterchainBuyButton).
  * ★Same parts and order as the free three's form (components/features/muedsat-landing/muedsat-signup-form.tsx —
  *   kimny 2026-10-04: 「無料の方はデカいオレンジのボタンをただ押すだけなら赤いメッセージ…どっちがわかりやすいか、
- *   押しやすいか明白だ」): [email | filled orange Try] → the updates opt-in (default off) → one short line.
+ *   押しやすいか明白だ」): [email | filled orange Try] → email-use notice (news + unsubscribe; kimny 2026-10-04) → one short line.
  *   Try is always pressable; a malformed email answers with the red message instead of a greyed-out button.
  *   Only once: no second receipt after a successful send.
  */
@@ -26,7 +26,6 @@ export function MasterchainTry() {
   const locale = useLocale();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
-  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [website, setWebsite] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [error, setError] = useState<DemoError>("generic");
@@ -54,7 +53,7 @@ export function MasterchainTry() {
       const response = await fetch("/api/masterchain/demo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), locale, marketingOptIn, website, ...attribution }),
+        body: JSON.stringify({ email: email.trim(), locale, website, ...attribution }),
       });
       const data = await response.json();
       if (!response.ok || !data.ok || typeof data.downloadUrl !== "string") {
@@ -127,13 +126,10 @@ export function MasterchainTry() {
               {t("try")}
             </button>
           </div>
-          {status === "error" && <p id="masterchain-demo-error" role="alert" className="text-sm text-red-400">{td(`errors.${error}`)}</p>}
-          <label className="flex items-start gap-2 text-sm text-white/65">
-            <input type="checkbox" checked={marketingOptIn} onChange={(e) => setMarketingOptIn(e.target.checked)} className="mt-1 accent-[#f5a524]" />
-            {td("consent")}
-          </label>
         </>
       )}
+      <p className="text-sm text-white/65">{td("emailNotice")}</p>
+      {status === "error" && <p id="masterchain-demo-error" role="alert" className="text-sm text-red-400">{td(`errors.${error}`)}</p>}
       <p id="masterchain-demo-note" className="text-xs leading-relaxed text-white/50">{t("demoNote")}</p>
     </form>
   );

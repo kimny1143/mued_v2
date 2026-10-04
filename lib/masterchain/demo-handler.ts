@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { addContactIfAbsent } from "@/lib/plugins/audience";
 import { z } from "zod";
 import { rateLimit, checkRateLimit } from "@/lib/middleware/rate-limit";
 import { MUEDSP_AUDIENCE_ID, isHoneypotTripped } from "@/lib/plugins/registry";
@@ -12,7 +13,8 @@ import { isDisposableEmail } from "./key-issuance";
 const schema = z.object({
   email: z.string().trim().toLowerCase().email(),
   locale: z.enum(["ja", "en"]).default("en"),
-  marketingOptIn: z.boolean().default(false),
+  // Compatibility only: ignore client value. kimny 2026-10-04 reverted #1166 to "tell and send".
+  marketingOptIn: z.boolean().optional(),
   website: z.string().optional(),
   utm_source: z.string().optional(),
   utm_medium: z.string().optional(),
@@ -24,22 +26,8 @@ const schema = z.object({
 /** true = the person is on the list. ★false is logged by the caller AND alerted (same as the free three). */
 async function addDemoContact(email: string): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) return false;
-  try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const { error } = await resend.contacts.create({
-      audienceId: MUEDSP_AUDIENCE_ID,
-      email,
-      unsubscribed: false,
-    });
-    if (error) {
-      logger.error("[masterchain/demo] Resend REJECTED the add", { error: error.message ?? String(error) });
-      return false;
-    }
-    return true;
-  } catch (error) {
-    logger.error("[masterchain/demo] could not reach Resend to add", { error: String(error) });
-    return false;
-  }
+  // ★Lookup first, never touching an existing (possibly unsubscribed) contact — see addContactIfAbsent.
+  return addContactIfAbsent(new Resend(process.env.RESEND_API_KEY), MUEDSP_AUDIENCE_ID, email, "masterchain/demo");
 }
 
 export async function handleMasterchainDemo(request: NextRequest) {
@@ -53,28 +41,27 @@ export async function handleMasterchainDemo(request: NextRequest) {
   const windows = masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION);
   const success = () =>
     NextResponse.json(windows ? { ok: true, downloadUrl: MASTERCHAIN_DOWNLOAD_URL, windowsDownloadUrl: windows.url } : { ok: true, downloadUrl: MASTERCHAIN_DOWNLOAD_URL });
-  const { email, locale, marketingOptIn, website } = parsed.data;
+  const { email, locale, website } = parsed.data;
   if (isHoneypotTripped(website)) return success();
   if (isDisposableEmail(email)) return NextResponse.json({ error: "disposable_email" }, { status: 422 });
 
   const emailLimit = await checkRateLimit("plugin-email", `plugin-email:${email}`).catch(() => null);
   if (emailLimit && !emailLimit.success) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
-  if (marketingOptIn) {
-    const captured = await addDemoContact(email);
-    // ★A consented person who did not reach the list is a lost lead AND a promise we did not keep — alert
-    //   the operator, like the free three (lib/plugins/subscribe-handler.ts). Configured-only: without the
-    //   Resend key there is no list to reach, which is not a failure worth waking anyone for.
-    const alertEmail = process.env.OPERATOR_ALERT_EMAIL;
-    if (!captured && process.env.RESEND_API_KEY && alertEmail && emailService.isConfigured()) {
-      void emailService
-        .sendAdminAlert(alertEmail, "[masterchain/demo] Resend audience add failed for a consenting person — lead not captured. Check Resend / MUEDsp audience.")
-        .catch((err) => logger.error("[masterchain/demo] operator alert failed", { error: String(err) }));
-    }
+  // Form notice + news and unsubscribe in every mail (kimny 2026-10-04).
+  const captured = await addDemoContact(email);
+  // ★A subscriber who did not reach the list is a lost lead AND a promise we did not keep — alert
+  //   the operator, like the free three (lib/plugins/subscribe-handler.ts). Configured-only: without the
+  //   Resend key there is no list to reach, which is not a failure worth waking anyone for.
+  const alertEmail = process.env.OPERATOR_ALERT_EMAIL;
+  if (!captured && process.env.RESEND_API_KEY && alertEmail && emailService.isConfigured()) {
+    void emailService
+      .sendAdminAlert(alertEmail, "[masterchain/demo] Resend audience add failed for a subscriber — lead not captured. Check Resend / MUEDsp audience.")
+      .catch((err) => logger.error("[masterchain/demo] operator alert failed", { error: String(err) }));
   }
   // The browser receives the download directly; the receipt is best-effort, never an entitlement.
   try {
-    const result = await emailService.sendMasterchainDemoDownload({ email }, { locale, marketingOptIn });
+    const result = await emailService.sendMasterchainDemoDownload({ email }, { locale, marketingOptIn: true });
     if (!result.success) logger.error("[masterchain/demo] receipt failed", { error: result.error });
   } catch (error) {
     logger.error("[masterchain/demo] receipt threw", { error: String(error) });

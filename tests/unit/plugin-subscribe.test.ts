@@ -1,6 +1,6 @@
 /**
  * Registry migration contracts remain stable (source, endpoint, audience env, download URL, live).
- * Marketing consent now gates audience capture; handler behavior is covered in
+ * Form notice + news and unsubscribe in every mail (kimny 2026-10-04); handler behavior is covered in
  * plugin-subscribe-handler.test.ts for all three plugins.
  */
 import { describe, it, expect } from "vitest";
