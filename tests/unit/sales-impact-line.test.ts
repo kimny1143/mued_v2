@@ -3,7 +3,7 @@
  * 増える／変わらない／法の明文: <条文名>. "減る" cannot be written. Enforced by the merge gate (⑥).
  */
 import { describe, expect, it } from "vitest";
-import { parseSalesImpact, parseCopyApproval, parseGuardChange, touchesGuard } from "../../scripts/ci/sales-impact.mjs";
+import { parseSalesImpact, parseCopyApproval, parseGuardChange, touchesGuard, withoutFences } from "../../scripts/ci/sales-impact.mjs";
 import { salesImpactVoidReason } from "../../scripts/verify/pr-merge-gate";
 
 describe("parseSalesImpact", () => {
@@ -102,6 +102,10 @@ describe("guard-change provenance (CCO #1227)", () => {
     "tests/unit/sales-path-approved-copy.test.ts",
     "tests/unit/sales-impact-line.test.ts",
     "tests/unit/funnel-denominator-trend.test.ts",
+    "lib/funnel/numbers.ts",
+    "scripts/emit-funnel-numbers.ts",
+    "vitest.config.unit.ts",
+    ".github/workflows/test.yml",
   ])("%s is a guard file", (p) => {
     expect(touchesGuard([p])).toBe(true);
   });
@@ -126,5 +130,39 @@ describe("guard-change provenance (CCO #1227)", () => {
 
   it.each(["guard-change: kimny", "guard-change: kimny 10/4 conductor", "guard-change: 2026-10-04 conductor", `${GUARD}\n${GUARD}`])("malformed %j → rejected", (body) => {
     expect(parseGuardChange(body).ok).toBe(false);
+  });
+});
+
+describe("a format example inside a fenced code block is not a declaration (CCO #1229)", () => {
+  // ★Positive control: #1229's own body had the example in a ``` block plus the real line → counted 2 → VOID.
+  const BODY_1229 = [
+    "A PR that edits a guard file now needs one line in its body:",
+    "",
+    "```",
+    "guard-change: <who> <YYYY-MM-DD> <channel>",
+    "```",
+    "",
+    "guard-change: kimny 2026-10-04 この窓（merge の許可）",
+  ].join("\n");
+
+  it("#1229's body has exactly one guard-change line", () => {
+    expect(parseGuardChange(BODY_1229)).toMatchObject({ ok: true, who: "kimny", date: "2026-10-04" });
+  });
+
+  it.each([
+    ["sales-impact", "sales-impact: 増える: 例", "sales-impact: 変わらない: 本物", (b: string) => parseSalesImpact(b)],
+    ["copy-approval", "copy-approval: <誰> <YYYY-MM-DD> <経路>", "copy-approval: kimny 2026-10-04 Chief の窓", (b: string) => parseCopyApproval(b)],
+    ["guard-change", "guard-change: x 2026-01-01 例", "guard-change: kimny 2026-10-04 この窓", (b: string) => parseGuardChange(b)],
+  ])("%s: the fenced example is skipped, the real line is read", (_k, example, real, parse) => {
+    expect(parse(["~~~", example, "~~~", real].join("\n")).ok).toBe(true);
+    expect(parse(["```md", example, "```"].join("\n")).ok).toBe(false); // only an example → no line
+  });
+
+  it("an unclosed fence hides everything after it (fails closed: the line is not found → VOID)", () => {
+    expect(parseGuardChange("```\nguard-change: kimny 2026-10-04 この窓").ok).toBe(false);
+  });
+
+  it("text outside the fences is kept as is", () => {
+    expect(withoutFences("a\n```\nb\n```\nc")).toBe("a\nc");
   });
 });

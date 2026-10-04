@@ -20,11 +20,34 @@ const KINDS = ["増える", "変わらない", "法の明文", "kimny の判断"
 const EMPTY = /^[\s\-—–ー・.。…]*$/;
 
 /**
+ * The body without its fenced code blocks (``` or ~~~). A format example written inside a code block is not a
+ * declaration (CCO #1229: #1229's own example of the line made it count 2 lines and VOID).
+ * @param {string} body
+ */
+export function withoutFences(body) {
+  const out = [];
+  let fence = null;
+  for (const line of String(body ?? "").split(/\r?\n/)) {
+    const m = line.match(/^[ \t>]*(`{3,}|~{3,})/);
+    if (fence) {
+      if (m && m[1][0] === fence[0] && m[1].length >= fence.length) fence = null;
+      continue;
+    }
+    if (m) {
+      fence = m[1];
+      continue;
+    }
+    out.push(line);
+  }
+  return out.join("\n");
+}
+
+/**
  * @param {string} body
  * @returns {{ ok: true, kind: string, reason: string } | { ok: false, reason: string }}
  */
 export function parseSalesImpact(body) {
-  const lines = [...String(body ?? "").matchAll(LINE)].map((m) => m[1].trim());
+  const lines = [...withoutFences(body).matchAll(LINE)].map((m) => m[1].trim());
   if (lines.length === 0) return { ok: false, reason: "PR 本文に `sales-impact:` 行が無い" };
   if (lines.length > 1) return { ok: false, reason: `\`sales-impact:\` 行が ${lines.length} 行ある（1 行だけにする）` };
   const value = lines[0];
@@ -81,7 +104,10 @@ export const GUARD_FILES = [
   /^scripts\/ci\/sales-(path|impact)\.mjs$/,
   /^scripts\/verify\/pr-merge-gate\.ts$/,
   /^scripts\/verify\/gate-mutation-check\.ts$/,
-  /^lib\/funnel\/denominator-trend\.ts$/,
+  /^lib\/funnel\/(denominator-trend|numbers)\.ts$/,
+  /^scripts\/emit-funnel-numbers\.ts$/, // attaches G4 to the daily numbers
+  /^vitest\.config\.unit\.ts$/, // its include/exclude can drop the G1/G3/G4 tests from CI
+  /^\.github\/workflows\/test\.yml$/, // runs those tests
   /^tests\/unit\/(sales-path-[^/]+|sales-impact-line|funnel-denominator-trend)\.test\.ts$/,
 ];
 
@@ -97,7 +123,7 @@ export function touchesGuard(paths) {
  * @returns {{ ok: true, who: string, date: string, via: string } | { ok: false, reason: string }}
  */
 function parseProvenance(body, key, what) {
-  const lines = [...String(body ?? "").matchAll(new RegExp(`^[ \\t>*-]*${key}[ \\t]*[:：][ \\t]*(.*)$`, "gim"))].map((m) => m[1].trim());
+  const lines = [...withoutFences(body).matchAll(new RegExp(`^[ \\t>*-]*${key}[ \\t]*[:：][ \\t]*(.*)$`, "gim"))].map((m) => m[1].trim());
   if (lines.length === 0) return { ok: false, reason: `${what} の本文に \`${key}:\` 行が無い` };
   if (lines.length > 1) return { ok: false, reason: `\`${key}:\` 行が ${lines.length} 行ある（1 行だけにする）` };
   const m = lines[0].match(/^(\S+)\s+(\d{4}-\d{2}-\d{2})\s+(\S.*)$/);
