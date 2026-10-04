@@ -1,152 +1,36 @@
-/**
- * masterchain's demo block (kimny 2026-10-01): [Try masterchain] needs a well-formed email in the field below,
- * and sends only once. The purchase is MasterchainBuyButton (its own test).
- */
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { AnchorHTMLAttributes } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-const { loadCheckoutScript, openCheckout, m } = vi.hoisted(() => ({
-  loadCheckoutScript: vi.fn(() => Promise.resolve(true)),
-  openCheckout: vi.fn(() => true),
-  m: { purchaseLive: true, demoLive: true, assign: vi.fn(), fetch: vi.fn() },
-}));
-
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, expect, it, vi } from "vitest";
+import { MasterchainTry } from "@/components/features/muedsp-landing/masterchain-try";
+import { trackCtaClick } from "@/lib/analytics/gtag";
+const flags = vi.hoisted(() => ({ demo: true, windows: true }));
 vi.mock("@/lib/masterchain/config", () => ({
-  get MASTERCHAIN_PURCHASE_LIVE() { return m.purchaseLive; },
-  get MASTERCHAIN_DEMO_LIVE() { return m.demoLive; },
+  get MASTERCHAIN_DEMO_LIVE() { return flags.demo; },
+  get MASTERCHAIN_WINDOWS_LIVE() { return flags.windows; },
+  MASTERCHAIN_DOWNLOAD_URL: "https://mued.jp/downloads/demo.pkg",
+  MASTERCHAIN_WINDOWS_URL: "https://mued.jp/downloads/demo.zip",
+  MASTERCHAIN_WINDOWS_VERSION: "1.0.1",
 }));
-vi.mock("next/link", () => ({
-  default: ({ href, children, ...props }: AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a href={String(href)} {...props}>{children}</a>
-  ),
-}));
-vi.mock("next-intl", () => ({ useLocale: () => "en", useTranslations: () => (key: string) => key }));
-vi.mock("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams("utm_source=news&utm_term=audio&utm_medium=email&utm_campaign=launch&utm_content=cta"),
-}));
+vi.mock("next-intl", () => ({ useTranslations: () => (key: string) => key }));
 vi.mock("@/lib/analytics/gtag", () => ({ trackCtaClick: vi.fn() }));
-vi.mock("@/lib/masterchain/fastspring-checkout", () => ({
-  MASTERCHAIN_CHECKOUT_ENABLED: true,
-  ORDER_COMPLETED_EVENT: "muedsp:fastspring-order-completed",
-  loadCheckoutScript,
-  openCheckout,
-}));
-
-async function renderBlock(eulaLive: boolean) {
-  vi.stubEnv("NEXT_PUBLIC_EULA_LIVE", eulaLive ? "1" : "");
-  const { MasterchainTry } = await import("@/components/features/muedsp-landing/masterchain-try");
-  return render(<MasterchainTry />);
-}
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  vi.resetModules();
-  m.purchaseLive = true;
-  m.demoLive = true;
-  vi.stubGlobal("fetch", m.fetch);
-  vi.stubGlobal("location", { assign: m.assign });
-  m.fetch.mockResolvedValue({ ok: true, json: async () => ({ ok: true, downloadUrl: "https://mued.jp/downloads/demo.pkg" }) });
+beforeEach(() => { flags.demo = true; flags.windows = true; });
+it("offers native one-click download links with no form, registration or network prerequisite", () => {
+  const fetch = vi.spyOn(globalThis, "fetch");
+  const { container } = render(<MasterchainTry />);
+  expect(container.querySelector("form, input")).toBeNull();
+  const mac = screen.getByRole("link", { name: "downloadMac" });
+  expect(mac).toHaveAttribute("href", "https://mued.jp/downloads/demo.pkg");
+  expect(mac).toHaveAttribute("download");
+  expect(screen.getByRole("link", { name: "downloadWindows" })).toHaveAttribute("href", "https://mued.jp/downloads/demo.zip");
+  expect(screen.getByText("Windows · VST3")).toBeVisible();
+  fireEvent.click(mac);
+  expect(trackCtaClick).toHaveBeenCalledWith("masterchain", "demo_direct_mac", "download_link");
+  expect(fetch).not.toHaveBeenCalled();
 });
-afterEach(() => {
-  vi.unstubAllEnvs();
-  vi.unstubAllGlobals();
-});
-
-describe("TRY — works only with a well-formed email", () => {
-  it("★TRY is always pressable (the free three's form — kimny 10/4); a malformed email answers in red and sends nothing", async () => {
-    await renderBlock(true);
-    const tryBtn = screen.getByRole("button", { name: "try" });
-    expect(tryBtn).toBeEnabled(); // ★never greyed out before typing
-    fireEvent.click(tryBtn); // empty
-    expect(await screen.findByRole("alert")).toHaveTextContent("errors.invalid_email");
-    fireEvent.change(screen.getByLabelText("emailLabel"), { target: { value: "person@" } });
-    expect(screen.queryByRole("alert")).toBeNull(); // typing clears the red line
-    fireEvent.click(tryBtn);
-    expect(await screen.findByRole("alert")).toHaveTextContent("errors.invalid_email");
-    expect(m.fetch).not.toHaveBeenCalled();
-    expect(screen.queryByRole("checkbox")).toBeNull();
-    expect(screen.getByText("emailNotice")).toBeVisible();
-  });
-
-  it("TRY is the filled orange button of the free form, beside the email (not an outline above it)", async () => {
-    await renderBlock(true);
-    const tryBtn = screen.getByRole("button", { name: "try" });
-    expect(tryBtn.className).toContain("bg-[#f5a524]");
-    expect(tryBtn.className).not.toContain("border-[#f5a524]/60");
-    const email = screen.getByLabelText("emailLabel");
-    expect(email.parentElement).toBe(tryBtn.parentElement); // same row
-    expect(email.compareDocumentPosition(tryBtn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // email first
-  });
-
-  it("posts the demo without the legacy field and starts the download", async () => {
-    await renderBlock(true);
-    expect(screen.queryByRole("checkbox")).toBeNull();
-    expect(screen.getByText("emailNotice")).toBeVisible();
-    expect(screen.getByLabelText("emailLabel").parentElement?.nextElementSibling).toBe(screen.getByText("emailNotice"));
-    fireEvent.change(screen.getByLabelText("emailLabel"), { target: { value: "person@example.com" } });
-    fireEvent.click(screen.getByRole("button", { name: "try" }));
-    await waitFor(() => expect(m.assign).toHaveBeenCalledWith("https://mued.jp/downloads/demo.pkg"));
-    expect(m.fetch.mock.calls[0][0]).toBe("/api/masterchain/demo");
-    expect(JSON.parse(m.fetch.mock.calls[0][1].body)).toEqual({
-      email: "person@example.com", locale: "en", website: "",
-      utm_source: "news", utm_term: "audio", utm_medium: "email", utm_campaign: "launch", utm_content: "cta",
-    });
-    expect(screen.getByRole("status")).toHaveTextContent("success");
-    expect(screen.getByText("emailNotice")).toBeVisible();
-    expect(screen.getByText("demoNote")).toBeVisible();
-    expect(JSON.parse(m.fetch.mock.calls[0][1].body)).not.toHaveProperty("marketingOptIn");
-    expect(screen.queryByRole("button", { name: "try" })).toBeNull(); // ★no second send after success
-  });
-
-  it.each(["invalid_email", "disposable_email", "rate_limited", "unexpected"])("maps API error %s", async (error) => {
-    m.fetch.mockResolvedValue({ ok: false, json: async () => ({ error }) });
-    await renderBlock(true);
-    fireEvent.change(screen.getByLabelText("emailLabel"), { target: { value: "person@example.com" } });
-    fireEvent.click(screen.getByRole("button", { name: "try" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent(`errors.${error === "unexpected" ? "generic" : error}`);
-    expect(m.assign).not.toHaveBeenCalled();
-  });
-
-  it("the demo closed: renders nothing", async () => {
-    m.demoLive = false;
-    const { container } = await renderBlock(true);
-    expect(container).toBeEmptyDOMElement();
-  });
-});
-
-describe("★which download starts — the visitor's OS (masterchain for Windows, 2026-10-01)", () => {
-  const MAC = "https://mued.jp/downloads/demo.pkg";
-  const WIN = "https://mued.jp/downloads/demo-win.zip";
-  async function tryWith(userAgent: string, maxTouchPoints = 0) {
-    vi.stubGlobal("navigator", { userAgent, maxTouchPoints });
-    m.fetch.mockResolvedValue({ ok: true, json: async () => ({ ok: true, downloadUrl: MAC, windowsDownloadUrl: WIN }) });
-    await renderBlock(true);
-    fireEvent.change(screen.getByLabelText("emailLabel"), { target: { value: "person@example.com" } });
-    fireEvent.click(screen.getByRole("button", { name: "try" }));
-    await waitFor(() => expect(screen.getByRole("status")).toBeInTheDocument());
-  }
-
-  it("Windows: starts the zip, says it started, offers the Mac one", async () => {
-    await tryWith("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-    expect(m.assign).toHaveBeenCalledWith(WIN);
-    expect(screen.getByRole("status")).toHaveTextContent("success");
-    expect(screen.getByRole("link", { name: "demoOtherMac" })).toHaveAttribute("href", MAC);
-  });
-
-  it("★OS unknown (iPad: 'Macintosh' + touch): starts nothing and does NOT say it started — pick below, both links", async () => {
-    await tryWith("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15", 5);
-    expect(m.assign).not.toHaveBeenCalled();
-    expect(screen.getByRole("status")).toHaveTextContent("demoChoose");
-    expect(screen.getByRole("status")).not.toHaveTextContent("success"); // kimny: 「事実と違うことは書かないで」
-    expect(screen.getByRole("link", { name: "demoOtherMac" })).toHaveAttribute("href", MAC);
-    expect(screen.getByRole("link", { name: "demoOtherWindows" })).toHaveAttribute("href", WIN);
-  });
-});
-
-describe("the red line is the free form's wording (kimny 10/4「揃えて」)", () => {
-  it.each(["ja", "en"] as const)("%s: muedsp.demo.errors.invalid_email === muedsat.form.errorEmail", async (locale) => {
-    const messages = (await import(`@/messages/${locale}.json`)).default;
-    expect(messages.muedsp.demo.errors.invalid_email).toBe(messages.muedsat.form.errorEmail);
-  });
+it("respects the demo and Windows publication gates", () => {
+  flags.windows = false;
+  const view = render(<MasterchainTry />);
+  expect(screen.queryByRole("link", { name: "downloadWindows" })).toBeNull();
+  flags.demo = false;
+  view.rerender(<MasterchainTry />);
+  expect(view.container).toBeEmptyDOMElement();
 });

@@ -144,9 +144,13 @@ for (const locale of Object.keys(LOCALES) as Locale[]) {
     test("demo (try)", async ({ page }) => {
       const model = await template(page, locale);
       await open(page, `/${locale}/muedsp`);
-      const shape = await shapeOf(page.getByRole("button", { name: m.muedsp.buyTry.try, exact: true }));
-      expectSameShape(shape, model);
-      await expectBelowEmail(page, shape, "#masterchain-demo-email");
+      for (const name of [m.muedsp.buyTry.downloadMac, m.muedsp.buyTry.downloadWindows]) {
+        const link = page.getByRole("link", { name, exact: true });
+        expectSameShape(await shapeOf(link), model);
+        await expect(link).toHaveAttribute("href", /^https:\/\/mued\.jp\/downloads\/.+\.(pkg|zip)$/);
+        await expect(link).toHaveAttribute("download", "");
+      }
+      await expect(page.locator("#demo input, #demo form")).toHaveCount(0);
     });
 
     /**
