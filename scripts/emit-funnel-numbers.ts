@@ -12,8 +12,10 @@
  * CI, unattended — the shape of check that nobody re-runs by hand. The logic worth being sure about
  * therefore has to be reachable from the test suite, not only from the cron.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { toFunnelNumbers, type FunnelReport } from "../lib/funnel/numbers";
+import { denominatorTrend, type DailyNetNew } from "../lib/funnel/denominator-trend";
 
 const [reportPath, outPath] = process.argv.slice(2);
 if (!reportPath || !outPath) {
@@ -37,8 +39,34 @@ if (!trigger || !workflowRun || !sourceReport) {
 }
 
 const numbers = toFunnelNumbers(report, { trigger, workflow_run: workflowRun, source_report: sourceReport });
+
+// ★G4: the 21 daily reports ending at this one live next to it (reports/plugin-funnel/<date>.json on the data
+//   branch). A day that is not there, or not readable, is reported as missing — never as 0.
+const asOf = (report as { date?: unknown }).date;
+if (typeof asOf === "string" && /^\d{4}-\d{2}-\d{2}$/.test(asOf)) {
+  const dir = dirname(reportPath);
+  const series: DailyNetNew[] = [];
+  for (let i = 20; i >= 0; i--) {
+    const d = new Date(`${asOf}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - i);
+    const date = d.toISOString().slice(0, 10);
+    const file = join(dir, `${date}.json`);
+    let netNew: number | null = null;
+    try {
+      if (existsSync(file)) {
+        const v = (JSON.parse(readFileSync(file, "utf8")) as FunnelReport).resend?.mued_sp_net_new_day;
+        netNew = typeof v === "number" && Number.isFinite(v) ? v : null;
+      }
+    } catch {
+      netNew = null;
+    }
+    series.push({ date, netNew });
+  }
+  numbers.denominator_trend = denominatorTrend(series, asOf);
+}
 writeFileSync(outPath, `${JSON.stringify(numbers, null, 2)}\n`);
 console.log(`✓ funnel-numbers.json written from ${sourceReport}`);
 console.log(`  reachable_contacts=${numbers.reachable_contacts} net_new_day=${numbers.net_new_day} ` +
   `target=${numbers.target} remaining_to_target=${numbers.remaining_to_target} portal_registrations=${numbers.portal_registrations}`);
 console.log(`  measured_at=${numbers.measured_at} trigger=${numbers.trigger}`);
+console.log(`  denominator_trend=${JSON.stringify(numbers.denominator_trend ?? null)}`);
