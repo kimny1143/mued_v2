@@ -1,6 +1,6 @@
 {
   "schema": "newsletter-metrics/v1",
-  "generated_at": "2026-10-04T22:19:24+09:00",
+  "generated_at": "2026-10-05T16:35:04+09:00",
   "source": "Resend API（/emails/metrics・/broadcasts/{id}/clicked-links）。plugin-funnel-collector が毎朝書き出す（mued_v2 scripts/emit-newsletter-metrics.ts）。",
   "notes": [
     "「押した人」には配信停止のリンクを押した人も入る（Resend の数え方）。製品へのリンクの数は下のリンク別を見る。",
@@ -25,15 +25,15 @@
         "bounced_transient": 29,
         "bounced_permanent": 0,
         "suppressed": 27,
-        "unique_opened": 290,
-        "unique_clicked": 51,
+        "unique_opened": 292,
+        "unique_clicked": 52,
         "unsubscribed": 10,
         "complained": 0
       },
       "rates": {
         "delivery": 97.13,
-        "open": 29.53,
-        "click": 5.19,
+        "open": 29.74,
+        "click": 5.3,
         "unsubscribe": 1.02,
         "complaint": 0
       },
@@ -194,8 +194,8 @@
           "label": "英語の Windows の段",
           "lang": "en",
           "kind": "windows",
-          "unique": 39,
-          "clicks": 54
+          "unique": 41,
+          "clicks": 56
         },
         {
           "label": "日本語の Windows の段",
@@ -208,8 +208,8 @@
           "label": "配信停止",
           "lang": "",
           "kind": "unsubscribe",
-          "unique": 7,
-          "clicks": 7
+          "unique": 8,
+          "clicks": 8
         }
       ]
     },
@@ -226,15 +226,15 @@
         "bounced_transient": 20,
         "bounced_permanent": 1,
         "suppressed": 26,
-        "unique_opened": 275,
-        "unique_clicked": 54,
+        "unique_opened": 276,
+        "unique_clicked": 55,
         "unsubscribed": 11,
         "complained": 0
       },
       "rates": {
         "delivery": 97.94,
-        "open": 27.5,
-        "click": 5.4,
+        "open": 27.6,
+        "click": 5.5,
         "unsubscribe": 1.1,
         "complaint": 0
       },
@@ -409,15 +409,15 @@
           "label": "日本語の製品ページ",
           "lang": "ja",
           "kind": "product",
-          "unique": 7,
-          "clicks": 9
+          "unique": 8,
+          "clicks": 10
         },
         {
           "label": "日本語の Windows の段",
           "lang": "ja",
           "kind": "windows",
-          "unique": 3,
-          "clicks": 4
+          "unique": 4,
+          "clicks": 5
         },
         {
           "label": "/ja/eula",
