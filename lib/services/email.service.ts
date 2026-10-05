@@ -933,15 +933,15 @@ Hoo MCP経由の自動送信
   /** Broadcast preparation only. Resend replaces the unsubscribe placeholder when sending. */
   masterchainDemoFollowup(locale: 'ja' | 'en'): { subject: string; html: string; text: string } {
     const ja = locale === 'ja';
-    const subject = ja ? 'masterchainデモ版のダウンロード手順を改善しました' : 'We made the masterchain demo easier to download.';
+    const subject = ja ? 'masterchainデモ版をこのメールから直接ダウンロードできます' : 'Download the masterchain demo directly from this email.';
     const paragraphs = ja ? [
       '先日リリースした「MUEDsp masterchain」についてお知らせです。',
-      'デモ版の入手にメールアドレスの入力が必要だったため、手順を見直し、登録不要のダイレクトリンクに変更しました。',
+      '今回は、このメールから直接ダウンロードできるリンクをご用意しました。メールアドレスを再入力する必要はありません。',
       'お使いのOSのリンクから、1クリックでデモ版をダウンロードできます。',
     ] : [
       'Hi,',
-      'Our MUEDsp masterchain demo download asked for your email address. We want you to spend time mixing, not filling out forms.',
-      "We've updated our site so you can now download the demo with a single click, with no registration required. Choose your OS below.",
+      "To make it easier to try MUEDsp masterchain, we've included direct download links in this email.",
+      "No need to enter your email address again. Choose your OS below to download the demo with a single click.",
     ];
     const links = [{ label: ja ? 'Mac 版デモをダウンロード（AU / VST3 / AAX）' : 'Download the Mac demo (AU / VST3 / AAX)', url: MASTERCHAIN_DOWNLOAD_URL }];
     const windows = masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION);

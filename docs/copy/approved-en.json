@@ -41,7 +41,6 @@
     "muedsp.buyTry.demoNote": "The demo has no time limit. Each insert processes the first 45 seconds of audio, then passes audio through unprocessed. Settings and presets aren't saved.",
     "muedsp.buyTry.downloadMac": "Download demo for Mac",
     "muedsp.buyTry.downloadWindows": "Download demo for Windows",
-    "muedsp.buyTry.directDownloadNote": "One click to download. No registration or email address required.",
     "muedsp.buyTry.emailLabel": "Email (to try it)",
     "muedsp.buyTry.emailPlaceholder": "you@example.com",
     "muedsp.buyTry.eulaConsentPrefix": "I have read and agree to the",

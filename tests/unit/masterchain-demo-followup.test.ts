@@ -29,4 +29,7 @@ it.each(["ja", "en"] as const)("renders truthful direct links and a broadcast un
   expect(mail.html).toContain(locale === "ja" ? 'Windows 版デモをダウンロード（VST3）' : 'Download the Windows demo (VST3)');
   expect(mail.html).not.toContain("class=\"header\"");
   expect(mail.text).toContain("45");
+  expect(mail.text).toContain(locale === "ja" ? "このメールから直接" : "direct download links in this email");
+  expect(mail.text).not.toContain("We've updated our site");
+  expect(mail.text).not.toContain("登録不要のダイレクトリンクに変更");
 });
