@@ -8,7 +8,8 @@
 // when the audience id / API key are unset, so the code ships BEFORE the audiences are provisioned),
 // and ALWAYS best-effort — a sync failure is caught + logged and must NEVER surface to the caller.
 import { Resend } from "resend";
-import { logger } from "@/lib/utils/logger";
+import { addContactIfAbsent } from "@/lib/plugins/audience";
+import { MUEDSP_AUDIENCE_ID } from "@/lib/plugins/registry";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
@@ -37,8 +38,8 @@ export function isMasterchainAudienceEnabled(which: MasterchainAudience): boolea
 }
 
 /**
- * Add a contact to a masterchain audience. Returns true ONLY when Resend accepted the create;
- * false on no-op (unconfigured), an API rejection, or a thrown error. Never throws.
+ * Add a contact to a masterchain audience. Returns true when the person is on the list (added now, or already
+ * there and left untouched); false on no-op (unconfigured), an API rejection, or a thrown error. Never throws.
  *
  * ★WHY `try/catch` ALONE REPORTED SUCCESS FOREVER (freee measured 2026-09-10, resend@6.12.4;
  * confirmed here against the installed `node_modules/resend/dist/index.cjs`). The SDK does NOT throw
@@ -62,27 +63,21 @@ export async function addMasterchainContact(
   const audienceId = masterchainAudienceId(which);
   const resend = getClient();
   if (!resend || !audienceId || !opts.email) return false; // no-op when unconfigured
-  try {
-    // ★Read `error`. `const { error } =` and not `res?.error`: `?.` folds "no response object at all"
-    //   into undefined → falsy → the SUCCESS side, which is the same silence being fixed here.
-    //   A shape change then throws a TypeError into the catch below, where it is at least visible.
-    //   (Same reasoning as lib/marketing/audience-sync.ts, product課 2026-08-05.)
-    const { error } = await resend.contacts.create({
-      audienceId,
-      email: opts.email.trim().toLowerCase(),
-      unsubscribed: false,
-    });
-    if (error) {
-      // ★error-level, and worded as a REJECTION: distinct from the catch below, which means "we could
-      //   not even ask". "Did not fail" and "did not see a failure" must not print the same.
-      logger.error(`[masterchain/audience] Resend REJECTED the add (${which})`, {
-        error: error.message ?? String(error),
-      });
-      return false;
-    }
-    return true;
-  } catch (err) {
-    logger.error(`[masterchain/audience] could not reach Resend to add (${which})`, { err: String(err) });
-    return false;
-  }
+  // ★Lookup first (addContactIfAbsent): a person already on the list — including one who unsubscribed — is left
+  //   untouched. A bare create with `unsubscribed: false` could re-subscribe someone who opted out; it was harmless
+  //   only while the buyers add never ran (the consent tag was always "false" until 2026-10-06).
+  return addContactIfAbsent(resend, audienceId, opts.email.trim().toLowerCase(), `masterchain/audience ${which}`);
+}
+
+/**
+ * A new buyer onto the MUEDsp news list — the shared audience the free downloads and the demo use
+ * (MUEDSP_AUDIENCE_ID). kimny 2026-10-06 (conductor relay): 「購入者をメールに入れます。」 — told and sent: the cart
+ * shows the notice (muedsp.buyTry.cartAudienceNote) and sends marketingConsent "true" only from that screen, so
+ * orders from before it (no notice) are not added. Lookup first: an unsubscribed person stays unsubscribed.
+ * Returns false when unconfigured or on failure. Never throws.
+ */
+export async function addBuyerToMuedspNews(email: string): Promise<boolean> {
+  const resend = getClient();
+  if (!resend || !email) return false;
+  return addContactIfAbsent(resend, MUEDSP_AUDIENCE_ID, email.trim().toLowerCase(), "masterchain/buyer-news");
 }

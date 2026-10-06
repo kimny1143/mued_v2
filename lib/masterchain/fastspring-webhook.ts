@@ -26,7 +26,7 @@
 // storefront order (Kevin 審査後). Everything else (record, GA4 mapping, idempotency) is real.
 import { trackServerPurchase, type GA4PurchaseParams } from "@/lib/analytics/ga4-server";
 import { masterchainPurchases } from "@/db/schema";
-import { addMasterchainContact } from "@/lib/masterchain/audience";
+import { addBuyerToMuedspNews, addMasterchainContact } from "@/lib/masterchain/audience";
 import { MUEDVOX_DOWNLOAD_URL } from "@/lib/muedvox/config";
 import { MASTERCHAIN_DOWNLOAD_URL } from "@/lib/masterchain/config";
 import { issueLicense, LICENSE_VERSION } from "@/lib/masterchain/license";
@@ -382,12 +382,20 @@ export async function handleFastspringOrderCompleted(
     });
   }
 
-  // FAIL-OPEN — buyers marketing audience add, CONSENT-GATED (#670): a purchase is not a marketing
-  // opt-in. TODO(C4): finalize the opt-in capture (popup checkbox tag / double-opt-in). Until then a
-  // buyer without an explicit consent tag is NOT added — the transactional welcome (below) still sends.
+  // FAIL-OPEN — the buyer onto the MUEDsp news list + the buyers list, ONLY when the order says the notice was
+  // shown: kimny 2026-10-06 (conductor relay) 「購入者をメールに入れます。」 under kimny's 10/4 rule — tell, send, and
+  // let them unsubscribe. The cart shows the notice (muedsp.buyTry.cartAudienceNote) and tags marketingConsent
+  // "true"; orders from before it carry "false" and are not added (no notice was shown — conductor 10/6: new
+  // purchases only). Lookup first in both: an unsubscribed person stays unsubscribed.
+  // ★Awaited (as the license email below is): a fire-and-forget call can be cut off when the function returns.
+  //   Both never throw; a failure is logged and does not stop delivery.
   if (parsed.marketingConsent) {
-    addMasterchainContact("buyers", { email: parsed.email }).catch((err) =>
-      logger.error("[fastspring] buyers audience add failed", { error: String(err) }));
+    const [news, buyers] = await Promise.all([
+      addBuyerToMuedspNews(parsed.email),
+      addMasterchainContact("buyers", { email: parsed.email }),
+    ]);
+    if (!news) logger.error("[fastspring] buyer not added to the MUEDsp news list", { orderId: parsed.orderId });
+    if (!buyers) logger.warn("[fastspring] buyer not added to the buyers list (unset or failed)", { orderId: parsed.orderId });
   }
 
   // CRITICAL — deliver portal access instructions. ★Only when we just issued it: on a FastSpring retry `existing` is
