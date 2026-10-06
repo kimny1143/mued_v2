@@ -382,22 +382,6 @@ export async function handleFastspringOrderCompleted(
     });
   }
 
-  // FAIL-OPEN — the buyer onto the MUEDsp news list + the buyers list, ONLY when the order says the notice was
-  // shown: kimny 2026-10-06 (conductor relay) 「購入者をメールに入れます。」 under kimny's 10/4 rule — tell, send, and
-  // let them unsubscribe. The cart shows the notice (muedsp.buyTry.cartAudienceNote) and tags marketingConsent
-  // "true"; orders from before it carry "false" and are not added (no notice was shown — conductor 10/6: new
-  // purchases only). Lookup first in both: an unsubscribed person stays unsubscribed.
-  // ★Awaited (as the license email below is): a fire-and-forget call can be cut off when the function returns.
-  //   Both never throw; a failure is logged and does not stop delivery.
-  if (parsed.marketingConsent) {
-    const [news, buyers] = await Promise.all([
-      addBuyerToMuedspNews(parsed.email),
-      addMasterchainContact("buyers", { email: parsed.email }),
-    ]);
-    if (!news) logger.error("[fastspring] buyer not added to the MUEDsp news list", { orderId: parsed.orderId });
-    if (!buyers) logger.warn("[fastspring] buyer not added to the buyers list (unset or failed)", { orderId: parsed.orderId });
-  }
-
   // CRITICAL — deliver portal access instructions. ★Only when we just issued it: on a FastSpring retry `existing` is
   // already set, and re-sending would mail the same buyer a duplicate for one order.
   if (!existing?.licenseKey) {
@@ -454,7 +438,39 @@ export async function handleFastspringOrderCompleted(
     }
   }
 
+  // FAIL-OPEN — the buyer onto the MUEDsp news list + the buyers list, ONLY when the order says the notice was
+  // shown: kimny 2026-10-06 (conductor relay) 「購入者をメールに入れます。」 under kimny's 10/4 rule — tell, send, and
+  // let them unsubscribe. Orders from before the notice carry "false" and are not added (conductor 10/6: new
+  // purchases only). Lookup first in both: an unsubscribed person stays unsubscribed.
+  // ★`marketingConsent` is the tag's historical name (#670, when a checkbox was planned). Since 2026-10-06 it means
+  //   "this order was placed from the cart that shows the news notice" — not a ticked box. The cart sets it.
+  // ★AFTER the delivery (CCO #1238): the email is what the buyer paid for; a slow Resend must not delay it, hold the
+  //   transaction, or widen the window in which a FastSpring retry could re-send. Awaited (a fire-and-forget call
+  //   can be cut off when the function returns) but capped at AUDIENCE_ADD_TIMEOUT_MS; a timeout counts as "not
+  //   added", is logged, and changes nothing else. On a retry the adds run again — harmless, they look up first.
+  if (parsed.marketingConsent) {
+    const [news, buyers] = await Promise.all([
+      withTimeout(addBuyerToMuedspNews(parsed.email), AUDIENCE_ADD_TIMEOUT_MS),
+      withTimeout(addMasterchainContact("buyers", { email: parsed.email }), AUDIENCE_ADD_TIMEOUT_MS),
+    ]);
+    if (!news) logger.error("[fastspring] buyer not added to the MUEDsp news list (failed or timed out)", { orderId: parsed.orderId });
+    if (!buyers) logger.warn("[fastspring] buyer not added to the buyers list (unset, failed or timed out)", { orderId: parsed.orderId });
+  }
+
   return "ok";
+}
+
+/** The cap on each audience add after delivery (CCO #1238: ~3 s). */
+export const AUDIENCE_ADD_TIMEOUT_MS = 3000;
+
+/** `p`, or false if it has not settled within `ms` (or rejected). Never throws; the timer is always cleared. */
+async function withTimeout(p: Promise<boolean>, ms: number): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([p.catch(() => false), new Promise<boolean>((r) => { timer = setTimeout(() => r(false), ms); })]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

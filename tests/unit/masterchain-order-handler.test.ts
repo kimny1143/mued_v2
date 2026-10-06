@@ -42,7 +42,7 @@ vi.mock("@/lib/services/email.service", () => ({
   emailService: { sendMuedvoxLicenseDelivery, sendMasterchainLicenseDelivery, sendAdminAlert, isConfigured: () => true },
 }));
 
-import { handleFastspringOrderCompleted, licenseEmailLocale } from "@/lib/masterchain/fastspring-webhook";
+import { AUDIENCE_ADD_TIMEOUT_MS, handleFastspringOrderCompleted, licenseEmailLocale } from "@/lib/masterchain/fastspring-webhook";
 import * as paidProducts from "@/lib/plugins/paid-products";
 import { verifyLicense } from "@/lib/masterchain/license";
 
@@ -118,6 +118,28 @@ describe("★the buyer onto the MUEDsp news list (kimny 10/6 「購入者をメ�
     await handleFastspringOrderCompleted(tx as any, tagged(tag));
     expect(addBuyerToMuedspNews).not.toHaveBeenCalled();
     expect(addMasterchainContact).not.toHaveBeenCalled();
+  });
+
+  it("★after the delivery (CCO #1238): the license email is sent before either list add starts", async () => {
+    const { tx } = makeTx([]);
+    await handleFastspringOrderCompleted(tx as any, tagged("true"));
+    const sent = sendMasterchainLicenseDelivery.mock.invocationCallOrder[0];
+    expect(sent).toBeLessThan(addBuyerToMuedspNews.mock.invocationCallOrder[0]);
+    expect(sent).toBeLessThan(addMasterchainContact.mock.invocationCallOrder[0]);
+  });
+
+  it("★a hung add is cut off at AUDIENCE_ADD_TIMEOUT_MS — the handler still returns ok", async () => {
+    vi.useFakeTimers();
+    try {
+      addBuyerToMuedspNews.mockImplementationOnce(() => new Promise(() => {}));
+      const { tx } = makeTx([]);
+      const done = handleFastspringOrderCompleted(tx as any, tagged("true"));
+      await vi.advanceTimersByTimeAsync(AUDIENCE_ADD_TIMEOUT_MS);
+      await expect(done).resolves.toBe("ok");
+      expect(sendMasterchainLicenseDelivery).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("a failed add does not stop delivery (fail-open)", async () => {
