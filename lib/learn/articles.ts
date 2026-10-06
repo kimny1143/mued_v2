@@ -35,7 +35,7 @@ export interface LearnGate {
   body: string;
   note?: string; // ownership-framing line (email = your portal), common across articles
   ctaLabel: string;
-  ctaHref: string; // /en/muedlim + UTM (the DL entry; kimny 10/6 via Chief — straight to the download gate)
+  ctaHref: string; // /en/muedlim?from=learn-<slug> (the DL entry; kimny 10/6 via Chief). ★`from`, not utm_* — internal links keep the visit's source
   /**
    * The second line (kimny 10/6 「OK」 via Chief): the whole chain, masterchain. `<demo>…</demo>` marks the linked
    * words; the text is in docs/copy/approved-en.json (learnCta2Label) and checked by G3.

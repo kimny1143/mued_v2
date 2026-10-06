@@ -11,9 +11,9 @@ gate:
   body: "MUEDlim is a free true-peak limiter with your loudness in LUFS front and centre, and a true-peak ceiling (−1 dBTP by default) so your master holds up after encoding."
   note: "Your email becomes your portal — latest build one click away."
   ctaLabel: "Get MUEDlim — free"
-  ctaHref: "/en/muedlim?utm_source=learn&utm_medium=internal&utm_campaign=muedlim-from-learn&utm_content=lufs-targets-streaming"
+  ctaHref: "/en/muedlim?from=learn-lufs-targets-streaming"
   cta2Label: "Or the whole chain: MUEDsp masterchain ($69) — <demo>try the demo</demo>."
-  cta2Href: "/en/muedsp?utm_source=learn&utm_medium=internal&utm_campaign=masterchain-from-learn&utm_content=lufs-targets-streaming#demo"
+  cta2Href: "/en/muedsp?from=learn-lufs-targets-streaming#demo"
 _ops:
   status: draft
   track: "mued.jp/learn (EN reference / TDR-manual)"

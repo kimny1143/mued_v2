@@ -139,7 +139,8 @@ describe("/learn — the masterchain line under every article's CTA (kimny 10/6 
 
   it.each(getAllLearnArticles().map((a) => [a.slug, a] as const))("%s: the line is the approved text, verbatim, and links to the demo", (_slug, a) => {
     expect(a.gate.cta2Label).toBe(approved);
-    expect(a.gate.cta2Href).toMatch(/^\/en\/muedsp\?utm_source=learn&utm_medium=internal&utm_campaign=masterchain-from-learn&utm_content=[a-z-]+#demo$/);
-    expect(a.gate.cta2Href).toContain(`utm_content=${a.slug}#`);
+    // ★`?from=`, not utm_*: an internal UTM would overwrite the visit's search source in GA4 (Chief 10/6 (b)).
+    expect(a.gate.cta2Href).toBe(`/en/muedsp?from=learn-${a.slug}#demo`);
+    expect(a.gate.ctaHref).not.toMatch(/utm_/);
   });
 });

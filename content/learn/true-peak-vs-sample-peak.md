@@ -11,9 +11,9 @@ gate:
   body: "MUEDlim is a free true-peak limiter — it measures inter-sample peaks and holds your true peak to a ceiling you set (−1 dBTP by default), so what leaves your session survives the encoder."
   note: "Your email becomes your portal — latest build one click away."
   ctaLabel: "Get MUEDlim — free"
-  ctaHref: "/en/muedlim?utm_source=learn&utm_medium=internal&utm_campaign=muedlim-from-learn&utm_content=true-peak-vs-sample-peak"
+  ctaHref: "/en/muedlim?from=learn-true-peak-vs-sample-peak"
   cta2Label: "Or the whole chain: MUEDsp masterchain ($69) — <demo>try the demo</demo>."
-  cta2Href: "/en/muedsp?utm_source=learn&utm_medium=internal&utm_campaign=masterchain-from-learn&utm_content=true-peak-vs-sample-peak#demo"
+  cta2Href: "/en/muedsp?from=learn-true-peak-vs-sample-peak#demo"
 _ops:
   status: draft
   track: "mued.jp/learn (EN reference / TDR-manual)"
