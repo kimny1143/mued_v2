@@ -35,7 +35,13 @@ export interface LearnGate {
   body: string;
   note?: string; // ownership-framing line (email = your portal), common across articles
   ctaLabel: string;
-  ctaHref: string; // /muedsp (the DL entry — a forwarded/new reader lands and downloads)
+  ctaHref: string; // /en/muedlim + UTM (the DL entry; kimny 10/6 via Chief — straight to the download gate)
+  /**
+   * The second line (kimny 10/6 「OK」 via Chief): the whole chain, masterchain. `<demo>…</demo>` marks the linked
+   * words; the text is in docs/copy/approved-en.json (learnCta2Label) and checked by G3.
+   */
+  cta2Label?: string;
+  cta2Href?: string;
 }
 
 export interface LearnArticle {
@@ -76,6 +82,8 @@ export function getLearnArticle(slug: string): LearnArticle | null {
       note: gate.note ? String(gate.note) : undefined,
       ctaLabel: String(gate.ctaLabel ?? ""),
       ctaHref: String(gate.ctaHref ?? "/muedsp"),
+      cta2Label: gate.cta2Label ? String(gate.cta2Label) : undefined,
+      cta2Href: gate.cta2Href ? String(gate.cta2Href) : undefined,
     },
     body: content.trim(),
   };

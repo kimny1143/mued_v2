@@ -11,7 +11,9 @@ gate:
   body: "MUEDlim is a free true-peak limiter with exactly two knobs — INPUT for loudness, CEILING for the true-peak ceiling (−3 to 0 dBTP, default −1). Set the ceiling, drive the input, done."
   note: "Your email becomes your portal — latest build one click away."
   ctaLabel: "Get MUEDlim — free"
-  ctaHref: "/muedsp"
+  ctaHref: "/en/muedlim?utm_source=learn&utm_medium=internal&utm_campaign=muedlim-from-learn&utm_content=set-true-peak-ceiling"
+  cta2Label: "Or the whole chain: MUEDsp masterchain ($69) — <demo>try the demo</demo>."
+  cta2Href: "/en/muedsp?utm_source=learn&utm_medium=internal&utm_campaign=masterchain-from-learn&utm_content=set-true-peak-ceiling#demo"
 _ops:
   status: draft
   track: "mued.jp/learn (EN reference / TDR-manual)"

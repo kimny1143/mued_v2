@@ -30,6 +30,32 @@ const md: Components = {
   td: ({ node: _n, ...p }) => <td className="border border-white/10 px-3 py-2" {...p} />,
 };
 
+/**
+ * The second line under the gate button: plain text with the `<demo>…</demo>` words as the link (kimny 10/6 via Chief:
+ * the readers are people who master their own tracks — masterchain's buyers). No `<demo>` marker → the whole line links.
+ */
+function SecondLine({ label, href }: { label: string; href: string }) {
+  const m = label.match(/^(.*)<demo>(.*)<\/demo>(.*)$/);
+  const linkClass = "text-amber-400 underline underline-offset-2 hover:text-amber-300";
+  return (
+    <p data-testid="learn-cta2" className="mt-4 text-sm text-slate-300">
+      {m ? (
+        <>
+          {m[1]}
+          <Link href={href} className={linkClass}>
+            {m[2]}
+          </Link>
+          {m[3]}
+        </>
+      ) : (
+        <Link href={href} className={linkClass}>
+          {label}
+        </Link>
+      )}
+    </p>
+  );
+}
+
 /** The 1-hop gate CTA at the foot of every /learn article — reads the structured frontmatter `gate`. */
 function LearnGateCta({ gate }: { gate: LearnArticle["gate"] }) {
   return (
@@ -43,6 +69,7 @@ function LearnGateCta({ gate }: { gate: LearnArticle["gate"] }) {
       >
         {gate.ctaLabel}
       </Link>
+      {gate.cta2Label && gate.cta2Href ? <SecondLine label={gate.cta2Label} href={gate.cta2Href} /> : null}
     </aside>
   );
 }

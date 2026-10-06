@@ -14,6 +14,7 @@ import en from "@/messages/en.json";
 import approvedJa from "../../docs/copy/approved-ja.json";
 import approvedEn from "../../docs/copy/approved-en.json";
 import { emailTemplates } from "@/lib/services/email.service";
+import { getAllLearnArticles } from "@/lib/learn/articles";
 
 type Approved = { messages: Record<string, string>; emails: Record<string, { subject: string }>; promiseLines: string[] };
 const LOCALES = { ja: { messages: ja, approved: approvedJa as Approved }, en: { messages: en, approved: approvedEn as Approved } } as const;
@@ -125,5 +126,20 @@ describe("positive controls — this week's real cases are caught BY THE GUARD",
 
   it.each([["ja", "永久にアップデート無料"], ["en", "Lifetime updates guaranteed"]] as const)("%s: the added promise words are caught (%s)", (locale, line) => {
     expect(unapprovedPromiseLines(locale, { subject: "s", text: line }, (locale === "ja" ? approvedJa : approvedEn) as Approved)).toEqual([line]);
+  });
+});
+
+describe("/learn — the masterchain line under every article's CTA (kimny 10/6 「OK」 via Chief)", () => {
+  const approved = (approvedEn as { learnCta2Label?: string }).learnCta2Label;
+
+  it("the approved text exists and carries no promise word", () => {
+    expect(approved).toBeTruthy();
+    expect(PROMISE.en.test(approved!)).toBe(false);
+  });
+
+  it.each(getAllLearnArticles().map((a) => [a.slug, a] as const))("%s: the line is the approved text, verbatim, and links to the demo", (_slug, a) => {
+    expect(a.gate.cta2Label).toBe(approved);
+    expect(a.gate.cta2Href).toMatch(/^\/en\/muedsp\?utm_source=learn&utm_medium=internal&utm_campaign=masterchain-from-learn&utm_content=[a-z-]+#demo$/);
+    expect(a.gate.cta2Href).toContain(`utm_content=${a.slug}#`);
   });
 });

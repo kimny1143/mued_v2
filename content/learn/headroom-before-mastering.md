@@ -11,7 +11,9 @@ gate:
   body: "MUEDlim is a free true-peak limiter that keeps loudness and true peak visible while you compare your mix and master — useful for checking, not for forcing a premaster to a magic level."
   note: "Your email becomes your portal — latest build one click away."
   ctaLabel: "Get MUEDlim — free"
-  ctaHref: "/muedsp"
+  ctaHref: "/en/muedlim?utm_source=learn&utm_medium=internal&utm_campaign=muedlim-from-learn&utm_content=headroom-before-mastering"
+  cta2Label: "Or the whole chain: MUEDsp masterchain ($69) — <demo>try the demo</demo>."
+  cta2Href: "/en/muedsp?utm_source=learn&utm_medium=internal&utm_campaign=masterchain-from-learn&utm_content=headroom-before-mastering#demo"
 _ops:
   status: draft
   track: "mued.jp/learn (EN reference / TDR-manual)"
