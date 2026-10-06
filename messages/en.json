@@ -2705,7 +2705,7 @@
       "thanks": "Thank you for your purchase. Instructions will arrive shortly at the email you used at checkout. You can also get the download and your license key in your portal (mued.jp/dashboard/plugins).",
       "thanksPortal": "Open your portal",
       "orderProduct": "MUEDsp masterchain",
-      "orderFormats": "macOS · VST3 · AU · AAX (Pro Tools)",
+      "orderFormats": "macOS · VST3 · AU · AAX (Pro Tools) / Windows · VST3",
       "orderPrice": "$69",
       "orderTaxNote": "Tax and currency are confirmed on the next screen",
       "orderTaxIncluded": "Includes {taxName} {tax} ({rate})",
@@ -2717,6 +2717,7 @@
       "cartEula": "End-User License Agreement (EULA)",
       "agreeAndContinue": "Agree to the EULA and continue to checkout",
       "cartNextScreen": "Payment and email are entered on the next screen (FastSpring).",
+      "cartAudienceNote": "We'll also use your purchase email for news from MUEDsp. Unsubscribe anytime.",
       "checkoutLoading": "Preparing checkout…",
       "modalClose": "Close"
     },

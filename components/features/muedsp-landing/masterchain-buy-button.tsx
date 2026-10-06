@@ -108,7 +108,9 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
           onClose={close}
           checkoutReady={checkoutReady}
           onAgree={() => {
-            if (openCheckout({ eulaAccepted: true })) setOpen(false);
+            // ★marketingConsent "true" = this order was placed from the cart that shows the news notice
+            //   (cartAudienceNote) — the webhook adds the buyer to the MUEDsp news list only then (kimny 10/6).
+            if (openCheckout({ eulaAccepted: true, marketingConsent: true })) setOpen(false);
           }}
         />
       )}
@@ -338,6 +340,9 @@ function CartModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
             {checkoutReady ? tb("agreeAndContinue") : tb("checkoutLoading")}
           </button>
           <p className="mt-2.5 text-xs leading-[1.6] text-[#767676]">{tb("cartNextScreen")}</p>
+          {/* ★Told before buying (kimny 10/4 「告げて送る＋解除」, 10/6 「購入者をメールに入れます。」) — the same wording as
+              the free and demo forms. Pressing the button above sends marketingConsent "true" with the order. */}
+          <p data-testid="cart-audience-note" className="mt-1.5 text-xs leading-[1.6] text-[#767676]">{tb("cartAudienceNote")}</p>
         </div>
       </div>
     </div>

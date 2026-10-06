@@ -95,8 +95,11 @@ describe("the cart", () => {
     expect(go).toBeEnabled();
     // ★The button sits outside the EULA text — nothing has to be opened or scrolled to reach it.
     expect(screen.getByTestId("eula-modal-body")).not.toContainElement(go);
+    // ★The news notice is on the screen the button is pressed from (kimny 10/4 「告げて送る」, 10/6) …
+    expect(within(dialog).getByTestId("cart-audience-note")).toHaveTextContent("cartAudienceNote");
     fireEvent.click(go);
-    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true });
+    // … and the order says so: marketingConsent true → the webhook adds the buyer to the MUEDsp news list.
+    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: true });
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 

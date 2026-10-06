@@ -80,6 +80,25 @@ describe("Resend API rejection ≠ success", () => {
     await expect(addMasterchainContact("buyers", { email: "buyer@example.com" })).resolves.toBe(true);
   });
 
+  it("★★addMasterchainContact leaves an existing contact alone — an unsubscribed buyer is not re-subscribed", async () => {
+    const { addMasterchainContact } = await import("@/lib/masterchain/audience");
+    get.mockResolvedValueOnce({ data: { id: "con_1", unsubscribed: true }, error: null } as never);
+    await expect(addMasterchainContact("buyers", { email: "buyer@example.com" })).resolves.toBe(true);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("★addBuyerToMuedspNews: new → created on the MUEDsp news list; existing (even unsubscribed) → untouched", async () => {
+    const { addBuyerToMuedspNews } = await import("@/lib/masterchain/audience");
+    const { MUEDSP_AUDIENCE_ID } = await import("@/lib/plugins/registry");
+    create.mockResolvedValueOnce(ACCEPTED);
+    await expect(addBuyerToMuedspNews("Buyer@Example.com")).resolves.toBe(true);
+    expect(create).toHaveBeenCalledWith({ audienceId: MUEDSP_AUDIENCE_ID, email: "buyer@example.com", unsubscribed: false });
+    create.mockClear();
+    get.mockResolvedValueOnce({ data: { id: "con_2", unsubscribed: true }, error: null } as never);
+    await expect(addBuyerToMuedspNews("buyer@example.com")).resolves.toBe(true);
+    expect(create).not.toHaveBeenCalled();
+  });
+
   it("★addPluginSubscriber returns false when the API rejects — a false true also silences its alert", async () => {
     const { addPluginSubscriber } = await import("@/lib/plugins/audience");
     create.mockResolvedValueOnce(REJECTION);

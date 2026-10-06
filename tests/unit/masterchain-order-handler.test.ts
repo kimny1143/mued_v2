@@ -20,13 +20,14 @@ import { generateKeyPairSync } from "node:crypto";
 
 // vi.hoisted: vi.mock factories are hoisted above ordinary consts, so the spies they close over must
 // be created in a hoisted block too — otherwise the factory runs first and hits a TDZ error.
-const { sendMuedvoxLicenseDelivery, sendMasterchainLicenseDelivery, trackServerPurchase, addMasterchainContact, sendAdminAlert } = vi.hoisted(
+const { sendMuedvoxLicenseDelivery, sendMasterchainLicenseDelivery, trackServerPurchase, addMasterchainContact, addBuyerToMuedspNews, sendAdminAlert } = vi.hoisted(
   () => ({
     sendMasterchainLicenseDelivery: vi.fn(),
     sendMuedvoxLicenseDelivery: vi.fn(),
     sendAdminAlert: vi.fn(() => Promise.resolve({ success: true })),
     trackServerPurchase: vi.fn(() => Promise.resolve()),
     addMasterchainContact: vi.fn(() => Promise.resolve(true)),
+    addBuyerToMuedspNews: vi.fn(() => Promise.resolve(true)),
   }),
 );
 
@@ -35,13 +36,13 @@ vi.mock("@/lib/utils/logger", () => ({
 }));
 vi.mock("@/db", () => ({ db: { transaction: vi.fn() } }));
 vi.mock("@/db/schema", () => ({ masterchainPurchases: { orderId: "order_id", licenseKey: "license_key" } }));
-vi.mock("@/lib/masterchain/audience", () => ({ addMasterchainContact }));
+vi.mock("@/lib/masterchain/audience", () => ({ addMasterchainContact, addBuyerToMuedspNews }));
 vi.mock("@/lib/analytics/ga4-server", () => ({ trackServerPurchase }));
 vi.mock("@/lib/services/email.service", () => ({
   emailService: { sendMuedvoxLicenseDelivery, sendMasterchainLicenseDelivery, sendAdminAlert, isConfigured: () => true },
 }));
 
-import { handleFastspringOrderCompleted, licenseEmailLocale } from "@/lib/masterchain/fastspring-webhook";
+import { AUDIENCE_ADD_TIMEOUT_MS, handleFastspringOrderCompleted, licenseEmailLocale } from "@/lib/masterchain/fastspring-webhook";
 import * as paidProducts from "@/lib/plugins/paid-products";
 import { verifyLicense } from "@/lib/masterchain/license";
 
@@ -94,6 +95,61 @@ beforeEach(() => {
 afterEach(() => {
   if (originalEnv === undefined) delete process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY;
   else process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = originalEnv;
+});
+
+describe("★the buyer onto the MUEDsp news list (kimny 10/6 「購入者をメールに入れます。」・told in the cart)", () => {
+  const tagged = (marketingConsent?: string) => ({
+    ...event,
+    data: { ...event.data, tags: { ...event.data.tags, ...(marketingConsent === undefined ? {} : { marketingConsent }) } },
+  });
+
+  it("an order from the cart (marketingConsent \"true\") → the news list and the buyers list, awaited before returning", async () => {
+    let settled = false;
+    addBuyerToMuedspNews.mockImplementationOnce(() => new Promise((r) => setTimeout(() => { settled = true; r(true); }, 10)));
+    const { tx } = makeTx([]);
+    await handleFastspringOrderCompleted(tx as any, tagged("true"));
+    expect(addBuyerToMuedspNews).toHaveBeenCalledWith("buyer@example.com");
+    expect(addMasterchainContact).toHaveBeenCalledWith("buyers", { email: "buyer@example.com" });
+    expect(settled).toBe(true); // ★not fire-and-forget: the add finished before the handler returned
+  });
+
+  it.each([["\"false\" (an order from before the notice)", "false"], ["no tag", undefined]])("%s → not added", async (_l, tag) => {
+    const { tx } = makeTx([]);
+    await handleFastspringOrderCompleted(tx as any, tagged(tag));
+    expect(addBuyerToMuedspNews).not.toHaveBeenCalled();
+    expect(addMasterchainContact).not.toHaveBeenCalled();
+  });
+
+  it("★after the delivery (CCO #1238): the license email is sent before either list add starts", async () => {
+    const { tx } = makeTx([]);
+    await handleFastspringOrderCompleted(tx as any, tagged("true"));
+    const sent = sendMasterchainLicenseDelivery.mock.invocationCallOrder[0];
+    expect(sent).toBeLessThan(addBuyerToMuedspNews.mock.invocationCallOrder[0]);
+    expect(sent).toBeLessThan(addMasterchainContact.mock.invocationCallOrder[0]);
+  });
+
+  it("★a hung add is cut off at AUDIENCE_ADD_TIMEOUT_MS — the handler still returns ok", async () => {
+    vi.useFakeTimers();
+    try {
+      addBuyerToMuedspNews.mockImplementationOnce(() => new Promise(() => {}));
+      const { tx } = makeTx([]);
+      const done = handleFastspringOrderCompleted(tx as any, tagged("true"));
+      await vi.advanceTimersByTimeAsync(AUDIENCE_ADD_TIMEOUT_MS);
+      await expect(done).resolves.toBe("ok");
+      expect(sendMasterchainLicenseDelivery).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a failed add does not stop delivery (fail-open)", async () => {
+    addBuyerToMuedspNews.mockResolvedValueOnce(false);
+    addMasterchainContact.mockResolvedValueOnce(false);
+    const { tx, inserted } = makeTx([]);
+    await expect(handleFastspringOrderCompleted(tx as any, tagged("true"))).resolves.toBe("ok");
+    expect(inserted).toHaveLength(1);
+    expect(sendMasterchainLicenseDelivery).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("handleFastspringOrderCompleted — issuance", () => {
