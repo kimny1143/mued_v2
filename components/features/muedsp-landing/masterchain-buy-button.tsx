@@ -157,7 +157,7 @@ function useOrderQuote(checkoutReady: boolean): QuoteState {
 
 // The product image is masterchain 1.0.1's own screen (kimny 10/4: 「製品の画像はUIスクショを使って欲しい」) — the
 // same file the product page shows (2186×912), shown whole at thumbnail size.
-const CART_THUMB = "/muedsp/masterchain-1.0.1-demo.webp";
+const CART_THUMB = "/muedsp/masterchain-1.0.1-licensed.webp";
 
 /**
  * The cart (kimny 2026-10-04, Chief plan-cart-flow-20261004 + mock cart-mock/ @ _chief 01616db): the ORDER is the

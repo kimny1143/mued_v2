@@ -76,18 +76,24 @@ it("★with the demo open, no user-facing copy still calls masterchain \"in deve
   expect(DEV.test("全段の masterchain は開発中。")).toBe(true);
 });
 
-it("★the masterchain image is the real 1.0.1 screen everywhere, never the old mock (kimny: no dummies)", () => {
+it("★the masterchain image is the real LICENSED 1.0.1 screen everywhere — never the old mock or the DEMO screen (kimny 10/6)", () => {
+  // kimny 10/6 (conductor relay 「muedjpにも使ってOK」, then in the mued window 「全部差し替える」「（デモ）を消す」): the press
+  // screen dsp captured while processing a real track, LICENSED — in all four places, so no page shows a DEMO badge.
   for (const f of [
     "components/features/muedsp-landing/muedsp-landing-content.tsx",
+    "components/features/muedsp-landing/masterchain-buy-button.tsx",
     "components/features/landing/integrated-landing-content-v2.tsx",
     "components/features/landing/studio-showroom.tsx",
   ]) {
     const src = readFileSync(f, "utf8");
-    expect(src, f).toContain("/muedsp/masterchain-1.0.1-demo.webp");
-    expect(src, f).not.toMatch(/"\/muedsp\/masterchain-mock\.webp"/);
+    expect(src, f).toContain('"/muedsp/masterchain-1.0.1-licensed.webp"');
+    expect(src, f).not.toMatch(/"\/muedsp\/masterchain-(mock|1\.0\.1-demo)\.webp"/);
   }
-  // ★The captions say what it is — not "illustrative".
-  for (const m of [ja, en]) expect(m.muedsp.masterchain.mockLabel).toContain("1.0.1");
+  // ★The captions say what it is — and no longer "(demo)": the screen is the licensed plugin.
+  for (const m of [ja, en]) {
+    expect(m.muedsp.masterchain.mockLabel).toContain("1.0.1");
+    for (const v of [m.muedsp.masterchain.mockLabel, m.studioShowroom.masterAlt, m.studioShowroom.mockNote]) expect(v).not.toMatch(/デモ|demo/i);
+  }
 });
 
 it("★llms.txt: the price leads and the demo is a footnote; while purchase is closed it still says sales have not started (kimny / CCO 2026-09-30)", () => {

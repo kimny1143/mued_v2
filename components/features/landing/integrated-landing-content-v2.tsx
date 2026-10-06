@@ -34,7 +34,7 @@ import { trackCtaClick } from "@/lib/analytics/gtag";
 // Real product renders (v1 poster stills). MASTER = the MUEDsp masterchain flagship MOCK (in
 // development — an honest preview, not the shipping plugin; /muedsp §1 carries the full label).
 const RENDER_MIX = "/muedial-hoo-mixing-console.webp";
-const RENDER_MASTER = "/muedsp/masterchain-1.0.1-demo.webp"; // the real 1.0.1 screen (dsp 2026-09-30)
+const RENDER_MASTER = "/muedsp/masterchain-1.0.1-licensed.webp"; // the LICENSED 1.0.1 screen, processing a real track (dsp 2026-10-06)
 // MUEDear: a real game screenshot (MuFreQ), NOT the atmospheric hero-bg — the bg rendered as an
 // empty-looking black frame (kimny: quality-signal damage). This is an actual app UI still.
 const RENDER_TRAIN = "/images/muedear/mufreq.webp";
@@ -122,11 +122,11 @@ export function IntegratedLandingContentV2() {
           render={RENDER_MASTER}
           renderAlt={
             isJa
-              ? "MUEDsp masterchain 1.0.1 の画面（デモ）"
-              : "The MUEDsp masterchain 1.0.1 screen (demo)"
+              ? "MUEDsp masterchain 1.0.1 の画面"
+              : "The MUEDsp masterchain 1.0.1 screen"
           }
           renderW={2186}
-          renderH={912}
+          renderH={910}
           reverse
           surface
           cta={

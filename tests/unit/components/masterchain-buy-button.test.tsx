@@ -119,7 +119,7 @@ describe("the cart", () => {
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     const order = screen.getByTestId("order-panel");
     for (const key of ["orderProduct", "orderFormats", "orderKeyNote", "cartTotal", "cartNextScreen"]) expect(order).toHaveTextContent(key);
-    expect(order.querySelector("img")?.getAttribute("src")).toContain("masterchain-1.0.1-demo.webp");
+    expect(order.querySelector("img")?.getAttribute("src")).toContain("masterchain-1.0.1-licensed.webp");
     expect(screen.getByTestId("eula-modal-body")).not.toContainElement(screen.getByTestId("order-price"));
   });
 

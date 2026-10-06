@@ -46,9 +46,11 @@ const FACEPLATE_MUEDRIVE = "/muedrive/faceplate.png";
 // masterchain flagship image — the REAL 1.0.1 screen (kimny: no dummies). dsp 2026-09-30: built from
 // 1.0.1 source (main c5b601b2) as a capture-only standalone that opens no audio device, no key (DEMO
 // badge, before the fade), audio stopped so meters read "--". Source PNG
-// _mued-dsp/build/screens/masterchain-1.0.1-demo-ui.png sha256 17618b70…aa81b (2186×912) → cwebp -q 86.
+// The LICENSED 1.0.1 screen, processing a real track (dsp 2026-10-06, kimny 「muedjpにも使ってOK」): public/press/
+// masterchain-1.0.1_screen_2x.png sha256 05de2fd1…1993d (2186×910) → cwebp -q 86. The demo screen (masterchain-1.0.1-demo.webp,
+// with the DEMO badge) stays on disk but is no longer referenced.
 // The old mock (/muedsp/masterchain-mock.webp) stays on disk but is no longer referenced.
-const MASTERCHAIN_MOCK = "/muedsp/masterchain-1.0.1-demo.webp";
+const MASTERCHAIN_MOCK = "/muedsp/masterchain-1.0.1-licensed.webp";
 
 // MUEDsat saturation: four knobs; Bypass is a header toggle (bypassNote, not counted).
 const KNOBS = ["drive", "mix", "air", "output"] as const;
@@ -138,11 +140,11 @@ export function MuedspLandingContent() {
                   src={MASTERCHAIN_MOCK}
                   alt={
                     isJa
-                      ? "MUEDsp masterchain 1.0.1 の画面（デモ）"
-                      : "The MUEDsp masterchain 1.0.1 screen (demo)"
+                      ? "MUEDsp masterchain 1.0.1 の画面"
+                      : "The MUEDsp masterchain 1.0.1 screen"
                   }
                   width={2186}
-                  height={912}
+                  height={910}
                   priority
                   sizes="(min-width: 768px) 720px, 90vw"
                   className="h-auto w-full rounded-lg"

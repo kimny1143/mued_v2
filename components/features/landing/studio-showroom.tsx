@@ -182,9 +182,9 @@ export async function StudioShowroom({
                   THE FINISHING TOUCH.
                 </span>
                 <Image
-                  src="/muedsp/masterchain-1.0.1-demo.webp"
+                  src="/muedsp/masterchain-1.0.1-licensed.webp"
                   width={2186}
-                  height={912}
+                  height={910}
                   alt={t("masterAlt")}
                   sizes="(min-width: 1280px) 1120px, 92vw"
                 />
