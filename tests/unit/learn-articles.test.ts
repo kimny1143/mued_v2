@@ -41,7 +41,9 @@ describe("learn articles loader", () => {
       expect(a!.title).toBeTruthy();
       expect(a!.seoTitle).toContain("MUED"); // <title> brand suffix
       expect(a!.description.length).toBeGreaterThan(20);
-      expect(a!.gate.ctaHref).toBe("/muedsp"); // the 1-hop gate target
+      // The 1-hop gate target: the MUEDlim download gate (kimny 10/6 via Chief), tagged with the article.
+      // ★`?from=`, not utm_*: a UTM on an internal link would overwrite the visit's search source in GA4 (Chief 10/6 (b)).
+      expect(a!.gate.ctaHref).toBe(`/en/muedlim?from=learn-${slug}`);
       expect(a!.gate.ctaLabel).toBeTruthy();
       expect(a!.gate.heading).toBeTruthy();
       expect(a!.body.length).toBeGreaterThan(100);

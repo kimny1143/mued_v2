@@ -11,7 +11,9 @@ gate:
   body: "MUEDlim is a free true-peak limiter with your loudness in LUFS front and centre and a true-peak ceiling (−1 dBTP by default) — the two things this guide is about, in one plugin."
   note: "Your email becomes your portal, so the latest build is always one click away."
   ctaLabel: "Get MUEDlim — free"
-  ctaHref: "/muedsp"
+  ctaHref: "/en/muedlim?from=learn-loudness-and-true-peak"
+  cta2Label: "Or the whole chain: MUEDsp masterchain ($69) — <demo>try the demo</demo>."
+  cta2Href: "/en/muedsp?from=learn-loudness-and-true-peak#demo"
 _ops:
   status: draft
   track: "mued.jp/learn (EN reference / TDR-manual)"

@@ -11,7 +11,9 @@ gate:
   body: "MUEDlim is a free true-peak limiter with a deliberately small control set, so you can focus on loudness, peak safety and the sound of the result."
   note: "Your email becomes your portal — latest build one click away."
   ctaLabel: "Get MUEDlim — free"
-  ctaHref: "/muedsp"
+  ctaHref: "/en/muedlim?from=learn-limiter-release-and-lookahead"
+  cta2Label: "Or the whole chain: MUEDsp masterchain ($69) — <demo>try the demo</demo>."
+  cta2Href: "/en/muedsp?from=learn-limiter-release-and-lookahead#demo"
 _ops:
   status: draft
   track: "mued.jp/learn (EN reference / TDR-manual)"

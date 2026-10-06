@@ -11,7 +11,9 @@ gate:
   body: "MUEDlim is a free true-peak limiter with integrated loudness and true peak in view, so you can judge the master before a platform applies playback gain."
   note: "Your email becomes your portal — latest build one click away."
   ctaLabel: "Get MUEDlim — free"
-  ctaHref: "/muedsp"
+  ctaHref: "/en/muedlim?from=learn-streaming-loudness-normalization"
+  cta2Label: "Or the whole chain: MUEDsp masterchain ($69) — <demo>try the demo</demo>."
+  cta2Href: "/en/muedsp?from=learn-streaming-loudness-normalization#demo"
 _ops:
   status: draft
   track: "mued.jp/learn (EN reference / TDR-manual)"

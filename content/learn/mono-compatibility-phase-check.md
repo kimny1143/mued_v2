@@ -11,7 +11,9 @@ gate:
   body: "MUEDlim is a free true-peak limiter for the final loudness and peak check after your stereo and mono balances are working as intended."
   note: "Your email becomes your portal — latest build one click away."
   ctaLabel: "Get MUEDlim — free"
-  ctaHref: "/muedsp"
+  ctaHref: "/en/muedlim?from=learn-mono-compatibility-phase-check"
+  cta2Label: "Or the whole chain: MUEDsp masterchain ($69) — <demo>try the demo</demo>."
+  cta2Href: "/en/muedsp?from=learn-mono-compatibility-phase-check#demo"
 _ops:
   status: draft
   track: "mued.jp/learn (EN reference / TDR-manual)"
