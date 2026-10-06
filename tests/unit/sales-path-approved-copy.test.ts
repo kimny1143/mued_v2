@@ -27,6 +27,7 @@ export const SCOPE_KEYS = [
   "muedsp.windows.demoChoose",
   "muedsp.windows.demoOtherMac",
   "muedsp.windows.demoOtherWindows",
+  "muedlim.whyFree.masterchainLine", // /muedlim → masterchain (kimny 10/6 「上の案でOK」 via Chief)
 ] as const;
 
 /** Promise words: binding (frequency, absolutes, "there is no …"). Allowed only when the approved copy itself has them. */
