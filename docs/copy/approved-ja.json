@@ -12,6 +12,7 @@
     "muedlim.form.submitting": "送信中…",
     "muedlim.form.successBody": "ダウンロードリンクをメールでお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
     "muedlim.form.successTitle": "メールをご確認ください。",
+    "muedlim.whyFree.masterchainLine": "このリミッターを含むチェーン全体が MUEDsp masterchain（$69）です。<demo>デモはこちら</demo>。",
     "muedrive.form.emailLabel": "メールアドレス",
     "muedrive.form.emailPlaceholder": "your@email",
     "muedrive.form.errorEmail": "有効なメールアドレスを入力してください。",

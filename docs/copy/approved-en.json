@@ -12,6 +12,7 @@
     "muedlim.form.submitting": "Sending…",
     "muedlim.form.successBody": "I've emailed you the download link. If it doesn't arrive, check your spam folder.",
     "muedlim.form.successTitle": "Check your email.",
+    "muedlim.whyFree.masterchainLine": "The whole chain this limiter comes from is MUEDsp masterchain ($69). <demo>Try the demo</demo>.",
     "muedrive.form.emailLabel": "Email",
     "muedrive.form.emailPlaceholder": "your@email",
     "muedrive.form.errorEmail": "Please enter a valid email address.",

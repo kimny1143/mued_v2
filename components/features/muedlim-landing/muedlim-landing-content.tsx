@@ -123,6 +123,22 @@ export function MuedlimLandingContent() {
           <div className="mx-auto max-w-3xl">
             <h2 className="text-2xl font-bold tracking-tight">{tw("heading")}</h2>
             <p className="mt-5 text-[17px] leading-[1.8] text-white/75">{tw("lead")}</p>
+            {/* ★/muedlim is the search front door (GA4: MUEDlim has the most search hits) — one line to the chain it comes
+                from (kimny 10/6 「上の案でOK」 via Chief). The demo link lands on the /muedsp demo form (#demo).
+                ★`?from=`, NOT utm_*: a UTM on an internal link makes GA4 start a new source (muedlim-lp / internal) and
+                the visit's search source is lost (CCO #1241, Chief 10/6 (b)). UTMs are for links from outside only. */}
+            <p data-testid="muedlim-masterchain-line" className="mt-4 text-[17px] leading-[1.8] text-white/75">
+              {tw.rich("masterchainLine", {
+                demo: (chunks) => (
+                  <Link
+                    href={`/${locale}/muedsp?from=muedlim-lp#demo`}
+                    className="text-[#f5a524] underline underline-offset-2 hover:text-[#ffc35a]"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </p>
             <a
               href="#get"
               className="mt-6 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]"
