@@ -127,21 +127,6 @@ export function licenseSigningPublicKeyHex(): string | null {
 }
 
 /**
- * The public key (SPKI PEM) of the configured signing key, or null — so the issuer can verify its own output
- * before handing it out (the owner-key route: never hand over a key the plugin would reject). Derived, like
- * licenseSigningPublicKeyHex; ★no part of the secret is returned or logged. Ed25519 only, as above.
- */
-export function licenseSigningPublicKeyPem(): string | null {
-  const key = privateKey();
-  if (!key || key.asymmetricKeyType !== "ed25519") return null;
-  try {
-    return createPublicKey(key).export({ format: "pem", type: "spki" }).toString();
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Issue a signed keyfile (format v2). Returns null when no signing key is configured (fail-CLOSED).
  *
  * ★NOT IDEMPOTENT BY ITSELF: `issued_at` differs per call, so issuing twice for one order yields two
