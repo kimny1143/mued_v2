@@ -113,7 +113,7 @@
     "minimatch@5": "^10.2.5",
     "minimatch@9": "^10.2.5",
     "js-yaml@4": "^4.3.1",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "fast-uri@3": "^3.1.7",
     "browserslist@4": "^4.28.8",
     "postcss@8": "^8.5.18",
