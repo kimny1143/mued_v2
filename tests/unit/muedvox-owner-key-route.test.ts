@@ -38,7 +38,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = PRIV;
   trusted.list = [RAW];
-  auth.mockResolvedValue({ userId: "user_admin" });
+  auth.mockResolvedValue({ userId: "user_38Ke5H6xPB9tm7M2J2fxP082fP5" }); // kimny (one of the two allowed ids)
   isAdmin.mockResolvedValue(true);
   getUser.mockResolvedValue({ primaryEmailAddress: { emailAddress: "Owner@Example.com" } });
 });
@@ -89,6 +89,25 @@ describe("★everyone else → 404 (the route does not admit it exists)", () => 
     expect(res.headers.get("cache-control")).toBe("no-store");
     expect(await res.text()).not.toContain("MUEDSP-LICENSE");
     expect(getUser).not.toHaveBeenCalled();
+  });
+
+  it("★another ADMIN (not kimny) → 404, nothing issued (conductor 10/7: kimny only)", async () => {
+    auth.mockResolvedValueOnce({ userId: "user_someone_else_admin" });
+    isAdmin.mockResolvedValueOnce(true);
+    const res = await GET();
+    expect(res.status).toBe(404);
+    expect(await res.text()).not.toContain("MUEDSP-LICENSE");
+    expect(getUser).not.toHaveBeenCalled();
+  });
+
+  it("kimny's other id (the second Clerk instance) is allowed too", async () => {
+    auth.mockResolvedValueOnce({ userId: "user_33EiZv982KTQ6s6AfTCkbaYqkpR" });
+    expect((await GET()).status).toBe(200);
+  });
+
+  it("kimny's id WITHOUT the admin role → 404", async () => {
+    isAdmin.mockResolvedValueOnce(false);
+    expect((await GET()).status).toBe(404);
   });
 
   it("signed in but not admin → 404 (not 401/403), nothing issued", async () => {

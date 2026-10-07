@@ -5,14 +5,14 @@
  * signed in, and the file goes straight to his Mac. The key never passes through any session, chat, PR or log.
  * ★TEMPORARY: retired by the next PR once kimny has the file (status.md blocked_by).
  *
- * ★404 for EVERYONE who is not a signed-in admin — signed out included (no 401/403: the route does not admit it
+ * ★404 for EVERYONE who is not kimny signed in as admin — signed out and other admins included (no 401/403: the route does not admit it
  *   exists). Not in middleware's public or protected lists, so nothing redirects before this handler runs.
  * ★Cache-Control: no-store on every response, so no cache keeps the key.
  * ★The log line carries the order id only — never the keyfile, the signature or the owner's address.
  */
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { isAdmin } from "@/lib/middleware/admin";
-import { issueMuedvoxOwnerKey, OWNER_KEY_FILE_NAME, OWNER_KEY_ORDER } from "@/lib/muedvox/owner-key";
+import { issueMuedvoxOwnerKey, OWNER_KEY_ALLOWED_USER_IDS, OWNER_KEY_FILE_NAME, OWNER_KEY_ORDER } from "@/lib/muedvox/owner-key";
 import { logger } from "@/lib/utils/logger";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +22,8 @@ const notFound = () => new Response("Not Found", { status: 404, headers: { ...NO
 
 export async function GET(): Promise<Response> {
   const { userId } = await auth();
-  if (!userId || !(await isAdmin(userId))) return notFound();
+  // kimny only (OWNER_KEY_ALLOWED_USER_IDS) AND the admin role — anyone else, including another admin, gets 404.
+  if (!userId || !OWNER_KEY_ALLOWED_USER_IDS.includes(userId) || !(await isAdmin(userId))) return notFound();
 
   let email: string | undefined;
   try {

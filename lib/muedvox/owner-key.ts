@@ -17,6 +17,18 @@ export const OWNER_KEY_ISSUED_AT = "2026-10-07T00:00:00.000Z";
 export const OWNER_KEY_SCOPE = "muedvox";
 export const OWNER_KEY_FILE_NAME = "MUEDvox.license.key";
 
+/**
+ * ★Only kimny (conductor 2026-10-07: "admin なら誰でも" is too wide — pin to kimny). Both Clerk user ids are kimny's:
+ * the production DB `users` table has exactly these two rows for kimny1143@gmail.com (read once, read-only, with
+ * kimny's approval, 2026-10-07; the DB is shared by the development and production Clerk instances, so one row per
+ * instance). Conductor decided both may stay in the set — either way it is kimny alone. Ids are not secret.
+ * Any other user, admin or not, gets 404.
+ */
+export const OWNER_KEY_ALLOWED_USER_IDS: readonly string[] = [
+  "user_38Ke5H6xPB9tm7M2J2fxP082fP5",
+  "user_33EiZv982KTQ6s6AfTCkbaYqkpR",
+];
+
 /** SPKI DER for Ed25519 = this fixed 12-byte prefix + the 32 raw key bytes. */
 const ED25519_SPKI_PREFIX = "302a300506032b6570032100";
 
