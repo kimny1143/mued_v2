@@ -53,6 +53,12 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Self-hosted fonts carry their content hash in the file name (scripts/fonts/sync-google-fonts.mjs),
+      // so a URL never changes meaning: cache it for good, like /_next/static.
+      {
+        source: '/fonts/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
     ];
   },
   // Redirects for legacy paths
