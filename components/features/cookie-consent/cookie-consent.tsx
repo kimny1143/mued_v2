@@ -27,6 +27,10 @@ type Props = {
   copy: { ja: CookieConsentCopy; en: CookieConsentCopy };
 };
 
+/** Both choices wear exactly this — same border, same size, same weight — so neither reads as the "right" answer. */
+export const CHOICE_BUTTON_CLASS =
+  "rounded-md border border-white/25 px-3 py-1.5 text-center font-medium text-slate-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5a524]";
+
 /**
  * Cookie consent for every visitor + the only place gtag.js is loaded.
  * ★gtag.js is rendered ONLY when the stored choice is "all". Before a choice and after
@@ -103,19 +107,14 @@ export function CookieConsent({ gaMeasurementId, copy }: Props) {
               {t.details}
             </a>
           </p>
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => choose("essential")}
-              className="rounded-md border border-white/15 px-3 py-1.5 text-slate-200 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5a524]"
-            >
+          {/* ★Two equal choices (kimny 2026-10-08 「揃えましょう」): one class for both, and a two-column grid so the
+              widths match whatever the labels are. Neither is filled — the amber fill stays the buy colour.
+              Order is unchanged from before (essential, then accept): the difference was the fill, not the place. */}
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button type="button" data-testid="cookie-consent-essential" onClick={() => choose("essential")} className={CHOICE_BUTTON_CLASS}>
               {t.essentialOnly}
             </button>
-            <button
-              type="button"
-              onClick={() => choose("all")}
-              className="rounded-md bg-[#f5a524] px-3 py-1.5 font-medium text-black hover:bg-[#f5a524]/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
-            >
+            <button type="button" data-testid="cookie-consent-accept" onClick={() => choose("all")} className={CHOICE_BUTTON_CLASS}>
               {t.accept}
             </button>
           </div>

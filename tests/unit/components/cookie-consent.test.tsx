@@ -28,7 +28,7 @@ vi.mock("next/script", () => ({
   ),
 }));
 
-import { CookieConsent, CookieSettingsButton } from "@/components/features/cookie-consent/cookie-consent";
+import { CHOICE_BUTTON_CLASS, CookieConsent, CookieSettingsButton } from "@/components/features/cookie-consent/cookie-consent";
 
 const GA = "G-TEST123";
 const copy = { ja: ja.cookieConsent, en: en.cookieConsent };
@@ -87,6 +87,22 @@ describe("<CookieConsent>", () => {
     expect(screen.getByText(ja.cookieConsent.accept)).toBeTruthy();
     expect(screen.getByText(ja.cookieConsent.essentialOnly)).toBeTruthy();
     expect(gtagScripts()).toHaveLength(0);
+  });
+
+  // kimny 2026-10-08 「揃えましょう」: neither choice may look like the main one. Same class string = same border,
+  // fill, padding and weight; the two-column grid gives them the same width whatever the labels are.
+  it.each([["/ja/muedsp"], ["/en/muedsp"]])("%s: the two choices are styled identically and sit in an equal two-column grid", (path) => {
+    pathname = path;
+    render(<CookieConsent gaMeasurementId={GA} copy={copy} />);
+    const essential = screen.getByTestId("cookie-consent-essential");
+    const accept = screen.getByTestId("cookie-consent-accept");
+    expect(accept.className).toBe(essential.className);
+    expect(accept.className).toBe(CHOICE_BUTTON_CLASS);
+    expect(accept.className).not.toMatch(/bg-\[#f5a524\]|bg-\[var\(--accent\)\]/); // the amber fill is the buy colour
+    const buttons = screen.getByTestId("cookie-consent").querySelectorAll("button");
+    expect(buttons).toHaveLength(2); // nothing else in the banner competes with the two
+    expect(essential.parentElement).toBe(accept.parentElement);
+    expect(essential.parentElement?.className).toMatch(/\bgrid\b.*\bgrid-cols-2\b/);
   });
 
   it("accept → stores 'all', hides the banner, and loads gtag.js with the measurement id", () => {
