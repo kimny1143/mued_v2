@@ -1,7 +1,9 @@
 import { SHARE_IMAGES } from "@/lib/seo/share-image";
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
-import Script from "next/script";
+import { CookieConsent } from "@/components/features/cookie-consent/cookie-consent";
+import jaMessages from "@/messages/ja.json";
+import enMessages from "@/messages/en.json";
 import { Geist_Mono, JetBrains_Mono, Sora } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { LocaleProviderWrapper } from "@/components/providers/locale-provider-wrapper";
@@ -101,24 +103,11 @@ export default async function RootLayout({
           </LocaleProviderWrapper>
           <Analytics />
           <SpeedInsights />
-          {/* Google Analytics 4 */}
-          {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-            <>
-              <Script
-                src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
-                strategy="afterInteractive"
-              />
-              <Script id="ga4-init" strategy="afterInteractive">
-                {`
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  var _gaDebug = new URLSearchParams(window.location.search).has('debug_mode');
-                  gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', { debug_mode: _gaDebug });
-                `}
-              </Script>
-            </>
-          )}
+          {/* Google Analytics 4 — loaded only after the visitor accepts (components/features/cookie-consent) */}
+          <CookieConsent
+            gaMeasurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}
+            copy={{ ja: jaMessages.cookieConsent, en: enMessages.cookieConsent }}
+          />
         </body>
       </html>
     </ClerkProvider>

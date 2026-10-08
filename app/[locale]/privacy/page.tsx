@@ -2,6 +2,7 @@ import { BrandHeader } from "@/components/brand/brand-header";
 import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import Link from "next/link";
+import { CookieSettingsButton } from "@/components/features/cookie-consent/cookie-consent";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
 import { ADVISORY_LIVE } from "@/lib/advisory/config";
@@ -41,6 +42,7 @@ export default async function PrivacyPage({ params }: PageProps) {
 
 function PrivacyContent({ locale }: { locale: string }) {
   const t = useTranslations("privacy");
+  const tc = useTranslations("cookieConsent");
 
   return (
     <div className="dark min-h-screen bg-bg-primary">
@@ -174,9 +176,10 @@ function PrivacyContent({ locale }: { locale: string }) {
           </section>
 
           {/* Section 6 */}
-          <section className="mb-8">
+          <section id="cookies" className="mb-8 scroll-mt-24">
             <h2 className="text-xl font-semibold text-white mb-4">{t("section6.title")}</h2>
             <p className="text-slate-300">{t("section6.description")}</p>
+            <CookieSettingsButton label={tc("settingsButton")} />
           </section>
 
           {/* Section 7 */}

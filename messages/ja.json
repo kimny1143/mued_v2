@@ -335,7 +335,7 @@
   },
   "privacy": {
     "title": "プライバシーポリシー",
-    "lastUpdated": "最終更新日: 2026年10月1日",
+    "lastUpdated": "最終更新日: 2026年10月8日",
     "intro": "株式会社グラスワークス（以下「当社」）は、MUEDnote（以下「本アプリ」）を運営しています。本プライバシーポリシーは、本アプリご利用時における情報の収集、使用、保護について説明するものです。",
     "section1": {
       "title": "1. 収集する情報",
@@ -390,7 +390,7 @@
     },
     "section6": {
       "title": "6. Cookie",
-      "description": "本サイトでは、次の 2 種類の Cookie を使用しています。(1) 必須の Cookie: 表示言語の保持（NEXT_LOCALE）と、サインイン中の認証状態の維持（Clerk の __session など）に使います。サービスの提供に必要なため、無効にはできません。(2) 計測の Cookie: Google Analytics 4 がアクセス状況の計測に使います（_ga、および _ga_ で始まるもの）。現在は、すべての訪問者に設定されます。計測を止める方法は第 9 項をご覧ください。"
+      "description": "本サイトでは、次の 2 種類の Cookie を使用しています。(1) 必須の Cookie: 表示言語の保持（NEXT_LOCALE）と、サインイン中の認証状態の維持（Clerk の __session など）に使います。サービスの提供に必要なため、無効にはできません。(2) 計測の Cookie: Google Analytics 4 がアクセス状況の計測に使います（_ga、および _ga_ で始まるもの）。画面の下の表示で「同意する」を選んだ方にだけ設定します。「必須のみ」を選んだ場合や、まだ選んでいない間は、Google Analytics を読み込みません。選択は、下のボタンからいつでも変えられます（選択は Cookie「mued_cookie_consent」に保存します。これも必須の Cookie です）。このほか、Cookie を使わず個人を特定しない形のアクセスの集計（Vercel Web Analytics）と、表示の速さの計測（Vercel Speed Insights）を、同意の選択に関係なく行っています。"
     },
     "section7": {
       "title": "7. ポリシーの変更",
@@ -407,7 +407,7 @@
       "description": "当サイトは Google Analytics 4（GA4）を使用してアクセス状況を計測しています。GA4 で収集した匿名化されたアクセスログ（利用者識別子、IPアドレスの一部、ブラウザ情報、訪問ページ履歴、イベント情報）は、Google Cloud BigQuery に転送・蓄積されます。氏名・メールアドレス等の個人を直接特定する情報は含まれません。",
       "retention": "データの保存期間は最大2ヶ月で、その後自動的に削除されます。",
       "purpose": "利用目的：サービス改善、マーケティング効果測定、A/B テスト分析、UX 改善",
-      "optout": "データ収集のオプトアウトは、Google アカウント設定（https://myaccount.google.com/activitycontrols）またはブラウザの Google Analytics オプトアウト拡張機能からいつでも行えます。"
+      "optout": "計測は、第 6 項の表示で「同意する」を選んだ方にだけ行います。止めるには、第 6 項のボタンから「必須のみ」を選んでください。このほか、データ収集のオプトアウトは、Google アカウント設定（https://myaccount.google.com/activitycontrols）またはブラウザの Google Analytics オプトアウト拡張機能からいつでも行えます。"
     },
     "section10": {
       "title": "MUED advisory（相談・構築サービス）について",
@@ -3085,5 +3085,13 @@
       "howto": "鍵のファイル（.key）をダウンロードし、{product} の画面{masterchain, select, yes {（「Drop license.key here」）} other {}}にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをコピーして「Paste license key」を押してください。",
       "purchasedOn": "{date} に購入"
     }
+  },
+  "cookieConsent": {
+    "message": "このサイトは、言語とサインインに必要な Cookie を使います。同意いただいた場合に限り、Google Analytics の計測 Cookie も使います。",
+    "accept": "同意する",
+    "essentialOnly": "必須のみ",
+    "details": "詳しく",
+    "label": "Cookie の設定",
+    "settingsButton": "Cookie の設定を変える"
   }
 }

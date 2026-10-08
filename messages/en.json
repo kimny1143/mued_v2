@@ -335,7 +335,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: October 1, 2026",
+    "lastUpdated": "Last updated: October 8, 2026",
     "intro": "glasswerks inc. (\"we,\" \"our,\" or \"us\") operates MUEDnote (the \"App\"). This Privacy Policy explains how we collect, use, and protect your information when you use our App.",
     "section1": {
       "title": "1. Information We Collect",
@@ -390,7 +390,7 @@
     },
     "section6": {
       "title": "6. Cookies",
-      "description": "This site uses two kinds of cookies. (1) Essential cookies: used to remember your display language (NEXT_LOCALE) and to keep you signed in (Clerk cookies such as __session). They are required to provide the service and cannot be turned off. (2) Measurement cookies: used by Google Analytics 4 to measure site usage (_ga and cookies starting with _ga_). They are currently set for all visitors. To stop this measurement, see Section 9."
+      "description": "This site uses two kinds of cookies. (1) Essential cookies: used to remember your display language (NEXT_LOCALE) and to keep you signed in (Clerk cookies such as __session). They are required to provide the service and cannot be turned off. (2) Measurement cookies: used by Google Analytics 4 to measure site usage (_ga and cookies starting with _ga_). They are set only if you choose \"Accept\" in the notice at the bottom of the screen. If you choose \"Essential only\", or until you choose, Google Analytics is not loaded. You can change your choice at any time with the button below (your choice is stored in the \"mued_cookie_consent\" cookie, which is also an essential cookie). Separately, regardless of your choice, we use Vercel Web Analytics for aggregate visit counts that use no cookies and do not identify you, and Vercel Speed Insights to measure page load speed."
     },
     "section7": {
       "title": "7. Changes to This Policy",
@@ -407,7 +407,7 @@
       "description": "This site uses Google Analytics 4 (GA4) to measure site usage. Anonymized access logs collected by GA4 (user identifiers, partial IP addresses, browser information, page visit history, and event data) are transferred to and stored in Google Cloud BigQuery. No directly personally identifiable information such as names or email addresses is included.",
       "retention": "Data is retained for a maximum of 2 months and is automatically deleted thereafter.",
       "purpose": "Purpose of use: Service improvement, marketing effectiveness measurement, A/B test analysis, UX improvement",
-      "optout": "You can opt out of data collection at any time via your Google Account settings (https://myaccount.google.com/activitycontrols) or by using the Google Analytics Opt-out Browser Add-on."
+      "optout": "We measure only visitors who chose \"Accept\" in the notice described in Section 6. To stop, choose \"Essential only\" with the button in Section 6. You can also opt out of data collection at any time via your Google Account settings (https://myaccount.google.com/activitycontrols) or by using the Google Analytics Opt-out Browser Add-on."
     },
     "section10": {
       "title": "About MUED advisory (consulting & build service)",
@@ -3085,5 +3085,13 @@
       "howto": "Download your key file (.key) and drag it onto {product}{masterchain, select, yes { (\"Drop license.key here\")} other {}}. If drop doesn't work in your DAW, use \"Load license file…\", or copy the key and press \"Paste license key\".",
       "purchasedOn": "Purchased {date}"
     }
+  },
+  "cookieConsent": {
+    "message": "This site uses cookies needed for language and sign-in. Only with your consent, it also uses Google Analytics cookies to measure site usage.",
+    "accept": "Accept",
+    "essentialOnly": "Essential only",
+    "details": "Details",
+    "label": "Cookie settings",
+    "settingsButton": "Change cookie settings"
   }
 }
