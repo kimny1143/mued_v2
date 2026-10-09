@@ -8,7 +8,7 @@ import { PluginVersionDetails, PluginVersionNotice } from "@/components/features
 // section for a direct-link press response (BPB / Tomislav Zlatic asked for a direct page; kimny GO
 // supersedes the 7/12 "no independent URL" decision). Same dark pro-audio faceplate aesthetic + page
 // chrome as the MUEDsat LP (components/features/muedsat-landing) — reuses the shared plugin signup
-// form (plugin="muedlim"), the shipped-UI faceplate (public/muedlim/faceplate.webp, #667 v2), and the
+// form (plugin="muedlim"), the shipped-UI faceplate (public/muedlim/faceplate-1.0.1.webp, #667 v2), and the
 // muedlim.* i18n namespace. Fact-lock (MUEDlim canon): true-peak limiter, TWO knobs (INPUT + CEILING),
 // THREE formats (VST3 · AU · AAX), macOS Universal, LUFS-hero, fully free — NO latency/ADAA/
 // oversampling/competitor claims. Staged behind MUEDLIM_LIVE (page.tsx robots). No hardcoded copy.
@@ -32,7 +32,7 @@ function SignupForm() {
 }
 
 // Real render of the shipped iPlug2 UI (a832976a LUFS-hero build), 1000×700 — same asset as /muedsp §2.
-const FACEPLATE = "/muedlim/faceplate.webp";
+const FACEPLATE = "/muedlim/faceplate-1.0.1.webp";
 
 // Two knobs; Bypass is a header toggle described once in bypassNote (the page matches the knob count).
 const KNOBS = ["input", "ceiling"] as const;

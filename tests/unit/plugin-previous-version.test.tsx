@@ -24,9 +24,13 @@ vi.mock("next-intl", () => ({
   useTranslations: (ns?: string) =>
     Object.assign(
       (key: string, vars?: Record<string, unknown>) => `${ns ? `${ns}.` : ""}${key}${vars ? `:${JSON.stringify(vars)}` : ""}`,
-      { has: (key: string) => !["added", "display"].includes(key) || hasKey.added },
+      { has: (key: string) => !["added", "display", "addedImageAlt"].includes(key) || hasKey.added },
     ),
   useLocale: () => "ja",
+}));
+vi.mock("next/image", () => ({
+  // eslint-disable-next-line @next/next/no-img-element
+  default: ({ src, alt, ...rest }: { src: string; alt: string }) => <img src={src} alt={alt} data-testid={(rest as Record<string, string>)["data-testid"]} />,
 }));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
@@ -127,6 +131,26 @@ describe("<PluginVersionNotice> on the product page", () => {
     expect(details.id).toBe("version-notes");
     for (const k of ["lead", "added", "display", "saved", "automation", "au", "revert"]) expect(details.textContent).toContain(`muedlim.versionNotice.${k}`);
     expect(Array.from(details.querySelectorAll("a")).map((a) => a.getAttribute("href"))).toEqual(["/dashboard/plugins"]);
+  });
+
+  it("MUEDlim: the 1:1-on screen sits in the section, with an alt that names the version — and the file exists", () => {
+    const { getByTestId } = render(<PluginVersionDetails plugin="muedlim" previous={FIXTURE} />);
+    const img = getByTestId("plugin-version-added-image");
+    expect(existsSync(join(ROOT, "public", img.getAttribute("src")!))).toBe(true);
+    expect(img.getAttribute("alt")).toContain("versionNotice.addedImageAlt");
+    for (const m of [ja, en]) {
+      expect(m.muedlim.versionNotice.addedImageAlt).toContain("MUEDlim {version}");
+      expect(m.muedlim.versionNotice.addedImageAlt).toContain("GAIN REDUCTION −2.7 dB");
+      expect(m.muedlim.visuals.faceplateAlt).toContain("MUEDlim 1.0.1"); // the hero image is the 1.0.1 screen too
+    }
+    // ★A new file name, not an overwrite of faceplate.webp: the image optimizer and browsers cache by URL, so the
+    //   same path kept showing the 1.0.0 screen (seen locally 2026-10-09). MUEDsat names its faceplates by version too.
+    for (const f of ["components/features/muedlim-landing/muedlim-landing-content.tsx", "components/features/muedsp-landing/muedsp-landing-content.tsx", "components/features/landing/studio-showroom.tsx"]) {
+      const src = readFileSync(join(ROOT, f), "utf8");
+      expect(src).toContain("/muedlim/faceplate-1.0.1.webp");
+      expect(src).not.toContain("/muedlim/faceplate.webp");
+    }
+    expect(existsSync(join(ROOT, "public/muedlim/faceplate-1.0.1.webp"))).toBe(true);
   });
 
   it("a version with no added feature shows no \"added\" paragraph (the key is optional)", () => {

@@ -41,7 +41,7 @@ const FACEPLATE_HOT = "/muedsat/faceplate-1.0.1-drive85.webp";
 const FACEPLATE_IDLE = "/muedsat/faceplate-1.0.1-drive30.webp";
 // MUEDlim faceplate — a REAL render of the shipping iPlug2 UI (a832976a LUFS-hero build), NOT a
 // mock (dsp-captured, dev version-string cropped out). One clean shot, 1000×700 (= MUEDsat parity).
-const FACEPLATE_MUEDLIM = "/muedlim/faceplate.webp";
+const FACEPLATE_MUEDLIM = "/muedlim/faceplate-1.0.1.webp";
 const FACEPLATE_MUEDRIVE = "/muedrive/faceplate.png";
 // masterchain flagship image — the REAL 1.0.1 screen (kimny: no dummies). dsp 2026-09-30: built from
 // 1.0.1 source (main c5b601b2) as a capture-only standalone that opens no audio device, no key (DEMO
