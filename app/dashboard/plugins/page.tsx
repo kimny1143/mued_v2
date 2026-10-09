@@ -5,6 +5,7 @@ import { getPortalItemsForUser, getPurchaseItemsForUser, getTrialItemForUser, ma
 import { MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
 import { buildAvailableItems } from "@/lib/plugins/portal";
 import { windowsBetaFor } from "@/lib/plugins/windows-beta";
+import { previousVersionFor } from "@/lib/plugins/previous-versions";
 import {
   PluginsPortalView,
   type PortalViewItem,
@@ -57,6 +58,8 @@ export default async function PluginsPortalPage() {
     claimedAtISO: it.claimedAt ? it.claimedAt.toISOString() : null,
     // ★Windows beta — null until WINDOWS_BETA_LIVE (the portal is the only place it is linked).
     windows: windowsBetaFor(it.pluginKey),
+    // ★The previous build kept beside this version — null for a module with none (lib/plugins/previous-versions.ts).
+    previous: previousVersionFor(it.pluginKey, it.version),
   }));
 
   // The live free modules this user does NOT own yet. Registry-derived and read-only — nothing is

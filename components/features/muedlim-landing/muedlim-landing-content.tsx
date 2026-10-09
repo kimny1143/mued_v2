@@ -2,6 +2,7 @@
 
 import { WINDOWS_BETA_LIVE } from "@/lib/plugins/windows-beta";
 import { BrandHeader } from "@/components/brand/brand-header";
+import { PluginVersionDetails, PluginVersionNotice } from "@/components/features/plugins/plugin-version-notice";
 
 // MUEDlim standalone free-download LP (/[locale]/muedlim) — spun out from the /muedsp §2 MUEDlim
 // section for a direct-link press response (BPB / Tomislav Zlatic asked for a direct page; kimny GO
@@ -69,6 +70,8 @@ export function MuedlimLandingContent() {
               <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-white/40">MUEDsp limiter</p>
               <p className="mt-3 text-lg font-light text-white/80 md:text-xl">{th("tagline")}</p>
               <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/55">{th("lead")}</p>
+              {/* ★Before the form: an existing user reads what the new version changes before taking it. */}
+              <PluginVersionNotice plugin="muedlim" />
               <div id="get" className="mt-7 max-w-md scroll-mt-20">
                 <SignupForm />
               </div>
@@ -89,6 +92,9 @@ export function MuedlimLandingContent() {
             </div>
           </div>
         </section>
+
+        {/* What the current version changes for existing sessions (only while a previous build is kept). */}
+        <PluginVersionDetails plugin="muedlim" />
 
         {/* What it is — one short paragraph (provenance: pulled from the masterchain, made free). */}
         <section className="border-t border-white/5 px-6 py-14">

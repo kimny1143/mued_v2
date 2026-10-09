@@ -69,9 +69,10 @@ const ARTIFACTS = [
   {
     name: "MUEDlim",
     url: MUEDLIM_DOWNLOAD_URL,
-    // 1.0.0, EULA 2026.10 rebuild (/downloads/eula-2026.10/). The first 1.0.0 is pinned as a shelf entry below.
-    sha256: "123bb9994e7ea85099778603484576200cddf017c82802b92935c4d8758bb7c7",
-    bytes: 3_269_395,
+    // 1.0.1 (2026-10-09; measured 13:43 JST on the copy under public/downloads/, after signing + notarization +
+    // staple). 1.0.0 (eula-2026.10) — the portal's "previous version" — and the first 1.0.0 are pinned below.
+    sha256: "3a1a49d21756456a2376d2255883bbdeebb628f35eaeccd560773168a3522360",
+    bytes: 3_302_225,
   },
   {
     name: "MUEDsat",
@@ -116,8 +117,11 @@ const ARTIFACTS = [
   {
     name: "MUEDlim (Windows beta)",
     url: WINDOWS_BETA.muedlim.url,
-    sha256: "cff3ab78931d2639e4e230b7530336ca4976d32555c99decaa2c06681b65f09e",
-    bytes: 1_136_734,
+    // 1.0.1 — 3b853018 (dsp #888 merged as mued-dsp main 27284478, 2026-10-09). Unsigned, like the 1.0.0 zip.
+    // Measured 2026-10-09 13:13 JST on dsp's build/win-zips copy and on the copy under public/downloads/.
+    // (Earlier 1.0.1 candidates — 81aa3e26, 701c0f2a — were withdrawn by dsp before they were pushed or linked.)
+    sha256: "d17e68200e0464deeb7526f72931dfc98117eb54aaabc1eadcc7aebef3f32aa7",
+    bytes: 1_142_661,
   },
   {
     name: "MUEDrive (Windows beta)",
@@ -151,6 +155,21 @@ const ARTIFACTS = [
     url: "https://mued.jp/downloads/MUEDrive-1.0.1-win-x64-80178027.zip",
     sha256: "4c691c4ecf17d3d81769acbda633ca08bcc4d40c91a13aec2b3ffc6f074ac4ec",
     bytes: 1_225_353,
+  },
+  // ★MUEDlim 1.0.0 as literal URLs (2026-10-09). The two rows above named "MUEDlim" / "MUEDlim (Windows beta)" pin
+  //   whatever the constants point at; now that 1.0.1 is current those rows moved with them, and 1.0.0 — kept on the
+  //   portal as the previous version (lib/plugins/previous-versions.ts) — would lose its pin. These stay.
+  {
+    name: "MUEDlim 1.0.0 (eula-2026.10, kept as the previous version)",
+    url: "https://mued.jp/downloads/eula-2026.10/MUEDlim-1.0.0-installer.pkg",
+    sha256: "123bb9994e7ea85099778603484576200cddf017c82802b92935c4d8758bb7c7",
+    bytes: 3_269_395,
+  },
+  {
+    name: "MUEDlim 1.0.0 (Windows 7ca36065, kept as the previous version)",
+    url: "https://mued.jp/downloads/MUEDlim-1.0.0-win-x64-7ca36065.zip",
+    sha256: "cff3ab78931d2639e4e230b7530336ca4976d32555c99decaa2c06681b65f09e",
+    bytes: 1_136_734,
   },
   // ★Shelf: the masterchain 1.0.1 UI rebuild (2026-09-30 night → 2026-10-01). Demo mails and purchases in that
   //   window point here (the confirmation purchase of 10/1 included).

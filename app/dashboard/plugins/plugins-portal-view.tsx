@@ -2,7 +2,8 @@
 
 import type { ReactElement } from "react";
 import Link from "next/link";
-import type { PluginKey } from "@/lib/plugins/registry";
+import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
+import { VERSION_NOTES_ID } from "@/components/features/plugins/plugin-version-notice";
 import { useTranslations, useLocale } from "next-intl";
 import styles from "./plugins-portal.module.css";
 import type { PaidProductKey } from "@/lib/plugins/paid-products";
@@ -23,6 +24,11 @@ export interface PortalViewItem {
    * not live. Shown here and ONLY here — the portal is behind the same email sign-up as the Mac build.
    */
   windows?: { url: string; version: string } | null;
+  /**
+   * The previous build kept beside the current one (lib/plugins/previous-versions.ts). ★Absent/null for a
+   * module with none — the row then renders exactly as before.
+   */
+  previous?: { version: string; macUrl: string; windowsUrl: string | null } | null;
 }
 
 // Fixed brand display names + shipped formats (technical labels — not translated). Both current free
@@ -192,6 +198,36 @@ export function PluginsPortalView({
                       </a>
                     )}
                   </div>
+                  {/* ★A new build that changes what an existing session plays: say what changed, and keep the
+                      previous installer one click away (kimny 2026-10-09). Text links, so the current build
+                      stays the one button. */}
+                  {it.previous && (
+                    <div className={styles.previous} data-testid="portal-previous-version">
+                      <p className={styles.howto}>
+                        {t(`changes.${it.pluginKey}.summary`, { version: it.version, previous: it.previous.version })}{" "}
+                        {PLUGIN_DIST[it.pluginKey as PluginKey] && (
+                          <Link href={`/${locale}${PLUGIN_DIST[it.pluginKey as PluginKey].lpPath}#${VERSION_NOTES_ID}`} data-testid="portal-version-notes-link">
+                            {t(`changes.${it.pluginKey}.more`)}
+                          </Link>
+                        )}
+                      </p>
+                      <p className={styles.howto}>{t(`changes.${it.pluginKey}.revert`, { version: it.version, previous: it.previous.version })}</p>
+                      <p className={styles.howto}>
+                        {t("previous.label", { name: d.name, version: it.previous.version })}{" "}
+                        <a href={it.previous.macUrl} download data-testid="portal-previous-mac">
+                          {t("previous.mac", { ext: fileExt(it.previous.macUrl) })}
+                        </a>
+                        {it.previous.windowsUrl && (
+                          <>
+                            {" · "}
+                            <a href={it.previous.windowsUrl} download data-testid="portal-previous-windows">
+                              {t("previous.windows", { ext: fileExt(it.previous.windowsUrl) })}
+                            </a>
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             })}
