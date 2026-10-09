@@ -19,7 +19,7 @@ const modules = [
   {
     name: "MUEDlim",
     slug: "muedlim",
-    image: "/muedlim/faceplate.webp",
+    image: "/muedlim/faceplate-1.0.1.webp",
     width: 1000,
     height: 700,
     key: "lim",

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
@@ -51,6 +52,13 @@ export function PluginVersionNotice(props: Props) {
 
 /** Optional per plugin: what came with the version besides the change the lead names. */
 const ADDED = ["added", "display"] as const;
+/**
+ * A screen of the new version shown under the first "added" paragraph (conductor 2026-10-09: MUEDlim's 1:1 on).
+ * 1000×700 like the product faceplates. Its alt is `versionNotice.addedImageAlt` — the words on the screen, with the version.
+ */
+const ADDED_IMAGE: Partial<Record<PluginKey, string>> = {
+  muedlim: "/muedlim/faceplate-1.0.1-unity.webp",
+};
 const POINTS = ["saved", "automation", "au", "revert"] as const;
 
 /** The full section: what changed, what it does to existing sessions, and how to go back. */
@@ -59,15 +67,27 @@ export function PluginVersionDetails(props: Props) {
   const t = useTranslations(`${dist.i18nNamespace}.versionNotice`);
   if (!prev) return null;
   const vars = { version: dist.version, previous: prev.version };
+  const image = ADDED_IMAGE[props.plugin];
   return (
     <section id={VERSION_NOTES_ID} data-testid="plugin-version-details" className="scroll-mt-20 border-t border-white/5 px-6 py-14">
       <div className="mx-auto max-w-3xl">
         <h2 className="text-2xl font-bold tracking-tight">{t("detailsHeading", vars)}</h2>
         <p className="mt-5 text-[17px] leading-[1.8] text-white/75">{t("lead", vars)}</p>
         {ADDED.filter((key) => t.has(key)).map((key) => (
-          <p key={key} className="mt-4 text-[15px] leading-relaxed text-white/70">
-            {t(key, vars)}
-          </p>
+          <div key={key}>
+            <p className="mt-4 text-[15px] leading-relaxed text-white/70">{t(key, vars)}</p>
+            {key === "added" && image && t.has("addedImageAlt") ? (
+              <Image
+                src={image}
+                alt={t("addedImageAlt", vars)}
+                width={1000}
+                height={700}
+                sizes="(min-width: 768px) 480px, 88vw"
+                className="mt-5 h-auto w-full max-w-[480px] rounded-lg"
+                data-testid="plugin-version-added-image"
+              />
+            ) : null}
+          </div>
         ))}
         <h3 className="mt-8 text-lg font-medium text-white/85">{t("sessionsHeading", vars)}</h3>
         <ul className="mt-4 list-disc space-y-3 pl-5 text-[15px] leading-relaxed text-white/70">

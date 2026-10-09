@@ -2841,7 +2841,7 @@
       "bypassNote": "加えて BYPASS トグル（ACTIVE / BYPASS）。素直な A/B のために。1:1 スイッチをオンにすると、INPUT は音量を上げる代わりに、その分だけ CEILING を下げます。"
     },
     "visuals": {
-      "faceplateAlt": "MUEDlim 1.0.0 のプラグイン画面（音が入った状態）。上部にタイトルと、右に ACTIVE のトグル。その下、左に大きな INTEGRATED LUFS 値（−11.7・アンバー）、右に SHORT-TERM −11.5・GR −0.95 dB・RANGE 0.7 LU・TRUE-PEAK −1.00 dBTP。中央は −12 前後で安定したラウドネス履歴グラフと TARGET −14 の破線、右は true-peak 縦メーターが上限 −1.00 dBTP を示す。下に INPUT（+0.00 dB）と CEILING（−1.00 dBTP）のノブ、右下に mued.jp のリンク。"
+      "faceplateAlt": "MUEDlim 1.0.1 のプラグイン画面（音が入った状態・1:1 はオフ）。上部にタイトルと、右に ACTIVE のトグル。その下、左に大きな INTEGRATED LUFS 値（−10.1・アンバー）、右に SHORT-TERM −11.7・GR −2.65 dB・RANGE 3.4 LU・CEILING −1.00 dBTP。中央はラウドネスの履歴グラフと TARGET −14 の破線で、グラフの上の縁からゲインリダクションの履歴（朱の線）が下がっている。右は出力の縦メーターが上限 −1.00 を示す。下に INPUT（+8.00 dB）と CEILING（−1.00 dBTP）のノブ、右に 1:1 のスイッチ（オフ）、右下に mued.jp のリンク。"
     },
     "versionNotice": {
       "line": "{previous} のセッションをお持ちの方へ: {version} では CEILING のオートメーションの値が変わります。",
@@ -2850,6 +2850,7 @@
       "detailsHeading": "{version} で変わったこと",
       "lead": "トラックやステムのバスでピークだけを抑えたい時に使えるよう、CEILING の幅を −3〜0 dBTP から −18〜0 dBTP に広げました。既定値（−1 dBTP）と音の処理は変えていません。",
       "added": "1:1 スイッチを追加しました。オンにすると、INPUT は音量を上げる代わりに、その分だけ CEILING を下げます（INPUT +12 dB → CEILING −12 dB）。CEILING に届かない音はそのままの大きさで通り、届くピークだけが抑えられます。オンの間は CEILING のつまみは使われません。INPUT が 0 dB の時、CEILING は 0.0 dBTP になります（既定の −1.0 ではありません）。INPUT を 0 dB より下げても、1:1 の間は何も変わりません。DAW のオートメーションの一覧では、このスイッチは「Unity」と表示されます。",
+      "addedImageAlt": "MUEDlim {version} のプラグイン画面（音が入った状態・1:1 はオン）。左の大きな数字は GAIN REDUCTION −2.7 dB（アンバー）。右に OUTPUT PEAK −9.0・SHORT-TERM −19.7 LUFS・INTEGRATED −18.1 LUFS・CEILING −9.00 dBTP。中央のグラフにはゲインリダクションの履歴（朱の線）だけが上の縁から下がっていて、右の出力メーターは上限 −9.00 を示す。下に INPUT（+9.00 dB）のノブと、薄く表示された CEILING（−9.00 dBTP）のノブ、右に 1:1 のスイッチ（オン・橙の点）。",
       "display": "ゲインリダクションがグラフで見えるようになりました。ラウドネスのグラフの上の縁から、リミッターがどこでどれだけ抑えたかが時間に沿って下がって表示されます。GR の数字は、直近でいちばん深い値を表示します。1:1 がオンの間は、大きい数字が GAIN REDUCTION になり、ラウドネスは右上に小さく表示されます。出力メーターにはピークホールドの線が付きました。",
       "sessionsHeading": "{previous} で作ったセッションをお持ちの方へ",
       "saved": "保存してあるつまみの値とプリセットは、そのままの値で開きます。1:1 はオフで開きます。",
