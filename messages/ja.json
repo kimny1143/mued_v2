@@ -2831,17 +2831,31 @@
         },
         "ceiling": {
           "name": "CEILING",
-          "desc": "真のピークの上限（−3〜0 dBTP・既定 −1）。"
+          "desc": "真のピークの上限（−18〜0 dBTP・既定 −1）。"
         },
         "bypass": {
           "name": "BYPASS",
           "desc": "本当のバイパス（ACTIVE / BYPASS）。素直な A/B のために。"
         }
       },
-      "bypassNote": "加えて BYPASS トグル（ACTIVE / BYPASS）。素直な A/B のために。"
+      "bypassNote": "加えて BYPASS トグル（ACTIVE / BYPASS）。素直な A/B のために。1:1 スイッチをオンにすると、INPUT は音量を上げる代わりに、その分だけ CEILING を下げます。"
     },
     "visuals": {
       "faceplateAlt": "MUEDlim 1.0.0 のプラグイン画面（音が入った状態）。上部にタイトルと、右に ACTIVE のトグル。その下、左に大きな INTEGRATED LUFS 値（−11.7・アンバー）、右に SHORT-TERM −11.5・GR −0.95 dB・RANGE 0.7 LU・TRUE-PEAK −1.00 dBTP。中央は −12 前後で安定したラウドネス履歴グラフと TARGET −14 の破線、右は true-peak 縦メーターが上限 −1.00 dBTP を示す。下に INPUT（+0.00 dB）と CEILING（−1.00 dBTP）のノブ、右下に mued.jp のリンク。"
+    },
+    "versionNotice": {
+      "line": "{previous} のセッションをお持ちの方へ: {version} では CEILING のオートメーションの値が変わります。",
+      "detailsLink": "変更点と戻し方を読む",
+      "previousLink": "{previous} のインストーラはポータルに残しています",
+      "detailsHeading": "{version} で変わったこと",
+      "lead": "トラックやステムのバスでピークだけを抑えたい時に使えるよう、CEILING の幅を −3〜0 dBTP から −18〜0 dBTP に広げました。既定値（−1 dBTP）と音の処理は変えていません。",
+      "added": "1:1 スイッチを追加しました。オンにすると、INPUT は音量を上げる代わりに、その分だけ CEILING を下げます（INPUT +12 dB → CEILING −12 dB）。CEILING に届かない音はそのままの大きさで通り、届くピークだけが抑えられます。オンの間は CEILING のつまみは使われません。INPUT が 0 dB の時、CEILING は 0.0 dBTP になります（既定の −1.0 ではありません）。INPUT を 0 dB より下げても、1:1 の間は何も変わりません。DAW のオートメーションの一覧では、このスイッチは「Unity」と表示されます。",
+      "display": "ゲインリダクションがグラフで見えるようになりました。ラウドネスのグラフの上の縁から、リミッターがどこでどれだけ抑えたかが時間に沿って下がって表示されます。GR の数字は、直近でいちばん深い値を表示します。1:1 がオンの間は、大きい数字が GAIN REDUCTION になり、ラウドネスは右上に小さく表示されます。出力メーターにはピークホールドの線が付きました。",
+      "sessionsHeading": "{previous} で作ったセッションをお持ちの方へ",
+      "saved": "保存してあるつまみの値とプリセットは、そのままの値で開きます。1:1 はオフで開きます。",
+      "automation": "VST3 と AAX で CEILING にオートメーションを書いてある場合、再生される値が下がります（書いた値の 6 倍。例: −1.0 dB で書いた所が −6.0 dB、−0.5 dB が −3.0 dB）。該当するセッションは、{version} に上げる前に書き出すか、上げた後でオートメーションを書き直してください。",
+      "au": "AU では、お使いの DAW によって同じように下がる場合があります。",
+      "revert": "{previous} のインストーラは引き続きポータルからダウンロードできます。新旧は同じプラグインなので、同時には入れられません。戻す時は、Mac は先に「Uninstall MUEDlim」（/Applications/MUEDlim/）で {version} を消してから {previous} を入れてください。Windows は {previous} の MUEDlim.vst3 で置き換えてください。{version} で −3 dB より下に設定したセッションは、{previous} では −3 dB として開きます。1:1 をオンにして保存したセッションを {previous} で開くと、1:1 は無くなり、INPUT の分だけ音が大きくなります。"
     },
     "whyFree": {
       "heading": "無料の理由と、メールがあなたの鍵になる理由",
@@ -3043,6 +3057,18 @@
       "masterchainSameKey": "Windows 版（VST3）も、同じライセンスキーで使えます。"
     },
     "added": "{date} に追加",
+    "changes": {
+      "muedlim": {
+        "summary": "{version} で CEILING の幅が −18〜0 dBTP に広がり、1:1 スイッチ（INPUT の分だけ CEILING を下げる）が加わりました。{previous} で作ったセッションのうち、VST3／AAX で CEILING にオートメーションを書いたものは、再生される値が下がります（例: −1.0 dB → −6.0 dB）。保存したつまみの値とプリセットは変わりません。AU でも、DAW によって同じように下がる場合があります。",
+        "revert": "{previous} に戻す時: Mac は先に「Uninstall MUEDlim」（/Applications/MUEDlim/）で {version} を消してから {previous} を入れます。Windows は {previous} の MUEDlim.vst3 で置き換えます。1:1 をオンにして保存したセッションは、{previous} では INPUT の分だけ音が大きくなります。",
+        "more": "くわしく"
+      }
+    },
+    "previous": {
+      "label": "以前の版（{name} {version}）:",
+      "mac": "macOS（{ext}）",
+      "windows": "Windows（{ext}）"
+    },
     "kind": {
       "muedsat": "サチュレーション",
       "muedlim": "リミッター",

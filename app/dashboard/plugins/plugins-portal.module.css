@@ -179,6 +179,15 @@
 .dlAlt:hover { background: var(--amber-glow); }
 .dlAlt:focus-visible { outline: 2px solid #ffd98a; outline-offset: 2px; }
 .dl:focus-visible { outline: 2px solid #ffd98a; outline-offset: 2px; }
+/* What changed in this version + the previous installer: a full-width note under the row, text links only. */
+.previous {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--line);
+  padding-top: 2px;
+}
+.previous .howto { word-break: normal; }
+.previous a { color: var(--amber); text-decoration: underline; text-underline-offset: 2px; }
+.previous a:focus-visible { outline: 2px solid #ffd98a; outline-offset: 2px; }
 
 /* empty state */
 .empty {

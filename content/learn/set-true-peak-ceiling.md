@@ -8,7 +8,7 @@ publishDate: null   # set at publish
 lastUpdated: null
 gate:
   heading: "A ceiling you can just dial in"
-  body: "MUEDlim is a free true-peak limiter with exactly two knobs — INPUT for loudness, CEILING for the true-peak ceiling (−3 to 0 dBTP, default −1). Set the ceiling, drive the input, done."
+  body: "MUEDlim is a free true-peak limiter with exactly two knobs — INPUT for loudness, CEILING for the true-peak ceiling (−18 to 0 dBTP, default −1). Set the ceiling, drive the input, done."
   note: "Your email becomes your portal — latest build one click away."
   ctaLabel: "Get MUEDlim — free"
   ctaHref: "/en/muedlim?from=learn-set-true-peak-ceiling"

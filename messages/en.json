@@ -2831,17 +2831,31 @@
         },
         "ceiling": {
           "name": "CEILING",
-          "desc": "the true-peak ceiling (−3 to 0 dBTP, default −1)."
+          "desc": "the true-peak ceiling (−18 to 0 dBTP, default −1)."
         },
         "bypass": {
           "name": "BYPASS",
           "desc": "a true bypass (ACTIVE / BYPASS), for honest A/B."
         }
       },
-      "bypassNote": "Plus a BYPASS toggle (ACTIVE / BYPASS), for honest A/B."
+      "bypassNote": "Plus a BYPASS toggle (ACTIVE / BYPASS), for honest A/B. With the 1:1 switch on, INPUT brings CEILING down by the same amount instead of making the signal louder."
     },
     "visuals": {
       "faceplateAlt": "The MUEDlim 1.0.0 plugin interface with audio running. At the top, the title with an ACTIVE toggle at the right. Below, a large amber INTEGRATED LUFS readout (−11.7) at the left, and SHORT-TERM −11.5, GR −0.95 dB, RANGE 0.7 LU and TRUE-PEAK −1.00 dBTP stacked at the right. A steady loudness-history graph around −12 with a dashed TARGET −14 line fills the center; a vertical true-peak meter at its −1.00 dBTP ceiling on the right; INPUT (+0.00 dB) and CEILING (−1.00 dBTP) knobs along the bottom, and a mued.jp link at the bottom right."
+    },
+    "versionNotice": {
+      "line": "If you have {previous} sessions: CEILING automation values change in {version}.",
+      "detailsLink": "Read what changed and how to go back",
+      "previousLink": "The {previous} installer stays in your portal",
+      "detailsHeading": "What changed in {version}",
+      "lead": "The CEILING range is now −18 to 0 dBTP (was −3 to 0), so you can use MUEDlim to catch peaks on track and stem buses. The default (−1 dBTP) and the processing itself are unchanged.",
+      "added": "New: the 1:1 switch. When it is on, INPUT no longer makes the signal louder; it brings CEILING down by the same amount instead (INPUT +12 dB → CEILING −12 dB). Anything below the ceiling passes at its own level, and only the peaks that reach it are limited. The CEILING knob is not used while 1:1 is on. At INPUT 0 dB the ceiling is 0.0 dBTP (not the default −1.0). Turning INPUT below 0 dB does nothing while 1:1 is on. In your DAW's automation list this switch appears as \"Unity\".",
+      "display": "Gain reduction is now drawn on the graph. It hangs from the top edge of the loudness graph and shows, over time, where and how much the limiter is reducing. The GR number shows the deepest recent value. While 1:1 is on, the large readout becomes GAIN REDUCTION and loudness moves to the small lines at the top right. The output meter now has a peak-hold line.",
+      "sessionsHeading": "If you have sessions made with {previous}",
+      "saved": "Saved knob values and presets open with the same values, with 1:1 off.",
+      "automation": "If you wrote CEILING automation in VST3 or AAX, it now plays back lower — six times the written value (for example, a lane written at −1.0 dB plays at −6.0 dB, and −0.5 dB at −3.0 dB). Bounce those sessions before updating to {version}, or rewrite the automation after updating.",
+      "au": "In AU, it may play back lower in the same way, depending on your DAW.",
+      "revert": "The {previous} installer stays available in your portal. Both versions are the same plugin, so they cannot be installed side by side. To go back: on Mac, remove {version} with \"Uninstall MUEDlim\" (in /Applications/MUEDlim/) first, then install {previous}. On Windows, replace MUEDlim.vst3 with the {previous} file. A session saved in {version} with CEILING below −3 dB opens at −3 dB in {previous}. A session saved with 1:1 on opens without it in {previous} and plays louder by the INPUT amount."
     },
     "whyFree": {
       "heading": "Free — and your email gives it a home",
@@ -3043,6 +3057,18 @@
       "masterchainSameKey": "The Windows version (VST3) uses the same license key."
     },
     "added": "Added {date}",
+    "changes": {
+      "muedlim": {
+        "summary": "{version} widens CEILING to −18 to 0 dBTP and adds the 1:1 switch (INPUT brings CEILING down by the same amount). If a session has CEILING automation written in VST3 or AAX, it now plays back lower (for example, −1.0 dB → −6.0 dB). Saved knob values and presets do not change. In AU it may play back lower in the same way, depending on your DAW.",
+        "revert": "To go back to {previous}: on Mac, remove {version} with \"Uninstall MUEDlim\" (in /Applications/MUEDlim/) first, then install {previous}. On Windows, replace MUEDlim.vst3 with the {previous} file. A session saved with 1:1 on plays louder by the INPUT amount in {previous}.",
+        "more": "Details"
+      }
+    },
+    "previous": {
+      "label": "Previous version ({name} {version}):",
+      "mac": "macOS ({ext})",
+      "windows": "Windows ({ext})"
+    },
     "kind": {
       "muedsat": "Saturation",
       "muedlim": "Limiter",
