@@ -1,0 +1,5 @@
+# status.md の 3 欄から退避した分（2026-10-11T21:46:36+09:00・逐語）
+
+## current_task
+
+★★**(2026-10-08T16:13:33+09:00) 10/8 の鍵の依頼は終わった。kimny の MUEDvox の鍵: #1245 で経路を出す → kimny が受け取り、Ableton で LICENSED を確認（conductor 経由・逐語「1.バッチリでした！」）→ #1251 で経路を消した（merge 8e5043dc・16:11 JST・CCO PASS と conductor の最終 PASS は head aba82c15・kimny がこの窓で「#1251 を merge」）。** 本番の実測（16:12 JST・サインアウト）: /api/admin/license/owner-muedvox は存在しない経路と同じ 404（text/html・x-matched-path /_not-found）。★鍵は kimny の Mac に在って有効のまま。同じ file を出し直す時は #1251 の revert。★#1245 の最初の本番 deploy は build で失敗（next/font/google の Sora が解決できない・10 件）→ kimny がダッシュボードで Redeploy → Ready＝同じ commit で通った。#1248（next 16.3.8）も本番（merge df4727ba・14:40 JST）。本番で実測（14:42 JST）: /en/muedsp・/ja/muedsp・/learn・/learn/lufs-targets-streaming が 200 で本文あり（記事に ?from=learn-<slug> の CTA）・画像の最適化 200・外の URL は 400。★この 4 ページは no-store で返る＝CDN のキャッシュの挙動は測れていない。★/learn は locale なし（/en/learn は 404）。7 日集計の数字は conductor へ送付済（デモ DL 4 人・客の購入 1 件・フォロー便の直リンク Mac 4／Win 8・?from= は 0）。★内部リンクに UTM を付けない＝?from=。★客の経路は sales-impact・守りは guard-change・承認文は copy-approval。
