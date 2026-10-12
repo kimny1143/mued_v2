@@ -1,6 +1,6 @@
 {
   "schema": "newsletter-metrics/v1",
-  "generated_at": "2026-10-11T16:44:31+09:00",
+  "generated_at": "2026-10-12T16:53:15+09:00",
   "source": "Resend API（/emails/metrics・/broadcasts/{id}/clicked-links）。plugin-funnel-collector が毎朝書き出す（mued_v2 scripts/emit-newsletter-metrics.ts）。",
   "notes": [
     "「押した人」には配信停止のリンクを押した人も入る（Resend の数え方）。製品へのリンクの数は下のリンク別を見る。",
@@ -25,15 +25,15 @@
         "bounced_transient": 20,
         "bounced_permanent": 1,
         "suppressed": 27,
-        "unique_opened": 333,
-        "unique_clicked": 52,
+        "unique_opened": 339,
+        "unique_clicked": 53,
         "unsubscribed": 4,
         "complained": 0
       },
       "rates": {
         "delivery": 97.96,
-        "open": 33,
-        "click": 5.15,
+        "open": 33.6,
+        "click": 5.25,
         "unsubscribe": 0.4,
         "complaint": 0
       },
@@ -194,8 +194,8 @@
           "label": "/en/muedlim",
           "lang": "en",
           "kind": "version-notes",
-          "unique": 37,
-          "clicks": 50
+          "unique": 38,
+          "clicks": 51
         },
         {
           "label": "/ja/muedlim",
@@ -596,8 +596,8 @@
           "label": "英語の製品ページ",
           "lang": "en",
           "kind": "product",
-          "unique": 33,
-          "clicks": 36
+          "unique": 34,
+          "clicks": 37
         },
         {
           "label": "英語の Windows の段",
