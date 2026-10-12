@@ -1,14 +1,14 @@
 {
   "reachable_contacts": 1074,
-  "net_new_day": 5,
+  "net_new_day": 7,
   "target": 5000,
   "remaining_to_target": 3926,
   "remaining_to_1000": -74,
   "portal_registrations": 147,
-  "measured_at": "2026-10-12T12:19:55.857Z",
+  "measured_at": "2026-10-12T12:22:00.821Z",
   "trigger": "workflow_dispatch",
-  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/38248197941",
-  "source_report": "reports/plugin-funnel/2026-10-09.json",
+  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/38248422067",
+  "source_report": "reports/plugin-funnel/2026-10-11.json",
   "newsletters": [
     {
       "id": "86c01ff0-b9f1-4ef4-b3ce-5ef3960d23f7",
@@ -99,7 +99,7 @@
     "since": "2026-09-23T06:51:00.000Z",
     "all_time": {
       "from": "2026-09-23T06:51:00.000Z",
-      "until": "2026-10-12T12:19:46.567Z",
+      "until": "2026-10-12T12:21:50.611Z",
       "total": {
         "sent": 304,
         "bounced": 5,
@@ -156,8 +156,8 @@
       }
     },
     "last_24h": {
-      "from": "2026-10-11T12:19:46.567Z",
-      "until": "2026-10-12T12:19:46.567Z",
+      "from": "2026-10-11T12:21:50.611Z",
+      "until": "2026-10-12T12:21:50.611Z",
       "total": {
         "sent": 14,
         "bounced": 0,
@@ -219,13 +219,13 @@
     "launch_at": "2026-09-30T22:13:13.198Z",
     "all_time": {
       "from": "2026-09-30T22:13:13.198Z",
-      "until": "2026-10-12T12:19:46.567Z",
+      "until": "2026-10-12T12:21:50.611Z",
       "demo_downloads": 5,
       "purchases": 1
     },
     "last_24h": {
-      "from": "2026-10-11T12:19:46.567Z",
-      "until": "2026-10-12T12:19:46.567Z",
+      "from": "2026-10-11T12:21:50.611Z",
+      "until": "2026-10-12T12:21:50.611Z",
       "demo_downloads": 0,
       "purchases": 0
     },
@@ -238,10 +238,10 @@
     }
   },
   "denominator_trend": {
-    "as_of": "2026-10-09",
-    "last7_avg": 5.43,
-    "prior14_avg": 8.5,
-    "ratio": 0.64,
+    "as_of": "2026-10-11",
+    "last7_avg": 6.29,
+    "prior14_avg": 7.43,
+    "ratio": 0.85,
     "alert": false,
     "reason": null,
     "threshold": 0.5,
