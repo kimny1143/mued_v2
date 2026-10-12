@@ -53,6 +53,7 @@ import {
 } from "@/lib/funnel/download-link-emails";
 import { isReached, welcomeReachAnomalies, welcomeReachCheckHealthy } from "@/lib/funnel/welcome-reach";
 import { LAUNCH_DEFINITION, toLaunchNumbers, type LaunchNumbers } from "@/lib/funnel/launch";
+import { createPacedGet } from "@/lib/funnel/resend-get";
 
 const KEY = process.env.RESEND_API_KEY;
 if (!KEY) {
@@ -60,6 +61,12 @@ if (!KEY) {
   process.exit(1);
 }
 const H = { Authorization: `Bearer ${KEY}` };
+// ★Every Resend read goes through this one gate (spaced, 429 waited out) — see lib/funnel/resend-get.ts.
+//   A direct, ungated call to Resend here is what killed the 2026-10-09 run; a test forbids adding one back.
+const resendGet = createPacedGet({
+  onRetry: ({ url, attempt, waitMs }) =>
+    console.warn(`[aggregate-plugin-funnel-daily] Resend 429 — retry ${attempt} in ${waitMs}ms: ${new URL(url).pathname}`),
+});
 
 const GENERAL_AUDIENCE_ID = "6293ccef-c19f-4a4e-bb52-4bd8a6ef5c6f";
 
@@ -165,8 +172,11 @@ async function fetchWelcomeEmailsForDay(day: string): Promise<Email[]> {
   let url: string | null = "https://api.resend.com/emails?limit=100";
   let pages = 0;
   while (url && pages < 30) {
-    const r = await fetch(url, { headers: H });
-    const b = (await r.json()) as { data?: Email[]; has_more?: boolean };
+    const r = await resendGet(url, { headers: H });
+    const text = await r.text();
+    // ★An error body has no `data`: unchecked, it read as an empty page and the count came out short.
+    if (!r.ok) throw new Error(`welcome email list ${r.status}: ${text.slice(0, 160)}`);
+    const b = JSON.parse(text) as { data?: Email[]; has_more?: boolean };
     const data = b.data || [];
     all = all.concat(data);
     pages++;
@@ -182,7 +192,7 @@ async function fetchNewsletters(): Promise<Newsletter[]> {
   const broadcasts: Broadcast[] = [];
   const params = new URLSearchParams({ limit: "100" });
   for (let page = 0; page < 20; page++) {
-    const r = await fetch(`https://api.resend.com/broadcasts?${params}`, { method: "GET", headers: H });
+    const r = await resendGet(`https://api.resend.com/broadcasts?${params}`, { method: "GET", headers: H });
     const text = await r.text();
     if (!r.ok) throw new Error(`broadcast list ${r.status}: ${text.slice(0, 160)}`);
     const body = JSON.parse(text) as { data: Broadcast[]; has_more: boolean };
@@ -210,7 +220,7 @@ async function fetchNewsletters(): Promise<Newsletter[]> {
       start_date: startDate,
       end_date: endDate,
     });
-    const r = await fetch(`https://api.resend.com/emails/metrics?${metricsParams}`, { method: "GET", headers: H });
+    const r = await resendGet(`https://api.resend.com/emails/metrics?${metricsParams}`, { method: "GET", headers: H });
     const text = await r.text();
     if (!r.ok) throw new Error(`broadcast metrics ${r.status}: ${text.slice(0, 160)}`);
     const body = JSON.parse(text) as { data: BroadcastMetricRow[] };
@@ -229,11 +239,7 @@ async function fetchEmailsSince(sinceIso: string): Promise<ResendEmail[]> {
   const params = new URLSearchParams({ limit: "100" });
   const MAX_PAGES = 200;
   for (let page = 0; page < MAX_PAGES; page++) {
-    let r = await fetch(`https://api.resend.com/emails?${params}`, { method: "GET", headers: H });
-    if (r.status === 429) {
-      await new Promise((res) => setTimeout(res, 2000));
-      r = await fetch(`https://api.resend.com/emails?${params}`, { method: "GET", headers: H });
-    }
+    const r = await resendGet(`https://api.resend.com/emails?${params}`, { method: "GET", headers: H });
     const text = await r.text();
     if (!r.ok) throw new Error(`email list ${r.status}: ${text.slice(0, 160)}`);
     const body = JSON.parse(text) as { data?: ResendEmail[]; has_more?: boolean };
@@ -245,8 +251,6 @@ async function fetchEmailsSince(sinceIso: string): Promise<ResendEmail[]> {
       throw new Error(`email list ended after ${all.length} mails without reaching ${sinceIso} — counts would be short`);
     }
     params.set("after", last.id);
-    // Resend's default rate limit is a few requests per second; stay under it.
-    await new Promise((res) => setTimeout(res, 600));
   }
   throw new Error(`email list: ${MAX_PAGES}-page cap reached before ${sinceIso} — counts would be short`);
 }
@@ -254,7 +258,7 @@ async function fetchEmailsSince(sinceIso: string): Promise<ResendEmail[]> {
 type Contact = { email?: string | null; unsubscribed?: boolean; created_at?: string };
 
 async function muedspAudienceSnapshot(): Promise<{ total: number; unsubscribed: number; netNewDay: number }> {
-  const r = await fetch(`https://api.resend.com/audiences/${MUEDSP_AUDIENCE_ID}/contacts`, { headers: H });
+  const r = await resendGet(`https://api.resend.com/audiences/${MUEDSP_AUDIENCE_ID}/contacts`, { headers: H });
   const text = await r.text();
   if (!r.ok) throw new Error(`audience list ${r.status}: ${text.slice(0, 160)}`);
   const body = JSON.parse(text) as { data?: Contact[]; has_more?: boolean };
@@ -279,7 +283,7 @@ async function muedspAudienceSnapshot(): Promise<{ total: number; unsubscribed: 
  * 現状 audience は MUEDsp + General の2本 (実測 has_more=false)。将来 audience 追加時も一覧を辿るので追随する。
  */
 async function audienceContacts(audienceId: string): Promise<Array<{ email: string; unsubscribed: boolean }>> {
-  const r = await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, { headers: H });
+  const r = await resendGet(`https://api.resend.com/audiences/${audienceId}/contacts`, { headers: H });
   const text = await r.text();
   if (!r.ok) throw new Error(`audience ${audienceId} list ${r.status}: ${text.slice(0, 160)}`);
   const body = JSON.parse(text) as { data?: Contact[]; has_more?: boolean };
@@ -305,7 +309,7 @@ async function audienceContacts(audienceId: string): Promise<Array<{ email: stri
  * accuracy guard: audience 一覧 or 各 audience contacts が has_more なら過小集計→abort。
  */
 async function marketingContacts(): Promise<{ total: number; muedspReachable: number; reachableUnionAnd: number }> {
-  const listRes = await fetch("https://api.resend.com/audiences", { headers: H });
+  const listRes = await resendGet("https://api.resend.com/audiences", { headers: H });
   const listText = await listRes.text();
   if (!listRes.ok) throw new Error(`audiences list ${listRes.status}: ${listText.slice(0, 160)}`);
   const listBody = JSON.parse(listText) as { data?: Array<{ id: string }>; has_more?: boolean };
