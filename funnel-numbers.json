@@ -1,13 +1,13 @@
 {
-  "reachable_contacts": 1072,
+  "reachable_contacts": 1074,
   "net_new_day": 7,
   "target": 5000,
-  "remaining_to_target": 3928,
-  "remaining_to_1000": -72,
+  "remaining_to_target": 3926,
+  "remaining_to_1000": -74,
   "portal_registrations": 147,
-  "measured_at": "2026-10-12T07:53:14.752Z",
-  "trigger": "schedule",
-  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/38220090838",
+  "measured_at": "2026-10-12T12:07:04.441Z",
+  "trigger": "workflow_dispatch",
+  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/38246838927",
   "source_report": "reports/plugin-funnel/2026-10-11.json",
   "newsletters": [
     {
@@ -40,8 +40,8 @@
       "sent_at": "2026-10-01T08:31:35.053Z",
       "delivered": 982,
       "unique_opened": 297,
-      "unique_clicked": 53,
-      "unsubscribed": 10,
+      "unique_clicked": 54,
+      "unsubscribed": 11,
       "bounced": 29,
       "complained": 0,
       "open_tracked": true
@@ -51,9 +51,9 @@
       "name": "Untitled",
       "sent_at": "2026-09-30T22:13:13.198Z",
       "delivered": 1000,
-      "unique_opened": 286,
-      "unique_clicked": 57,
-      "unsubscribed": 11,
+      "unique_opened": 287,
+      "unique_clicked": 58,
+      "unsubscribed": 12,
       "bounced": 21,
       "complained": 0,
       "open_tracked": true
@@ -99,19 +99,19 @@
     "since": "2026-09-23T06:51:00.000Z",
     "all_time": {
       "from": "2026-09-23T06:51:00.000Z",
-      "until": "2026-10-12T07:52:46.477Z",
+      "until": "2026-10-12T12:06:55.068Z",
       "total": {
-        "sent": 301,
+        "sent": 304,
         "bounced": 5,
-        "reached": 295,
-        "clicked": 232,
-        "opened": 32,
+        "reached": 298,
+        "clicked": 234,
+        "opened": 33,
         "delivered": 31,
         "complained": 0,
         "other": 1,
-        "unique_recipients": 204,
-        "unique_clicked_recipients": 169,
-        "unique_opened_or_clicked_recipients": 182
+        "unique_recipients": 207,
+        "unique_clicked_recipients": 171,
+        "unique_opened_or_clicked_recipients": 185
       },
       "by_product": {
         "muedsat": {
@@ -128,48 +128,48 @@
           "unique_opened_or_clicked_recipients": 60
         },
         "muedlim": {
-          "sent": 169,
+          "sent": 171,
           "bounced": 4,
-          "reached": 165,
-          "clicked": 131,
+          "reached": 167,
+          "clicked": 132,
           "opened": 16,
-          "delivered": 18,
+          "delivered": 19,
           "complained": 0,
           "other": 0,
-          "unique_recipients": 151,
-          "unique_clicked_recipients": 125,
-          "unique_opened_or_clicked_recipients": 136
+          "unique_recipients": 153,
+          "unique_clicked_recipients": 126,
+          "unique_opened_or_clicked_recipients": 137
         },
         "muedrive": {
-          "sent": 62,
+          "sent": 63,
           "bounced": 0,
-          "reached": 61,
-          "clicked": 47,
-          "opened": 8,
-          "delivered": 6,
+          "reached": 62,
+          "clicked": 48,
+          "opened": 9,
+          "delivered": 5,
           "complained": 0,
           "other": 1,
-          "unique_recipients": 60,
-          "unique_clicked_recipients": 47,
-          "unique_opened_or_clicked_recipients": 54
+          "unique_recipients": 61,
+          "unique_clicked_recipients": 48,
+          "unique_opened_or_clicked_recipients": 56
         }
       }
     },
     "last_24h": {
-      "from": "2026-10-11T07:52:46.477Z",
-      "until": "2026-10-12T07:52:46.477Z",
+      "from": "2026-10-11T12:06:55.068Z",
+      "until": "2026-10-12T12:06:55.068Z",
       "total": {
-        "sent": 12,
+        "sent": 14,
         "bounced": 0,
-        "reached": 12,
-        "clicked": 10,
+        "reached": 14,
+        "clicked": 11,
         "opened": 0,
-        "delivered": 2,
+        "delivered": 3,
         "complained": 0,
         "other": 0,
-        "unique_recipients": 10,
-        "unique_clicked_recipients": 8,
-        "unique_opened_or_clicked_recipients": 8
+        "unique_recipients": 12,
+        "unique_clicked_recipients": 9,
+        "unique_opened_or_clicked_recipients": 9
       },
       "by_product": {
         "muedsat": {
@@ -186,30 +186,30 @@
           "unique_opened_or_clicked_recipients": 2
         },
         "muedlim": {
-          "sent": 8,
+          "sent": 9,
           "bounced": 0,
-          "reached": 8,
+          "reached": 9,
           "clicked": 6,
           "opened": 0,
-          "delivered": 2,
+          "delivered": 3,
           "complained": 0,
           "other": 0,
-          "unique_recipients": 8,
+          "unique_recipients": 9,
           "unique_clicked_recipients": 6,
           "unique_opened_or_clicked_recipients": 6
         },
         "muedrive": {
-          "sent": 2,
+          "sent": 3,
           "bounced": 0,
-          "reached": 2,
-          "clicked": 2,
+          "reached": 3,
+          "clicked": 3,
           "opened": 0,
           "delivered": 0,
           "complained": 0,
           "other": 0,
-          "unique_recipients": 2,
-          "unique_clicked_recipients": 2,
-          "unique_opened_or_clicked_recipients": 2
+          "unique_recipients": 3,
+          "unique_clicked_recipients": 3,
+          "unique_opened_or_clicked_recipients": 3
         }
       }
     }
@@ -219,13 +219,13 @@
     "launch_at": "2026-09-30T22:13:13.198Z",
     "all_time": {
       "from": "2026-09-30T22:13:13.198Z",
-      "until": "2026-10-12T07:52:46.477Z",
+      "until": "2026-10-12T12:06:55.068Z",
       "demo_downloads": 5,
       "purchases": 1
     },
     "last_24h": {
-      "from": "2026-10-11T07:52:46.477Z",
-      "until": "2026-10-12T07:52:46.477Z",
+      "from": "2026-10-11T12:06:55.068Z",
+      "until": "2026-10-12T12:06:55.068Z",
       "demo_downloads": 0,
       "purchases": 0
     },
@@ -233,8 +233,8 @@
       "id": "a615f3f2-4bd5-4e52-9e74-32a2ec67cbef",
       "name": "Untitled",
       "sent_at": "2026-09-30T22:13:13.198Z",
-      "unique_opened": 286,
-      "unique_clicked": 57
+      "unique_opened": 287,
+      "unique_clicked": 58
     }
   },
   "denominator_trend": {
