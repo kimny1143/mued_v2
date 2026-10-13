@@ -8,10 +8,11 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import type { AnchorHTMLAttributes } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { loadCheckoutScript, openCheckout, requestQuote, m } = vi.hoisted(() => ({
-  loadCheckoutScript: vi.fn(() => Promise.resolve(true)),
-  openCheckout: vi.fn(() => true),
-  requestQuote: vi.fn(() => true),
+const { loadCheckoutScript, openCheckout, requestQuote, trackCtaClick, m } = vi.hoisted(() => ({
+  loadCheckoutScript: vi.fn((_product?: string) => Promise.resolve(true)),
+  openCheckout: vi.fn((_input: { eulaAccepted: boolean; marketingConsent?: boolean; product?: string }) => true),
+  requestQuote: vi.fn((_product?: string) => true),
+  trackCtaClick: vi.fn(),
   m: { purchaseLive: true, locale: "en", quote: null as Record<string, string> | null },
 }));
 
@@ -29,7 +30,7 @@ vi.mock("next-intl", () => {
   return { useLocale: () => m.locale, useTranslations: (ns?: string) => (ns === "eula" ? eula : t) };
 });
 vi.mock("@/lib/masterchain/fastspring-checkout", () => ({
-  MASTERCHAIN_CHECKOUT_ENABLED: true,
+  checkoutEnabled: () => true,
   ORDER_COMPLETED_EVENT: "muedsp:fastspring-order-completed",
   QUOTE_EVENT: "muedsp:fastspring-quote",
   currentQuote: () => m.quote,
@@ -37,6 +38,8 @@ vi.mock("@/lib/masterchain/fastspring-checkout", () => ({
   openCheckout,
   requestQuote,
 }));
+
+vi.mock("@/lib/analytics/gtag", () => ({ trackCtaClick }));
 
 const JP_QUOTE = { total: "¥12,364", currency: "JPY", taxPriceType: "included", tax: "¥1,124", taxRate: "10%", taxType: "JCT" };
 const US_QUOTE = { total: "$69.00", currency: "USD", taxPriceType: "added", tax: "$0.00", taxRate: "0%", taxType: "US" };
@@ -99,7 +102,7 @@ describe("the cart", () => {
     expect(within(dialog).getByTestId("cart-audience-note")).toHaveTextContent("cartAudienceNote");
     fireEvent.click(go);
     // … and the order says so: marketingConsent true → the webhook adds the buyer to the MUEDsp news list.
-    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: true });
+    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: true, product: "masterchain" });
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
@@ -231,5 +234,50 @@ describe("★the price — FastSpring's own figure for this session (kimny 10/1:
     const price = screen.getByTestId("order-price");
     expect(within(price).getAllByText("¥12,364")).toHaveLength(2);
     expect(price.textContent).not.toMatch(/subtotal|小計/i);
+  });
+});
+
+describe("★the product the button sells, and the two clicks that are counted (C9 PR-C, conductor 10/13)", () => {
+  it("★masterchain's button prices and checks out masterchain — the product is passed, not assumed", async () => {
+    await renderButton();
+    await waitFor(() => expect(loadCheckoutScript).toHaveBeenCalledWith("masterchain"));
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
+    await waitFor(() => expect(requestQuote).toHaveBeenCalledWith("masterchain"));
+    fireEvent.click(await screen.findByRole("button", { name: "agreeAndContinue" }));
+    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: true, product: "masterchain" });
+  });
+
+  it("★pressing Buy is counted once, and the FastSpring step only when the popup really opened", async () => {
+    await renderButton();
+    expect(trackCtaClick).not.toHaveBeenCalled(); // rendering is not a click
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
+    expect(trackCtaClick.mock.calls).toEqual([["masterchain", "buy_button", "checkout"]]);
+
+    openCheckout.mockReturnValueOnce(false); // the popup did not open → the cart stays, nothing more is counted
+    fireEvent.click(await screen.findByRole("button", { name: "agreeAndContinue" }));
+    expect(trackCtaClick).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("cart")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "agreeAndContinue" }));
+    expect(trackCtaClick.mock.calls[1]).toEqual(["masterchain", "cart_checkout", "checkout"]);
+    expect(screen.queryByTestId("cart")).not.toBeInTheDocument();
+  });
+
+  it("★another product's button uses that product's flag, words, image and path — and stays shut while its flag is off", async () => {
+    vi.stubEnv("NEXT_PUBLIC_EULA_LIVE", "1");
+    const { PaidBuyButton } = await import("@/components/features/muedsp-landing/masterchain-buy-button");
+    const vox = { key: "muedvox" as const, purchaseLive: false, cartThumb: "/muedvox/screen.webp", messages: "muedvox.buy" };
+    const closed = render(<PaidBuyButton product={vox} buyLabel="Buy MUEDvox" />);
+    expect(screen.getByRole("button", { name: "Buy MUEDvox" })).toBeDisabled();
+    expect(loadCheckoutScript).not.toHaveBeenCalled();
+    closed.unmount();
+
+    render(<PaidBuyButton product={{ ...vox, purchaseLive: true }} buyLabel="Buy MUEDvox" />);
+    await waitFor(() => expect(loadCheckoutScript).toHaveBeenCalledWith("muedvox"));
+    fireEvent.click(screen.getByRole("button", { name: "Buy MUEDvox" }));
+    expect(trackCtaClick).toHaveBeenCalledWith("muedvox", "buy_button", "checkout");
+    expect(within(screen.getByTestId("cart")).getByRole("presentation", { hidden: true })).toHaveAttribute("src", expect.stringContaining("screen.webp"));
+    fireEvent.click(await screen.findByRole("button", { name: "agreeAndContinue" }));
+    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: true, product: "muedvox" });
   });
 });

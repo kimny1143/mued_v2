@@ -244,3 +244,64 @@ describe("★the price in the buyer's currency, from FastSpring's own session (k
     expect(pushed).toEqual([]);
   });
 });
+
+describe("★one path per product (C9 PR-C) — masterchain's checkout does not move, a disabled product cannot check out", () => {
+  const TWO = { enabled: true };
+  /** The product table as it will be on MUEDvox's launch day: both rows enabled. */
+  async function loadWithBothOnSale() {
+    vi.resetModules();
+    for (const [k, v] of Object.entries(CONFIGURED)) process.env[k] = v;
+    vi.doMock("@/lib/plugins/paid-products", async (original) => {
+      const actual = await original<typeof import("@/lib/plugins/paid-products")>();
+      return { ...actual, PAID_PRODUCTS: { ...actual.PAID_PRODUCTS, muedvox: { ...actual.PAID_PRODUCTS.muedvox, ...TWO } } };
+    });
+    return import("@/lib/masterchain/fastspring-checkout");
+  }
+  afterEach(() => vi.doUnmock("@/lib/plugins/paid-products"));
+
+  it("★★today (MUEDvox's row disabled): masterchain sends exactly the payload it always sent, and MUEDvox opens nothing", async () => {
+    const m = await load(CONFIGURED);
+    expect(m.cartProducts("masterchain")).toEqual([{ path: "muedsp-masterchain", quantity: 1 }]);
+    expect(m.checkoutPath("muedvox")).toBe("");
+    expect(m.checkoutEnabled("muedvox")).toBe(false);
+    await expect(m.loadCheckoutScript("muedvox")).resolves.toBe(false);
+    expect(document.getElementById("fsc-api")).toBeNull();
+    const { pushed, checkout } = checkoutBuilder();
+    expect(m.requestQuote("muedvox")).toBe(false);
+    expect(m.openCheckout({ eulaAccepted: true, product: "muedvox" })).toBe(false);
+    expect(pushed).toEqual([]);
+    expect(checkout).not.toHaveBeenCalled();
+
+    expect(m.openCheckout({ eulaAccepted: true })).toBe(true);
+    expect(pushed).toEqual([{ products: [{ path: "muedsp-masterchain", quantity: 1 }] }]);
+  });
+
+  it("★★both on sale: each cart holds its own product × 1 and sets the other to 0 — never the two together", async () => {
+    // ★The webhook fulfils only an order of exactly one known item; a session carrying both would be paid and get no key.
+    const m = await loadWithBothOnSale();
+    const { pushed, checkout } = checkoutBuilder();
+    expect(m.checkoutPath("muedvox")).toBe("muedsp-vox"); // from the table, not from the env
+    expect(m.requestQuote("masterchain")).toBe(true);
+    expect(m.openCheckout({ eulaAccepted: true, product: "muedvox" })).toBe(true);
+    expect(pushed).toEqual([
+      { products: [{ path: "muedsp-masterchain", quantity: 1 }, { path: "muedsp-vox", quantity: 0 }] },
+      { products: [{ path: "muedsp-vox", quantity: 1 }, { path: "muedsp-masterchain", quantity: 0 }] },
+    ]);
+    expect(checkout).toHaveBeenCalledTimes(1);
+  });
+
+  it("★a figure belongs to the product whose cart asked for it — masterchain's price never shows in MUEDvox's cart", async () => {
+    const m = await loadWithBothOnSale();
+    checkoutBuilder();
+    const vox = session(JP, [{ path: "muedsp-vox", selected: true, quantity: 1 }]);
+    m.requestQuote("masterchain");
+    expect(m.handleSessionData(vox)).toBeNull(); // the session still holds the other product: no figure
+    m.handleSessionData(session(JP));
+    expect(m.currentQuote("masterchain")?.total).toBe("¥12,364");
+    expect(m.currentQuote("muedvox")).toBeNull();
+    m.requestQuote("muedvox");
+    expect(m.handleSessionData(session(JP))).toBeNull();
+    expect(m.handleSessionData(vox)?.total).toBe("¥12,364");
+    expect(m.currentQuote("muedvox")?.total).toBe("¥12,364");
+  });
+});

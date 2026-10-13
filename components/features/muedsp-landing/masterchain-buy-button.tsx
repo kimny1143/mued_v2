@@ -5,9 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import {
-  MASTERCHAIN_CHECKOUT_ENABLED,
   ORDER_COMPLETED_EVENT,
   QUOTE_EVENT,
+  checkoutEnabled,
   currentQuote,
   loadCheckoutScript,
   openCheckout,
@@ -18,14 +18,37 @@ import { MASTERCHAIN_PURCHASE_LIVE } from "@/lib/masterchain/config";
 import { EULA_VERSION } from "@/lib/legal/eula";
 import { parseEulaContent } from "@/lib/legal/eula-content";
 import { EulaArticles, EulaBlocks } from "@/components/legal/eula-body";
+import { trackCtaClick } from "@/lib/analytics/gtag";
+import type { PaidProductKey } from "@/lib/plugins/paid-products";
 import { BUY_BUTTON_CLASS } from "./buy-button-style";
 
 // Client gate: NEXT_PUBLIC_EULA_LIVE is read directly so Next.js inlines it at build time. Do not
 // replace this with the server-only EULA_LIVE flag; both flags must be enabled for publication.
 const EULA_CONSENT_LIVE = process.env.NEXT_PUBLIC_EULA_LIVE === "1";
-// ★Purchase is open only when the code flag says so (lib/masterchain/config.ts) AND the EULA is live.
-//   While closed: the button is the closed label, disabled; no FastSpring script, no modal.
-const PURCHASE_OPEN = MASTERCHAIN_PURCHASE_LIVE && EULA_CONSENT_LIVE;
+
+/**
+ * What the Buy button and its cart need to know about the product it sells (C9 PR-C). ★Only masterchain has
+ * one today: another product gets its own when its cart copy and its screen image exist — the button is not
+ * placed on a page before that.
+ */
+export type BuyProduct = {
+  key: PaidProductKey;
+  /** The product's own code flag (lib/<product>/config.ts). */
+  purchaseLive: boolean;
+  /** The product's screen, shown at thumbnail size in the cart. */
+  cartThumb: string;
+  /** messages namespace holding the cart's words (the keys muedsp.buyTry has). */
+  messages: string;
+};
+
+// The product image is masterchain 1.0.1's own screen (kimny 10/4: 「製品の画像はUIスクショを使って欲しい」) — the
+// same file the product page shows (2186×912), shown whole at thumbnail size.
+const MASTERCHAIN_BUY: BuyProduct = {
+  key: "masterchain",
+  purchaseLive: MASTERCHAIN_PURCHASE_LIVE,
+  cartThumb: "/muedsp/masterchain-1.0.1-licensed.webp",
+  messages: "muedsp.buyTry",
+};
 
 /**
  * masterchain's Buy (kimny 2026-10-01, verbatim: 「このエリアにもうmasterchainの購入ボタンが見えてないとダメだよね。
@@ -41,7 +64,14 @@ const PURCHASE_OPEN = MASTERCHAIN_PURCHASE_LIVE && EULA_CONSENT_LIVE;
  * button becomes the thank-you + portal link.
  */
 export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
-  const t = useTranslations("muedsp.buyTry");
+  return <PaidBuyButton product={MASTERCHAIN_BUY} buyLabel={buyLabel} />;
+}
+
+export function PaidBuyButton({ product, buyLabel }: { product: BuyProduct; buyLabel: string }) {
+  const t = useTranslations(product.messages);
+  // ★Purchase is open only when the product's code flag says so (lib/<product>/config.ts) AND the EULA is live.
+  //   While closed: the button is the closed label, disabled; no FastSpring script, no modal.
+  const PURCHASE_OPEN = product.purchaseLive && EULA_CONSENT_LIVE;
   const [checkoutReady, setCheckoutReady] = useState(false);
   const [open, setOpen] = useState(false);
   const [ordered, setOrdered] = useState(false);
@@ -53,15 +83,15 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
     return () => window.removeEventListener(ORDER_COMPLETED_EVENT, onDone);
   }, []);
   useEffect(() => {
-    if (!MASTERCHAIN_CHECKOUT_ENABLED || !PURCHASE_OPEN) return;
+    if (!checkoutEnabled(product.key) || !PURCHASE_OPEN) return;
     let alive = true;
-    void loadCheckoutScript().then((ok) => {
+    void loadCheckoutScript(product.key).then((ok) => {
       if (alive) setCheckoutReady(ok);
     });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [product.key, PURCHASE_OPEN]);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -70,7 +100,7 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
 
   if (ordered) {
     return (
-      <div role="status" data-testid="masterchain-thanks" className="flex max-w-xs flex-col items-start gap-3">
+      <div role="status" data-testid={`${product.key}-thanks`} className="flex max-w-xs flex-col items-start gap-3">
         <p className="text-sm leading-relaxed text-white/80">{t("thanks")}</p>
         <Link
           href="/dashboard/plugins"
@@ -91,7 +121,12 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
         disabled={!PURCHASE_OPEN}
         aria-disabled={!PURCHASE_OPEN}
         aria-haspopup="dialog"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          // ★Counted (conductor 2026-10-13): masterchain's launch had no figure for "pressed Buy". Same event as
+          //   every other CTA (cta_click), told apart by location; GA4 only receives it from visitors who consented.
+          trackCtaClick(product.key, "buy_button", "checkout");
+          setOpen(true);
+        }}
         className={
           PURCHASE_OPEN
             ? BUY_BUTTON_CLASS
@@ -101,16 +136,21 @@ export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
         {buyLabel}
       </button>
       {PURCHASE_OPEN && (
-        <p data-testid="masterchain-signin-note" className="text-xs leading-relaxed text-white/50">{t("signInNote")}</p>
+        <p data-testid={`${product.key}-signin-note`} className="text-xs leading-relaxed text-white/50">{t("signInNote")}</p>
       )}
       {PURCHASE_OPEN && open && (
         <CartModal
+          product={product}
           onClose={close}
           checkoutReady={checkoutReady}
           onAgree={() => {
             // ★marketingConsent "true" = this order was placed from the cart that shows the news notice
             //   (cartAudienceNote) — the webhook adds the buyer to the MUEDsp news list only then (kimny 10/6).
-            if (openCheckout({ eulaAccepted: true, marketingConsent: true })) setOpen(false);
+            if (openCheckout({ eulaAccepted: true, marketingConsent: true, product: product.key })) {
+              // The FastSpring popup opened — the step after "pressed Buy".
+              trackCtaClick(product.key, "cart_checkout", "checkout");
+              setOpen(false);
+            }
           }}
         />
       )}
@@ -136,28 +176,24 @@ type QuoteState = { kind: "quote"; quote: CheckoutQuote } | { kind: "fallback" }
  * ★One figure for the line and the total: the cart holds masterchain × 1, so they are the same number by
  *   construction (readQuote returns null for anything else).
  */
-function useOrderQuote(checkoutReady: boolean): QuoteState {
-  const [quote, setQuote] = useState<CheckoutQuote | null>(() => currentQuote());
+function useOrderQuote(checkoutReady: boolean, product: PaidProductKey): QuoteState {
+  const [quote, setQuote] = useState<CheckoutQuote | null>(() => currentQuote(product));
   const [gaveUp, setGaveUp] = useState(false);
 
   useEffect(() => {
     const onQuote = (e: Event) => setQuote((e as CustomEvent<CheckoutQuote>).detail);
     window.addEventListener(QUOTE_EVENT, onQuote);
-    if (checkoutReady) requestQuote();
+    if (checkoutReady) requestQuote(product);
     const timer = window.setTimeout(() => setGaveUp(true), QUOTE_WAIT_MS);
     return () => {
       window.removeEventListener(QUOTE_EVENT, onQuote);
       window.clearTimeout(timer);
     };
-  }, [checkoutReady]);
+  }, [checkoutReady, product]);
 
   if (quote) return { kind: "quote", quote };
   return gaveUp ? { kind: "fallback" } : { kind: "loading" };
 }
-
-// The product image is masterchain 1.0.1's own screen (kimny 10/4: 「製品の画像はUIスクショを使って欲しい」) — the
-// same file the product page shows (2186×912), shown whole at thumbnail size.
-const CART_THUMB = "/muedsp/masterchain-1.0.1-licensed.webp";
 
 /**
  * The cart (kimny 2026-10-04, Chief plan-cart-flow-20261004 + mock cart-mock/ @ _chief 01616db): the ORDER is the
@@ -169,14 +205,14 @@ const CART_THUMB = "/muedsp/masterchain-1.0.1-licensed.webp";
  *   からは白地でお願いします」): measured from the live popup (2026-10-01) — white panel, total #356eec, secondary
  *   #767676, divider #eeeeee, system fonts. Sizes are the mock's (cart-ja.html).
  */
-function CartModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; onAgree: () => void; checkoutReady: boolean }) {
+function CartModal({ product, onClose, onAgree, checkoutReady }: { product: BuyProduct; onClose: () => void; onAgree: () => void; checkoutReady: boolean }) {
   const t = useTranslations("eula");
-  const tb = useTranslations("muedsp.buyTry");
+  const tb = useTranslations(product.messages);
   const locale = useLocale();
   const isJa = locale === "ja";
   const titleId = useId();
   const dialog = useRef<HTMLDivElement>(null);
-  const price = useOrderQuote(checkoutReady);
+  const price = useOrderQuote(checkoutReady, product.key);
   const content = parseEulaContent({
     intro: t.raw("intro"),
     articles: t.raw("articles"),
@@ -276,7 +312,7 @@ function CartModal({ onClose, onAgree, checkoutReady }: { onClose: () => void; o
                 as in the mock. One price element, placed by the grid. */}
             <div className="grid grid-cols-[112px_minmax(0,1fr)] items-start gap-x-3.5 gap-y-1 sm:grid-cols-[112px_minmax(0,1fr)_auto]">
               <Image
-                src={CART_THUMB}
+                src={product.cartThumb}
                 alt=""
                 width={112}
                 height={47}
