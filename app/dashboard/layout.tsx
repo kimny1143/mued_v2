@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { cookies } from 'next/headers';
 import { type Locale, locales, defaultLocale } from '@/lib/i18n/config';
+import { clientMessages } from '@/lib/muedvox/config';
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -21,7 +22,7 @@ export default async function DashboardLayout({
   const messages = (await import(`../../messages/${locale}.json`)).default;
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    <NextIntlClientProvider locale={locale} messages={clientMessages(messages)}>
       {children}
     </NextIntlClientProvider>
   );

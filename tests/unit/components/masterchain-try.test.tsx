@@ -150,3 +150,37 @@ describe("the red line is the free form's wording (kimny 10/4「揃えて」)", 
     expect(messages.muedsp.demo.errors.invalid_email).toBe(messages.muedsat.form.errorEmail);
   });
 });
+
+describe("★the demo form takes its product (C9 PR-C)", () => {
+  const other = { key: "other", demoLive: true, endpoint: "/api/other/demo", messages: { form: "other.form", demo: "other.demo", windows: "other.windows" } };
+
+  it("★posts to its own endpoint and is counted under its own name", async () => {
+    const { PaidDemoForm } = await import("@/components/features/muedsp-landing/masterchain-try");
+    const { trackCtaClick } = await import("@/lib/analytics/gtag");
+    const { container } = render(<PaidDemoForm product={other} />);
+    expect(container.querySelector("#other-demo-email")).not.toBeNull();
+    expect(container.querySelector("#masterchain-demo-email")).toBeNull();
+    fireEvent.change(screen.getByLabelText("emailLabel"), { target: { value: "person@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "try" }));
+    await waitFor(() => expect(m.fetch).toHaveBeenCalledTimes(1));
+    expect(m.fetch.mock.calls[0][0]).toBe("/api/other/demo");
+    expect(trackCtaClick).toHaveBeenCalledExactlyOnceWith("other", "demo_form", "download_form");
+  });
+
+  it("★its own flag off renders nothing, whatever masterchain's flag says", async () => {
+    const { PaidDemoForm } = await import("@/components/features/muedsp-landing/masterchain-try");
+    const { container } = render(<PaidDemoForm product={{ ...other, demoLive: false }} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("masterchain's form is unchanged: its endpoint, its ids, its name", async () => {
+    const { container } = await renderBlock(true);
+    const { trackCtaClick } = await import("@/lib/analytics/gtag");
+    expect(container.querySelector("#masterchain-demo-email")).not.toBeNull();
+    fireEvent.change(screen.getByLabelText("emailLabel"), { target: { value: "person@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "try" }));
+    await waitFor(() => expect(m.fetch).toHaveBeenCalledTimes(1));
+    expect(m.fetch.mock.calls[0][0]).toBe("/api/masterchain/demo");
+    expect(trackCtaClick).toHaveBeenCalledExactlyOnceWith("masterchain", "demo_form", "download_form");
+  });
+});
