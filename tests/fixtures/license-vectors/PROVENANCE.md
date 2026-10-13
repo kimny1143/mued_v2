@@ -11,12 +11,12 @@ other*, which is the one thing the vectors exist to prevent.
 |---|---|
 | repo | `mued-dsp` (`_mued-dsp`) |
 | ref | `main` |
-| commit | **`f207182`** — *docs(license): say plainly that the seed trick must never reach the product key (#233)*, on top of `7194b39` *the shape the production path emits (ms) + repair the public key #240 dropped silently (#242)* |
+| commit | **`b5b72d0`** — *test(license): --check で MANIFEST も全文比較・--self-test を CI へ (#873)*, on top of `744e57a` *同じ product で scope だけ違う鍵（MUEDvox の形）を拒否する vector と試験 (#872)* |
 | path | `plugin/MUEDsp/tests/license-vectors/` |
-| `MANIFEST.tsv` git blob | **`d06125eae963e62706275c238dbf5df06e481307`** |
-| cases | **15** |
-| `vector-set-version` | **3** (pinned in `masterchain-license-vectors.test.ts`) |
-| vendored | 2026-09-01 (re-vendored; earlier copies were `88e2b83` / 14 cases and `463d3f8` / 13 cases) |
+| `MANIFEST.tsv` git blob | **`ce19185a2e80f61e8dfe5df5f9b97b0a86d42ade`** |
+| cases | **16** |
+| `vector-set-version` | **4** (pinned in `masterchain-license-vectors.test.ts`) |
+| vendored | 2026-10-13 (re-vendored; earlier copies were `f207182` / 15 cases, `88e2b83` / 14 cases and `463d3f8` / 13 cases) |
 
 ★**The blob row above is checked, not merely asserted.** `npm run verify:vector-drift` re-hashes
 `MANIFEST.tsv` against it on every run (and at session start), and refuses to compare against upstream
@@ -24,11 +24,14 @@ when they disagree. ★Until 2026-09-02 this was prose only — which meant edit
 without re-vendoring left both the drift check and the vector suite green while the copy was a
 generation behind. ★A sentence holds only for whoever read it on the day they read it.
 
-Verified at vendoring time: the `MANIFEST.tsv` blob hash above matches this copy exactly, and all 15
-case files are byte-identical to `f207182`. The upstream diff was read before copying: **it adds
-only** — one case (`valid_issued_at_millis`, verdict `accept`) and a comment; **no existing verdict
-moved**, which `git status` showed independently (one `M` on the manifest, one `??` on the new case,
-nothing else touched).
+Verified at vendoring time: the `MANIFEST.tsv` blob hash above matches this copy exactly, and all 16
+case files are byte-identical to `b5b72d0`. The upstream diff was read before copying: **it adds
+only** — one case (`same_product_sibling_scope`, verdict `reject`: product `MUEDsp`, scope `muedvox`,
+a valid signature — the key a MUEDvox buyer holds, which masterchain must not open) and the set
+version 3 → 4; **no existing verdict moved**, which `git status` showed independently (one `M` on the
+manifest, one `??` on the new case, nothing else touched). ★The decision the new case encodes was
+already made here: the webhook issues MUEDvox keys as product `MUEDsp` + scope `muedvox`
+(`lib/plugins/paid-products.ts`, #1218).
 
 ## ★Why the commit and blob are recorded, not just the sha256
 
