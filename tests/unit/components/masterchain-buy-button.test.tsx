@@ -13,7 +13,7 @@ const { loadCheckoutScript, openCheckout, requestQuote, trackCtaClick, m } = vi.
   openCheckout: vi.fn((_input: { eulaAccepted: boolean; marketingConsent?: boolean; product?: string }) => true),
   requestQuote: vi.fn((_product?: string) => true),
   trackCtaClick: vi.fn(),
-  m: { purchaseLive: true, locale: "en", quote: null as Record<string, string> | null },
+  m: { purchaseLive: true, locale: "en", quote: null as Record<string, string> | null, quoteFor: "masterchain", sold: ["masterchain", "muedvox"] },
 }));
 
 vi.mock("@/lib/masterchain/config", () => ({ get MASTERCHAIN_PURCHASE_LIVE() { return m.purchaseLive; } }));
@@ -30,10 +30,10 @@ vi.mock("next-intl", () => {
   return { useLocale: () => m.locale, useTranslations: (ns?: string) => (ns === "eula" ? eula : t) };
 });
 vi.mock("@/lib/masterchain/fastspring-checkout", () => ({
-  checkoutEnabled: () => true,
+  checkoutEnabled: (product: string = "masterchain") => m.sold.includes(product),
   ORDER_COMPLETED_EVENT: "muedsp:fastspring-order-completed",
   QUOTE_EVENT: "muedsp:fastspring-quote",
-  currentQuote: () => m.quote,
+  currentQuote: (product: string = "masterchain") => (product === m.quoteFor ? m.quote : null),
   loadCheckoutScript,
   openCheckout,
   requestQuote,
@@ -52,10 +52,13 @@ async function renderButton(eulaLive = true) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  trackCtaClick.mockReset();
   vi.resetModules();
   m.purchaseLive = true;
   m.locale = "en";
   m.quote = null;
+  m.quoteFor = "masterchain";
+  m.sold = ["masterchain", "muedvox"];
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -279,5 +282,36 @@ describe("★the product the button sells, and the two clicks that are counted (
     expect(within(screen.getByTestId("cart")).getByRole("presentation", { hidden: true })).toHaveAttribute("src", expect.stringContaining("screen.webp"));
     fireEvent.click(await screen.findByRole("button", { name: "agreeAndContinue" }));
     expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: true, product: "muedvox" });
+  });
+
+  it("★★a counting call that throws never costs the purchase — the cart opens and the popup step completes (CCO #1263)", async () => {
+    const broken = () => { throw new Error("analytics broke"); };
+    trackCtaClick.mockImplementationOnce(broken).mockImplementationOnce(broken);
+    await renderButton();
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
+    expect(screen.getByTestId("cart")).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "agreeAndContinue" }));
+    expect(openCheckout).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId("cart")).not.toBeInTheDocument(); // not left behind the popup
+    expect(trackCtaClick).toHaveBeenCalledTimes(2); // both counting calls ran, and both threw
+  });
+
+  it("★the button asks whether ITS product can check out, and reads ITS product's remembered price (CCO #1263 J, M)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_EULA_LIVE", "1");
+    const { PaidBuyButton } = await import("@/components/features/muedsp-landing/masterchain-buy-button");
+    const vox = { key: "muedvox" as const, purchaseLive: true, cartThumb: "/muedvox/screen.webp", messages: "muedvox.buy" };
+    // masterchain can check out, MUEDvox cannot → MUEDvox's button loads no FastSpring script.
+    m.sold = ["masterchain"];
+    const first = render(<PaidBuyButton product={vox} buyLabel="Buy MUEDvox" />);
+    await act(async () => {});
+    expect(loadCheckoutScript).not.toHaveBeenCalled();
+    first.unmount();
+    // The page remembers masterchain's price only → MUEDvox's cart must not show it.
+    m.sold = ["masterchain", "muedvox"];
+    m.quote = JP_QUOTE;
+    m.quoteFor = "masterchain";
+    render(<PaidBuyButton product={vox} buyLabel="Buy MUEDvox" />);
+    fireEvent.click(screen.getByRole("button", { name: "Buy MUEDvox" }));
+    expect(within(screen.getByTestId("cart")).queryByText("¥12,364")).toBeNull();
   });
 });

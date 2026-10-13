@@ -304,4 +304,19 @@ describe("★one path per product (C9 PR-C) — masterchain's checkout does not 
     expect(m.handleSessionData(vox)?.total).toBe("¥12,364");
     expect(m.currentQuote("muedvox")?.total).toBe("¥12,364");
   });
+
+  it("★masterchain's path is the env's, not the table's — this change does not move the live checkout (CCO #1263 C)", async () => {
+    const m = await load({ ...CONFIGURED, [PRODUCT]: "a-path-only-the-env-has" });
+    expect(m.checkoutPath("masterchain")).toBe("a-path-only-the-env-has");
+    expect(m.cartProducts("masterchain")).toEqual([{ path: "a-path-only-the-env-has", quantity: 1 }]);
+  });
+
+  it("★opening a product's checkout makes it the one session data is read for, without a quote request first (CCO #1263 G)", async () => {
+    const m = await loadWithBothOnSale();
+    checkoutBuilder();
+    expect(m.openCheckout({ eulaAccepted: true, product: "muedvox" })).toBe(true);
+    expect(m.handleSessionData(session(JP, [{ path: "muedsp-vox", selected: true, quantity: 1 }]))?.total).toBe("¥12,364");
+    expect(m.currentQuote("muedvox")?.total).toBe("¥12,364");
+    expect(m.currentQuote("masterchain")).toBeNull();
+  });
 });

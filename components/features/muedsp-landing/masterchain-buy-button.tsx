@@ -63,6 +63,15 @@ const MASTERCHAIN_BUY: BuyProduct = {
  * Closing the cart (×, Esc, the backdrop) does nothing. After FastSpring reports a COMPLETED order, the
  * button becomes the thank-you + portal link.
  */
+/** Counting is best-effort: whatever the analytics call does, the buyer's click has already taken effect. */
+function countClick(product: PaidProductKey, location: "buy_button" | "cart_checkout") {
+  try {
+    trackCtaClick(product, location, "checkout");
+  } catch {
+    // ignore — a click is never worth a failed purchase (same rule as readAttribution in fastspring-checkout.ts)
+  }
+}
+
 export function MasterchainBuyButton({ buyLabel }: { buyLabel: string }) {
   return <PaidBuyButton product={MASTERCHAIN_BUY} buyLabel={buyLabel} />;
 }
@@ -122,10 +131,11 @@ export function PaidBuyButton({ product, buyLabel }: { product: BuyProduct; buyL
         aria-disabled={!PURCHASE_OPEN}
         aria-haspopup="dialog"
         onClick={() => {
+          // ★The cart first: a purchase never waits on, or fails with, the measurement (CCO #1263).
+          setOpen(true);
           // ★Counted (conductor 2026-10-13): masterchain's launch had no figure for "pressed Buy". Same event as
           //   every other CTA (cta_click), told apart by location; GA4 only receives it from visitors who consented.
-          trackCtaClick(product.key, "buy_button", "checkout");
-          setOpen(true);
+          countClick(product.key, "buy_button");
         }}
         className={
           PURCHASE_OPEN
@@ -147,9 +157,9 @@ export function PaidBuyButton({ product, buyLabel }: { product: BuyProduct; buyL
             // ★marketingConsent "true" = this order was placed from the cart that shows the news notice
             //   (cartAudienceNote) — the webhook adds the buyer to the MUEDsp news list only then (kimny 10/6).
             if (openCheckout({ eulaAccepted: true, marketingConsent: true, product: product.key })) {
-              // The FastSpring popup opened — the step after "pressed Buy".
-              trackCtaClick(product.key, "cart_checkout", "checkout");
               setOpen(false);
+              // The FastSpring popup opened — the step after "pressed Buy".
+              countClick(product.key, "cart_checkout");
             }
           }}
         />
