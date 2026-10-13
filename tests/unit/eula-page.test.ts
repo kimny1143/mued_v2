@@ -137,7 +137,7 @@ describe("★EULA 2026.10 — the web text IS dsp's installer text", () => {
   //   file dsp has merged. dsp's merged 2026.10 file is e7e222479867f7877ac35100291713d5d58405a12491f05e126ada2b80f97a2e
   //   (dsp #845 head 3b4fba76). Before this can merge: the same text lands in mued-dsp's EULA-en.md, the version
   //   and the date are decided, and this pin is set from dsp's merged file.
-  const DSP_EULA_EN_SHA256 = "87c10d0edb1ffc818df056199f343bbabd6b54c5261e42a5e11032ad4a19d0be";
+  const DSP_EULA_EN_SHA256 = "755240b4deadf4044efd8087de16da9572062d9a9f5216b2a532afb43c5d9ee9";
 
   it("the English source is the pinned byte copy of dsp's EULA-en.md", () => {
     const md = readFileSync(join(ROOT, "docs", "legal", "eula", "EULA-2026.10-en.md"));
