@@ -65,9 +65,17 @@ const WINDOWS_ONLY_VALUES = new Map(
 // The follow-up's Windows-only download label describes the shipped VST3 ZIP.
 // Exact copy, not a broad Windows-word exemption; its rendered link is checked in demo-followup tests.
 const FOLLOWUP_WINDOWS_LABELS = ['Windows 版デモをダウンロード（VST3）', 'Download the Windows demo (VST3)'];
+// The masterchain purchase mail's two Windows lines (2026-10-13): the Windows zip is VST3 only — the same fact as
+// the blocks above. Exact copy again (ja and en sit on one source line each), never a "Windows" word rule: the
+// first is the portal's own sentence (pluginPortal.windows.masterchainSameKey), the second the zip's format line.
+const PURCHASE_WINDOWS_LINES = [
+  ['Windows 版（VST3）も、同じライセンスキーで使えます。', 'The Windows version (VST3) uses the same license key.'],
+  ['Windows: VST3（64 bit）', 'Windows: VST3 (64-bit)'],
+];
 const isWindowsOnly = (l: { file: string; text: string }) =>
   (WINDOWS_ONLY_VALUES.get(l.file) ?? []).some((v) => l.text.includes(v)) ||
-  (l.file === 'lib/services/email.service.ts' && FOLLOWUP_WINDOWS_LABELS.every(v => l.text.includes(v)));
+  (l.file === 'lib/services/email.service.ts' && FOLLOWUP_WINDOWS_LABELS.every(v => l.text.includes(v))) ||
+  (l.file === 'lib/services/email.service.ts' && PURCHASE_WINDOWS_LINES.some((pair) => pair.every((v) => l.text.includes(v))));
 
 // A line that enumerates plugin formats. `VST3` appears for no other reason in these files — except
 // as the name of Steinberg's SDK ("VST3 SDK" in the EULA's third-party list, art. 8, 2026-09-29),

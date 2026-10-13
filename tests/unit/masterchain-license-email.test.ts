@@ -7,7 +7,10 @@ const PORTAL = "https://mued.jp/dashboard/plugins";
 async function service(downloadUrl: string, appUrl: string | undefined = "https://mued.jp") {
   vi.resetModules();
   vi.stubEnv("NEXT_PUBLIC_APP_URL", appUrl);
-  vi.doMock("@/lib/masterchain/config", () => ({ MASTERCHAIN_DOWNLOAD_URL: downloadUrl }));
+  // No Windows build in this fixture: the tests that need one pass `windowsUrl` (or read the real config).
+  vi.doMock("@/lib/masterchain/config", () => ({
+    MASTERCHAIN_DOWNLOAD_URL: downloadUrl, MASTERCHAIN_WINDOWS_LIVE: false, MASTERCHAIN_WINDOWS_URL: "", MASTERCHAIN_WINDOWS_VERSION: "",
+  }));
   return import("@/lib/services/email.service");
 }
 
@@ -67,5 +70,58 @@ describe("masterchain purchase email — portal-only keys", () => {
     const expected = appUrl ? "https://preview.example/dashboard/plugins" : PORTAL;
     expect(mail.html).toContain(`href="${expected}"`);
     expect(mail.text).toContain(expected);
+  });
+});
+
+describe("★the Windows zip in the purchase email (conductor 2026-10-13) — a Windows buyer must not have to find it in the portal", () => {
+  const WIN = "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-win-x64-a2678157.zip";
+
+  it.each(["ja", "en"] as const)("with a Windows build: both links, each named for its OS, and the same-key line (%s)", async (locale) => {
+    const { emailTemplates } = await service(URL);
+    const mail = emailTemplates.masterchainLicenseDelivery({ locale, windowsUrl: WIN });
+    const ja = locale === "ja";
+    for (const surface of [mail.html, mail.text]) {
+      expect(surface).toContain(URL);
+      expect(surface).toContain(WIN);
+      expect(surface).toContain(ja ? "Mac 版の masterchain をダウンロード" : "Download masterchain for Mac");
+      expect(surface).toContain(ja ? "Windows 版の masterchain をダウンロード" : "Download masterchain for Windows");
+      expect(surface).toContain(ja ? "Windows: VST3（64 bit）" : "Windows: VST3 (64-bit)");
+      // The portal's own sentence (messages pluginPortal.windows.masterchainSameKey).
+      expect(surface).toContain(ja ? "Windows 版（VST3）も、同じライセンスキーで使えます。" : "The Windows version (VST3) uses the same license key.");
+      // ★"… · macOS" beside a Windows link read as a contradiction (CCO #1200): the Mac line says it is the Mac's.
+      expect(surface).toContain("Mac: VST3 · AU · AAX (Pro Tools) · macOS");
+    }
+    // The key rules are untouched by the new link.
+    expect(mail.html).toContain(PORTAL);
+    expect(mail.html).not.toContain("MUEDSP-LICENSE");
+  });
+
+  it.each(["ja", "en"] as const)("★without a Windows build the mail is byte-for-byte what it was (%s)", async (locale) => {
+    const { emailTemplates } = await service(URL);
+    const mail = emailTemplates.masterchainLicenseDelivery({ locale, windowsUrl: null });
+    expect(mail.html).not.toMatch(/Windows/);
+    expect(mail.text).not.toMatch(/Windows/);
+    expect(mail.html).toContain(locale === "ja" ? "masterchain をダウンロード" : "Download masterchain");
+    expect(mail.html).not.toContain("Mac: VST3");
+    expect(mail.text).toContain(`${locale === "ja" ? "ダウンロード" : "Download"}: ${URL}\nVST3 · AU · AAX (Pro Tools) · macOS`);
+  });
+
+  it("★no Mac link → no Windows link either: the degraded mail promises one link by reply, not half a download", async () => {
+    const { emailTemplates } = await service("");
+    const mail = emailTemplates.masterchainLicenseDelivery({ locale: "en", windowsUrl: WIN });
+    expect(mail.html).not.toContain(WIN);
+    expect(mail.text).not.toContain(WIN);
+  });
+
+  it("★by default the link follows what is actually offered — the live flag and URL in lib/masterchain/config.ts", async () => {
+    vi.resetModules();
+    vi.doUnmock("@/lib/masterchain/config");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://mued.jp");
+    const config = await import("@/lib/masterchain/config");
+    const { emailTemplates } = await import("@/lib/services/email.service");
+    const mail = emailTemplates.masterchainLicenseDelivery({ locale: "en" });
+    expect(config.MASTERCHAIN_WINDOWS_LIVE && !!config.MASTERCHAIN_WINDOWS_URL).toBe(true); // what is on sale today
+    expect(mail.html).toContain(config.MASTERCHAIN_WINDOWS_URL);
+    expect(mail.text).toContain(config.MASTERCHAIN_WINDOWS_URL);
   });
 });

@@ -998,9 +998,25 @@ Hoo MCP経由の自動送信
   },
 
   /** Transactional purchase instructions. The key itself never enters email. */
-  masterchainLicenseDelivery(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
+  masterchainLicenseDelivery(data: { locale: 'ja' | 'en'; windowsUrl?: string | null }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MASTERCHAIN_DOWNLOAD_URL;
+    // ★The Windows zip (conductor 2026-10-13): masterchain for Windows has been on sale since 10/1, but this mail
+    //   only ever linked the Mac package — a Windows buyer had to find the zip in the portal. Same rule and the same
+    //   words as the demo receipt above (masterchainDemoDownload): the link appears only while the Windows build is
+    //   offered, both buttons then say which OS they are for, and the format line says which line is the Mac's.
+    const windowsUrl = !hasLink ? null : data.windowsUrl === undefined
+      ? masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION)?.url ?? null
+      : data.windowsUrl;
+    const macLabel = windowsUrl
+      ? (isJa ? 'Mac 版の masterchain をダウンロード' : 'Download masterchain for Mac')
+      : (isJa ? 'masterchain をダウンロード' : 'Download masterchain');
+    const windowsLabel = isJa ? 'Windows 版の masterchain をダウンロード' : 'Download masterchain for Windows';
+    // The portal's own sentence (messages pluginPortal.windows.masterchainSameKey), so the mail and the portal agree.
+    const windowsSameKey = isJa ? 'Windows 版（VST3）も、同じライセンスキーで使えます。' : 'The Windows version (VST3) uses the same license key.';
+    const macFormatsHtml = 'VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon &amp; Intel)';
+    const macFormatsText = 'VST3 · AU · AAX (Pro Tools) · macOS';
+    const windowsFormats = isJa ? 'Windows: VST3（64 bit）' : 'Windows: VST3 (64-bit)';
     // ★The subject follows the BODY's condition, not the product's name (conductor decided the
     //   wording 2026-09-11; kimny approved it — kimny saw the wording, conductor approved the
     //   branching as implementation granularity).
@@ -1034,17 +1050,26 @@ Hoo MCP経由の自動送信
     const downloadHtml = hasLink
       ? `<p style="text-align: center;">
            <a href="${MASTERCHAIN_DOWNLOAD_URL}" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
-             ${isJa ? 'masterchain をダウンロード' : 'Download masterchain'}
+             ${macLabel}
            </a>
          </p>
-         <p style="color: #6b7280; font-size: 13px; text-align: center;">VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon &amp; Intel)</p>`
+         <p style="color: #6b7280; font-size: 13px; text-align: center;">${windowsUrl ? `Mac: ${macFormatsHtml}` : macFormatsHtml}</p>${windowsUrl ? `
+         <p style="text-align: center;">
+           <a href="${windowsUrl}" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
+             ${windowsLabel}
+           </a>
+         </p>
+         <p style="color: #6b7280; font-size: 13px; text-align: center;">${windowsFormats}</p>
+         <p style="text-align: center;">${windowsSameKey}</p>` : ''}`
       : `<div class="info-box">
            <p style="margin: 0;">${isJa
              ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
              : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you."}</p>
          </div>`;
     const downloadText = hasLink
-      ? `${isJa ? 'ダウンロード' : 'Download'}: ${MASTERCHAIN_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS`
+      ? (windowsUrl
+        ? `${macLabel}: ${MASTERCHAIN_DOWNLOAD_URL}\nMac: ${macFormatsText}\n${windowsLabel}: ${windowsUrl}\n${windowsFormats}\n${windowsSameKey}`
+        : `${isJa ? 'ダウンロード' : 'Download'}: ${MASTERCHAIN_DOWNLOAD_URL}\n${macFormatsText}`)
       : (isJa
         ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
         : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you.");
