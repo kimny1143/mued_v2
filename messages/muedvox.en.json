@@ -111,6 +111,11 @@
         "answer": "No. The harmony parts are made from your own recording."
       },
       {
+        "id": "presets",
+        "question": "Does it come with presets?",
+        "answer": "Seven: Natural, Clean, Wide Stack, Stack + Bass, Vintage Chorus, Plate Duo and Wide Duo. A preset switches the harmony and the FX together. Choosing one does not change Key, Scale or Mode."
+      },
+      {
         "id": "license",
         "requires": "purchase",
         "question": "How do I get my license key?",

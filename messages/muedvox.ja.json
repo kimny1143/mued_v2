@@ -111,6 +111,11 @@
         "answer": "なりません。ハモリは自分の録音から作ります。"
       },
       {
+        "id": "presets",
+        "question": "プリセットはありますか？",
+        "answer": "7 つ入っています: Natural、Clean、Wide Stack、Stack + Bass、Vintage Chorus、Plate Duo、Wide Duo。ハモリと FX をまとめて切り替えます。プリセットを選んでも、Key、Scale、Mode は変わりません。"
+      },
+      {
         "id": "license",
         "requires": "purchase",
         "question": "鍵はどこで受け取りますか？",
