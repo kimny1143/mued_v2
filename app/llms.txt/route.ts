@@ -4,7 +4,6 @@ import { ADVISORY_LIVE } from "@/lib/advisory/config";
 import { MUEDSAT_LIVE } from "@/lib/muedsat/config";
 import { MUEDSP_LIVE } from "@/lib/muedsp/config";
 import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
-import { MUEDVOX_LIVE, MUEDVOX_PURCHASE_LIVE } from "@/lib/muedvox/config";
 import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 
 const MUED_CONTENT = `# MUED — 音楽制作の道具
@@ -15,7 +14,7 @@ const MUED_CONTENT = `# MUED — 音楽制作の道具
 ## プロダクト
 
 - **MUEDsp masterchain（有料・買い切り $69）**: 作編曲家である代表がマスタリングで使っているマスターバスのチェーン（コンプ→EQ→リミッター）を、1つのプラグインにしたもの（https://mued.jp/ja/muedsp）。
-${MUEDVOX_LIVE ? `- **MUEDvox（有料・買い切り $69）**: リードボーカルを 1 本入れると、調とコードに沿った最大 4 声のハモリとベースを作るボーカルハーモナイザー。声部ごとに声区を選べる。macOS（AU・VST3・AAX）／Windows（VST3）。${MUEDVOX_PURCHASE_LIVE ? "販売中" : "販売の開始は近日"}（https://mued.jp/ja/muedvox）。\n` : ""}- **無料のプラグイン（MUEDsp）**: MUEDsat（トランス・サチュレーション）・MUEDlim（トゥルーピーク・リミッター）・MUEDrive（3キャラクターのドライブ）。詳細は下の「MUEDsp」節。
+- **無料のプラグイン（MUEDsp）**: MUEDsat（トランス・サチュレーション）・MUEDlim（トゥルーピーク・リミッター）・MUEDrive（3キャラクターのドライブ）。詳細は下の「MUEDsp」節。
 - **MUEDial**: ステムをアップロードして AI と話すだけでミックス・マスタリングを得る、日本語対応の AI ミキシングサービス（https://dial.mued.jp）。
 - **MUEDear**: 耳トレのゲームで、聴き取りの傾向を可視化する iOS アプリ。
 

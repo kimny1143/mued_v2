@@ -99,7 +99,7 @@ export function MuedvoxLandingContent() {
           <Section id="screen" title={t("screen.heading")}>
             <figure className="mt-8">
               <div className="brand-display">
-                <Image src={MUEDVOX_SCREENSHOT} alt={t("screen.alt")} width={1200} height={800} sizes="(min-width: 768px) 720px, 90vw" className="h-auto w-full rounded-lg" />
+                <Image src={MUEDVOX_SCREENSHOT} alt={t("screen.alt")} width={1200} height={900} sizes="(min-width: 768px) 720px, 90vw" className="h-auto w-full rounded-lg" />
               </div>
               <figcaption className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">{t("screen.caption")}</figcaption>
             </figure>

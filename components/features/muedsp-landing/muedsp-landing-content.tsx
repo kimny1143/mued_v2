@@ -30,7 +30,6 @@ import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 import { WINDOWS_BETA_LIVE } from "@/lib/plugins/windows-beta";
 import { MasterchainBuyButton } from "@/components/features/muedsp-landing/masterchain-buy-button";
 import { MasterchainTry } from "@/components/features/muedsp-landing/masterchain-try";
-import { MUEDVOX_LIVE } from "@/lib/muedvox/config";
 import {
   MASTERCHAIN_PURCHASE_LIVE,
   MASTERCHAIN_TRIAL_DAYS,
@@ -502,18 +501,6 @@ export function MuedspLandingContent() {
             )}
           </div>
         </section>
-        {/* ★The way in to MUEDvox from the masterchain page (a new page with no link to it is reachable by nobody —
-            the PR template's rule). Shown only once MUEDvox is live. One quiet line, not a second hero: this page
-            is masterchain's. */}
-        {MUEDVOX_LIVE && (
-          <section data-testid="muedsp-to-muedvox" className="border-t border-white/5 px-6 py-10">
-            <div className="mx-auto max-w-5xl">
-              <Link href={`/${locale}/muedvox`} className="text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]">
-                {isJa ? "MUEDvox — リード 1 本から、最大 4 声のハモリを作るボーカルハーモナイザー →" : "MUEDvox — a vocal harmonizer: up to four harmony voices from one lead vocal →"}
-              </Link>
-            </div>
-          </section>
-        )}
       </main>
 
       {/* Footer */}
