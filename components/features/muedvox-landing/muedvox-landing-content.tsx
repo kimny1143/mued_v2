@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
@@ -10,6 +10,24 @@ import {
   MUEDVOX_PURCHASE_LIVE,
   MUEDVOX_DEMO_LIVE,
 } from "@/lib/muedvox/config";
+import { PaidBuyButton, type BuyProduct } from "@/components/features/muedsp-landing/masterchain-buy-button";
+import { PaidDemoForm, type DemoFormProduct } from "@/components/features/muedsp-landing/masterchain-try";
+
+// ★The same Buy button and demo form as masterchain (#1263, #1266), given MUEDvox's own flag, words and image.
+//   Both are client components: their words (muedvox.cart / muedvox.demoForm) reach the browser only while the
+//   page is visible (lib/muedvox/config.ts clientMessages) — which the flags below already require.
+const MUEDVOX_BUY: BuyProduct = {
+  key: "muedvox",
+  purchaseLive: MUEDVOX_PURCHASE_LIVE,
+  cartThumb: MUEDVOX_SCREENSHOT,
+  messages: "muedvox.cart",
+};
+const MUEDVOX_TRY: DemoFormProduct = {
+  key: "muedvox",
+  demoLive: MUEDVOX_DEMO_LIVE,
+  endpoint: "/api/muedvox/demo",
+  messages: { form: "muedvox.demoForm", demo: "muedvox.demoForm", windows: "muedvox.demoForm" },
+};
 
 // Typography, widths, rules and figure treatment follow MUEDsp's masterchain block.
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
@@ -103,7 +121,7 @@ export function MuedvoxLandingContent() {
               <th key={key} scope="col" className="py-3 pr-5 font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">{t(`modes.${key}`)}</th>
             ))}</tr></thead>
             <tbody className="divide-y divide-white/5">
-              {(["track", "trackShort", "live"] as const).map((mode) => (
+              {(["render", "track", "live"] as const).map((mode) => (
                 <tr key={mode}>
                   <th scope="row" className="py-3 pr-5 font-semibold text-white/85">{t(`modes.${mode}.name`)}</th>
                   <td className="py-3 pr-5">{t(`modes.${mode}.latency`)}</td>
@@ -128,19 +146,22 @@ export function MuedvoxLandingContent() {
         </Section>
         {(MUEDVOX_PURCHASE_LIVE || MUEDVOX_DEMO_LIVE) && (
           <Section id="buy" title={t("buy.heading")}>
-            {/* ★No buy / demo BUTTON here on purpose: the checkout (FastSpring path in lib/plugins/paid-products.ts)
-                and the demo download gate land in PR-C (docs/paid-line/c9-…). A placeholder button would render as
-                a real-looking one the moment a flag is flipped early. */}
+            {/* ★The Buy button opens the cart, and the cart's button is the EULA consent (kimny 10/4) — so the old
+                「EULA を読み、同意します」 line is not shown here: a second, unlinked consent beside the button would
+                say something the flow does not do. */}
             {MUEDVOX_PURCHASE_LIVE && (
               <div className="mt-5">
                 <p className="mb-3 text-lg font-semibold text-white">{t("buy.price")}</p>
-                <p className="mt-4 text-sm leading-relaxed text-white/45"><Link href={`/${locale}/eula`}>{t("buy.consent")}</Link></p>
+                <PaidBuyButton product={MUEDVOX_BUY} buyLabel={t("buy.button")} />
                 <p className="mt-5 text-[15px] leading-relaxed text-white/70">{t("buy.afterPurchase")}</p>
               </div>
             )}
+            {/* The form carries id="demo" itself (the hero's 「デモを試す」 lands on it) and its own note. */}
             {MUEDVOX_DEMO_LIVE && (
-              <div id="demo" className="mt-8 space-y-4 border-t border-white/8 pt-6">
-                <p className="text-[15px] leading-relaxed text-white/70">{t("demo.body")}</p>
+              <div className="mt-8 border-t border-white/8 pt-6">
+                <Suspense fallback={null}>
+                  <PaidDemoForm product={MUEDVOX_TRY} />
+                </Suspense>
               </div>
             )}
           </Section>

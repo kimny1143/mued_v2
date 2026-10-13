@@ -36,7 +36,14 @@ describe("★road 2 — the JS chunks: MUEDvox's words are not in the files clie
     expect("muedvox" in main).toBe(false);
     const shipped = JSON.stringify(main);
     // Sentences only (a bare "MUEDvox" or "Windows" is not the unreleased copy); positive control: there are many.
-    const sentences = strings(vox).filter((text) => text.length >= 20);
+    // ★`cart` and `demoForm` are left out of the population on purpose: they are masterchain's already-public cart
+    //   and demo-form sentences, word for word, so finding them in the main file says nothing about MUEDvox.
+    //   tests/unit/muedvox-launch-gates.test.ts pins BOTH namespaces whole (exact key set, every value) — the
+    //   only MUEDvox-owned strings in them are the product line, the "Try MUEDvox" button and the demo note, and
+    //   the note is `demo.body`, which IS in the population below.
+    const { cart: _cart, demoForm: _demoForm, ...own } = vox;
+    void _cart; void _demoForm;
+    const sentences = strings(own).filter((text) => text.length >= 20);
     expect(sentences.length).toBeGreaterThan(20);
     for (const text of sentences) expect(shipped.includes(JSON.stringify(text).slice(1, -1)), text).toBe(false);
   });

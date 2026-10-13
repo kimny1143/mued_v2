@@ -39,6 +39,42 @@ export function clientMessages<T extends Record<string, unknown>>(
   return rest as T;
 }
 
+/**
+ * ★What must be true together on launch day, as one checked list rather than a remembered order. Each line is a
+ * way to open something that cannot work: a Buy button whose cart cannot check out, a purchase mail with no
+ * download, a demo form that "starts" a download of nothing, client components whose words never reach the
+ * browser. Returns the problems (empty = consistent). tests/unit/muedvox-launch-gates.test.ts runs it on the
+ * real values, so a half-flipped launch PR fails CI instead of production.
+ */
+export function muedvoxLaunchProblems(state: {
+  live: boolean; purchaseLive: boolean; demoLive: boolean;
+  downloadUrl: string; windowsUrl: string; windowsVersion: string; screenshot: string;
+  /** PAID_PRODUCTS.muedvox.enabled — the webhook issues a key only then. */
+  productEnabled: boolean;
+}): string[] {
+  const problems: string[] = [];
+  const need = (ok: boolean, message: string) => { if (!ok) problems.push(message); };
+  if (state.purchaseLive) {
+    need(state.live, "PURCHASE_LIVE needs LIVE: the page is 404 and the cart's words are not sent to the browser");
+    need(state.productEnabled, "PURCHASE_LIVE needs PAID_PRODUCTS.muedvox.enabled: the order would be paid and get no key");
+    need(state.downloadUrl !== "", "PURCHASE_LIVE needs MUEDVOX_DOWNLOAD_URL: the purchase mail and the portal would have no installer");
+    need(state.screenshot !== "", "PURCHASE_LIVE needs MUEDVOX_SCREENSHOT: the cart shows the product's own screen");
+  }
+  if (state.demoLive) {
+    need(state.live, "DEMO_LIVE needs LIVE: the page is 404 and the form's words are not sent to the browser");
+    need(state.downloadUrl !== "", "DEMO_LIVE needs MUEDVOX_DOWNLOAD_URL: the demo is that installer without a key");
+    // ★The demo's receipt says "you can buy it from the product page" and links there (CCO #1272): a demo open
+    //   while buying is closed would send people to a page with no Buy button.
+    need(state.purchaseLive, "DEMO_LIVE needs PURCHASE_LIVE: the demo receipt tells people they can buy from the product page");
+  }
+  // ★Enabled without the button is allowed on purpose: the launch order is "enable + deploy, THEN publish the
+  //   store" (docs/paid-line/c9 §3.4) — but an enabled product must be able to deliver.
+  if (state.productEnabled) need(state.downloadUrl !== "", "an enabled product needs MUEDVOX_DOWNLOAD_URL: a buyer's mail would promise the link by reply");
+  need((state.windowsUrl === "") === (state.windowsVersion === ""), "MUEDVOX_WINDOWS_URL and MUEDVOX_WINDOWS_VERSION are set together or not at all");
+  need(state.windowsUrl === "" || state.downloadUrl !== "", "a Windows zip without the Mac installer: the mails link the Mac package first");
+  return problems;
+}
+
 // Set at launch with the sha256/bytes pin, like masterchain.
 export const MUEDVOX_DOWNLOAD_URL = "";
 export const MUEDVOX_WINDOWS_URL = "";

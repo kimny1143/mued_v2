@@ -194,5 +194,14 @@ export const SHORT_LINKS: readonly ShortLink[] = [
   { slug: 'mc-plugin', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_header', utmContent: 'header_link', localeFromBrowser: true },
   // mc-demo-mail = the product-page link in the masterchain demo receipt (conductor 2026-09-30, d).
   { slug: 'mc-demo-mail', host: 'mued.jp', path: '/en/muedsp', utmSource: 'email', utmMedium: 'lifecycle', utmCampaign: 'masterchain_demo_mail', utmContent: 'product_link', localeFromBrowser: true },
+  // ★Baked into MUEDvox 1.0.0 (VOX, conductor 2026-10-13) — the two links in the key window that the DEMO /
+  //   LICENSED badge opens. Same rule as the mc-* rows above: once a build ships, the slug never changes.
+  //   vox-plugin = "Buy MUEDvox" → the product page. ★No "#buy": a row's path cannot carry a fragment (pathIsSafe
+  //   in resolve.ts), and widening the redirect's path grammar for one link is not worth it — the page is short.
+  //   vox-portal = "My licenses (mued.jp)" → the portal.
+  { slug: 'vox-plugin', host: 'mued.jp', path: '/en/muedvox', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'muedvox_buy', utmContent: 'license_panel', localeFromBrowser: true },
+  { slug: 'vox-portal', host: 'mued.jp', path: '/dashboard/plugins', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'muedvox_portal', utmContent: 'license_window' },
+  // vox-demo-mail = the product-page link in the MUEDvox demo receipt (same shape as mc-demo-mail).
+  { slug: 'vox-demo-mail', host: 'mued.jp', path: '/en/muedvox', utmSource: 'email', utmMedium: 'lifecycle', utmCampaign: 'muedvox_demo_mail', utmContent: 'product_link', localeFromBrowser: true },
   { slug: 'mc-portal', host: 'mued.jp', path: '/dashboard/plugins', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_portal', utmContent: 'license_window' },
 ] as const;

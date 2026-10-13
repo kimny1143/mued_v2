@@ -41,26 +41,26 @@
     ]
   },
   "modes": {
-    "heading": "Two modes",
+    "heading": "Three modes",
     "mode": "Mode",
     "latency": "Latency",
     "use": "Use it for",
+    "render": {
+      "name": "Render",
+      "latency": "0.94 s",
+      "use": "The cleanest sound. It reads ahead before it sings, so it is 0.94 s late. In Pro Tools, commit the track. In other DAWs, freeze or bounce the track if it plays late."
+    },
     "track": {
       "name": "Track",
-      "latency": "about 0.94 s",
-      "use": "Mixing. It looks ahead to pick the parts, so it is not for recording through."
-    },
-    "trackShort": {
-      "name": "Track Short",
-      "latency": "about 0.34 s",
-      "use": "Mixing, with a shorter look-ahead than Track."
+      "latency": "0.34 s",
+      "use": "Close to Render with a third of the latency. You can mix with the plugin on the insert."
     },
     "live": {
       "name": "Live",
       "latency": "3 ms",
-      "use": "Playing and monitoring while you sing."
+      "use": "For singing or playing along."
     },
-    "note": "To record, switch to Live. When you mix, use Track or Track Short."
+    "note": "Latency is the value the plugin reports to your DAW. The time from a chord change to the harmony changing is longer than that."
   },
   "formats": {
     "heading": "Formats and requirements",
@@ -79,7 +79,7 @@
   },
   "demo": {
     "button": "Download the demo",
-    "body": "The demo has no time limit. Each time you insert it, it processes the first 45 seconds of audio, then passes audio through unprocessed until you insert it again. Settings aren’t saved.",
+    "body": "The demo has no time limit. Each time you insert it, the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing (insert it again for another 45 seconds). Settings you change in the demo aren’t saved with your session.",
     "refundNote": "The demo lets you check that it runs in your setup before you buy."
   },
   "faq": {
@@ -88,7 +88,7 @@
       {
         "id": "latency",
         "question": "How much delay does it add?",
-        "answer": "It depends on the mode. Track adds about 0.94 seconds and Track Short about 0.34 seconds, because they look ahead to choose the harmony parts; they are meant for mixing, not for recording through. Live adds 3 milliseconds and is meant for playing and monitoring. To record, use Live; to mix, use Track or Track Short."
+        "answer": "It depends on the mode. Render is 0.94 s, Track is 0.34 s and Live is 3 ms (the value the plugin reports to your DAW). Render reads ahead, so in Pro Tools you commit the track. To sing or play along, use Live."
       },
       {
         "id": "windows",
@@ -120,7 +120,7 @@
         "id": "demo",
         "requires": "demo",
         "question": "What does the demo do?",
-        "answer": "It is the full plugin with no time limit. Each time you insert it, it processes the first 45 seconds of audio and then passes audio through unprocessed until you insert it again. Settings aren't saved."
+        "answer": "It is the full plugin with no time limit. Each time you insert it, the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing (insert it again for another 45 seconds). Settings you change in the demo aren't saved with your session."
       },
       {
         "id": "refund",
@@ -135,5 +135,43 @@
     "eula": "EULA",
     "thirdParty": "MUEDvox includes third-party software. The required notices are included with the plugin.",
     "footer": "Made by glasswerks in Tokyo. Support: support@mued.jp"
+  },
+  "cart": {
+    "signInNote": "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
+    "thanks": "Thank you for your purchase. Instructions will arrive shortly at the email you used at checkout. You can also get the download and your license key in your portal (mued.jp/dashboard/plugins).",
+    "thanksPortal": "Open your portal",
+    "orderProduct": "MUEDvox",
+    "orderFormats": "macOS · AU · VST3 · AAX (Pro Tools) / Windows · VST3",
+    "orderPrice": "$69",
+    "orderTaxNote": "Tax and currency are confirmed on the next screen",
+    "orderTaxIncluded": "Includes {taxName} {tax} ({rate})",
+    "orderTaxAdded": "Any sales tax is calculated on the next screen from your address",
+    "orderPriceLoading": "Checking the price…",
+    "orderKeyNote": "Get your license key from your mued.jp portal, using the email you buy with.",
+    "cartTitle": "Cart",
+    "cartTotal": "Total",
+    "cartEula": "End-User License Agreement (EULA)",
+    "agreeAndContinue": "Agree to the EULA and continue to checkout",
+    "cartNextScreen": "Payment and email are entered on the next screen (FastSpring).",
+    "cartAudienceNote": "We'll also use your purchase email for news from MUEDsp. Unsubscribe anytime.",
+    "checkoutLoading": "Preparing checkout…",
+    "modalClose": "Close"
+  },
+  "demoForm": {
+    "try": "Try MUEDvox",
+    "emailLabel": "Email (to try it)",
+    "emailPlaceholder": "you@example.com",
+    "demoNote": "The demo has no time limit. Each time you insert it, the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing (insert it again for another 45 seconds). Settings you change in the demo aren’t saved with your session.",
+    "emailNotice": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
+    "success": "Your download has started. If it didn't, use the link in the email.",
+    "errors": {
+      "invalid_email": "Please enter a valid email address.",
+      "disposable_email": "Please use an email address that isn't disposable.",
+      "rate_limited": "Please wait a moment and try again.",
+      "generic": "Couldn't start the download. Please try again."
+    },
+    "demoChoose": "Choose the one for your computer below. The confirmation email has both links too.",
+    "demoOtherMac": "Get the Mac version",
+    "demoOtherWindows": "Get the Windows version"
   }
 }
