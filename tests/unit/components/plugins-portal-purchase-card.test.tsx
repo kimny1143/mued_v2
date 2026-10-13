@@ -17,6 +17,12 @@ vi.mock("@/app/dashboard/plugins/plugins-portal.module.css", () => ({
   default: new Proxy({}, { get: (_t, k) => String(k) }),
 }));
 
+// next/image builds its src with `new URL`, and one test below replaces the global URL.
+vi.mock("next/image", () => ({
+  default: ({ src, alt, className, ...rest }: { src: string; alt: string; className?: string; "data-testid"?: string }) =>
+    // eslint-disable-next-line @next/next/no-img-element -- a stand-in for next/image in a test
+    <img src={src} alt={alt} className={className} data-testid={rest["data-testid"]} />,
+}));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: AnchorHTMLAttributes<HTMLAnchorElement>) => (
     <a href={String(href)} {...props}>{children}</a>
@@ -131,7 +137,7 @@ describe("purchase card — the buyer can actually get the key", () => {
   });
 });
 
-it("MUEDvox card uses its name and filename without a masterchain faceplate or Windows note", async () => {
+it("MUEDvox card uses its name, its filename and its own plate (its screen, not a drawn faceplate), without the masterchain Windows note", async () => {
   const revokeObjectURL = vi.fn();
   vi.stubGlobal("URL", { createObjectURL: vi.fn(() => "blob:key"), revokeObjectURL });
   try {
@@ -143,7 +149,9 @@ it("MUEDvox card uses its name and filename without a masterchain faceplate or W
       windows: { url: "https://mued.jp/vox.zip", version: "1.0.0" },
     }]} />);
     expect(screen.getByRole("heading", { name: "MUEDvox" })).toBeTruthy();
-    expect(container.querySelector(".faceplate")).toBeNull();
+    // ★It has a plate (2026-10-13: with none, the text was laid out in the 96px plate column) — its own screen.
+    expect(container.querySelector("svg.faceplate")).toBeNull();
+    expect(container.querySelector('[data-testid="paid-plate-muedvox"]')?.getAttribute("src")).toContain("MUEDvox-1.0.0-harmony.webp");
     expect(screen.queryByTestId("portal-masterchain-windows-note")).toBeNull();
     expect(screen.getByTestId("portal-masterchain-windows")).toHaveTextContent("MUEDvox 1.0.0");
     fireEvent.click(screen.getByRole("button", { name: "purchased.download" }));
