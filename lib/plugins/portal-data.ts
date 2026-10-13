@@ -6,13 +6,15 @@
 // "fail-closed when no verified email" guarantees are unit-tested with a mocked DB.
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { pluginEntitlements, masterchainPurchases, masterchainTrials } from "@/db/schema";
+import { pluginEntitlements, masterchainPurchases, masterchainTrials, pluginLicenseGrants } from "@/db/schema";
 import {
   verifiedEmailsOf,
   buildPortalItems,
   buildPurchaseItems,
+  buildGrantItems,
   type PortalItem,
   type PurchaseItem,
+  type GrantItem,
   type ClerkUserLike,
 } from "@/lib/plugins/portal";
 import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION } from "@/lib/masterchain/config";
@@ -104,20 +106,50 @@ export async function getPurchaseItemsForUser(user: ClerkUserLike | null | undef
     .from(masterchainPurchases)
     .where(inArray(masterchainPurchases.email, emails)); // scoped to the caller's verified emails ONLY
 
-  return buildPurchaseItems(rows, (productId) => {
-    const product = paidProductByProductId(productId);
-    if (!product) return null;
-    switch (product.key) {
-      case "masterchain":
-        return { product, downloadUrl: MASTERCHAIN_DOWNLOAD_URL,
-          windows: masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION) };
-      case "muedvox":
-        return { product, downloadUrl: MUEDVOX_DOWNLOAD_URL,
-          windows: MUEDVOX_WINDOWS_URL ? { url: MUEDVOX_WINDOWS_URL, version: MUEDVOX_WINDOWS_VERSION } : null };
-      default: {
-        const exhaustive: never = product.key;
-        throw new Error(`Unhandled paid product: ${exhaustive}`);
-      }
+  return buildPurchaseItems(rows, paidDistribution);
+}
+
+/** Where a paid product's installers are today — shared by purchases and grants, so the two rows cannot differ. */
+function paidDistribution(productId: string) {
+  const product = paidProductByProductId(productId);
+  if (!product) return null;
+  switch (product.key) {
+    case "masterchain":
+      return { product, downloadUrl: MASTERCHAIN_DOWNLOAD_URL,
+        windows: masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION) };
+    case "muedvox":
+      return { product, downloadUrl: MUEDVOX_DOWNLOAD_URL,
+        windows: MUEDVOX_WINDOWS_URL ? { url: MUEDVOX_WINDOWS_URL, version: MUEDVOX_WINDOWS_VERSION } : null };
+    default: {
+      const exhaustive: never = product.key;
+      throw new Error(`Unhandled paid product: ${exhaustive}`);
     }
-  });
+  }
+}
+
+/**
+ * The time-limited keys we handed to `user` (plugin_license_grants — testers), resolved by the user's VERIFIED
+ * emails only. ★The SAME authorization boundary as purchases: a grant is issued to an address, and only someone who
+ * has proved they hold that address sees it — so it can be issued before the person has an account.
+ * ★Fail-closed: no verified email → the query is NOT run. ★Fail-open on a DB error: this table is newer than the
+ *   portal, and a missing table (migration 0064 not applied yet) must not take the whole page down — the row is
+ *   simply absent.
+ */
+export async function getGrantItemsForUser(user: ClerkUserLike | null | undefined): Promise<GrantItem[]> {
+  const emails = verifiedEmailsOf(user);
+  if (emails.length === 0) return [];
+  try {
+    const rows = await db
+      .select({
+        productId: pluginLicenseGrants.productId,
+        licenseKey: pluginLicenseGrants.licenseKey,
+        issuedAt: pluginLicenseGrants.issuedAt,
+        expiresAt: pluginLicenseGrants.expiresAt,
+      })
+      .from(pluginLicenseGrants)
+      .where(inArray(pluginLicenseGrants.email, emails)); // scoped to the caller's verified emails ONLY
+    return buildGrantItems(rows, paidDistribution);
+  } catch {
+    return [];
+  }
 }

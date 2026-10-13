@@ -84,6 +84,19 @@ export interface AvailableViewItem {
   lpPath: string;
 }
 
+/** A time-limited key we handed out (a tester's loan). ★No purchase date: this row never says "purchased". */
+export interface GrantViewItem {
+  productKey: string;
+  displayName: string;
+  keyFileName: string;
+  version: string | null;
+  downloadUrl: string;
+  windows?: { url: string; version: string } | null;
+  licenseKey: string;
+  expiresAtISO: string;
+  expired: boolean;
+}
+
 export interface TrialViewItem {
   licenseKey: string | null;
   expiresAtISO: string;
@@ -95,11 +108,13 @@ export function PluginsPortalView({
   available = [],
   purchases = [],
   trial = null,
+  grants = [],
 }: {
   items: PortalViewItem[];
   available?: AvailableViewItem[];
   purchases?: PurchaseViewItem[];
   trial?: TrialViewItem | null;
+  grants?: GrantViewItem[];
 }) {
   const t = useTranslations("pluginPortal");
   const locale = useLocale();
@@ -126,6 +141,20 @@ export function PluginsPortalView({
             <div className={styles.rack}>
               {purchases.map((p) => (
                 <PurchaseCard key={p.licenseKey} item={p} fmtDate={fmtDate} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {grants.length > 0 && (
+          <>
+            <div className={styles.racklabel}>
+              <span>{t("grant.label")}</span>{" "}
+              <span className={styles.count}>{grants.length}</span>
+            </div>
+            <div className={styles.rack}>
+              {grants.map((g) => (
+                <GrantCard key={g.licenseKey} item={g} />
               ))}
             </div>
           </>
@@ -401,6 +430,45 @@ function PurchaseCard({
         {/* ★Windows: the same license key (conductor 2026-10-01). Shown only once it ships and while not refunded. */}
         {item.windows && (
           <a className={styles.dlAlt} href={item.windows.url} download data-testid="portal-masterchain-windows">
+            {t("windows.masterchainDownload")}
+            <small>{`${item.displayName} ${item.windows.version} · VST3 · ${fileExt(item.windows.url)}`}</small>
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** A tester's time-limited key. Same downloads and key actions as a purchase; its own words — no "purchased". */
+function GrantCard({ item }: { item: GrantViewItem }) {
+  const t = useTranslations("pluginPortal");
+  return (
+    <div className={styles.module} data-testid="portal-grant">
+      <div className={styles.meta}>
+        <div className={styles.name}>
+          <h3>{item.displayName}</h3>
+          <span className={styles.kind}>{t("grant.kind")}</span>
+        </div>
+        <p className={styles.claimed} data-testid="portal-grant-expiry">
+          {item.expired ? t("grant.ended", { date: formatUtcMinute(item.expiresAtISO) }) : t("grant.ends", { date: formatUtcMinute(item.expiresAtISO) })}
+        </p>
+        <LicenseKeyActions licenseKey={item.licenseKey} fileName={item.keyFileName} label={t("purchased.licenseLabel")} copyLabel={t("purchased.copy")} copiedLabel={t("purchased.copied")} failedLabel={t("purchased.copyFailed")} downloadLabel={t("purchased.download")} />
+        <p className={styles.howto}>{t("purchased.howto", { product: item.displayName, masterchain: item.productKey === "masterchain" ? "yes" : "no" })}</p>
+        {item.windows && <p className={styles.howto}>{t("windows.howto")}</p>}
+      </div>
+      <div className={styles.action}>
+        {item.version && (
+          <span className={styles.readout}>
+            <span className={styles.led} aria-hidden="true" />
+            <span className={styles.vlabel}>{t("versionLabel")}</span> {item.version}
+          </span>
+        )}
+        {item.downloadUrl && <a className={styles.dl} href={item.downloadUrl} download>
+          {t("download")}
+          <small>{`${item.displayName}${item.version ? ` ${item.version}` : ""}${fileExt(item.downloadUrl) ? ` · ${fileExt(item.downloadUrl)}` : ""}`}</small>
+        </a>}
+        {item.windows && (
+          <a className={styles.dlAlt} href={item.windows.url} download data-testid="portal-grant-windows">
             {t("windows.masterchainDownload")}
             <small>{`${item.displayName} ${item.windows.version} · VST3 · ${fileExt(item.windows.url)}`}</small>
           </a>

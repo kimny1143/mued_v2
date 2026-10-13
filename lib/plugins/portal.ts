@@ -268,3 +268,65 @@ export function buildPurchaseItems(
   items.sort((a, b) => b.purchasedAt.getTime() - a.purchasedAt.getTime());
   return items;
 }
+
+/** A time-limited key we handed out ourselves (plugin_license_grants) — a tester's loan, never a purchase. */
+export interface OwnedGrant {
+  productId: string;
+  licenseKey: string;
+  issuedAt: Date;
+  expiresAt: Date;
+}
+
+/**
+ * A portal row for a grant. ★Its own type, with no "purchased" field: the page cannot print "purchased on" for it.
+ * The key stays downloadable after the expiry (the plugin itself falls back to its demo); `expired` only labels it.
+ */
+export interface GrantItem {
+  productKey: PaidProductKey;
+  displayName: string;
+  keyFileName: string;
+  version: string | null;
+  downloadUrl: string;
+  windows: { url: string; version: string } | null;
+  licenseKey: string;
+  issuedAt: Date;
+  expiresAt: Date;
+  expired: boolean;
+}
+
+/**
+ * Map a person's grants → portal rows. The caller MUST pass rows already filtered to verifiedEmailsOf() on the
+ * server. Deduped by key; ★the latest expiry first, so an extension sits above the key it extends.
+ */
+export function buildGrantItems(
+  grants: readonly OwnedGrant[] | null | undefined,
+  resolve: (productId: string) => {
+    product: PaidProduct;
+    downloadUrl: string;
+    windows: { url: string; version: string } | null;
+  } | null,
+  now: Date = new Date(),
+): GrantItem[] {
+  const items: GrantItem[] = [];
+  const seen = new Set<string>();
+  for (const g of grants ?? []) {
+    const resolved = resolve(g.productId);
+    if (!resolved) continue;
+    if (!g.licenseKey || g.licenseKey.trim() === "" || seen.has(g.licenseKey)) continue;
+    seen.add(g.licenseKey);
+    items.push({
+      productKey: resolved.product.key,
+      displayName: resolved.product.displayName,
+      keyFileName: resolved.product.keyFileName,
+      version: versionInUrl(resolved.downloadUrl),
+      downloadUrl: resolved.downloadUrl,
+      windows: resolved.windows,
+      licenseKey: g.licenseKey,
+      issuedAt: g.issuedAt,
+      expiresAt: g.expiresAt,
+      expired: g.expiresAt.getTime() <= now.getTime(),
+    });
+  }
+  items.sort((a, b) => b.expiresAt.getTime() - a.expiresAt.getTime());
+  return items;
+}

@@ -13,7 +13,7 @@ const m = vi.hoisted(() => ({ live: true, trial: vi.fn(), purchases: vi.fn() }))
 vi.mock("@/lib/masterchain/config", () => ({ get MASTERCHAIN_TRIAL_LIVE() { return m.live; } }));
 vi.mock("@/lib/plugins/portal-data", () => ({
   getTrialItemForUser: m.trial, getPurchaseItemsForUser: m.purchases,
-  getPortalItemsForUser: async () => [], markPortalRegistered: vi.fn(),
+  getPortalItemsForUser: async () => [], markPortalRegistered: vi.fn(), getGrantItemsForUser: async () => [],
 }));
 vi.mock("@/lib/plugins/portal", () => ({ buildAvailableItems: () => [] }));
 vi.mock("@clerk/nextjs/server", () => ({ currentUser: async () => ({ id: "user", emailAddresses: [] }) }));

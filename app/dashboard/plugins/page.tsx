@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { MuednoteLayout } from "@/components/layouts/muednote-layout";
-import { getPortalItemsForUser, getPurchaseItemsForUser, getTrialItemForUser, markPortalRegistered } from "@/lib/plugins/portal-data";
+import { getGrantItemsForUser, getPortalItemsForUser, getPurchaseItemsForUser, getTrialItemForUser, markPortalRegistered } from "@/lib/plugins/portal-data";
 import { MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
 import { buildAvailableItems } from "@/lib/plugins/portal";
 import { windowsBetaFor } from "@/lib/plugins/windows-beta";
@@ -11,6 +11,7 @@ import {
   type PortalViewItem,
   type AvailableViewItem,
   type PurchaseViewItem,
+  type GrantViewItem,
 } from "./plugins-portal-view";
 
 /**
@@ -77,6 +78,19 @@ export default async function PluginsPortalPage() {
     windows: p.windows, // null until masterchain for Windows ships (MASTERCHAIN_WINDOWS_LIVE)
   }));
 
+  // Time-limited keys we handed out (testers). Their own rows — never shown as purchases.
+  const grantViewItems: GrantViewItem[] = (await getGrantItemsForUser(user)).map((g) => ({
+    productKey: g.productKey,
+    displayName: g.displayName,
+    keyFileName: g.keyFileName,
+    version: g.version,
+    downloadUrl: g.downloadUrl,
+    windows: g.windows,
+    licenseKey: g.licenseKey, // ★verbatim — signed over its exact bytes
+    expiresAtISO: g.expiresAt.toISOString(),
+    expired: g.expired,
+  }));
+
   const available: AvailableViewItem[] = buildAvailableItems(items).map((a) => ({
     pluginKey: a.pluginKey,
     lpPath: a.lpPath,
@@ -84,7 +98,7 @@ export default async function PluginsPortalPage() {
 
   return (
     <MuednoteLayout>
-      <PluginsPortalView items={viewItems} available={available} purchases={purchaseViewItems} trial={trialViewItem} />
+      <PluginsPortalView items={viewItems} available={available} purchases={purchaseViewItems} trial={trialViewItem} grants={grantViewItems} />
     </MuednoteLayout>
   );
 }

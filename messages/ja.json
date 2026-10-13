@@ -2978,6 +2978,12 @@
       "refunded": "返金済み（{date}）。ライセンスキーは表示しません。",
       "howto": "鍵のファイル（.key）をダウンロードし、{product} の画面{masterchain, select, yes {（「Drop license.key here」）} other {}}にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをコピーして「Paste license key」を押してください。",
       "purchasedOn": "{date} に購入"
+    },
+    "grant": {
+      "label": "テスト用ライセンス",
+      "kind": "テスト用ライセンス",
+      "ends": "{date}（UTC）まで使えます",
+      "ended": "期限が切れました（{date} UTC）"
     }
   },
   "cookieConsent": {
