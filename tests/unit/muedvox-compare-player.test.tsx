@@ -128,7 +128,7 @@ describe("★one song's player", () => {
   it.each([
     ["After", "Mix", "mix_after"], ["After", "Vocals only", "vocal_after"], ["Before", "Vocals only", "vocal_before"], ["Before", "Mix", "mix_before"],
   ] as const)("★while playing, %s + %s raises %s alone — and starts nothing new", async (side, layer, take) => {
-    render(<ComparePlayer example={song("002")} labels={labels} />);
+    render(<ComparePlayer example={song("003")} labels={labels} />);
     fireEvent.click(screen.getByRole("button", { name: /^Play/ }));
     await settle();
     const started = audio.sources.length;
@@ -136,7 +136,7 @@ describe("★one song's player", () => {
     fireEvent.click(screen.getByRole("button", { name: "Vocals only" }));
     fireEvent.click(screen.getByRole("button", { name: side }));
     fireEvent.click(screen.getByRole("button", { name: layer }));
-    expect(audibleUrls(audio.gains)).toEqual([`/muedvox/audio/002_${take}.mp3`]);
+    expect(audibleUrls(audio.gains)).toEqual([`/muedvox/audio/003_${take}.mp3`]);
     expect(take).toBe(takeOf(layer === "Mix" ? "mix" : "vocal", side === "Before" ? "before" : "after"));
     expect(audio.sources).toHaveLength(started); // ★no restart: the position carries on
     expect(sounding()).toHaveLength(4);
@@ -179,17 +179,17 @@ describe("★one song's player", () => {
 });
 
 describe("★two songs on the page: starting one stops the other", () => {
-  it("001 playing → Play on 002 → 001's four sources are stopped and its button is Play again", async () => {
-    render(<><ComparePlayer example={song("001")} labels={labels} /><ComparePlayer example={song("002")} labels={labels} /></>);
+  it("001 playing → Play on 003 → 001's four sources are stopped and its button is Play again", async () => {
+    render(<><ComparePlayer example={song("001")} labels={labels} /><ComparePlayer example={song("003")} labels={labels} /></>);
     const first = within(screen.getByTestId("compare-player-001"));
-    const second = within(screen.getByTestId("compare-player-002"));
+    const second = within(screen.getByTestId("compare-player-003"));
     fireEvent.click(first.getByRole("button", { name: /^Play/ }));
     await settle();
     expect(sounding().map((s) => s.buffer!.url).every((u) => u.includes("/001_"))).toBe(true);
     fireEvent.click(second.getByRole("button", { name: /^Play/ }));
     await settle();
     expect(sounding()).toHaveLength(4);
-    expect(sounding().map((s) => s.buffer!.url).every((u) => u.includes("/002_"))).toBe(true);
+    expect(sounding().map((s) => s.buffer!.url).every((u) => u.includes("/003_"))).toBe(true);
     expect(first.getByRole("button", { name: /^Play/ })).toBeInTheDocument();
     expect(second.getByRole("button", { name: /^Pause/ })).toBeInTheDocument();
   });
