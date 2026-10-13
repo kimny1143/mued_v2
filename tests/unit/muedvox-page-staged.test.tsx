@@ -118,7 +118,7 @@ describe("MUEDvox staged product page", () => {
       expect(byId({ purchase: false, demo: false })).toEqual(["latency", "windows", "protools", "input", "voice", "presets"]);
       expect(byId({ purchase: true, demo: false })).toEqual(["latency", "windows", "protools", "input", "voice", "presets", "license", "refund"]);
       expect(byId({ purchase: false, demo: true })).toEqual(["latency", "windows", "protools", "input", "voice", "presets", "demo"]);
-      expect(byId({ purchase: true, demo: true })).toHaveLength(8);
+      expect(byId({ purchase: true, demo: true })).toHaveLength(9);
     }
   });
 
