@@ -436,7 +436,7 @@
     }
   },
   "eula": {
-    "title": "MUEDsp プラグイン（MUEDsp masterchain、MUEDlim、MUEDsat、MUEDrive）エンドユーザー使用許諾契約（参考訳）",
+    "title": "MUEDsp プラグイン（MUEDsp masterchain、MUEDvox、MUEDlim、MUEDsat、MUEDrive）エンドユーザー使用許諾契約（参考訳）",
     "referenceNote": "この日本語訳は参考です。英語版と食い違う場合は、英語版が優先します。",
     "intro": [
       "本エンドユーザー使用許諾契約（以下「本契約」）は、お客様（個人または 1 つの団体。以下「お客様」または「ライセンシー」）と、日本法に基づいて設立され、主たる事業所を 〒153-0042 東京都目黒区青葉台4-7-27 3F に置く 株式会社グラスワークス / glasswerks inc.（以下「glasswerks」「当社」または「ライセンサー」）との間の法的な契約です。本契約は、上記のソフトウェア製品（付属の説明書、アップデート、ライセンスキーを含みます。以下あわせて「本ソフトウェア」）のお客様による使用について定めます。",
@@ -522,7 +522,9 @@
               "Roboto — Google — Apache License 2.0 — FONT-LICENSES.md に収録",
               "Sora — The Sora Project Authors — SIL Open Font License 1.1 — FONT-LICENSES.md に収録",
               "khrplatform.h（Windows 版のみ）— The Khronos Group Inc. — MIT 形式のライセンス — THIRD-PARTY-LICENSES.md に収録",
-              "glad OpenGL loader（Windows 版のみ）— glad contributors — MIT 形式のライセンス — THIRD-PARTY-LICENSES.md に記載"
+              "glad OpenGL loader（Windows 版のみ）— glad contributors — MIT 形式のライセンス — THIRD-PARTY-LICENSES.md に記載",
+              "WORLD（MUEDvox のみ）— M. Morise — 修正 BSD ライセンス — 表示が必要（THIRD-PARTY-LICENSES.md に収録）",
+              "MetalNanoVG（MUEDvox・macOS 版のみ）— Ollix — MIT License — 表示が必要（THIRD-PARTY-LICENSES.md に収録）"
             ]
           },
           "VST および VST3 は、欧州その他の国で登録された Steinberg Media Technologies GmbH の商標です。Audio Units（AU）は Apple Inc. の商標です。AAX は Avid Technology, Inc. の商標です。AAX のプラグイン形式は、glasswerks と Avid Technology, Inc. との間の別途の開発者契約に基づいて実装しています。AAX SDK は非公開のソフトウェアであり、オープンソースソフトウェアではありません。"
@@ -748,7 +750,7 @@
     },
     "muedsp": {
       "name": "MUEDsp",
-      "description": "プラグイン群（無料モジュール／有料 masterchain）",
+      "description": "プラグイン群（無料モジュール／有料 masterchain・MUEDvox）",
       "url": {
         "title": "販売URL",
         "value": "https://mued.jp/ja/muedsp"
@@ -758,6 +760,7 @@
         "description": "料金は以下の通りです：",
         "plans": {
           "masterchain": "MUEDsp masterchain: $69（米ドル建て・買い切り／継続課金なし）",
+          "muedvox": "MUEDvox: $69（米ドル建て・買い切り／継続課金なし）",
           "free": "無料モジュール（MUEDsat・MUEDlim・MUEDrive）: 無料",
           "note": "※ 米ドル建てのため、日本円でのご請求額は決済時の為替レートおよびカード発行会社の換算により変動します。税額は、販売事業者である FastSpring, Inc. が判定し徴収します。"
         }
