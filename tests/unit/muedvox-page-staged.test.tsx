@@ -44,12 +44,12 @@ function deepKeys(value: unknown, prefix = ""): string[] {
 }
 
 describe("MUEDvox product page (launched 2026-10-13; the staged state is kept as a fixture below)", () => {
-  it("is open: page, Buy and demo, with the 1.0.0 screen and no audio examples", () => {
+  it("is open: page, Buy and demo, with the 1.0.0 screen and the two listening examples (2026-10-14)", () => {
     expect(config.MUEDVOX_LIVE).toBe(true);
     expect(config.MUEDVOX_PURCHASE_LIVE).toBe(true);
     expect(config.MUEDVOX_DEMO_LIVE).toBe(true);
     expect(config.MUEDVOX_SCREENSHOT).toBe("/muedvox/MUEDvox-1.0.0-harmony.webp");
-    expect(config.MUEDVOX_AUDIO_EXAMPLES).toEqual([]);
+    expect(config.MUEDVOX_AUDIO_EXAMPLES.map((e) => [e.id, e.title])).toEqual([["001", "Sample #1"], ["003", "Sample #2"]]);
   });
 
   it("pre-renders both locales and keeps their namespace keys identical", () => {
@@ -83,7 +83,7 @@ describe("MUEDvox product page (launched 2026-10-13; the staged state is kept as
     vi.resetModules();
     vi.doMock("@/lib/muedvox/config", async (original) => ({
       ...await original<typeof import("@/lib/muedvox/config")>(),
-      MUEDVOX_LIVE: false, MUEDVOX_PURCHASE_LIVE: false, MUEDVOX_DEMO_LIVE: false, MUEDVOX_SCREENSHOT: "",
+      MUEDVOX_LIVE: false, MUEDVOX_PURCHASE_LIVE: false, MUEDVOX_DEMO_LIVE: false, MUEDVOX_SCREENSHOT: "", MUEDVOX_AUDIO_EXAMPLES: [],
     }));
     const { MuedvoxLandingContent: Staged } = await import("@/components/features/muedvox-landing/muedvox-landing-content");
     vi.doUnmock("@/lib/muedvox/config");

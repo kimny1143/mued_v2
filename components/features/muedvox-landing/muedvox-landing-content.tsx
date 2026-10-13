@@ -11,6 +11,7 @@ import {
   MUEDVOX_DEMO_LIVE,
 } from "@/lib/muedvox/config";
 import { PaidBuyButton, type BuyProduct } from "@/components/features/muedsp-landing/masterchain-buy-button";
+import { ComparePlayer, type ComparePlayerLabels } from "./compare-player";
 import { PaidDemoForm, type DemoFormProduct } from "@/components/features/muedsp-landing/masterchain-try";
 
 // ★The same Buy button and demo form as masterchain (#1263, #1266), given MUEDvox's own flag, words and image.
@@ -53,6 +54,7 @@ export function MuedvoxLandingContent() {
   const t = useTranslations("muedvox");
   const points = t.raw("points.items") as { title: string; body: string }[];
   const faq = t.raw("faq.items") as MuedvoxFaqItem[];
+  const compareLabels = t.raw("beforeAfter.player") as ComparePlayerLabels;
   return (
     <div className="brand-product dark min-h-screen bg-[var(--bg-base)] text-white">
       <header className="brand-header">
@@ -68,7 +70,7 @@ export function MuedvoxLandingContent() {
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-white">{t("hero.title")}</h1>
             <p className="mt-5 text-[17px] leading-[1.8] text-white/75">{t("hero.lead")}</p>
             {MUEDVOX_AUDIO_EXAMPLES.length > 0 && (
-              <a href="#before-after" className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("hero.hear")}</a>
+              <a href="#before-after" className="mr-6 mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("hero.hear")}</a>
             )}
             {MUEDVOX_DEMO_LIVE && (
               <a href="#demo" className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("hero.demo")}</a>
@@ -77,22 +79,16 @@ export function MuedvoxLandingContent() {
         </section>
         {MUEDVOX_AUDIO_EXAMPLES.length > 0 && (
           <Section id="before-after" title={t("beforeAfter.heading")}>
-            {MUEDVOX_AUDIO_EXAMPLES.map((example, index) => (
-              <figure key={example.before} className="mt-8">
-                <h3 className="text-lg font-medium leading-snug text-white/85">
-                  {example.label === "example1" || example.label === "example2" ? t(`beforeAfter.${example.label}`) : example.label}
-                </h3>
-                <div className="mt-5 divide-y divide-white/5 border-y border-white/5">
-                  {(["before", "after"] as const).map((side) => (
-                    <div key={side} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr] sm:gap-5">
-                      <p id={`audio-${index}-${side}`} className="font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">{t(`beforeAfter.${side}`)}</p>
-                      <audio controls preload="none" src={example[side]} aria-labelledby={`audio-${index}-${side}`} />
-                    </div>
-                  ))}
-                </div>
-                <figcaption className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">{t("beforeAfter.caption")}</figcaption>
+            {/* ★Each song is one player: Before / After and Mix / Vocals only, switched while it plays (kimny 10/14:
+                the vocal sits back in the mix, so it can also be heard alone). The words go in as props — the player
+                is a client component and does not read the muedvox namespace itself. */}
+            {MUEDVOX_AUDIO_EXAMPLES.map((example) => (
+              <figure key={example.id} className="mt-8">
+                <h3 className="text-lg font-medium leading-snug text-white/85">{example.title}</h3>
+                <ComparePlayer example={example} labels={compareLabels} />
               </figure>
             ))}
+            <p className="mt-5 text-sm leading-relaxed text-white/45">{t("beforeAfter.caption")}</p>
           </Section>
         )}
         {MUEDVOX_SCREENSHOT && (

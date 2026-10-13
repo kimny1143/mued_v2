@@ -12,11 +12,20 @@
   },
   "beforeAfter": {
     "heading": "Hear the same vocal, then the harmonies",
-    "example1": "Example 1 — lead vocal alone → with four voices",
-    "example2": "Example 2 — lead vocal alone → with four voices",
-    "before": "Lead only",
-    "after": "With MUEDvox",
-    "caption": "Same level on both sides. Recorded dry vocal in, MUEDvox out, no other processing."
+    "caption": "Before and After are matched in level.",
+    "player": {
+      "play": "Play",
+      "pause": "Pause",
+      "position": "Playback position",
+      "loading": "Loading the audio.",
+      "failed": "The audio could not be loaded. Please reload the page.",
+      "sideGroup": "Before and after MUEDvox",
+      "layerGroup": "Mix or vocals only",
+      "before": "Before",
+      "after": "After",
+      "mix": "Mix",
+      "vocal": "Vocals only"
+    }
   },
   "screen": {
     "heading": "Screen",
