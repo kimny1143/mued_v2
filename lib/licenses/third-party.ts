@@ -13,6 +13,16 @@
 //   identical). It is the macOS 1.0.0 file plus sections marked "Windows only" (Khronos khrplatform.h,
 //   glad GL2 loader) — additions only, nothing removed. FONT-LICENSES.md is unchanged (same bytes).
 //   ★When dsp merges the Windows files to main or the shipped build changes, re-copy and re-pin.
+// ★2026-10-13 (dsp #894, mued-dsp main 733a92be): the four THIRD-PARTY-LICENSES.md were re-copied (git show; blobs
+//   matched upstream). dsp's audit of the five packages on the shelf found parts that are IN the binaries but
+//   were missing from the notice files: MetalNanoVG (MIT, macOS), Destroy FX AU Utilities (BSD 3-Clause, macOS
+//   AU), the Red Sweater text field cell (MIT, macOS), plus the notices iPlug2's own source carries. Additions
+//   only — no line of the previous copies was removed (diff, 0 "<" lines each). FONT-LICENSES.md: unchanged.
+//   ★So these copies are now AHEAD of the files inside the installers on the shelf (those still lack the
+//   sections) — the page no longer says "the same as shipped". When the packages are rebuilt, compare again.
+//   ★The page note says so in one sentence (kimny 2026-10-13, via conductor: 「残りも推奨通りでOK」 = write it):
+//   「一部の節は、次の版のインストーラーから同梱されます。」 ★REMOVE that sentence (messages licenses.note, ja + en)
+//   when the four products' 1.0.2 installers — the ones carrying these sections — are on the shelf.
 //
 // ★Read with fs at REQUEST time (the root layout makes every route dynamic), so next.config's
 //   outputFileTracingIncludes for "/[locale]/licenses" is LOAD-BEARING — same as /learn.
@@ -24,22 +34,22 @@ export type LicensePlugin = (typeof LICENSE_PLUGINS)[number];
 export const LICENSE_KINDS = ["THIRD-PARTY-LICENSES.md", "FONT-LICENSES.md"] as const;
 export type LicenseKind = (typeof LICENSE_KINDS)[number];
 
-/** sha256 of each copy (THIRD-PARTY: dsp 4b331677 incl. the Windows-only parts; FONT: the 1.0.0 installer file). */
+/** sha256 of each copy (THIRD-PARTY: mued-dsp main 733a92be, dsp #894; FONT: the 1.0.0 installer file). */
 export const LICENSE_FILES: Record<LicensePlugin, Record<LicenseKind, string>> = {
   MUEDsp: {
-    "THIRD-PARTY-LICENSES.md": "15da934102f8ce1d4f34da54b5c051b2f23228a0a64ef73f7a4855538d85611e",
+    "THIRD-PARTY-LICENSES.md": "40190ea689b67cbc52eed0305f75e9b59e0017c6c585640692851683904fe2ad",
     "FONT-LICENSES.md": "2d0f646b01f2469dd8bd79c48ec20032a796d58869ce36876293532025e0c497",
   },
   MUEDsat: {
-    "THIRD-PARTY-LICENSES.md": "5d93fdbba454021966929a33d5fbd367111723f2b8f16a89e2ac696e6e65ffdd",
+    "THIRD-PARTY-LICENSES.md": "0621828d905d45aa129dee2fdabe4dd99f5f634fd95952b093b1fecfb5cbf170",
     "FONT-LICENSES.md": "7ccbb46aa40444f67ef4e9ce73be2919c66567c2fb68df167490229e7dab88da",
   },
   MUEDlim: {
-    "THIRD-PARTY-LICENSES.md": "8042d8424517c6a4d2459111b5d11afdbff3845cf8f7e1745537d7b7b8871799",
+    "THIRD-PARTY-LICENSES.md": "cfc6dbcd6e2ebce1aad8d889917c48799057f9e5d98ec9b1a0a5286d0426d53e",
     "FONT-LICENSES.md": "a1d334b428d724792b80c52fa0be346fd2de2e418a8459b2bf9eed037e2b67bf",
   },
   MUEDrive: {
-    "THIRD-PARTY-LICENSES.md": "ae78bf8b135b23c62a9dbb41bb876ac27a09dd31f2ec161cf2029e3d1ecffba4",
+    "THIRD-PARTY-LICENSES.md": "49f4f6e587560222b871c491229c14b1fb114087fc6303cbe27792c3f05f58e2",
     "FONT-LICENSES.md": "bfd0cc81e01540ee8d1eeb53d7dad7510d0d1fa1677e9ba874c40c0270bfea39",
   },
 };
