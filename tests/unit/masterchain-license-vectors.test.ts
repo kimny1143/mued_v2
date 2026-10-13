@@ -83,7 +83,7 @@ const MANIFEST = readFileSync(path.join(DIR, "MANIFEST.tsv"), "utf8");
 // ★Pinned deliberately. Upstream bumps this when the SET changes (a case added or removed), which
 // per-case hashes cannot detect — see the header. A failure here is not "re-copy the files": read
 // dsp's diff first, because a new case may encode a decision this repo has not made yet.
-const EXPECTED_SET_VERSION = 3;
+const EXPECTED_SET_VERSION = 4;
 const setVersion = Number(MANIFEST.match(/^# vector-set-version:\s*(\d+)$/m)?.[1] ?? NaN);
 
 const vectors: Vector[] = MANIFEST
@@ -136,4 +136,15 @@ describe("masterchain license — shared golden vectors (dsp #234/#235/#242)", (
       expect(verdict, `${v.name}: ${v.why}`).toBe(v.verdict);
     },
   );
+
+  it("★one product, two scopes (set v4): each plugin opens its own key and refuses its sibling's — both ways", () => {
+    // ★The manifest's verdicts are masterchain's view. MUEDvox verifies the same bytes with scope "muedvox"
+    //   (mued-vox LicenseVerifier kMuedvox), so the same two files must swap verdicts there.
+    const read = (name: string) => readFileSync(path.join(DIR, "cases", `${name}.key`), "utf8");
+    const as = (scope: string, name: string) => evaluateLicense(read(name), TEST_PUB_PEM, { product: "MUEDsp", scope }, NOW).verdict;
+    expect(as("masterchain", "valid_no_expiry")).toBe("accept");
+    expect(as("masterchain", "same_product_sibling_scope")).toBe("reject");
+    expect(as("muedvox", "same_product_sibling_scope")).toBe("accept");
+    expect(as("muedvox", "valid_no_expiry")).toBe("reject");
+  });
 });
