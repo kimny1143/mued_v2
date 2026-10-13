@@ -29,7 +29,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export const LICENSE_PLUGINS = ["MUEDsp", "MUEDsat", "MUEDlim", "MUEDrive"] as const;
+export const LICENSE_PLUGINS = ["MUEDsp", "MUEDvox", "MUEDsat", "MUEDlim", "MUEDrive"] as const;
 export type LicensePlugin = (typeof LICENSE_PLUGINS)[number];
 export const LICENSE_KINDS = ["THIRD-PARTY-LICENSES.md", "FONT-LICENSES.md"] as const;
 export type LicenseKind = (typeof LICENSE_KINDS)[number];
@@ -39,6 +39,14 @@ export const LICENSE_FILES: Record<LicensePlugin, Record<LicenseKind, string>> =
   MUEDsp: {
     "THIRD-PARTY-LICENSES.md": "40190ea689b67cbc52eed0305f75e9b59e0017c6c585640692851683904fe2ad",
     "FONT-LICENSES.md": "2d0f646b01f2469dd8bd79c48ec20032a796d58869ce36876293532025e0c497",
+  },
+  // ★MUEDvox (2026-10-13): copied from mued-vox main da9332e6 (#197), plugin/MUEDvox/resources/fonts/ — git blobs
+  //   matched upstream. ★NOT yet compared with a shipped installer: no MUEDvox 1.0.0 package exists. Re-copy and
+  //   re-pin from the package when it does. ★EULA 2026.10.1 Section 9 says WORLD's text is also at /licenses — so
+  //   this section must be on the site BEFORE any package carrying that EULA is distributed.
+  MUEDvox: {
+    "THIRD-PARTY-LICENSES.md": "2a98ae5424bef0496b657fb814240a07bd40e738ecbcfd64574a784306bae831",
+    "FONT-LICENSES.md": "033ef5368b06349f28b17191620ce92ef042ebf87c6a1839227609f667176912",
   },
   MUEDsat: {
     "THIRD-PARTY-LICENSES.md": "0621828d905d45aa129dee2fdabe4dd99f5f634fd95952b093b1fecfb5cbf170",

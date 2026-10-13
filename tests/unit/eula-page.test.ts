@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { parseEulaContent } from "@/lib/legal/eula-content";
 import { eulaFromMarkdown } from "@/lib/legal/eula-markdown";
 import { createHash } from "node:crypto";
+import { EULA_VERSION } from "@/lib/legal/eula";
 
 const ROOT = process.cwd();
 const PAGE = join(ROOT, "app", "[locale]", "eula", "page.tsx");
@@ -36,13 +37,14 @@ describe("staged EULA page", () => {
     expect(page).not.toContain("PlaceholderSections");
   });
 
-  it("★2026.10: the English text governs; /ja shows the reference note; effective 2026-10-01 as in dsp's RTF", () => {
+  it("★2026.10.1: the English text governs; /ja shows the reference note; last updated 2026-10-13 as in dsp's RTF", () => {
     // Version 2026.10 is the lawyer's draft (2026-09-30) staged for the release PR. The same version
     //   string must mean the same text as dsp's installer RTF, so EULA_VERSION moves with dsp.
     const load = (l: string) => JSON.parse(readFileSync(join(ROOT, "messages", `${l}.json`), "utf8")).eula;
-    // kimny 2026-09-30: effective 2026-10-01. The EN string is what dsp puts in the RTF's [DATE].
-    expect(load("en").effectiveDate).toBe("October 1, 2026");
-    expect(load("ja").effectiveDate).toBe("2026年10月1日");
+    // 2026.10.1 (kimny 2026-10-13 via conductor): the date is the day the text was fixed and merged into mued-dsp
+    //   (#895) — conductor's call. The EN string is what dsp puts in the RTF's [DATE]. (2026.10 was October 1.)
+    expect(load("en").effectiveDate).toBe("October 13, 2026");
+    expect(load("ja").effectiveDate).toBe("2026年10月13日");
     // ★CCO #1171 A / conductor (a): the governing text says "Last updated", so the page says it too —
     //   the label comes from the source line, never the page's own "Effective date" / 「施行日」.
     expect(load("en").dateLabel).toBe("Last updated");
@@ -129,19 +131,30 @@ describe("staged EULA page", () => {
   });
 });
 
-describe("★EULA 2026.10 — the web text IS dsp's installer text", () => {
-  // dsp #845 (mued-dsp plugin/_shared/eula/EULA-en.md): the English text the installer RTF is built from.
-  //   docs/legal/eula/EULA-2026.10-en.md is a byte copy of it. ★Update this pin only together with a
-  //   fresh byte copy, after comparing with the sha dsp sends for its merged file.
-  const DSP_EULA_EN_SHA256 = "e7e222479867f7877ac35100291713d5d58405a12491f05e126ada2b80f97a2e"; // dsp #845 head 3b4fba76
+describe("★EULA 2026.10.1 — the web text IS dsp's installer text", () => {
+  // mued-dsp plugin/_shared/eula/EULA-en.md is the English text the installer RTF is built from;
+  //   docs/legal/eula/EULA-<version>-en.md is a byte copy of it. ★Update a pin only together with a fresh byte
+  //   copy, after comparing with the sha dsp sends for its MERGED file.
+  // 2026.10.1 (kimny 2026-10-13: 「EULAは10月中想定で作りましょう。」): mued-dsp main ee29385d (#895), sha sent by dsp
+  //   2026-10-13 — adds MUEDvox to the title and four lines to Section 9; "Last updated: October 13, 2026".
+  const DSP_EULA_EN_SHA256 = "bb39f5890672d9890bd68ab1e0863decc38cded6151ac4bf7815c2123c5d5b33";
+  // ★2026.10 stays in the repo, byte for byte: it is the text the October 1 buyers agreed to (their order rows
+  //   carry eula_version 2026.10). dsp #845 head 3b4fba76.
+  const DSP_EULA_2026_10_EN_SHA256 = "e7e222479867f7877ac35100291713d5d58405a12491f05e126ada2b80f97a2e";
 
-  it("the English source is the pinned byte copy of dsp's EULA-en.md", () => {
-    const md = readFileSync(join(ROOT, "docs", "legal", "eula", "EULA-2026.10-en.md"));
+  it("the English source is the pinned byte copy of dsp's EULA-en.md, and its file name carries EULA_VERSION", () => {
+    const md = readFileSync(join(ROOT, "docs", "legal", "eula", `EULA-${EULA_VERSION}-en.md`));
     expect(createHash("sha256").update(md).digest("hex")).toBe(DSP_EULA_EN_SHA256);
   });
 
+  it("★the previous version's text is still here, unchanged (what earlier buyers agreed to)", () => {
+    const md = readFileSync(join(ROOT, "docs", "legal", "eula", "EULA-2026.10-en.md"));
+    expect(createHash("sha256").update(md).digest("hex")).toBe(DSP_EULA_2026_10_EN_SHA256);
+    expect(readFileSync(join(ROOT, "docs", "legal", "eula", "EULA-2026.10-ja.md"), "utf8")).toContain("最終更新日: 2026年10月1日");
+  });
+
   it.each(["en", "ja"] as const)("messages.%s.eula is exactly the conversion of its source (nobody hand-edited it)", (locale) => {
-    const md = readFileSync(join(ROOT, "docs", "legal", "eula", `EULA-2026.10-${locale}.md`), "utf8");
+    const md = readFileSync(join(ROOT, "docs", "legal", "eula", `EULA-${EULA_VERSION}-${locale}.md`), "utf8");
     const draft = eulaFromMarkdown(md);
     const eula = JSON.parse(readFileSync(join(ROOT, "messages", `${locale}.json`), "utf8")).eula;
     expect(eula.title).toBe(draft.title);

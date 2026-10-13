@@ -99,7 +99,7 @@ export function MuedvoxLandingContent() {
           <Section id="screen" title={t("screen.heading")}>
             <figure className="mt-8">
               <div className="brand-display">
-                <Image src={MUEDVOX_SCREENSHOT} alt={t("screen.alt")} width={1200} height={800} sizes="(min-width: 768px) 720px, 90vw" className="h-auto w-full rounded-lg" />
+                <Image src={MUEDVOX_SCREENSHOT} alt={t("screen.alt")} width={1200} height={900} sizes="(min-width: 768px) 720px, 90vw" className="h-auto w-full rounded-lg" />
               </div>
               <figcaption className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">{t("screen.caption")}</figcaption>
             </figure>
@@ -136,7 +136,12 @@ export function MuedvoxLandingContent() {
           <dl className="mt-5 divide-y divide-white/5 border-y border-white/5">
             <div className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr] sm:gap-5">
               <dt className="font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">{t("formats.formatsLabel")}</dt>
-              <dd className="text-[15px] leading-relaxed text-white/70">{t("formats.formats")}</dd>
+              <dd className="text-[15px] leading-relaxed text-white/70">
+                <p>{t("formats.formats")}</p>
+                {/* ★Said plainly, next to the formats (conductor 2026-10-13; kimny decides whether it stays): the
+                    Windows build ships as an unsigned zip, and Windows may warn about it. */}
+                <p className="mt-2 text-sm text-white/45">{t("formats.windowsNote")}</p>
+              </dd>
             </div>
             <div className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr] sm:gap-5">
               <dt className="font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">{t("formats.requirementsLabel")}</dt>

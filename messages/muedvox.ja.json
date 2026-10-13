@@ -68,7 +68,8 @@
     "formats": "macOS: AU・VST3・AAX。Windows: VST3。",
     "requirementsLabel": "動作環境",
     "input": "入力: インスタンスごとにモノのリードボーカル 1 本。",
-    "daw": "上記の形式に対応した DAW。"
+    "daw": "上記の形式に対応した DAW。",
+    "windowsNote": "Windows 版は署名のない zip です。Windows が警告を出すことがあります。"
   },
   "buy": {
     "heading": "購入とデモ",
@@ -109,6 +110,11 @@
         "id": "voice",
         "question": "別人の声になりますか？",
         "answer": "なりません。ハモリは自分の録音から作ります。"
+      },
+      {
+        "id": "presets",
+        "question": "プリセットはありますか？",
+        "answer": "7 つ入っています: Natural、Clean、Wide Stack、Stack + Bass、Vintage Chorus、Plate Duo、Wide Duo。ハモリと FX をまとめて切り替えます。プリセットを選んでも、Key、Scale、Mode は変わりません。"
       },
       {
         "id": "license",

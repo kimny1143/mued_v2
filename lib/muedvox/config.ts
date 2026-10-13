@@ -1,11 +1,14 @@
-// MUEDvox — staged until kimny’s go: noindex, not in sitemap, no buy/demo.
-// Flip publication and distribution flags only after the release assets are ready.
-// ★PURCHASE_LIVE / DEMO_LIVE render text only — the buy button and the demo gate are not built yet (PR-C,
-//   docs/paid-line/c9-multi-product-paid-line-design.md). Do not flip them before PR-C lands.
-export const MUEDVOX_LIVE = false;
-export const MUEDVOX_PURCHASE_LIVE = false;
-export const MUEDVOX_DEMO_LIVE = false;
-export const MUEDVOX_SCREENSHOT = "";
+// MUEDvox — LIVE since 2026-10-13 (kimny, in the MUED window: 「MUEDvox を今夜開ける。」). The page is indexed, Buy and
+// the demo are open, and the webhook issues keys (PAID_PRODUCTS.muedvox.enabled).
+// ★To close Buy in a hurry, set MUEDVOX_PURCHASE_LIVE and MUEDVOX_DEMO_LIVE to false together
+//   (muedvoxLaunchProblems: the demo's receipt sends people to the Buy button).
+// ★The announcement is later (about a week): the link from /muedsp and the llms.txt line are NOT in yet.
+export const MUEDVOX_LIVE = true;
+export const MUEDVOX_PURCHASE_LIVE = true;
+export const MUEDVOX_DEMO_LIVE = true;
+// The HARMONY page of the shipped 1.0.0, LICENSED (VOX 2026-10-13): MUEDvox-1.0.0-harmony-2400x1800.png
+// sha256 b4ce46e1…0db3 → cwebp -q 86 (2400×1800).
+export const MUEDVOX_SCREENSHOT: string = "/muedvox/MUEDvox-1.0.0-harmony.webp";
 export const MUEDVOX_AUDIO_EXAMPLES: ReadonlyArray<{ label: string; before: string; after: string }> = [];
 
 /**
@@ -75,7 +78,8 @@ export function muedvoxLaunchProblems(state: {
   return problems;
 }
 
-// Set at launch with the sha256/bytes pin, like masterchain.
-export const MUEDVOX_DOWNLOAD_URL = "";
-export const MUEDVOX_WINDOWS_URL = "";
-export const MUEDVOX_WINDOWS_VERSION = "";
+// 1.0.0 (2026-10-13): the second signed build (the first, bea9d181…, was never shipped) and the unsigned Windows
+// zip be75a5d2. sha256 and bytes are pinned in tests/unit/plugin-download-artifact-integrity.test.ts.
+export const MUEDVOX_DOWNLOAD_URL: string = "https://mued.jp/downloads/MUEDvox-1.0.0-installer.pkg";
+export const MUEDVOX_WINDOWS_URL: string = "https://mued.jp/downloads/MUEDvox-1.0.0-win-x64-be75a5d2.zip";
+export const MUEDVOX_WINDOWS_VERSION: string = "1.0.0";

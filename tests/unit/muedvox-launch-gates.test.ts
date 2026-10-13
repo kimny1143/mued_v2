@@ -28,8 +28,14 @@ const LAUNCHED = {
 };
 
 describe("★the flags can only be on in a combination that works", () => {
-  it("the real configuration is consistent (today: everything off)", () => {
+  it("the real configuration is consistent, and it is the launched one (2026-10-13)", () => {
     expect(config.muedvoxLaunchProblems(real())).toEqual([]);
+    expect(real()).toEqual({
+      live: true, purchaseLive: true, demoLive: true, productEnabled: true,
+      downloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.0-installer.pkg",
+      windowsUrl: "https://mued.jp/downloads/MUEDvox-1.0.0-win-x64-be75a5d2.zip", windowsVersion: "1.0.0",
+      screenshot: "/muedvox/MUEDvox-1.0.0-harmony.webp",
+    });
   });
 
   it("positive control: the full launch state is accepted, and so is 'enabled + deployed, store not yet published'", () => {
@@ -148,8 +154,19 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
     return POST(new NextRequest("https://mued.jp/api/muedvox/demo", { method: "POST", body: JSON.stringify({ email: "person@example.com", locale: "ja" }) }));
   }
 
-  it("★today's configuration: the route answers 404 and touches nothing", async () => {
+  it("★today's configuration (launched 2026-10-13): the route answers the real installer and the real Windows zip", async () => {
     vi.doUnmock("@/lib/muedvox/config");
+    const res = await post();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      ok: true, downloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.0-installer.pkg",
+      windowsDownloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.0-win-x64-be75a5d2.zip",
+    });
+    expect(m.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("★the flag off: 404 and touches nothing, whatever the URLs say (the state before launch, and the way to close it)", async () => {
+    m.url = LAUNCHED.downloadUrl; m.win = LAUNCHED.windowsUrl;
     const res = await post();
     expect(res.status).toBe(404);
     expect(m.send).not.toHaveBeenCalled();
@@ -180,6 +197,7 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
       expect(surface).toContain(locale === "ja" ? "Mac 版のデモをダウンロード" : "Download the demo for Mac");
       expect(surface).toContain(locale === "ja" ? "Windows 版のデモをダウンロード" : "Download the demo for Windows");
       expect(surface).toContain("https://mued.jp/l/vox-demo-mail");
+      expect(surface).toContain((locale === "ja" ? jaVox : enVox).formats.windowsNote);
       // ★What 1.0.0's demo really does (VOX, mued-vox #205): the harmonies stop, the lead keeps playing — never
       //   "passes audio through unprocessed" (masterchain's sentence), and never "nothing is saved" (the plugin's
       //   own preset file can still be written).
@@ -235,6 +253,8 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
       expect(surface).toContain(LAUNCHED.downloadUrl);
       expect(surface).toContain(LAUNCHED.windowsUrl);
       expect(surface).toContain(locale === "ja" ? "Windows 版の MUEDvox をダウンロード" : "Download MUEDvox for Windows");
+      // ★The page, the demo receipt and the purchase mail say the same sentence about the unsigned zip.
+      expect(surface).toContain((locale === "ja" ? jaVox : enVox).formats.windowsNote);
       expect(surface).toContain(locale === "ja" ? "Mac 版の MUEDvox をダウンロード" : "Download MUEDvox for Mac");
     }
     vi.resetModules();

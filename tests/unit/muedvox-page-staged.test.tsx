@@ -6,7 +6,6 @@ import jaMain from "@/messages/ja.json";
 import enVox from "@/messages/muedvox.en.json";
 import jaVox from "@/messages/muedvox.ja.json";
 import * as config from "@/lib/muedvox/config";
-import { MuedvoxLandingContent } from "@/components/features/muedvox-landing";
 import { visibleFaq, type MuedvoxFaqItem } from "@/components/features/muedvox-landing/muedvox-landing-content";
 import MuedvoxPage, { generateMetadata, generateStaticParams } from "@/app/[locale]/muedvox/page";
 import sitemap from "@/app/sitemap";
@@ -44,12 +43,12 @@ function deepKeys(value: unknown, prefix = ""): string[] {
   }).sort();
 }
 
-describe("MUEDvox staged product page", () => {
-  it("ships with every publication gate closed and no media", () => {
-    expect(config.MUEDVOX_LIVE).toBe(false);
-    expect(config.MUEDVOX_PURCHASE_LIVE).toBe(false);
-    expect(config.MUEDVOX_DEMO_LIVE).toBe(false);
-    expect(config.MUEDVOX_SCREENSHOT).toBe("");
+describe("MUEDvox product page (launched 2026-10-13; the staged state is kept as a fixture below)", () => {
+  it("is open: page, Buy and demo, with the 1.0.0 screen and no audio examples", () => {
+    expect(config.MUEDVOX_LIVE).toBe(true);
+    expect(config.MUEDVOX_PURCHASE_LIVE).toBe(true);
+    expect(config.MUEDVOX_DEMO_LIVE).toBe(true);
+    expect(config.MUEDVOX_SCREENSHOT).toBe("/muedvox/MUEDvox-1.0.0-harmony.webp");
     expect(config.MUEDVOX_AUDIO_EXAMPLES).toEqual([]);
   });
 
@@ -58,30 +57,39 @@ describe("MUEDvox staged product page", () => {
     expect(deepKeys(en.muedvox)).toEqual(deepKeys(ja.muedvox));
   });
 
-  it.each(["en", "ja"] as const)("%s: noindex/nofollow, canonical and hreflang, no JSON-LD", async (locale) => {
+  it.each(["en", "ja"] as const)("%s: indexed, canonical and hreflang, JSON-LD with the USD 69 offer", async (locale) => {
     state.locale = locale;
     const params = Promise.resolve({ locale });
     const metadata = await generateMetadata({ params });
-    expect(metadata.robots).toEqual({ index: false, follow: false });
+    expect(metadata.robots).toEqual({ index: true, follow: true });
     expect(metadata.alternates?.canonical).toBe(`https://mued.jp/${locale}/muedvox`);
     expect(metadata.alternates?.languages).toMatchObject({
       en: "https://mued.jp/en/muedvox", ja: "https://mued.jp/ja/muedvox",
     });
     expect(metadata.description).not.toMatch(/\$69|demo|デモ/i);
     const before = process.env.VERCEL_ENV;
-    process.env.VERCEL_ENV = "preview"; // the page renders only on a preview (or local dev) before LIVE
+    process.env.VERCEL_ENV = "production"; // LIVE: production renders it
     let page;
     try { page = await MuedvoxPage({ params }); } finally {
       if (before === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = before;
     }
-    const { container } = render(page);
-    expect(container.querySelector('script[type="application/ld+json"]')).toBeNull();
+    const ld = JSON.stringify(page);
+    expect(ld).toContain('application/ld+json');
+    expect(ld).toContain(String.raw`\"@type\":\"SoftwareApplication\"`);
+    expect(ld).toContain(String.raw`\"price\":\"69\",\"priceCurrency\":\"USD\"`);
   });
 
-  it.each(["en", "ja"] as const)("%s: approved copy, no commerce, demo or missing-media placeholders", (locale) => {
+  it.each(["en", "ja"] as const)("%s (fixture: every flag off, as before launch): approved copy, no commerce, demo or missing-media placeholders", async (locale) => {
+    vi.resetModules();
+    vi.doMock("@/lib/muedvox/config", async (original) => ({
+      ...await original<typeof import("@/lib/muedvox/config")>(),
+      MUEDVOX_LIVE: false, MUEDVOX_PURCHASE_LIVE: false, MUEDVOX_DEMO_LIVE: false, MUEDVOX_SCREENSHOT: "",
+    }));
+    const { MuedvoxLandingContent: Staged } = await import("@/components/features/muedvox-landing/muedvox-landing-content");
+    vi.doUnmock("@/lib/muedvox/config");
     state.locale = locale;
     const copy = (locale === "en" ? en : ja).muedvox;
-    const { container } = render(<MuedvoxLandingContent />);
+    const { container } = render(<Staged />);
     expect(container.querySelector(".brand-mark")).toHaveTextContent("MUEDvox");
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(locale === "en"
       ? "One vocal in, up to four voices out — each sung a different way."
@@ -115,14 +123,14 @@ describe("MUEDvox staged product page", () => {
     for (const messages of [en, ja]) {
       const items = messages.muedvox.faq.items as MuedvoxFaqItem[];
       const byId = (open: { purchase: boolean; demo: boolean }) => visibleFaq(items, open).map((i) => i.id);
-      expect(byId({ purchase: false, demo: false })).toEqual(["latency", "windows", "protools", "input", "voice"]);
-      expect(byId({ purchase: true, demo: false })).toEqual(["latency", "windows", "protools", "input", "voice", "license", "refund"]);
-      expect(byId({ purchase: false, demo: true })).toEqual(["latency", "windows", "protools", "input", "voice", "demo"]);
-      expect(byId({ purchase: true, demo: true })).toHaveLength(8);
+      expect(byId({ purchase: false, demo: false })).toEqual(["latency", "windows", "protools", "input", "voice", "presets"]);
+      expect(byId({ purchase: true, demo: false })).toEqual(["latency", "windows", "protools", "input", "voice", "presets", "license", "refund"]);
+      expect(byId({ purchase: false, demo: true })).toEqual(["latency", "windows", "protools", "input", "voice", "presets", "demo"]);
+      expect(byId({ purchase: true, demo: true })).toHaveLength(9);
     }
   });
 
-  it("is a 404 in production until LIVE; preview and local dev still render (CCO #1216)", async () => {
+  it("the visibility rule: 404 in production unless LIVE; preview and local dev render either way (CCO #1216)", async () => {
     expect(config.muedvoxPageVisible(false, "production", "production")).toBe(false);
     expect(config.muedvoxPageVisible(false, "preview", "production")).toBe(true);
     expect(config.muedvoxPageVisible(false, undefined, "development")).toBe(true); // local next dev
@@ -132,14 +140,14 @@ describe("MUEDvox staged product page", () => {
     const before = process.env.VERCEL_ENV;
     process.env.VERCEL_ENV = "production";
     try {
-      await expect(MuedvoxPage({ params: Promise.resolve({ locale: "en" }) })).rejects.toThrow("NEXT_NOT_FOUND");
+      await expect(MuedvoxPage({ params: Promise.resolve({ locale: "en" }) })).resolves.toBeTruthy(); // LIVE
     } finally {
       if (before === undefined) delete process.env.VERCEL_ENV; else process.env.VERCEL_ENV = before;
     }
   });
 
-  it("excludes MUEDvox from the sitemap", async () => {
-    expect((await sitemap()).some(({ url }) => url.includes("/muedvox"))).toBe(false);
+  it("lists MUEDvox in the sitemap", async () => {
+    expect((await sitemap()).some(({ url }) => url.includes("/muedvox"))).toBe(true);
   });
 });
 

@@ -136,6 +136,22 @@ const ARTIFACTS = [
     sha256: "af9dfe0424105a79171bedcdecabe8dc2bba6f25662f1240d369b32479535d29",
     bytes: 1_416_745,
   },
+  // ★MUEDvox 1.0.0 (2026-10-13). Measured 22:02 JST on the copies under public/downloads/ (shasum -a 256,
+  //   stat -f%z); both match VOX's and conductor's relayed values. The pkg is the second signed build (signed
+  //   2026-10-13 11:30 UTC, notarised, stapled; universal, min macOS 11.0); the zip is unsigned (mued-vox be75a5d2).
+  //   Literal URLs: the files sit on the shelf whether or not lib/muedvox/config.ts points at them yet.
+  {
+    name: "MUEDvox 1.0.0",
+    url: "https://mued.jp/downloads/MUEDvox-1.0.0-installer.pkg",
+    sha256: "bd2d54cb13194ed4012462c36f444def1bf3b2903a42d14045494f9471e320a9",
+    bytes: 6_545_204,
+  },
+  {
+    name: "MUEDvox 1.0.0 (Windows be75a5d2)",
+    url: "https://mued.jp/downloads/MUEDvox-1.0.0-win-x64-be75a5d2.zip",
+    sha256: "968317aea8d69ffca1d0aa2752a563779ae9aad118b59695b211a67df9109099",
+    bytes: 1_137_620,
+  },
   // ★Shelf: the first Windows beta zips (dsp build/win-beta-20260930b, 80178027). Never linked (the flag was off
   //   while they were the table's), but public under these URLs since 2026-09-30 — so their bytes stay fixed.
   {

@@ -233,7 +233,8 @@ describe("★the price in the buyer's currency, from FastSpring's own session (k
 
     const { pushed, checkout } = checkoutBuilder();
     expect(m.requestQuote()).toBe(true);
-    expect(pushed).toEqual([{ products: [{ path: "muedsp-masterchain", quantity: 1 }] }]);
+    // MUEDvox is on sale too (2026-10-13), so the cart names it × 0: never the two together.
+    expect(pushed).toEqual([{ products: [{ path: "muedsp-masterchain", quantity: 1 }, { path: "muedsp-vox", quantity: 0 }] }]);
     expect(checkout).not.toHaveBeenCalled(); // pricing only — no popup
   });
 
@@ -259,8 +260,19 @@ describe("★one path per product (C9 PR-C) — masterchain's checkout does not 
   }
   afterEach(() => vi.doUnmock("@/lib/plugins/paid-products"));
 
-  it("★★today (MUEDvox's row disabled): masterchain sends exactly the payload it always sent, and MUEDvox opens nothing", async () => {
-    const m = await load(CONFIGURED);
+  /** The table with MUEDvox's row off — the state before 2026-10-13, and what closing its sale looks like. */
+  async function loadWithMuedvoxOff() {
+    vi.resetModules();
+    for (const [k, v] of Object.entries(CONFIGURED)) process.env[k] = v;
+    vi.doMock("@/lib/plugins/paid-products", async (original) => {
+      const actual = await original<typeof import("@/lib/plugins/paid-products")>();
+      return { ...actual, PAID_PRODUCTS: { ...actual.PAID_PRODUCTS, muedvox: { ...actual.PAID_PRODUCTS.muedvox, enabled: false } } };
+    });
+    return import("@/lib/masterchain/fastspring-checkout");
+  }
+
+  it("★★MUEDvox's row disabled (a fixture since launch): masterchain sends exactly the payload it always sent, and MUEDvox opens nothing", async () => {
+    const m = await loadWithMuedvoxOff();
     expect(m.cartProducts("masterchain")).toEqual([{ path: "muedsp-masterchain", quantity: 1 }]);
     expect(m.checkoutPath("muedvox")).toBe("");
     expect(m.checkoutEnabled("muedvox")).toBe(false);
@@ -274,6 +286,13 @@ describe("★one path per product (C9 PR-C) — masterchain's checkout does not 
 
     expect(m.openCheckout({ eulaAccepted: true })).toBe(true);
     expect(pushed).toEqual([{ products: [{ path: "muedsp-masterchain", quantity: 1 }] }]);
+  });
+
+  it("★★today's real table (both on sale since 2026-10-13): each cart is its own product × 1 and the other × 0", async () => {
+    const m = await load(CONFIGURED);
+    expect(m.checkoutEnabled("muedvox")).toBe(true);
+    expect(m.cartProducts("masterchain")).toEqual([{ path: "muedsp-masterchain", quantity: 1 }, { path: "muedsp-vox", quantity: 0 }]);
+    expect(m.cartProducts("muedvox")).toEqual([{ path: "muedsp-vox", quantity: 1 }, { path: "muedsp-masterchain", quantity: 0 }]);
   });
 
   it("★★both on sale: each cart holds its own product × 1 and sets the other to 0 — never the two together", async () => {
@@ -308,7 +327,7 @@ describe("★one path per product (C9 PR-C) — masterchain's checkout does not 
   it("★masterchain's path is the env's, not the table's — this change does not move the live checkout (CCO #1263 C)", async () => {
     const m = await load({ ...CONFIGURED, [PRODUCT]: "a-path-only-the-env-has" });
     expect(m.checkoutPath("masterchain")).toBe("a-path-only-the-env-has");
-    expect(m.cartProducts("masterchain")).toEqual([{ path: "a-path-only-the-env-has", quantity: 1 }]);
+    expect(m.cartProducts("masterchain")[0]).toEqual({ path: "a-path-only-the-env-has", quantity: 1 });
   });
 
   it("★opening a product's checkout makes it the one session data is read for, without a quote request first (CCO #1263 G)", async () => {

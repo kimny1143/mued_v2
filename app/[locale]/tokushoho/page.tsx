@@ -141,6 +141,7 @@ function TokushohoContent({ locale }: { locale: string }) {
                 priceDescription={t("muedsp.price.description")}
                 pricePlans={[
                   t("muedsp.price.plans.masterchain"),
+                  t("muedsp.price.plans.muedvox"),
                   t("muedsp.price.plans.free"),
                   t("muedsp.price.plans.note"),
                 ]}

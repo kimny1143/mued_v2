@@ -68,7 +68,8 @@
     "formats": "macOS: AU, VST3 and AAX. Windows: VST3.",
     "requirementsLabel": "Requirements",
     "input": "Input: one mono lead vocal per instance.",
-    "daw": "A DAW that hosts one of the formats above."
+    "daw": "A DAW that hosts one of the formats above.",
+    "windowsNote": "The Windows version is an unsigned zip. Windows may show a warning."
   },
   "buy": {
     "heading": "Buy and demo",
@@ -109,6 +110,11 @@
         "id": "voice",
         "question": "Does it turn my voice into someone else's?",
         "answer": "No. The harmony parts are made from your own recording."
+      },
+      {
+        "id": "presets",
+        "question": "Does it come with presets?",
+        "answer": "Seven: Natural, Clean, Wide Stack, Stack + Bass, Vintage Chorus, Plate Duo and Wide Duo. A preset switches the harmony and the FX together. Choosing one does not change Key, Scale or Mode."
       },
       {
         "id": "license",
