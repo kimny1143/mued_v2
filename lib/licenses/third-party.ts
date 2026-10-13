@@ -20,6 +20,9 @@
 //   only — no line of the previous copies was removed (diff, 0 "<" lines each). FONT-LICENSES.md: unchanged.
 //   ★So these copies are now AHEAD of the files inside the installers on the shelf (those still lack the
 //   sections) — the page no longer says "the same as shipped". When the packages are rebuilt, compare again.
+//   ★The page note says so in one sentence (kimny 2026-10-13, via conductor: 「残りも推奨通りでOK」 = write it):
+//   「一部の節は、次の版のインストーラーから同梱されます。」 ★REMOVE that sentence (messages licenses.note, ja + en)
+//   when the four products' 1.0.2 installers — the ones carrying these sections — are on the shelf.
 //
 // ★Read with fs at REQUEST time (the root layout makes every route dynamic), so next.config's
 //   outputFileTracingIncludes for "/[locale]/licenses" is LOAD-BEARING — same as /learn.

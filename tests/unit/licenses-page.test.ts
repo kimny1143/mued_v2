@@ -8,11 +8,11 @@ const ROOT = process.cwd();
 const sha = (text: string) => createHash("sha256").update(text, "utf8").digest("hex");
 
 describe("/licenses — third-party licenses shipped in the plugins", () => {
-  it.each(LICENSE_PLUGINS)("★%s: both copies are byte-identical to the pinned installer files", (plugin) => {
+  it.each(LICENSE_PLUGINS)("★%s: both copies are byte-identical to the pinned upstream files (lib/licenses/third-party.ts says which commit)", (plugin) => {
     for (const kind of LICENSE_KINDS) {
       const text = readLicense(plugin, kind);
       expect(text.length, `${plugin}/${kind} is empty`).toBeGreaterThan(100);
-      expect(sha(text), `${plugin}/${kind} changed without its pin — re-copy from the shipped build and update LICENSE_FILES`).toBe(
+      expect(sha(text), `${plugin}/${kind} changed without its pin — re-copy from the source named in lib/licenses/third-party.ts (the dsp repo; ★not from an installer on the shelf, which may be OLDER) and update LICENSE_FILES`).toBe(
         LICENSE_FILES[plugin][kind],
       );
     }
@@ -38,5 +38,16 @@ describe("/licenses — third-party licenses shipped in the plugins", () => {
       Object.entries(o).flatMap(([k, v]) => (typeof v === "object" && v ? keys(v as Record<string, unknown>, `${pre}${k}.`) : [`${pre}${k}`]));
     expect(keys(ja).sort()).toEqual(keys(en).sort());
     for (const p of LICENSE_PLUGINS) expect(ja.plugins[p]).toBeTruthy();
+  });
+});
+
+describe("/licenses — the note while the shelf is behind the page (kimny 2026-10-13)", () => {
+  // ★Temporary by design: the page lists sections the installers on the shelf do not carry yet. Remove the
+  //   sentence — and this test — when the four products' 1.0.2 installers are on the shelf.
+  it("says, in both languages, that some sections ship from the next installer version", () => {
+    const load = (l: string) => JSON.parse(readFileSync(join(ROOT, "messages", `${l}.json`), "utf8")).licenses.note as string;
+    expect(load("ja")).toContain("一部の節は、次の版のインストーラーから同梱されます。");
+    expect(load("en")).toContain("Some sections will be included in the installers from the next version.");
+    expect(load("ja")).not.toContain("と同じ内容"); // the old claim that the page equals the shipped files
   });
 });

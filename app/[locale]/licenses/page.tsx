@@ -1,6 +1,6 @@
 // Third-party software and font licenses shipped in the MUEDsp plugins (EULA Section 9 links here).
 // The texts are each plugin's English notice files, copied from the dsp repo — since 2026-10-13 AHEAD of the files
-// inside the installers on the shelf, which lack three sections (lib/licenses/third-party.ts has the
+// inside the installers on the shelf, which lack five sections (lib/licenses/third-party.ts has the
 // provenance and the pins); only the page chrome is localized.
 import type { Metadata } from "next";
 import ReactMarkdown, { type Components } from "react-markdown";
