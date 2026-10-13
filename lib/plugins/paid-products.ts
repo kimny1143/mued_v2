@@ -48,7 +48,7 @@ export const PAID_PRODUCTS: Readonly<Record<PaidProductKey, PaidProduct>> = {
     itemName: "MUEDvox",
     displayName: "MUEDvox",
     keyFileName: "MUEDvox.license.key",
-    enabled: false,
+    enabled: true,
   },
 };
 

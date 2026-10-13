@@ -289,7 +289,8 @@ describe("handleFastspringOrderCompleted — only products we sell (C9)", () => 
   const refused: Array<[string, unknown]> = [
     ["FastSpring's sample product (seen in webhook_events as a test notification)", [{ product: "example-product", quantity: 1 }]],
     ["a product path not in PAID_PRODUCTS (e.g. MUEDvox before it is added)", [{ product: "muedsp-muedvox", quantity: 1 }]],
-    ["disabled MUEDvox", [{ product: "muedsp-vox", quantity: 1 }]],
+    ["MUEDvox × 2 (on sale since 2026-10-13, but only one item × 1 is fulfilled)", [{ product: "muedsp-vox", quantity: 2 }]],
+    ["one of each (both on sale — a cart carrying both gets no key)", [{ product: "muedsp-masterchain", quantity: 1 }, { product: "muedsp-vox", quantity: 1 }]],
     ["no items at all", []],
     ["an item with no product", [{ quantity: 1 }]],
     ["two items", [{ product: "muedsp-masterchain", quantity: 1 }, { product: "muedsp-masterchain", quantity: 1 }]],

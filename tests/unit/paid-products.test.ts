@@ -28,13 +28,13 @@ describe("PAID_PRODUCTS (C9)", () => {
   });
 });
 
-it("MUEDvox is registered but cannot be fulfilled until launch", () => {
+it("MUEDvox is on sale since 2026-10-13: its FastSpring path resolves to its own row", () => {
   expect(PAID_PRODUCTS.muedvox).toEqual({
     key: "muedvox", fastspringPath: "muedsp-vox", productId: "muedsp_vox",
     scope: "muedvox", itemName: "MUEDvox", displayName: "MUEDvox",
-    keyFileName: "MUEDvox.license.key", enabled: false,
+    keyFileName: "MUEDvox.license.key", enabled: true,
   });
-  expect(paidProductByFastspringPath("muedsp-vox")).toBeNull();
+  expect(paidProductByFastspringPath("muedsp-vox")).toBe(PAID_PRODUCTS.muedvox);
   expect(paidProductByProductId("muedsp_vox")).toBe(PAID_PRODUCTS.muedvox);
   expect(paidProductByProductId("muedsp_masterchain")).toBe(PAID_PRODUCTS.masterchain);
   expect(paidProductByProductId("unknown")).toBeNull();
