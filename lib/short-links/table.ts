@@ -194,5 +194,7 @@ export const SHORT_LINKS: readonly ShortLink[] = [
   { slug: 'mc-plugin', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_header', utmContent: 'header_link', localeFromBrowser: true },
   // mc-demo-mail = the product-page link in the masterchain demo receipt (conductor 2026-09-30, d).
   { slug: 'mc-demo-mail', host: 'mued.jp', path: '/en/muedsp', utmSource: 'email', utmMedium: 'lifecycle', utmCampaign: 'masterchain_demo_mail', utmContent: 'product_link', localeFromBrowser: true },
+  // vox-demo-mail = the product-page link in the MUEDvox demo receipt (same shape as mc-demo-mail).
+  { slug: 'vox-demo-mail', host: 'mued.jp', path: '/en/muedvox', utmSource: 'email', utmMedium: 'lifecycle', utmCampaign: 'muedvox_demo_mail', utmContent: 'product_link', localeFromBrowser: true },
   { slug: 'mc-portal', host: 'mued.jp', path: '/dashboard/plugins', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_portal', utmContent: 'license_window' },
 ] as const;

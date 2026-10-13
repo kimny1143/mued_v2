@@ -45,22 +45,22 @@
     "mode": "モード",
     "latency": "遅延",
     "use": "用途",
+    "render": {
+      "name": "Render",
+      "latency": "0.94 秒",
+      "use": "いちばんきれいな音。先の音を読んでから歌うので、0.94 秒遅れます。Pro Tools ではトラックをコミットして使ってください。ほかの DAW で遅れて聞こえる時は、フリーズまたはバウンスしてください。"
+    },
     "track": {
       "name": "Track",
-      "latency": "約 0.94 秒",
-      "use": "ミックス用。先読みで声部を決めるので、録音しながらは使えません。"
-    },
-    "trackShort": {
-      "name": "Track Short",
-      "latency": "約 0.34 秒",
-      "use": "ミックス用。Track より先読みが短い。"
+      "latency": "0.34 秒",
+      "use": "Render に近い音で、遅れは 3 分の 1。インサートに挿したままミックスできます。"
     },
     "live": {
       "name": "Live",
       "latency": "3 ms",
-      "use": "歌いながら聴く・演奏用。"
+      "use": "歌いながら、弾きながら使うモードです。"
     },
-    "note": "録るときは Live、ミックスは Track か Track Short。"
+    "note": "遅延は、プラグインが DAW に知らせる値です。コードを変えてからハモリが変わるまでの時間は、これより長くなります。"
   },
   "formats": {
     "heading": "形式と動作環境",
@@ -88,7 +88,7 @@
       {
         "id": "latency",
         "question": "遅延は？",
-        "answer": "Track は約 0.94 秒、Track Short は約 0.34 秒（どちらもミックス用・先読みで声部を決める）。Live は 3 ms（演奏用）。録るときは Live。"
+        "answer": "モードで変わります。Render は 0.94 秒、Track は 0.34 秒、Live は 3 ms（プラグインが DAW に知らせる値）。Render は先の音を読むので、Pro Tools ではトラックをコミットして使います。歌いながら・弾きながら使う時は Live。"
       },
       {
         "id": "windows",
@@ -135,5 +135,43 @@
     "eula": "EULA",
     "thirdParty": "MUEDvox は第三者ソフトウェアを含みます。必要な表示はプラグインに同梱しています。",
     "footer": "東京の glasswerks が制作。サポート: support@mued.jp"
+  },
+  "cart": {
+    "signInNote": "購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。",
+    "thanks": "購入ありがとうございます。購入時のメールアドレスに、まもなく案内が届きます。ダウンロードと鍵は、ポータル（mued.jp/dashboard/plugins）でも受け取れます。",
+    "thanksPortal": "ポータルを開く",
+    "orderProduct": "MUEDvox",
+    "orderFormats": "macOS · AU · VST3 · AAX（Pro Tools）／Windows · VST3",
+    "orderPrice": "$69",
+    "orderTaxNote": "税・通貨は次の画面で確定します",
+    "orderTaxIncluded": "{taxName} {tax} を含みます（{rate}）",
+    "orderTaxAdded": "税がかかる場合は、次の画面で住所から計算されます",
+    "orderPriceLoading": "価格を確認しています…",
+    "orderKeyNote": "鍵は、購入時のメールアドレスで mued.jp のポータルから受け取れます。",
+    "cartTitle": "カート",
+    "cartTotal": "合計",
+    "cartEula": "使用許諾契約（EULA）",
+    "agreeAndContinue": "EULA に同意して購入手続きに進む",
+    "cartNextScreen": "次の画面（FastSpring）で支払いとメールアドレスを入力します。",
+    "cartAudienceNote": "購入時のメールアドレスを、MUEDsp のお知らせにも使用します。配信はいつでも解除できます。",
+    "checkoutLoading": "購入画面を準備しています…",
+    "modalClose": "閉じる"
+  },
+  "demoForm": {
+    "try": "MUEDvox を試す",
+    "emailLabel": "メールアドレス（試す時に使います）",
+    "emailPlaceholder": "you@example.com",
+    "demoNote": "デモは期限なし。挿すたびに最初の 45 秒だけ処理し、あとは挿し直すまで原音のまま通します。設定は保存されません。",
+    "emailNotice": "ダウンロードリンクの送付と、MUEDsp のお知らせにメールアドレスを使用します。配信はいつでも解除できます。",
+    "success": "ダウンロードを始めました。始まらない場合は、メールのリンクからどうぞ。",
+    "errors": {
+      "invalid_email": "有効なメールアドレスを入力してください。",
+      "disposable_email": "使い捨てではないメールアドレスでお試しください。",
+      "rate_limited": "少し時間をおいて、もう一度お試しください。",
+      "generic": "ダウンロードを始められませんでした。もう一度お試しください。"
+    },
+    "demoChoose": "お使いのパソコンに合わせて、下から選んでください。控えのメールにも両方のリンクがあります。",
+    "demoOtherMac": "Mac 版はこちら",
+    "demoOtherWindows": "Windows 版はこちら"
   }
 }

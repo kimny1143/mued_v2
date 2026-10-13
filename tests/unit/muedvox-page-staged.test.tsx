@@ -106,7 +106,8 @@ describe("MUEDvox staged product page", () => {
     }
     // Three modes, the build's values (mued-vox main, docs/mvp-listening-guide.md).
     expect(screen.getAllByRole("row")).toHaveLength(4); // header + Track / Track Short / Live
-    expect(screen.getByText(copy.modes.trackShort.latency)).toBeInTheDocument();
+    expect(screen.getByText(copy.modes.render.latency)).toBeInTheDocument();
+    expect(screen.getByText(copy.modes.track.latency)).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/3–40|3〜40/);
   });
 
@@ -139,5 +140,39 @@ describe("MUEDvox staged product page", () => {
 
   it("excludes MUEDvox from the sitemap", async () => {
     expect((await sitemap()).some(({ url }) => url.includes("/muedvox"))).toBe(false);
+  });
+});
+
+describe("★launch day: the page mounts MUEDvox's own Buy button and demo form (flags on, in a fixture)", () => {
+  it("passes each component MUEDvox's product — its flag, its words, its image, its endpoint — and drops the old consent line", async () => {
+    vi.resetModules();
+    const seen: Record<string, unknown> = {};
+    vi.doMock("@/lib/muedvox/config", async (original) => ({
+      ...await original<typeof import("@/lib/muedvox/config")>(),
+      MUEDVOX_PURCHASE_LIVE: true, MUEDVOX_DEMO_LIVE: true, MUEDVOX_SCREENSHOT: "/muedvox/screen.webp",
+    }));
+    vi.doMock("@/components/features/muedsp-landing/masterchain-buy-button", () => ({
+      PaidBuyButton: (props: { product: unknown; buyLabel: string }) => { seen.buy = props; return <button>{props.buyLabel}</button>; },
+    }));
+    vi.doMock("@/components/features/muedsp-landing/masterchain-try", () => ({
+      PaidDemoForm: (props: { product: unknown }) => { seen.demo = props; return <form id="demo" />; },
+    }));
+    const { MuedvoxLandingContent: Live } = await import("@/components/features/muedvox-landing/muedvox-landing-content");
+    state.locale = "en";
+    const { container } = render(<Live />);
+    expect(seen.buy).toEqual({
+      product: { key: "muedvox", purchaseLive: true, cartThumb: "/muedvox/screen.webp", messages: "muedvox.cart" },
+      buyLabel: enVox.buy.button,
+    });
+    expect(seen.demo).toEqual({
+      product: { key: "muedvox", demoLive: true, endpoint: "/api/muedvox/demo", messages: { form: "muedvox.demoForm", demo: "muedvox.demoForm", windows: "muedvox.demoForm" } },
+    });
+    expect(screen.getByRole("button", { name: enVox.buy.button })).toBeInTheDocument();
+    expect(container.querySelector("form#demo")).not.toBeNull(); // the hero's "Try the demo" lands here
+    // The cart's button is the EULA consent now; a second, unlinked consent line beside Buy is gone.
+    expect(container.textContent).not.toContain(enVox.buy.consent);
+    vi.doUnmock("@/lib/muedvox/config");
+    vi.doUnmock("@/components/features/muedsp-landing/masterchain-buy-button");
+    vi.doUnmock("@/components/features/muedsp-landing/masterchain-try");
   });
 });

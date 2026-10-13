@@ -8,7 +8,7 @@ describe("MUEDvox purchase delivery", () => {
     for (const url of [URL, ""]) {
       vi.resetModules();
       vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://mued.jp");
-      vi.doMock("@/lib/muedvox/config", () => ({ MUEDVOX_DOWNLOAD_URL: url }));
+      vi.doMock("@/lib/muedvox/config", () => ({ MUEDVOX_DOWNLOAD_URL: url, MUEDVOX_WINDOWS_URL: "" })); // no Windows zip here; muedvox-launch-gates covers the one with it
       const { emailTemplates, emailService } = await import("@/lib/services/email.service");
       const mail = emailTemplates.muedvoxLicenseDelivery({ locale });
       expect(mail.subject).toBe(url

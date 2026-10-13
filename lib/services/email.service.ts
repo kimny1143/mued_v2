@@ -13,7 +13,7 @@ import { logger } from '@/lib/utils/logger';
 import { MUEDSAT_DOWNLOAD_URL } from '@/lib/muedsat/config';
 import { MUEDLIM_DOWNLOAD_URL } from '@/lib/muedlim/config';
 import { MUEDRIVE_DOWNLOAD_URL } from '@/lib/muedrive/config';
-import { MUEDVOX_DOWNLOAD_URL } from '@/lib/muedvox/config';
+import { MUEDVOX_DOWNLOAD_URL, MUEDVOX_WINDOWS_URL } from '@/lib/muedvox/config';
 import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION } from '@/lib/masterchain/config';
 import { masterchainWindowsBuild } from '@/lib/plugins/windows-beta';
 import { formatUtcMinute } from '@/lib/masterchain/format';
@@ -1065,6 +1065,48 @@ Hoo MCP経由の自動送信
   },
 
 
+  /**
+   * MUEDvox demo receipt. ★The same mail as masterchainDemoDownload with the product's own facts: every sentence is
+   * that template's (kimny-approved 9/30–10/1) with the name swapped, except the limits line, which is MUEDvox's
+   * page copy (messages muedvox.demo.body), and the "Buy … inside the plugin" clause, which is left out — nobody
+   * has checked that MUEDvox's window has such a link (lib rule: copy about another repo's UI is verified against
+   * the shipped build first).
+   */
+  muedvoxDemoDownload(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string; windowsUrl?: string | null }): { subject: string; html: string; text: string } {
+    const isJa = data.locale === 'ja';
+    const subject = isJa ? 'MUEDvox デモのダウンロード' : 'Your MUEDvox demo download';
+    const intro = isJa ? 'MUEDvox のデモをお試しいただき、ありがとうございます。' : 'Thanks for trying the MUEDvox demo.';
+    const limits = isJa
+      ? 'キーを入れなくても、デモとして期限なく使えます。デモは、挿すたびに最初の 45 秒だけ処理し、あとは挿し直すまで原音のまま通します。設定は保存されません。ライセンスキーを入れると、これらの制限はなくなります。'
+      : "Without a key, MUEDvox runs as a demo with no time limit. Each time you insert it, it processes the first 45 seconds of audio, then passes audio through unprocessed until you insert it again. Settings aren't saved. Entering a license key removes these limits.";
+    const label = isJa ? 'デモをダウンロード' : 'Download the demo';
+    const formats = 'AU · VST3 · AAX (Pro Tools) · macOS';
+    const buyUrl = `${APP_URL}/l/vox-demo-mail`;
+    const buy = isJa
+      ? '気に入ったら、製品ページから購入できます。購入後は、購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。'
+      : 'If you like it, you can buy it from the product page. After buying, sign in to mued.jp with the email you used at checkout to get your license key in your portal.';
+    const buyLabel = isJa ? '製品ページを開く' : 'Open the product page';
+    // ★Only with consent — the unsubscribe URL exists only then (same rule as the masterchain receipt).
+    const optedIn = !!data.unsubscribeUrl;
+    const buyHtml = optedIn ? `<p>${buy}</p><p><a href="${buyUrl}">${buyLabel}</a></p>` : '';
+    const buyText = optedIn ? `\n\n${buy}\n${buyLabel}: ${buyUrl}` : '';
+    const unsubHtml = data.unsubscribeUrl
+      ? `<p style="color: #9ca3af; font-size: 12px;"><a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a></p>`
+      : '';
+    const unsubText = data.unsubscribeUrl ? `\n\n${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}` : '';
+    const windowsUrl = data.windowsUrl === undefined ? (MUEDVOX_WINDOWS_URL || null) : data.windowsUrl;
+    const windowsLabel = isJa ? 'Windows 版のデモをダウンロード' : 'Download the demo for Windows';
+    const macLabel = windowsUrl ? (isJa ? 'Mac 版のデモをダウンロード' : 'Download the demo for Mac') : label;
+    const macFormats = windowsUrl ? `Mac: ${formats}` : formats;
+    const windowsHtml = windowsUrl ? `<p><a href="${windowsUrl}" class="button">${windowsLabel}</a></p>` : '';
+    const windowsText = windowsUrl ? `\n${windowsLabel}: ${windowsUrl}` : '';
+    return {
+      subject,
+      html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp MUEDvox</h2><p>${intro}</p><p><a href="${MUEDVOX_DOWNLOAD_URL}" class="button">${macLabel}</a></p>${windowsHtml}<p>${limits}</p><p>${macFormats}</p>${buyHtml}${unsubHtml}`),
+      text: `${intro}\n\n${macLabel}: ${MUEDVOX_DOWNLOAD_URL}${windowsText}\n\n${limits}\n\n${macFormats}${buyText}${unsubText}\n\nglasswerks inc. — mued.jp`,
+    };
+  },
+
   /** Transactional MUEDvox delivery; keys remain in the buyer portal. */
   muedvoxLicenseDelivery(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
@@ -1085,14 +1127,26 @@ Hoo MCP経由の自動送信
       ? 'ポータルで鍵のファイル（.key）をダウンロードし、MUEDvox の画面にドラッグ&ドロップしてください。うまくいかない DAW では、「Load license file…」で選ぶか、キーをコピーして「Paste license key」を押してください。'
       : 'In the portal: download your key file (.key) and drag it onto MUEDvox. If drop doesn\'t work in your DAW, use "Load license file…", or copy the key and press "Paste license key".';
     const formats = isJa ? 'macOS: AU・VST3・AAX。Windows: VST3。' : 'macOS: AU, VST3 and AAX. Windows: VST3.';
+    // ★The Windows zip gets its own link (the masterchain purchase mail lacked one from 10/1 to #1271 — a Windows
+    //   buyer had to find the zip in the portal). With it, each button says which OS it is for.
+    const windowsUrl = hasLink && MUEDVOX_WINDOWS_URL ? MUEDVOX_WINDOWS_URL : null;
+    const macLabel = windowsUrl
+      ? (isJa ? 'Mac 版の MUEDvox をダウンロード' : 'Download MUEDvox for Mac')
+      : (isJa ? 'MUEDvox をダウンロード' : 'Download MUEDvox');
+    const windowsLabel = isJa ? 'Windows 版の MUEDvox をダウンロード' : 'Download MUEDvox for Windows';
 
     // Install first, then open the portal to retrieve the license.
     const downloadHtml = hasLink
       ? `<p style="text-align: center;">
            <a href="${MUEDVOX_DOWNLOAD_URL}" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
-             ${isJa ? 'MUEDvox をダウンロード' : 'Download MUEDvox'}
+             ${macLabel}
            </a>
-         </p>
+         </p>${windowsUrl ? `
+         <p style="text-align: center;">
+           <a href="${windowsUrl}" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
+             ${windowsLabel}
+           </a>
+         </p>` : ''}
          <p style="color: #6b7280; font-size: 13px; text-align: center;">${formats}</p>`
       : `<div class="info-box">
            <p style="margin: 0;">${isJa
@@ -1100,7 +1154,9 @@ Hoo MCP経由の自動送信
              : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you."}</p>
          </div>`;
     const downloadText = hasLink
-      ? `${isJa ? 'ダウンロード' : 'Download'}: ${MUEDVOX_DOWNLOAD_URL}\n${formats}`
+      ? (windowsUrl
+        ? `${macLabel}: ${MUEDVOX_DOWNLOAD_URL}\n${windowsLabel}: ${windowsUrl}\n${formats}`
+        : `${isJa ? 'ダウンロード' : 'Download'}: ${MUEDVOX_DOWNLOAD_URL}\n${formats}`)
       : (isJa
         ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
         : "I'll send the installer download link to this address shortly. If it doesn't arrive, just reply to this email and I'll get it to you.");
@@ -1772,6 +1828,22 @@ class EmailService {
       to,
       ...template,
       tags: [{ name: 'type', value: 'masterchain_license_delivery' }],
+    });
+  }
+
+  async sendMuedvoxDemoDownload(
+    to: EmailRecipient,
+    data: { locale: 'ja' | 'en' }
+  ): Promise<EmailResult> {
+    // ★The demo adds the person to the shared MUEDsp list (told on the form), so the receipt always carries the
+    //   way off it. The unsubscribe scope "masterchain" means "the shared MUEDsp list" (lib/plugins/unsubscribe-token.ts)
+    //   — it is the same list for every paid product's demo, so the same scope withdraws from it.
+    const unsubscribeUrl = pluginUnsubscribeUrl('masterchain', to.email, data.locale);
+    return this.send({
+      to,
+      ...emailTemplates.muedvoxDemoDownload({ locale: data.locale, unsubscribeUrl }),
+      tags: [{ name: 'type', value: 'muedvox_demo_download' }],
+      headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
     });
   }
 
