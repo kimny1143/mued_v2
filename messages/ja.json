@@ -425,7 +425,7 @@
   "licenses": {
     "title": "第三者のライセンス",
     "intro": "MUEDsp のプラグインに含まれる、第三者のソフトウェアと書体のライセンスです。",
-    "note": "ライセンスの本文は英語です。各プラグインのインストーラーに同梱の THIRD-PARTY-LICENSES.md と FONT-LICENSES.md と同じ内容で、Windows 版だけで使う部品の段（Windows only）も含みます。",
+    "note": "ライセンスの本文は英語です。各プラグインの THIRD-PARTY-LICENSES.md と FONT-LICENSES.md の内容で、Windows 版だけ・macOS 版だけで使う部品の段（Windows only・macOS only）も含みます。",
     "thirdParty": "第三者のソフトウェア",
     "fonts": "書体",
     "plugins": {
