@@ -14,6 +14,8 @@ export const MUEDVOX_SCREENSHOT: string = "/muedvox/MUEDvox-1.0.0-harmony.webp";
 //   (scripts/muedvox/encode-lp-audio.sh <folder of wavs>); to add or drop a song, add or drop a row.
 // Four takes per song, same length and same start: the mix and the vocal alone, each before and after MUEDvox.
 // Source: lp/audio-final-20261014/*.wav (48 kHz 24 bit) → mp3 192 kbps CBR.
+// ★The song names stay off the page (kimny 2026-10-14: 「サンプルの曲名は伏せましょう。Sample #1 #2」): the title is
+//   what is shown and read aloud, the same in ja and en; the files carry only the number.
 export type MuedvoxAudioTake = "mix_before" | "mix_after" | "vocal_before" | "vocal_after";
 export type MuedvoxAudioExample = { id: string; title: string; files: Record<MuedvoxAudioTake, string> };
 const audioExample = (id: string, title: string): MuedvoxAudioExample => ({
@@ -27,8 +29,8 @@ const audioExample = (id: string, title: string): MuedvoxAudioExample => ({
   },
 });
 export const MUEDVOX_AUDIO_EXAMPLES: ReadonlyArray<MuedvoxAudioExample> = [
-  audioExample("001", "Stay A Little Longer"),
-  audioExample("003", "Isolated World"),
+  audioExample("001", "Sample #1"),
+  audioExample("003", "Sample #2"),
 ];
 
 /**

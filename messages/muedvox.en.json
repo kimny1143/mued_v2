@@ -12,8 +12,7 @@
   },
   "beforeAfter": {
     "heading": "Hear the same vocal, then the harmonies",
-    "caption": "Before and After are matched in level. The harmonies were made by following MIDI chords.",
-    "sunoNote": "The demo vocals were generated with Suno.",
+    "caption": "Before and After are matched in level.",
     "player": {
       "play": "Play",
       "pause": "Pause",

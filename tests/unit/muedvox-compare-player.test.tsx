@@ -80,10 +80,24 @@ describe("★the songs are data: every listed take is a file, and a song's four 
     expect(new Set(sizes).size).toBe(1);
   });
 
-  it("en and ja carry the same player words, and the Suno note is on both", () => {
+  it("en and ja carry the same player words", () => {
     expect(Object.keys(jaVox.beforeAfter.player).sort()).toEqual(Object.keys(enVox.beforeAfter.player).sort());
-    expect(enVox.beforeAfter.sunoNote).toContain("Suno");
-    expect(jaVox.beforeAfter.sunoNote).toContain("Suno");
+  });
+
+  // kimny 2026-10-14: 「注記は『Before と After は同じ音量に揃えています』だけで十分　Sunoのくだりはいらない。」
+  it("★the note under the players is the one sentence about level, and nothing else", () => {
+    expect(jaVox.beforeAfter.caption).toBe("Before と After は同じ音量に揃えています。");
+    expect(enVox.beforeAfter.caption).toBe("Before and After are matched in level.");
+    expect(Object.keys(jaVox.beforeAfter).sort()).toEqual(["caption", "heading", "player"]);
+    expect(Object.keys(enVox.beforeAfter).sort()).toEqual(["caption", "heading", "player"]);
+  });
+
+  // kimny 2026-10-14: 「サンプルの曲名は伏せましょう。Sample #1 #2」
+  it("★the songs are shown by number only", () => {
+    expect(MUEDVOX_AUDIO_EXAMPLES.map((e) => e.title)).toEqual(MUEDVOX_AUDIO_EXAMPLES.map((_e, i) => `Sample #${i + 1}`));
+    for (const example of MUEDVOX_AUDIO_EXAMPLES) {
+      for (const take of TAKES) expect(example.files[take]).toBe(`/muedvox/audio/${example.id}_${take}.mp3`);
+    }
   });
 });
 
@@ -95,7 +109,7 @@ describe("★one song's player", () => {
     expect(audio.gains).toHaveLength(0);
     const pressed = screen.getAllByRole("button", { pressed: true }).map((b) => b.textContent);
     expect(pressed).toEqual(["Before", "Mix"]);
-    expect(screen.getByRole("button", { name: "Play — Stay A Little Longer" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Play — Sample #1" })).toBeEnabled();
   });
 
   it("Play: fetches the song's four takes and starts them on one instant from one offset; only Mix/Before is up", async () => {

@@ -49,7 +49,7 @@ describe("MUEDvox product page (launched 2026-10-13; the staged state is kept as
     expect(config.MUEDVOX_PURCHASE_LIVE).toBe(true);
     expect(config.MUEDVOX_DEMO_LIVE).toBe(true);
     expect(config.MUEDVOX_SCREENSHOT).toBe("/muedvox/MUEDvox-1.0.0-harmony.webp");
-    expect(config.MUEDVOX_AUDIO_EXAMPLES.map((e) => [e.id, e.title])).toEqual([["001", "Stay A Little Longer"], ["003", "Isolated World"]]);
+    expect(config.MUEDVOX_AUDIO_EXAMPLES.map((e) => [e.id, e.title])).toEqual([["001", "Sample #1"], ["003", "Sample #2"]]);
   });
 
   it("pre-renders both locales and keeps their namespace keys identical", () => {

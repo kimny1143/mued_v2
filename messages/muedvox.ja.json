@@ -12,8 +12,7 @@
   },
   "beforeAfter": {
     "heading": "同じボーカルを、まず1本で。次にハモリ付きで。",
-    "caption": "Before と After は同じ音量に揃えています。ハモリは、MIDI のコードに追従させて作りました。",
-    "sunoNote": "デモの歌は、Suno で生成したものです。",
+    "caption": "Before と After は同じ音量に揃えています。",
     "player": {
       "play": "再生",
       "pause": "一時停止",

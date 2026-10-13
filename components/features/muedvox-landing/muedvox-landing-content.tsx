@@ -89,7 +89,6 @@ export function MuedvoxLandingContent() {
               </figure>
             ))}
             <p className="mt-5 text-sm leading-relaxed text-white/45">{t("beforeAfter.caption")}</p>
-            <p className="mt-2 text-sm leading-relaxed text-white/45">{t("beforeAfter.sunoNote")}</p>
           </Section>
         )}
         {MUEDVOX_SCREENSHOT && (
