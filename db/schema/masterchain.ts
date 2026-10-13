@@ -104,3 +104,29 @@ export const masterchainTrials = pgTable('masterchain_trials', {
 
 export type MasterchainTrial = typeof masterchainTrials.$inferSelect;
 export type NewMasterchainTrial = typeof masterchainTrials.$inferInsert;
+
+// ── License grants: time-limited keys we hand out ourselves (testers), NOT sales ──────────────────────
+// kimny 2026-10-13 (MUED window): 「テスター向けに期限つきの MUEDvox の鍵を出す道を作って良い」.
+// ★A table of its own, on purpose. masterchain_purchases would count these as sales (the launch numbers count
+//   purchase emails), block the masterchain trial for the tester (trial-handler looks at the email only), and show
+//   "purchased on" in the portal. masterchain_trials needs a Clerk account before the key exists; a tester has none.
+// ★Email-keyed like purchases: the portal shows a grant to whoever signs in with that VERIFIED address, so the key
+//   can be issued before the person has an account. An extension is another row (a new key with a later expiry).
+export const pluginLicenseGrants = pgTable('plugin_license_grants', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull(),                       // recipient, lower-cased; the portal's ownership key
+  productId: text('product_id').notNull(),              // PAID_PRODUCTS[*].productId, e.g. 'muedsp_vox'
+  orderRef: text('order_ref').notNull().unique(),       // the keyfile's `order=` line: "grant-<product>-<uuid>"
+  licenseKey: text('license_key').notNull(),            // the signed keyfile, verbatim
+  licenseVersion: integer('license_version').notNull(),
+  issuedAt: timestamp('issued_at', { withTimezone: true }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(), // always set: a grant is never perpetual
+  reason: text('reason').notNull(),                     // why (free text by the admin), e.g. "beta tester"
+  grantedBy: text('granted_by').notNull(),              // Clerk user id of the admin who issued it
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  emailIdx: index('idx_plugin_license_grants_email').on(t.email),
+}));
+
+export type PluginLicenseGrant = typeof pluginLicenseGrants.$inferSelect;
+export type NewPluginLicenseGrant = typeof pluginLicenseGrants.$inferInsert;

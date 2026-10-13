@@ -2978,6 +2978,12 @@
       "refunded": "Refunded ({date}). The license key is no longer shown.",
       "howto": "Download your key file (.key) and drag it onto {product}{masterchain, select, yes { (\"Drop license.key here\")} other {}}. If drop doesn't work in your DAW, use \"Load license file…\", or copy the key and press \"Paste license key\".",
       "purchasedOn": "Purchased {date}"
+    },
+    "grant": {
+      "label": "Test licenses",
+      "kind": "Test license",
+      "ends": "Valid until {date} (UTC)",
+      "ended": "Expired ({date} UTC)"
     }
   },
   "cookieConsent": {
