@@ -17,7 +17,7 @@ vi.mock("@/lib/middleware/rate-limit", () => ({ rateLimit: m.ip, checkRateLimit:
 vi.mock("@/lib/utils/logger", () => ({ logger: { error: m.error } }));
 vi.mock("@/db", () => { throw new Error("Demo must not import DB"); });
 vi.mock("@/lib/plugins/entitlements", () => { throw new Error("Demo must not record ownership"); });
-import { handleMasterchainDemo } from "@/lib/masterchain/demo-handler";
+import { handleMasterchainDemo, handlePaidDemo, type DemoProduct } from "@/lib/masterchain/demo-handler";
 
 function request(body: unknown = { email: "person@example.com" }) {
   return new NextRequest("https://mued.jp/api/masterchain/demo", { method: "POST", body: JSON.stringify(body) });
@@ -153,5 +153,37 @@ describe("an existing contact is never touched (CCO #1221)", () => {
     expect(m.create).not.toHaveBeenCalled();
     expect(m.error).toHaveBeenCalled();
     expect(m.alert).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("★the demo entrance takes its product (C9 PR-C) — nothing of masterchain's leaks into another product's demo", () => {
+  const receipt = vi.fn();
+  const other = (over: Partial<DemoProduct> = {}): DemoProduct => ({
+    tag: "other/demo", live: true, downloadUrl: "https://mued.jp/downloads/Other-1.0.0-installer.pkg", windowsUrl: null, sendReceipt: receipt, ...over,
+  });
+  beforeEach(() => { receipt.mockReset(); receipt.mockResolvedValue({ success: true }); });
+
+  it("★its own flag closes it — 404 and no side effects — while masterchain's demo is open", async () => {
+    const res = await handlePaidDemo(request(), other({ live: false }));
+    expect(res.status).toBe(404);
+    for (const fn of [m.ip, m.emailLimit, m.create, m.send, receipt]) expect(fn).not.toHaveBeenCalled();
+    expect((await handleMasterchainDemo(request())).status).toBe(200); // positive control: the other flag is not this one
+  });
+
+  it("★answers with its own installer and sends its own receipt — not masterchain's URL, not masterchain's mail", async () => {
+    const res = await handlePaidDemo(request({ email: "person@example.com", locale: "ja" }), other());
+    expect(await res.json()).toEqual({ ok: true, downloadUrl: "https://mued.jp/downloads/Other-1.0.0-installer.pkg" });
+    expect(receipt).toHaveBeenCalledExactlyOnceWith("person@example.com", "ja");
+    expect(m.send).not.toHaveBeenCalled();
+    // The list is the one shared MUEDsp list (kimny 8/27: one audience for the whole family).
+    expect(m.create).toHaveBeenCalledExactlyOnceWith({ audienceId: MUEDSP_AUDIENCE_ID, email: "person@example.com", unsubscribed: false });
+  });
+
+  it("carries its Windows link only when it has one, and names itself in the operator's log", async () => {
+    const res = await handlePaidDemo(request(), other({ windowsUrl: "https://mued.jp/downloads/Other-1.0.0-win-x64.zip" }));
+    expect(await res.json()).toMatchObject({ windowsDownloadUrl: "https://mued.jp/downloads/Other-1.0.0-win-x64.zip" });
+    receipt.mockResolvedValue({ success: false, error: "boom" });
+    await handlePaidDemo(request(), other());
+    expect(m.error).toHaveBeenCalledWith("[other/demo] receipt failed", { error: "boom" });
   });
 });
