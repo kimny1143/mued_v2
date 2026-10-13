@@ -386,7 +386,9 @@
               "khrplatform.h（Windows 版のみ）— The Khronos Group Inc. — MIT 形式のライセンス — THIRD-PARTY-LICENSES.md に収録",
               "glad OpenGL loader（Windows 版のみ）— glad contributors — MIT 形式のライセンス — THIRD-PARTY-LICENSES.md に記載",
               "WORLD（MUEDvox のみ）— M. Morise — 修正 BSD ライセンス — 表示が必要（THIRD-PARTY-LICENSES.md に収録）",
-              "MetalNanoVG（macOS 版のみ）— Ollix — MIT License — 表示が必要（THIRD-PARTY-LICENSES.md に収録）"
+              "MetalNanoVG（macOS 版のみ）— Ollix — MIT License — 表示が必要（THIRD-PARTY-LICENSES.md に収録）",
+              "Destroy FX AU Utilities（macOS の Audio Unit 版のみ）— Sophia Poirier — BSD 3-Clause License — 表示が必要（THIRD-PARTY-LICENSES.md に収録）",
+              "Text field cell by Red Sweater Software（macOS 版のみ）— Red Sweater Software — MIT License — 表示が必要（THIRD-PARTY-LICENSES.md に収録）"
             ]
           },
           "VST および VST3 は、欧州その他の国で登録された Steinberg Media Technologies GmbH の商標です。Audio Units（AU）は Apple Inc. の商標です。AAX は Avid Technology, Inc. の商標です。AAX のプラグイン形式は、glasswerks と Avid Technology, Inc. との間の別途の開発者契約に基づいて実装しています。AAX SDK は非公開のソフトウェアであり、オープンソースソフトウェアではありません。"
@@ -451,7 +453,7 @@
         ]
       }
     ],
-    "effectiveDate": "2026年10月1日",
+    "effectiveDate": "2026年10月13日",
     "dateLabel": "最終更新日"
   },
   "terms": {
