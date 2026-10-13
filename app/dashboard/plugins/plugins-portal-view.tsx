@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
 import { VERSION_NOTES_ID } from "@/components/features/plugins/plugin-version-notice";
@@ -8,6 +9,7 @@ import { useTranslations, useLocale } from "next-intl";
 import styles from "./plugins-portal.module.css";
 import type { PaidProductKey } from "@/lib/plugins/paid-products";
 import { MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
+import { MUEDVOX_SCREENSHOT } from "@/lib/muedvox/config";
 import { LicenseKeyActions } from "@/components/features/license/license-key-actions";
 import { formatUtcMinute } from "@/lib/masterchain/format";
 
@@ -391,7 +393,7 @@ function PurchaseCard({
   const t = useTranslations("pluginPortal");
   return (
     <div className={styles.module}>
-      {item.productKey === "masterchain" && <Faceplate pluginKey="masterchain" />}
+      <PaidPlate productKey={item.productKey} />
       <div className={styles.meta}>
         <div className={styles.name}>
           <h3>{item.displayName}</h3>
@@ -444,6 +446,7 @@ function GrantCard({ item }: { item: GrantViewItem }) {
   const t = useTranslations("pluginPortal");
   return (
     <div className={styles.module} data-testid="portal-grant">
+      <PaidPlate productKey={item.productKey} />
       <div className={styles.meta}>
         <div className={styles.name}>
           <h3>{item.displayName}</h3>
@@ -476,6 +479,20 @@ function GrantCard({ item }: { item: GrantViewItem }) {
       </div>
     </div>
   );
+}
+
+/**
+ * The plate at the left of a paid product's card. ★Every card has one: the card is a three-column grid
+ * (plate | text | actions), so a card without a plate puts its text in the 96px plate column — MUEDvox's purchase
+ * row did exactly that on launch night (2026-10-13: the key wrapped every 8 characters). The CSS now pins the
+ * columns too, so a missing plate can no longer move the text.
+ * MUEDvox shows its own screen (the same image as its cart); it has no drawn faceplate.
+ */
+export function PaidPlate({ productKey }: { productKey: string }) {
+  if (productKey === "muedvox" && MUEDVOX_SCREENSHOT) {
+    return <Image src={MUEDVOX_SCREENSHOT} alt="" width={192} height={132} sizes="96px" className={`${styles.faceplate} ${styles.plateImage}`} data-testid="paid-plate-muedvox" />;
+  }
+  return <Faceplate pluginKey={productKey} />;
 }
 
 function Faceplate({ pluginKey }: { pluginKey: string }) {

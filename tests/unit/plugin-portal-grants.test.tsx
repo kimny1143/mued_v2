@@ -110,6 +110,8 @@ describe("★the row on the page", () => {
     m.locale = locale;
     render(<PluginsPortalView items={[]} grants={[grant()]} />);
     const card = screen.getByTestId("portal-grant");
+    // ★plate | text | actions, like every paid card (#1277: without the plate the text is laid out in 96px).
+    expect([...card.children].map((c) => (c.getAttribute("class") ?? "").split(" ")[0])).toEqual(["faceplate", "meta", "action"]);
     expect(within(card).getByRole("heading", { level: 3 }).textContent).toBe("MUEDvox");
     expect(card.textContent).toContain(locale === "ja" ? "テスト用ライセンス" : "Test license");
     expect(within(card).getByTestId("portal-grant-expiry").textContent).toBe(
