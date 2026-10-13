@@ -291,13 +291,14 @@
     "fonts": "Fonts",
     "plugins": {
       "MUEDsp": "MUEDsp masterchain",
+      "MUEDvox": "MUEDvox",
       "MUEDsat": "MUEDsat",
       "MUEDlim": "MUEDlim",
       "MUEDrive": "MUEDrive"
     }
   },
   "eula": {
-    "title": "MUEDsp plug-ins (MUEDsp masterchain, MUEDlim, MUEDsat, MUEDrive) End-User License Agreement",
+    "title": "MUEDsp plug-ins (MUEDsp masterchain, MUEDvox, MUEDlim, MUEDsat, MUEDrive) End-User License Agreement",
     "referenceNote": "This is the governing English text. A Japanese reference translation is available; if the two differ, the English text prevails.",
     "intro": [
       "This End-User License Agreement (“Agreement”) is a legal agreement between you (either an individual or a single entity, “you” or “Licensee”) and 株式会社グラスワークス / glasswerks inc., a company organized under the laws of Japan with its principal place of business at 4-7-27-3F Aobadai, Meguro-ku, Tokyo 153-0042, Japan (“glasswerks,” “we,” “us,” or “Licensor”), governing your use of the software product identified above, including any associated documentation, updates, and license keys (collectively, the “Software”).",
@@ -383,7 +384,11 @@
               "Roboto — Google — Apache License 2.0 — Reproduced in FONT-LICENSES.md",
               "Sora — The Sora Project Authors — SIL Open Font License 1.1 — Reproduced in FONT-LICENSES.md",
               "khrplatform.h (Windows version only) — The Khronos Group Inc. — MIT-style license — Reproduced in THIRD-PARTY-LICENSES.md",
-              "glad OpenGL loader (Windows version only) — glad contributors — MIT-style license — Listed in THIRD-PARTY-LICENSES.md"
+              "glad OpenGL loader (Windows version only) — glad contributors — MIT-style license — Listed in THIRD-PARTY-LICENSES.md",
+              "WORLD (MUEDvox only) — M. Morise — Modified BSD License — Required — reproduced in THIRD-PARTY-LICENSES.md",
+              "MetalNanoVG (macOS version only) — Ollix — MIT License — Required — reproduced in THIRD-PARTY-LICENSES.md",
+              "Destroy FX AU Utilities (macOS Audio Unit version only) — Sophia Poirier — BSD 3-Clause License — Required — reproduced in THIRD-PARTY-LICENSES.md",
+              "Text field cell by Red Sweater Software (macOS version only) — Red Sweater Software — MIT License — Required — reproduced in THIRD-PARTY-LICENSES.md"
             ]
           },
           "VST and VST3 are trademarks of Steinberg Media Technologies GmbH, registered in Europe and other countries. Audio Units (AU) is a trademark of Apple Inc. AAX is a trademark of Avid Technology, Inc. The AAX plug-in format is implemented under a separate developer agreement between glasswerks and Avid Technology, Inc.; the AAX SDK is proprietary and is not open-source software."
@@ -448,7 +453,7 @@
         ]
       }
     ],
-    "effectiveDate": "October 1, 2026",
+    "effectiveDate": "October 13, 2026",
     "dateLabel": "Last updated"
   },
   "terms": {
@@ -609,7 +614,7 @@
     },
     "muedsp": {
       "name": "MUEDsp",
-      "description": "Plugin line (free modules and the paid masterchain)",
+      "description": "Plugin line (free modules and the paid masterchain and MUEDvox)",
       "url": {
         "title": "Sales URL",
         "value": "https://mued.jp/en/muedsp"
@@ -619,6 +624,7 @@
         "description": "Pricing is as follows:",
         "plans": {
           "masterchain": "MUEDsp masterchain: $69 (one-time purchase, no recurring charge)",
+          "muedvox": "MUEDvox: $69 (one-time purchase, no recurring charge)",
           "free": "Free modules (MUEDsat, MUEDlim, MUEDrive): free of charge",
           "note": "Prices are in US dollars. Amounts billed in other currencies vary with the exchange rate at the time of payment and your card issuer's conversion. Tax is determined and collected by FastSpring, Inc. as the Merchant of Record."
         }
