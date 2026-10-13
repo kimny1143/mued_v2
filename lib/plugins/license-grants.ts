@@ -58,7 +58,9 @@ export function parseGrantRequest(body: unknown): GrantRequestResult {
   const hasDays = input.days !== undefined && input.days !== null && input.days !== "";
   const hasMinutes = input.minutes !== undefined && input.minutes !== null && input.minutes !== "";
   if (hasDays === hasMinutes) return { ok: false, error: "give exactly one of days or minutes" };
-  const amount = Number(hasDays ? input.days : input.minutes);
+  // A number, or a string of digits only (CCO #1276: Number() also reads true, [5] and "0x10").
+  const raw = hasDays ? input.days : input.minutes;
+  const amount = typeof raw === "number" ? raw : typeof raw === "string" && /^\d+$/.test(raw.trim()) ? Number(raw.trim()) : NaN;
   if (!Number.isInteger(amount)) return { ok: false, error: "days / minutes must be a whole number" };
   const minutes = hasDays ? amount * 24 * 60 : amount;
   if (minutes < MIN_GRANT_MINUTES || minutes > MAX_GRANT_MINUTES) {

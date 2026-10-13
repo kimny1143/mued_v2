@@ -13,6 +13,8 @@ vi.mock("drizzle-orm", () => ({
   eq: vi.fn(), and: vi.fn(), isNull: vi.fn(),
 }));
 vi.mock("@/db", () => ({ db: { select: m.select } }));
+const log = vi.hoisted(() => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }));
+vi.mock("@/lib/utils/logger", () => ({ logger: log }));
 vi.mock("@/db/schema", () => ({
   pluginEntitlements: {}, masterchainPurchases: {}, masterchainTrials: {},
   pluginLicenseGrants: { email: "g_email", productId: "g_product", licenseKey: "g_key", issuedAt: "g_issued", expiresAt: "g_expires" },
@@ -73,6 +75,8 @@ describe("★ownership: the caller's verified emails only", () => {
   it("★a missing table (migration 0064 not applied) does not take the portal down: no rows, no throw", async () => {
     m.where.mockRejectedValue(new Error('relation "plugin_license_grants" does not exist'));
     expect(await getGrantItemsForUser({ emailAddresses: [verified("tester@example.com")] })).toEqual([]);
+    expect(log.error).toHaveBeenCalledTimes(1); // not silent (CCO #1276)
+    expect(JSON.stringify(log.error.mock.calls)).not.toContain("tester@example.com");
   });
 });
 

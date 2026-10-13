@@ -21,6 +21,7 @@ import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS
 import { paidProductByProductId } from "@/lib/plugins/paid-products";
 import { MUEDVOX_DOWNLOAD_URL, MUEDVOX_WINDOWS_URL, MUEDVOX_WINDOWS_VERSION } from "@/lib/muedvox/config";
 import { masterchainWindowsBuild } from "@/lib/plugins/windows-beta";
+import { logger } from "@/lib/utils/logger";
 
 /** Trial ownership requires BOTH a verified email and the issuing Clerk account. */
 export async function getTrialItemForUser(user: (ClerkUserLike & { id?: string }) | null | undefined) {
@@ -150,6 +151,8 @@ export async function getGrantItemsForUser(user: ClerkUserLike | null | undefine
       .where(inArray(pluginLicenseGrants.email, emails)); // scoped to the caller's verified emails ONLY
     return buildGrantItems(rows, paidDistribution);
   } catch {
+    // Not silent (CCO #1276): the row is absent for the person, and this line says so to us. No address in it.
+    logger.error("[portal] license grants could not be read — the row is not shown (is migration 0064 applied?)");
     return [];
   }
 }
