@@ -430,6 +430,7 @@
     "fonts": "Fonts",
     "plugins": {
       "MUEDsp": "MUEDsp masterchain",
+      "MUEDvox": "MUEDvox",
       "MUEDsat": "MUEDsat",
       "MUEDlim": "MUEDlim",
       "MUEDrive": "MUEDrive"

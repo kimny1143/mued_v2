@@ -19,7 +19,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export const LICENSE_PLUGINS = ["MUEDsp", "MUEDsat", "MUEDlim", "MUEDrive"] as const;
+export const LICENSE_PLUGINS = ["MUEDsp", "MUEDvox", "MUEDsat", "MUEDlim", "MUEDrive"] as const;
 export type LicensePlugin = (typeof LICENSE_PLUGINS)[number];
 export const LICENSE_KINDS = ["THIRD-PARTY-LICENSES.md", "FONT-LICENSES.md"] as const;
 export type LicenseKind = (typeof LICENSE_KINDS)[number];
@@ -29,6 +29,13 @@ export const LICENSE_FILES: Record<LicensePlugin, Record<LicenseKind, string>> =
   MUEDsp: {
     "THIRD-PARTY-LICENSES.md": "15da934102f8ce1d4f34da54b5c051b2f23228a0a64ef73f7a4855538d85611e",
     "FONT-LICENSES.md": "2d0f646b01f2469dd8bd79c48ec20032a796d58869ce36876293532025e0c497",
+  },
+  // ★MUEDvox (2026-10-13): copied from mued-vox main 9beaa218 (#194), plugin/MUEDvox/resources/fonts/ — git blobs
+  //   7e8bffc2 / b870d1e4 matched upstream. ★NOT yet compared with a shipped installer: no MUEDvox 1.0.0 package
+  //   exists. Re-copy and re-pin from the package when it does (the same check the four above went through).
+  MUEDvox: {
+    "THIRD-PARTY-LICENSES.md": "61b82d54dfa3f29b318801187d7539d33e53dc9ff0808cb1ca84a04f837bcf34",
+    "FONT-LICENSES.md": "033ef5368b06349f28b17191620ce92ef042ebf87c6a1839227609f667176912",
   },
   MUEDsat: {
     "THIRD-PARTY-LICENSES.md": "5d93fdbba454021966929a33d5fbd367111723f2b8f16a89e2ac696e6e65ffdd",
