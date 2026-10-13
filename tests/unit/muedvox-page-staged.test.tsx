@@ -1,14 +1,19 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import type { AnchorHTMLAttributes } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import en from "@/messages/en.json";
-import ja from "@/messages/ja.json";
+import enMain from "@/messages/en.json";
+import jaMain from "@/messages/ja.json";
+import enVox from "@/messages/muedvox.en.json";
+import jaVox from "@/messages/muedvox.ja.json";
 import * as config from "@/lib/muedvox/config";
 import { MuedvoxLandingContent } from "@/components/features/muedvox-landing";
 import { visibleFaq, type MuedvoxFaqItem } from "@/components/features/muedvox-landing/muedvox-landing-content";
 import MuedvoxPage, { generateMetadata, generateStaticParams } from "@/app/[locale]/muedvox/page";
 import sitemap from "@/app/sitemap";
 
+// MUEDvox's words live in their own files until launch; lib/i18n/request.ts joins them on the server like this.
+const en = { ...enMain, muedvox: enVox };
+const ja = { ...jaMain, muedvox: jaVox };
 const state = vi.hoisted(() => ({ locale: "en" as "en" | "ja" }));
 function translations(locale: "en" | "ja", namespace: string) {
   const messages = locale === "en" ? en : ja;

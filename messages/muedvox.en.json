@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "title": "MUEDvox — a vocal harmonizer that follows your key and chords",
+    "description": "MUEDvox: a vocal harmonizer plugin with up to four voices and a bass part, a register lever for each voice, and harmony that follows your key and chords."
+  },
+  "hero": {
+    "eyebrow": "MUEDvox",
+    "title": "One vocal in, up to four voices out — each sung a different way.",
+    "lead": "Vocal harmonies that follow your key and chords. Feed MUEDvox a lead vocal. It writes up to four harmony voices and a bass part that stay in key and move with your chords. Made in Tokyo by a working composer and engineer.",
+    "hear": "Hear it",
+    "demo": "Try the demo"
+  },
+  "beforeAfter": {
+    "heading": "Hear the same vocal, then the harmonies",
+    "example1": "Example 1 — lead vocal alone → with four voices",
+    "example2": "Example 2 — lead vocal alone → with four voices",
+    "before": "Lead only",
+    "after": "With MUEDvox",
+    "caption": "Same level on both sides. Recorded dry vocal in, MUEDvox out, no other processing."
+  },
+  "screen": {
+    "heading": "Screen",
+    "alt": "The MUEDvox window: four voice strips, key and scale selectors, mode switch.",
+    "caption": "The MUEDvox window."
+  },
+  "points": {
+    "heading": "Three things it does",
+    "items": [
+      {
+        "title": "It follows the key and the chords.",
+        "body": "Set the key and scale, or send the chords as MIDI. The harmony parts are chosen from them, so the same melody note gets a different harmony when the chord underneath changes. It follows modulations, keeps parts moving smoothly from one chord to the next, and holds steady through short passing notes instead of chasing each one."
+      },
+      {
+        "title": "Each voice has its own register.",
+        "body": "A lever on every voice sets how it is sung: whisper, falsetto, head, mix or chest. The harmonies stop sounding like one voice copied four times."
+      },
+      {
+        "title": "Built to sit in a mix.",
+        "body": "Up to four voices plus a bass part, a doubler and a chorus, and a formant control for each voice. Check it the way you would any vocal: in the full mix."
+      }
+    ]
+  },
+  "modes": {
+    "heading": "Two modes",
+    "mode": "Mode",
+    "latency": "Latency",
+    "use": "Use it for",
+    "track": {
+      "name": "Track",
+      "latency": "about 0.94 s",
+      "use": "Mixing. It looks ahead to pick the parts, so it is not for recording through."
+    },
+    "trackShort": {
+      "name": "Track Short",
+      "latency": "about 0.34 s",
+      "use": "Mixing, with a shorter look-ahead than Track."
+    },
+    "live": {
+      "name": "Live",
+      "latency": "3 ms",
+      "use": "Playing and monitoring while you sing."
+    },
+    "note": "To record, switch to Live. When you mix, use Track or Track Short."
+  },
+  "formats": {
+    "heading": "Formats and requirements",
+    "formatsLabel": "Formats",
+    "formats": "macOS: AU, VST3 and AAX. Windows: VST3.",
+    "requirementsLabel": "Requirements",
+    "input": "Input: one mono lead vocal per instance.",
+    "daw": "A DAW that hosts one of the formats above."
+  },
+  "buy": {
+    "heading": "Buy and demo",
+    "button": "Buy MUEDvox — $69",
+    "price": "One-time purchase, USD 69. Not a subscription.",
+    "consent": "I have read and agree to the EULA",
+    "afterPurchase": "After purchase, the download link and the steps to get your license key are emailed to you. The key itself is in your buyer’s portal on mued.jp (sign in with a code sent to your email; keys are not sent by email). Drag the license.key file onto the plugin, or use \"Load license file…\" or \"Paste license key\". No online activation. No background app."
+  },
+  "demo": {
+    "button": "Download the demo",
+    "body": "The demo has no time limit. Each time you insert it, it processes the first 45 seconds of audio, then passes audio through unprocessed until you insert it again. Settings aren’t saved.",
+    "refundNote": "The demo lets you check that it runs in your setup before you buy."
+  },
+  "faq": {
+    "heading": "FAQ",
+    "items": [
+      {
+        "id": "latency",
+        "question": "How much delay does it add?",
+        "answer": "It depends on the mode. Track adds about 0.94 seconds and Track Short about 0.34 seconds, because they look ahead to choose the harmony parts; they are meant for mixing, not for recording through. Live adds 3 milliseconds and is meant for playing and monitoring. To record, use Live; to mix, use Track or Track Short."
+      },
+      {
+        "id": "windows",
+        "question": "Does it work on Windows?",
+        "answer": "Windows: VST3. macOS: AU, VST3 and AAX."
+      },
+      {
+        "id": "protools",
+        "question": "Does it work in Pro Tools?",
+        "answer": "AAX for macOS is included."
+      },
+      {
+        "id": "input",
+        "question": "What do I need to give it?",
+        "answer": "One mono lead vocal on the track it is inserted on, and the key — set by hand, or sent as MIDI chords. Without chords it works from the key and scale you set."
+      },
+      {
+        "id": "voice",
+        "question": "Does it turn my voice into someone else's?",
+        "answer": "No. The harmony parts are made from your own recording."
+      },
+      {
+        "id": "license",
+        "requires": "purchase",
+        "question": "How do I get my license key?",
+        "answer": "After you buy, you are emailed a download link and the steps to get your key. The key is in your buyer's portal at mued.jp: sign in with the email address you used at checkout (a code is sent to that address). Drag the license.key file onto the plugin, or use \"Load license file…\" or \"Paste license key\". The plugin does not go online to activate, and there is no background app."
+      },
+      {
+        "id": "demo",
+        "requires": "demo",
+        "question": "What does the demo do?",
+        "answer": "It is the full plugin with no time limit. Each time you insert it, it processes the first 45 seconds of audio and then passes audio through unprocessed until you insert it again. Settings aren't saved."
+      },
+      {
+        "id": "refund",
+        "requires": "purchase",
+        "question": "Can I get a refund?",
+        "answer": "FastSpring is the Merchant of Record and handles refunds under the MUED Refund Policy. Purchases are generally non-refundable once the license key has been delivered, except for a billing error or a confirmed technical problem that prevents use. If the plugin does not run on a supported system, write to support@mued.jp first."
+      }
+    ]
+  },
+  "legal": {
+    "heading": "EULA and third-party software",
+    "eula": "EULA",
+    "thirdParty": "MUEDvox includes third-party software. The required notices are included with the plugin.",
+    "footer": "Made by glasswerks in Tokyo. Support: support@mued.jp"
+  }
+}

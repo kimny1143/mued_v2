@@ -26,6 +26,8 @@ export function muedvoxPageVisible(live: boolean, vercelEnv: string | undefined,
  *   HTML of every other page (measured on production 2026-10-13: /ja, /ja/muedsp, /en/eula, /ja/tokushoho each
  *   carried the whole namespace). Same condition as the page itself, so preview and local dev still get it.
  * ★The MUEDvox page reads its words on the server, so it does not need them in this payload.
+ * ★This covers the HTML. The JS chunks are covered by where the words live: messages/muedvox.<locale>.json,
+ *   imported only by lib/i18n/request.ts (server) — not messages/{en,ja}.json, which client modules import whole.
  */
 export function clientMessages<T extends Record<string, unknown>>(
   messages: T,

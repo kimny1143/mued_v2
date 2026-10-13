@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "title": "MUEDvox — 調とコードに沿うボーカルハーモナイザー",
+    "description": "調とコードに沿った最大 4 声のハモリとベース。声部ごとに声区を選べるボーカルハーモナイザー MUEDvox。"
+  },
+  "hero": {
+    "eyebrow": "MUEDvox",
+    "title": "リード 1 本から、歌い方の違う最大 4 声を。",
+    "lead": "調とコードに沿って、ハモリを書くボーカルハーモナイザー。リードボーカルを 1 本入れると、調とコードに沿った最大 4 声のハモリとベースを作ります。東京で、現役の作曲家・エンジニアが作りました。",
+    "hear": "音を聴く",
+    "demo": "デモを試す"
+  },
+  "beforeAfter": {
+    "heading": "同じボーカルを、まず1本で。次にハモリ付きで。",
+    "example1": "例 1 — リードボーカルのみ → 4 声のハモリ付き",
+    "example2": "例 2 — リードボーカルのみ → 4 声のハモリ付き",
+    "before": "リードのみ",
+    "after": "MUEDvox 使用",
+    "caption": "音量は揃えています。ドライな録音を MUEDvox で処理し、ほかの処理は加えていません。"
+  },
+  "screen": {
+    "heading": "画面",
+    "alt": "MUEDvox の画面：4 つの声部、調とスケールの選択、モード切り替え。",
+    "caption": "MUEDvox の画面。"
+  },
+  "points": {
+    "heading": "できること",
+    "items": [
+      {
+        "title": "調とコードに沿います。",
+        "body": "調とスケールを決めるか、コードを MIDI で送ると、それに合わせて声部を選びます。同じメロディの音でも、下のコードが変われば別のハモリになります。転調に追従し、短い経過音は追いかけずに保ちます。"
+      },
+      {
+        "title": "声部ごとに声区を選べます。",
+        "body": "ウィスパー、ファルセット、ヘッド、ミックス、チェスト。同じ声のコピーに聴こえにくくなります。"
+      },
+      {
+        "title": "ミックスに入れて使う前提で作りました。",
+        "body": "最大 4 声とベース、ダブラー、コーラス、声部ごとのフォルマント。"
+      }
+    ]
+  },
+  "modes": {
+    "heading": "モード",
+    "mode": "モード",
+    "latency": "遅延",
+    "use": "用途",
+    "track": {
+      "name": "Track",
+      "latency": "約 0.94 秒",
+      "use": "ミックス用。先読みで声部を決めるので、録音しながらは使えません。"
+    },
+    "trackShort": {
+      "name": "Track Short",
+      "latency": "約 0.34 秒",
+      "use": "ミックス用。Track より先読みが短い。"
+    },
+    "live": {
+      "name": "Live",
+      "latency": "3 ms",
+      "use": "歌いながら聴く・演奏用。"
+    },
+    "note": "録るときは Live、ミックスは Track か Track Short。"
+  },
+  "formats": {
+    "heading": "形式と動作環境",
+    "formatsLabel": "形式",
+    "formats": "macOS: AU・VST3・AAX。Windows: VST3。",
+    "requirementsLabel": "動作環境",
+    "input": "入力: インスタンスごとにモノのリードボーカル 1 本。",
+    "daw": "上記の形式に対応した DAW。"
+  },
+  "buy": {
+    "heading": "購入とデモ",
+    "button": "MUEDvox を購入 — $69",
+    "price": "買い切り・69 米ドル。サブスクリプションではありません。",
+    "consent": "EULA を読み、同意します",
+    "afterPurchase": "購入後、ダウンロードリンクとキーの受け取り手順をメールでお送りします。ライセンスキーは mued.jp の購入者ポータルで受け取ります（メールに届くコードでサインイン・キーはメールでは送りません）。license.key をプラグインにドラッグ＆ドロップ、または「Load license file…」「Paste license key」。オンライン認証も常駐アプリも不要です。"
+  },
+  "demo": {
+    "button": "デモをダウンロード",
+    "body": "デモは期限なし。挿すたびに最初の 45 秒だけ処理し、あとは挿し直すまで原音のまま通します。設定は保存されません。",
+    "refundNote": "購入前に、デモでお使いの環境で動くことをご確認ください。"
+  },
+  "faq": {
+    "heading": "よくある質問",
+    "items": [
+      {
+        "id": "latency",
+        "question": "遅延は？",
+        "answer": "Track は約 0.94 秒、Track Short は約 0.34 秒（どちらもミックス用・先読みで声部を決める）。Live は 3 ms（演奏用）。録るときは Live。"
+      },
+      {
+        "id": "windows",
+        "question": "Windows は？",
+        "answer": "Windows: VST3。macOS: AU・VST3・AAX。"
+      },
+      {
+        "id": "protools",
+        "question": "Pro Tools で使えますか？",
+        "answer": "macOS 用の AAX が含まれます。"
+      },
+      {
+        "id": "input",
+        "question": "何を入力しますか？",
+        "answer": "インスタンスごとにモノのリードボーカル 1 本と、手動で設定した調、または MIDI のコード。コードがない場合は、設定した調とスケールから声部を選びます。"
+      },
+      {
+        "id": "voice",
+        "question": "別人の声になりますか？",
+        "answer": "なりません。ハモリは自分の録音から作ります。"
+      },
+      {
+        "id": "license",
+        "requires": "purchase",
+        "question": "鍵はどこで受け取りますか？",
+        "answer": "購入者ポータル（購入時のメールアドレスに届くコードでサインイン）。キーはメールでは送りません。license.key をプラグインにドラッグ＆ドロップ、または「Load license file…」「Paste license key」。オンライン認証も常駐アプリも不要です。"
+      },
+      {
+        "id": "demo",
+        "requires": "demo",
+        "question": "デモは何ができますか？",
+        "answer": "期限なし。挿すたびに最初の 45 秒だけ処理し、あとは挿し直すまで原音のまま通します。設定は保存されません。"
+      },
+      {
+        "id": "refund",
+        "requires": "purchase",
+        "question": "返金は？",
+        "answer": "FastSpring が販売主体として、MUED の返金ポリシーに基づき対応します。鍵の配布後は原則返金できません（請求ミス・確認済みの技術的不具合を除く）。動かない場合はまず support@mued.jp へ。"
+      }
+    ]
+  },
+  "legal": {
+    "heading": "EULA・第三者ソフトウェア",
+    "eula": "EULA",
+    "thirdParty": "MUEDvox は第三者ソフトウェアを含みます。必要な表示はプラグインに同梱しています。",
+    "footer": "東京の glasswerks が制作。サポート: support@mued.jp"
+  }
+}
