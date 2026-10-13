@@ -63,6 +63,9 @@ export function muedvoxLaunchProblems(state: {
   if (state.demoLive) {
     need(state.live, "DEMO_LIVE needs LIVE: the page is 404 and the form's words are not sent to the browser");
     need(state.downloadUrl !== "", "DEMO_LIVE needs MUEDVOX_DOWNLOAD_URL: the demo is that installer without a key");
+    // ★The demo's receipt says "you can buy it from the product page" and links there (CCO #1272): a demo open
+    //   while buying is closed would send people to a page with no Buy button.
+    need(state.purchaseLive, "DEMO_LIVE needs PURCHASE_LIVE: the demo receipt tells people they can buy from the product page");
   }
   // ★Enabled without the button is allowed on purpose: the launch order is "enable + deploy, THEN publish the
   //   store" (docs/paid-line/c9 §3.4) — but an enabled product must be able to deliver.

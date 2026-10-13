@@ -44,6 +44,7 @@ describe("★the flags can only be on in a combination that works", () => {
     ["Buy with no screen image for the cart", { screenshot: "" }, /MUEDVOX_SCREENSHOT/],
     ["demo with no installer", { purchaseLive: false, productEnabled: false, downloadUrl: "", windowsUrl: "", windowsVersion: "" }, /DEMO_LIVE needs MUEDVOX_DOWNLOAD_URL/],
     ["demo without the page", { live: false, purchaseLive: false }, /DEMO_LIVE needs LIVE/],
+    ["demo while buying is closed (the receipt says 'buy from the product page')", { purchaseLive: false }, /DEMO_LIVE needs PURCHASE_LIVE/],
     ["a Windows URL without its version", { windowsVersion: "" }, /set together/],
     ["a Windows zip without the Mac installer", { live: false, purchaseLive: false, demoLive: false, productEnabled: false, downloadUrl: "" }, /Windows zip without the Mac installer/],
   ] as const)("refuses: %s", (_name, change, message) => {
@@ -81,10 +82,24 @@ describe("★the Buy button and the demo form have every word they read", () => 
     expect(read.length).toBeGreaterThanOrEqual(6);
     const form = vox.demoForm as Record<string, unknown>;
     for (const key of read) expect(Object.keys(form), `muedvox.demoForm.${key}`).toContain(key.split(".")[0]);
-    expect(Object.keys(form.errors as object).sort()).toEqual(Object.keys(main.muedsp.demo.errors).sort());
-    // The email notice is the approved sentence (news + unsubscribe), word for word — the demo adds to the same list.
-    expect(form.emailNotice).toBe(main.muedsp.demo.emailNotice);
-    expect(form.demoNote).toBe(vox.demo.body);
+    // ★The WHOLE namespace is pinned (CCO #1272: only three fields were, so a new or rewritten sentence here passed —
+    //   and tests/unit/muedvox-client-messages.test.ts leaves this namespace out of its "not in the main file"
+    //   population on the strength of this test). Exactly these keys; every value is masterchain's public one,
+    //   except the two that are MUEDvox's own: the button and the note (which is the page's demo sentence).
+    const { buyTry, demo, windows } = main.muedsp;
+    expect(form).toEqual({
+      try: vox.demoForm.try,
+      emailLabel: buyTry.emailLabel,
+      emailPlaceholder: buyTry.emailPlaceholder,
+      demoNote: vox.demo.body,
+      emailNotice: demo.emailNotice,
+      success: demo.success,
+      errors: demo.errors,
+      demoChoose: windows.demoChoose,
+      demoOtherMac: windows.demoOtherMac,
+      demoOtherWindows: windows.demoOtherWindows,
+    });
+    expect(vox.demoForm.try).toMatch(/MUEDvox/);
   });
 
   it("ja and en carry the same keys", () => {
@@ -165,7 +180,13 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
       expect(surface).toContain(locale === "ja" ? "Mac 版のデモをダウンロード" : "Download the demo for Mac");
       expect(surface).toContain(locale === "ja" ? "Windows 版のデモをダウンロード" : "Download the demo for Windows");
       expect(surface).toContain("https://mued.jp/l/vox-demo-mail");
-      expect(surface).toContain("45");
+      // ★What 1.0.0's demo really does (VOX, mued-vox #205): the harmonies stop, the lead keeps playing — never
+      //   "passes audio through unprocessed" (masterchain's sentence), and never "nothing is saved" (the plugin's
+      //   own preset file can still be written).
+      expect(surface).toContain(locale === "ja" ? "ハモリは最初の 45 秒だけ鳴り、その後は元の歌だけが鳴り続けます" : "the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing");
+      expect(surface).toContain(locale === "ja" ? "デモ中の設定はセッションに保存されません" : "aren't saved with your session");
+      expect(surface).not.toMatch(/unprocessed|原音のまま/);
+      expect(surface).toContain(locale === "ja" ? "プラグインの中の Buy MUEDvox からも開けます" : "Buy MUEDvox inside the plugin opens it too");
       expect(surface).not.toMatch(/masterchain/i); // nothing of the other product's mail
       expect(surface).toContain("unsubscribe?x=1");
     }
@@ -176,6 +197,12 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
     await emailService.sendMuedvoxDemoDownload({ email: "person@example.com" }, { locale });
     const sent = send.mock.calls[0][0] as { headers?: Record<string, string>; tags?: { value: string }[] };
     expect(sent.headers?.["List-Unsubscribe"]).toMatch(/^<https:\/\/.+>$/);
+    // ★The scope must be one the unsubscribe route accepts AND that withdraws from the shared MUEDsp list — the
+    //   list the demo adds to. That scope is named "masterchain" (app/api/plugins/unsubscribe/route.ts); any other
+    //   name would make a link the route rejects (CCO #1272).
+    expect(sent.headers?.["List-Unsubscribe"]).toContain("/api/plugins/unsubscribe?plugin=masterchain&");
+    const route = readFileSync("app/api/plugins/unsubscribe/route.ts", "utf8");
+    expect(route).toMatch(/scope === "masterchain"\s*\?\s*unsubscribeMuedspContact\(email\)/);
     expect(sent.headers?.["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
     expect(sent.tags?.[0].value).toBe("muedvox_demo_download");
   });
@@ -183,6 +210,21 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
   it("the short link in the receipt exists and lands on MUEDvox's page", () => {
     const row = SHORT_LINKS.find((r) => r.slug === "vox-demo-mail");
     expect(row).toMatchObject({ host: "mued.jp", path: "/en/muedvox", utmSource: "email", utmCampaign: "muedvox_demo_mail" });
+  });
+
+  it("★the two links baked into the 1.0.0 binary exist under the names VOX was given (a slug never changes once shipped)", () => {
+    const row = (slug: string) => SHORT_LINKS.find((r) => r.slug === slug);
+    expect(row("vox-plugin")).toMatchObject({ host: "mued.jp", path: "/en/muedvox", utmSource: "muedsp_plugin", utmMedium: "inapp", localeFromBrowser: true });
+    expect(row("vox-portal")).toMatchObject({ host: "mued.jp", path: "/dashboard/plugins", utmSource: "muedsp_plugin", utmMedium: "inapp" });
+  });
+
+  it.each([["ja", jaVox], ["en", enVox]] as const)("%s: the page says the same thing about the demo as the mail — harmonies stop, the lead keeps playing", (_l, vox) => {
+    for (const text of [vox.demo.body, vox.demoForm.demoNote, vox.faq.items.find((i) => i.id === "demo")!.answer]) {
+      expect(text).toMatch(/45/);
+      expect(text).not.toMatch(/unprocessed|原音のまま/);
+      expect(text).toMatch(/元の歌だけが鳴り続けます|only your lead vocal keeps playing/);
+      expect(text).toMatch(/セッションに保存されません|saved with your session/);
+    }
   });
 
   it.each(["ja", "en"] as const)("the purchase mail (%s): with a Windows zip, a link for each OS; without one, the mail as it was", async (locale) => {

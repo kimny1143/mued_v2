@@ -79,7 +79,7 @@
   },
   "demo": {
     "button": "Download the demo",
-    "body": "The demo has no time limit. Each time you insert it, it processes the first 45 seconds of audio, then passes audio through unprocessed until you insert it again. Settings aren’t saved.",
+    "body": "The demo has no time limit. Each time you insert it, the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing (insert it again for another 45 seconds). Settings you change in the demo aren’t saved with your session.",
     "refundNote": "The demo lets you check that it runs in your setup before you buy."
   },
   "faq": {
@@ -120,7 +120,7 @@
         "id": "demo",
         "requires": "demo",
         "question": "What does the demo do?",
-        "answer": "It is the full plugin with no time limit. Each time you insert it, it processes the first 45 seconds of audio and then passes audio through unprocessed until you insert it again. Settings aren't saved."
+        "answer": "It is the full plugin with no time limit. Each time you insert it, the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing (insert it again for another 45 seconds). Settings you change in the demo aren't saved with your session."
       },
       {
         "id": "refund",
@@ -161,7 +161,7 @@
     "try": "Try MUEDvox",
     "emailLabel": "Email (to try it)",
     "emailPlaceholder": "you@example.com",
-    "demoNote": "The demo has no time limit. Each time you insert it, it processes the first 45 seconds of audio, then passes audio through unprocessed until you insert it again. Settings aren’t saved.",
+    "demoNote": "The demo has no time limit. Each time you insert it, the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing (insert it again for another 45 seconds). Settings you change in the demo aren’t saved with your session.",
     "emailNotice": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
     "success": "Your download has started. If it didn't, use the link in the email.",
     "errors": {

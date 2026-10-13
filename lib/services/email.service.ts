@@ -1067,24 +1067,26 @@ Hoo MCP経由の自動送信
 
   /**
    * MUEDvox demo receipt. ★The same mail as masterchainDemoDownload with the product's own facts: every sentence is
-   * that template's (kimny-approved 9/30–10/1) with the name swapped, except the limits line, which is MUEDvox's
-   * page copy (messages muedvox.demo.body), and the "Buy … inside the plugin" clause, which is left out — nobody
-   * has checked that MUEDvox's window has such a link (lib rule: copy about another repo's UI is verified against
-   * the shipped build first).
+   * that template's (kimny-approved 9/30–10/1) with the name swapped, except the limits line, which says what
+   * MUEDvox 1.0.0's demo does (VOX read the code, mued-vox #205, via conductor 2026-10-13): only the HARMONIES stop
+   * after 45 seconds per insert — the lead keeps playing, with the FX still on it; re-inserting gives another 45;
+   * settings changed in the demo are not saved with the session (the plugin's own "Save preset…" still writes a
+   * file, so the mail does not say "nothing is saved"). "Buy MUEDvox" inside the plugin is real: the DEMO /
+   * LICENSED badge opens the key window, which has it.
    */
   muedvoxDemoDownload(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string; windowsUrl?: string | null }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const subject = isJa ? 'MUEDvox デモのダウンロード' : 'Your MUEDvox demo download';
     const intro = isJa ? 'MUEDvox のデモをお試しいただき、ありがとうございます。' : 'Thanks for trying the MUEDvox demo.';
     const limits = isJa
-      ? 'キーを入れなくても、デモとして期限なく使えます。デモは、挿すたびに最初の 45 秒だけ処理し、あとは挿し直すまで原音のまま通します。設定は保存されません。ライセンスキーを入れると、これらの制限はなくなります。'
-      : "Without a key, MUEDvox runs as a demo with no time limit. Each time you insert it, it processes the first 45 seconds of audio, then passes audio through unprocessed until you insert it again. Settings aren't saved. Entering a license key removes these limits.";
+      ? 'キーを入れなくても、デモとして期限なく使えます。デモでは、挿すたびに、ハモリは最初の 45 秒だけ鳴り、その後は元の歌だけが鳴り続けます（挿し直すと、また 45 秒）。デモ中の設定はセッションに保存されません。ライセンスキーを入れると、これらの制限はなくなります。'
+      : "Without a key, MUEDvox runs as a demo with no time limit. Each time you insert it, the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing (insert it again for another 45 seconds). Settings you change in the demo aren't saved with your session. Entering a license key removes these limits.";
     const label = isJa ? 'デモをダウンロード' : 'Download the demo';
     const formats = 'AU · VST3 · AAX (Pro Tools) · macOS';
     const buyUrl = `${APP_URL}/l/vox-demo-mail`;
     const buy = isJa
-      ? '気に入ったら、製品ページから購入できます。購入後は、購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。'
-      : 'If you like it, you can buy it from the product page. After buying, sign in to mued.jp with the email you used at checkout to get your license key in your portal.';
+      ? '気に入ったら、製品ページから購入できます（プラグインの中の Buy MUEDvox からも開けます）。購入後は、購入時のメールアドレスで mued.jp にサインインすると、ポータルで鍵を受け取れます。'
+      : 'If you like it, you can buy it from the product page (Buy MUEDvox inside the plugin opens it too). After buying, sign in to mued.jp with the email you used at checkout to get your license key in your portal.';
     const buyLabel = isJa ? '製品ページを開く' : 'Open the product page';
     // ★Only with consent — the unsubscribe URL exists only then (same rule as the masterchain receipt).
     const optedIn = !!data.unsubscribeUrl;
