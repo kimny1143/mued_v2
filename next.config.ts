@@ -74,6 +74,33 @@ const nextConfig: NextConfig = {
         destination: '/en/support',
         permanent: true,
       },
+      // Already-distributed download aliases retain their files in public/downloads, but requests use
+      // the canonical 0.1.2 artifacts so an old filename cannot keep serving an older build.
+      {
+        source: '/downloads/MUEDlim-0.1.0-alpha-installer.pkg',
+        destination: '/downloads/MUEDlim-0.1.2-installer.pkg',
+        permanent: false,
+      },
+      {
+        source: '/downloads/MUEDlim-0.1.1-alpha-installer.pkg',
+        destination: '/downloads/MUEDlim-0.1.2-installer.pkg',
+        permanent: false,
+      },
+      {
+        source: '/downloads/MUEDrive-0.1.0-alpha-installer.pkg',
+        destination: '/downloads/MUEDrive-0.1.2-installer.pkg',
+        permanent: false,
+      },
+      {
+        source: '/downloads/MUEDsat-0.1.0-alpha-installer.pkg',
+        destination: '/downloads/MUEDsat-0.1.2-installer.pkg',
+        permanent: false,
+      },
+      {
+        source: '/downloads/MUEDsat-0.1.1-alpha-installer.pkg',
+        destination: '/downloads/MUEDsat-0.1.2-installer.pkg',
+        permanent: false,
+      },
       // Non-locale product pages: app/[locale]/{muedsat,muedlim,muedsp} only exist under a locale, so the
       // bare /muedsp (used as a locale-agnostic entry in the free-plugin welcome-email forward CTA, the
       // portal empty-CTA, and the /learn gate) 404s without this. → /en (the site's x-default). Temporary
