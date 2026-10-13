@@ -12,11 +12,21 @@
   },
   "beforeAfter": {
     "heading": "同じボーカルを、まず1本で。次にハモリ付きで。",
-    "example1": "例 1 — リードボーカルのみ → 4 声のハモリ付き",
-    "example2": "例 2 — リードボーカルのみ → 4 声のハモリ付き",
-    "before": "リードのみ",
-    "after": "MUEDvox 使用",
-    "caption": "音量は揃えています。ドライな録音を MUEDvox で処理し、ほかの処理は加えていません。"
+    "caption": "Before と After は同じ音量に揃えています。ハモリは、MIDI のコードに追従させて作りました。",
+    "sunoNote": "デモの歌は、Suno で生成したものです。",
+    "player": {
+      "play": "再生",
+      "pause": "一時停止",
+      "position": "再生位置",
+      "loading": "音を読み込んでいます。",
+      "failed": "音を読み込めませんでした。ページを読み込み直してください。",
+      "sideGroup": "MUEDvox を掛ける前と後",
+      "layerGroup": "ミックスと歌だけ",
+      "before": "Before",
+      "after": "After",
+      "mix": "ミックス",
+      "vocal": "歌だけ"
+    }
   },
   "screen": {
     "heading": "画面",
