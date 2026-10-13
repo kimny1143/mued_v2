@@ -9,11 +9,12 @@ export const MUEDVOX_DEMO_LIVE = true;
 // The HARMONY page of the shipped 1.0.0, LICENSED (VOX 2026-10-13): MUEDvox-1.0.0-harmony-2400x1800.png
 // sha256 b4ce46e1…0db3 → cwebp -q 86 (2400×1800).
 export const MUEDVOX_SCREENSHOT: string = "/muedvox/MUEDvox-1.0.0-harmony.webp";
-// The listening examples on the page (kimny 2026-10-14: 「載せるのは001 003にしましょう。2曲」, vocal +4 dB, 20 s each).
+// The listening examples on the page (kimny 2026-10-14: two songs, vocal +4 dB, 20 s each; the second became 002 the
+//   same day: 「Sample#2を、３つあったうちの002に差し替えて。」).
 // ★The songs and their files are this list and nothing else: to swap a file, re-encode it under the same name
 //   (scripts/muedvox/encode-lp-audio.sh <folder of wavs>); to add or drop a song, add or drop a row.
 // Four takes per song, same length and same start: the mix and the vocal alone, each before and after MUEDvox.
-// Source: lp/audio-final-20261014/*.wav (48 kHz 24 bit) → mp3 192 kbps CBR.
+// Source: lp/audio-final-20261014-rev2/*.wav (48 kHz 24 bit) → mp3 192 kbps CBR.
 // ★The song names stay off the page (kimny 2026-10-14: 「サンプルの曲名は伏せましょう。Sample #1 #2」): the title is
 //   what is shown and read aloud, the same in ja and en; the files carry only the number.
 export type MuedvoxAudioTake = "mix_before" | "mix_after" | "vocal_before" | "vocal_after";
@@ -30,7 +31,7 @@ const audioExample = (id: string, title: string): MuedvoxAudioExample => ({
 });
 export const MUEDVOX_AUDIO_EXAMPLES: ReadonlyArray<MuedvoxAudioExample> = [
   audioExample("001", "Sample #1"),
-  audioExample("003", "Sample #2"),
+  audioExample("002", "Sample #2"),
 ];
 
 /**
