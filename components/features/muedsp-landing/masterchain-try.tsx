@@ -20,9 +20,35 @@ type DemoError = "invalid_email" | "disposable_email" | "rate_limited" | "generi
  *   Only once: no second receipt after a successful send.
  */
 export function MasterchainTry() {
-  const t = useTranslations("muedsp.buyTry");
-  const td = useTranslations("muedsp.demo");
-  const twin = useTranslations("muedsp.windows");
+  return <PaidDemoForm product={MASTERCHAIN_TRY} />;
+}
+
+/**
+ * What the demo form needs to know about its product (C9 PR-C). ★Only masterchain has one today: another
+ * product gets its own with its demo's words and its receipt mail (lib/masterchain/demo-handler.ts DemoProduct).
+ */
+export type DemoFormProduct = {
+  /** GA4 `product` and the prefix of the form's element ids. */
+  key: string;
+  demoLive: boolean;
+  /** POST endpoint answering { ok, downloadUrl, windowsDownloadUrl? }. */
+  endpoint: string;
+  /** messages namespaces: the form (try / emailLabel / emailPlaceholder / demoNote), the demo
+   *  (emailNotice / success / errors.*) and the two-OS words (demoChoose / demoOtherMac / demoOtherWindows). */
+  messages: { form: string; demo: string; windows: string };
+};
+
+const MASTERCHAIN_TRY: DemoFormProduct = {
+  key: "masterchain",
+  demoLive: MASTERCHAIN_DEMO_LIVE,
+  endpoint: "/api/masterchain/demo",
+  messages: { form: "muedsp.buyTry", demo: "muedsp.demo", windows: "muedsp.windows" },
+};
+
+export function PaidDemoForm({ product }: { product: DemoFormProduct }) {
+  const t = useTranslations(product.messages.form);
+  const td = useTranslations(product.messages.demo);
+  const twin = useTranslations(product.messages.windows);
   const locale = useLocale();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -33,7 +59,7 @@ export function MasterchainTry() {
   // ★Once the demo has been sent, Try stays done (CCO #1187): a second press would send a second receipt.
   const busy = status === "submitting" || status === "success";
 
-  if (!MASTERCHAIN_DEMO_LIVE) return null;
+  if (!product.demoLive) return null;
 
   async function tryDemo(event: React.FormEvent) {
     event.preventDefault();
@@ -45,12 +71,12 @@ export function MasterchainTry() {
     }
     setStatus("submitting");
     // ★Same GA4 event as the free three's forms (cta_click / download_form); GA4 ties it to the session's utm.
-    trackCtaClick("masterchain", "demo_form", "download_form");
+    trackCtaClick(product.key, "demo_form", "download_form");
     try {
       const attribution = Object.fromEntries(
         ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"].map((key) => [key, searchParams.get(key) ?? undefined]),
       );
-      const response = await fetch("/api/masterchain/demo", {
+      const response = await fetch(product.endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), locale, website, ...attribution }),
@@ -80,8 +106,8 @@ export function MasterchainTry() {
   return (
     <form id="demo" onSubmit={tryDemo} noValidate className="max-w-xl scroll-mt-20 space-y-4" aria-busy={status === "submitting"}>
       <div style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
-        <label htmlFor="masterchain-demo-website">{locale === "ja" ? "この欄は空欄のままにしてください" : "Leave this field empty"}</label>
-        <input id="masterchain-demo-website" name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+        <label htmlFor={`${product.key}-demo-website`}>{locale === "ja" ? "この欄は空欄のままにしてください" : "Leave this field empty"}</label>
+        <input id={`${product.key}-demo-website`} name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
       </div>
       {status === "success" ? (
         <div role="status" className="space-y-2">
@@ -89,7 +115,7 @@ export function MasterchainTry() {
               書かないで」). Only then: "pick one below; the receipt has both links". */}
           <p className="text-sm text-[#f5a524]">{offer.length > 1 ? twin("demoChoose") : td("success")}</p>
           {offer.length > 0 && (
-            <p className="flex flex-wrap gap-4 text-sm" data-testid="masterchain-demo-offer">
+            <p className="flex flex-wrap gap-4 text-sm" data-testid={`${product.key}-demo-offer`}>
               {offer.map((o) => (
                 <a key={o.os} href={o.url} className="text-[#f5a524] underline underline-offset-2">
                   {twin(o.os === "mac" ? "demoOtherMac" : "demoOtherWindows")}
@@ -102,7 +128,7 @@ export function MasterchainTry() {
         <>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input
-              id="masterchain-demo-email"
+              id={`${product.key}-demo-email`}
               name="email"
               type="email"
               autoComplete="email"
@@ -114,7 +140,7 @@ export function MasterchainTry() {
               }}
               placeholder={t("emailPlaceholder")}
               aria-invalid={status === "error" && error === "invalid_email"}
-              aria-describedby={status === "error" ? "masterchain-demo-error" : "masterchain-demo-note"}
+              aria-describedby={status === "error" ? `${product.key}-demo-error` : `${product.key}-demo-note`}
               className="min-w-0 flex-1 rounded-[var(--radius-lg)] border border-white/15 bg-white/[0.04] px-4 py-3.5 font-mono text-white placeholder:text-white/30 transition-colors focus:border-[#f5a524]/60 focus:outline-none focus:ring-1 focus:ring-[#f5a524]/40"
             />
             <button
@@ -128,8 +154,8 @@ export function MasterchainTry() {
         </>
       )}
       <p className="text-sm text-white/65">{td("emailNotice")}</p>
-      {status === "error" && <p id="masterchain-demo-error" role="alert" className="text-sm text-red-400">{td(`errors.${error}`)}</p>}
-      <p id="masterchain-demo-note" className="text-xs leading-relaxed text-white/50">{t("demoNote")}</p>
+      {status === "error" && <p id={`${product.key}-demo-error`} role="alert" className="text-sm text-red-400">{td(`errors.${error}`)}</p>}
+      <p id={`${product.key}-demo-note`} className="text-xs leading-relaxed text-white/50">{t("demoNote")}</p>
     </form>
   );
 }

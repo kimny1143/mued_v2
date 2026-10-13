@@ -28,7 +28,9 @@ it("gates the demo in product UI, FAQ UI and FAQ structured data on the one flag
   // ★The demo block (MasterchainTry) renders nothing unless the demo flag is on; the purchase is the
   //   button right under masterchain's screen image (MasterchainBuyButton — kimny 10/1), placed before the demo.
   const block = readFileSync("components/features/muedsp-landing/masterchain-try.tsx", "utf8");
-  expect(block).toMatch(/if \(!MASTERCHAIN_DEMO_LIVE\) return null;/);
+  // The form takes its product (C9 PR-C): masterchain's is wired to masterchain's flag, and a closed flag renders nothing.
+  expect(block).toMatch(/demoLive: MASTERCHAIN_DEMO_LIVE,/);
+  expect(block).toMatch(/if \(!product\.demoLive\) return null;/);
   expect(block).toContain('id="demo"'); // #demo still lands on the block (demo mail / old links)
   expect(product).toContain("<MasterchainTry");
   expect(product).toContain("<MasterchainBuyButton");

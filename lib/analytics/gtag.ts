@@ -75,7 +75,8 @@ export type CtaDestination =
   | "internal_page"  // 同一サイト内の別ページ
   | "signup"         // サインアップ / サインイン
   | "download_link"  // 直接インストーラーをダウンロード
-  | "download_form"; // その場の DL フォーム（ページ遷移しない）
+  | "download_form"  // その場の DL フォーム（ページ遷移しない）
+  | "checkout";      // 有料の購入（Buy → カート → FastSpring の popup）
 
 /**
  * Track CTA button clicks on the landing page.

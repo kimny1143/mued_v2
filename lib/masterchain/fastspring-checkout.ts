@@ -30,6 +30,7 @@
 
 import { readGaClientId } from "@/lib/dial/first-touch-client";
 import { EULA_VERSION } from "@/lib/legal/eula";
+import { PAID_PRODUCTS, type PaidProductKey } from "@/lib/plugins/paid-products";
 
 const STOREFRONT = process.env.NEXT_PUBLIC_FASTSPRING_STOREFRONT ?? "";
 const PRODUCT_PATH = process.env.NEXT_PUBLIC_FASTSPRING_PRODUCT_PATH ?? "";
@@ -40,6 +41,38 @@ const PRODUCT_PATH = process.env.NEXT_PUBLIC_FASTSPRING_PRODUCT_PATH ?? "";
  * looks live and does nothing, which is worse than the disabled button it replaced.
  */
 export const MASTERCHAIN_CHECKOUT_ENABLED = STOREFRONT !== "" && PRODUCT_PATH !== "";
+
+/**
+ * The FastSpring path the Buy button checks out, per product (C9 PR-C: one env path → the product table).
+ * ★masterchain keeps reading the env, exactly as before — its live checkout does not move in this change.
+ * ★Any other product takes its path from PAID_PRODUCTS, and only while its row is enabled: a disabled row
+ *   has no path here, so its button cannot check out an order the webhook would answer with no key.
+ */
+export function checkoutPath(product: PaidProductKey = "masterchain"): string {
+  if (product === "masterchain") return PRODUCT_PATH;
+  const row = PAID_PRODUCTS[product];
+  return row.enabled ? row.fastspringPath : "";
+}
+
+export function checkoutEnabled(product: PaidProductKey = "masterchain"): boolean {
+  return STOREFRONT !== "" && checkoutPath(product) !== "";
+}
+
+/**
+ * The cart for one product: that product × 1, and every OTHER product we sell set to 0.
+ * ★Why the zeros: the FastSpring session outlives a page, so a visitor who opened one product's cart and then
+ *   another's would hold both — and the webhook fulfils only an order of exactly one known item (C9 §3.2), so
+ *   that buyer would pay and get no key. ★With one product on sale the list is that product alone, i.e. the
+ *   payload masterchain has always sent.
+ */
+export function cartProducts(product: PaidProductKey = "masterchain"): { path: string; quantity: number }[] {
+  const path = checkoutPath(product);
+  const others = (Object.keys(PAID_PRODUCTS) as PaidProductKey[])
+    .filter((key) => key !== product)
+    .map((key) => checkoutPath(key))
+    .filter((other) => other !== "" && other !== path);
+  return [{ path, quantity: 1 }, ...others.map((other) => ({ path: other, quantity: 0 }))];
+}
 
 /**
  * ★THE TAG CONTRACT, now in code.
@@ -179,7 +212,9 @@ export type CheckoutQuote = {
 
 export const DATA_CALLBACK = "__muedspFsData";
 export const QUOTE_EVENT = "muedsp:fastspring-quote";
-let lastQuote: CheckoutQuote | null = null;
+const lastQuotes = new Map<PaidProductKey, CheckoutQuote>();
+// The product whose cart is on screen (set by requestQuote / openCheckout). Session data is read for this one.
+let activeProduct: PaidProductKey = "masterchain";
 
 /**
  * Pure: FastSpring session data → the quote for masterchain, or null. ★Null unless the cart holds exactly
@@ -202,29 +237,30 @@ export function readQuote(data: unknown, productPath: string = PRODUCT_PATH): Ch
 }
 
 export function handleSessionData(data: unknown): CheckoutQuote | null {
-  const quote = readQuote(data);
+  const quote = readQuote(data, checkoutPath(activeProduct));
   if (quote) {
-    lastQuote = quote;
+    lastQuotes.set(activeProduct, quote);
     if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(QUOTE_EVENT, { detail: quote }));
   }
   return quote;
 }
 
 /** The latest quote this page has seen (a modal opened a second time shows it at once). */
-export function currentQuote(): CheckoutQuote | null {
-  return lastQuote;
+export function currentQuote(product: PaidProductKey = "masterchain"): CheckoutQuote | null {
+  return lastQuotes.get(product) ?? null;
 }
 
 /**
  * Put masterchain × 1 in the session so FastSpring prices it (the answer arrives through DATA_CALLBACK).
  * ★Session only — nothing is charged and no popup opens; openCheckout pushes the same line again.
  */
-export function requestQuote(): boolean {
-  if (!MASTERCHAIN_CHECKOUT_ENABLED || typeof window === "undefined") return false;
+export function requestQuote(product: PaidProductKey = "masterchain"): boolean {
+  if (!checkoutEnabled(product) || typeof window === "undefined") return false;
   const b = builder();
   if (!b) return false;
   try {
-    b.push({ products: [{ path: PRODUCT_PATH, quantity: 1 }] });
+    activeProduct = product;
+    b.push({ products: cartProducts(product) });
     return true;
   } catch {
     return false;
@@ -243,8 +279,8 @@ function builder(): FastSpringBuilder | undefined {
  * script loads but exposes no builder. ★The caller only enables the button on `true` — otherwise a
  * click would be a no-op, which is a worse button than the disabled one it replaced.
  */
-export function loadCheckoutScript(): Promise<boolean> {
-  if (!MASTERCHAIN_CHECKOUT_ENABLED) return Promise.resolve(false);
+export function loadCheckoutScript(product: PaidProductKey = "masterchain"): Promise<boolean> {
+  if (!checkoutEnabled(product)) return Promise.resolve(false);
   if (typeof document === "undefined") return Promise.resolve(false);
   if (builder()) return Promise.resolve(true);
 
@@ -297,17 +333,20 @@ export function loadCheckoutScript(): Promise<boolean> {
 export function openCheckout({
   eulaAccepted,
   marketingConsent,
+  product = "masterchain",
 }: {
   eulaAccepted: boolean;
   marketingConsent?: boolean;
+  product?: PaidProductKey;
 }): boolean {
   if (!eulaAccepted) return false;
-  if (!MASTERCHAIN_CHECKOUT_ENABLED) return false;
+  if (!checkoutEnabled(product)) return false;
   const b = builder();
   if (!b) return false;
   try {
+    activeProduct = product;
     b.push({
-      products: [{ path: PRODUCT_PATH, quantity: 1 }],
+      products: cartProducts(product),
     });
     // FastSpring's documented order-level metadata API. Calling tag() before checkout makes the
     // accepted EULA version part of the order and therefore available to order.completed webhooks.

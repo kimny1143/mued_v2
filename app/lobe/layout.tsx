@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { locales, type Locale, getPreferredLocale } from '@/lib/i18n/config';
+import { clientMessages } from '@/lib/muedvox/config';
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -32,7 +33,7 @@ export default async function LobeLayout({
   const messages = (await import(`../../messages/${locale}.json`)).default;
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    <NextIntlClientProvider locale={locale} messages={clientMessages(messages)}>
       {children}
     </NextIntlClientProvider>
   );
