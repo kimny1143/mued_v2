@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { locales, type Locale } from "@/lib/i18n/config";
+import { clientMessages } from "@/lib/muedvox/config";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -44,7 +45,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <NextIntlClientProvider messages={messages}>
+    <NextIntlClientProvider messages={clientMessages(messages)}>
       <SetHtmlLang locale={locale} />
       {children}
     </NextIntlClientProvider>

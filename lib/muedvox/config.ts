@@ -19,6 +19,24 @@ export function muedvoxPageVisible(live: boolean, vercelEnv: string | undefined,
   return live || vercelEnv === "preview" || nodeEnv === "development";
 }
 
+/**
+ * The messages a layout hands to the browser (NextIntlClientProvider serialises ALL of them into every page).
+ * ★Before LIVE the `muedvox` namespace is left out: the page answering 404 does not keep its copy private while
+ *   the same words — price, modes, latency figures not yet checked against the release build — ride along in the
+ *   HTML of every other page (measured on production 2026-10-13: /ja, /ja/muedsp, /en/eula, /ja/tokushoho each
+ *   carried the whole namespace). Same condition as the page itself, so preview and local dev still get it.
+ * ★The MUEDvox page reads its words on the server, so it does not need them in this payload.
+ */
+export function clientMessages<T extends Record<string, unknown>>(
+  messages: T,
+  visible: boolean = muedvoxPageVisible(MUEDVOX_LIVE, process.env.VERCEL_ENV, process.env.NODE_ENV),
+): T {
+  if (visible || !("muedvox" in messages)) return messages;
+  const { muedvox: _unreleased, ...rest } = messages;
+  void _unreleased;
+  return rest as T;
+}
+
 // Set at launch with the sha256/bytes pin, like masterchain.
 export const MUEDVOX_DOWNLOAD_URL = "";
 export const MUEDVOX_WINDOWS_URL = "";
