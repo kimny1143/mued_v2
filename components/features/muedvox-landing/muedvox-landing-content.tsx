@@ -136,7 +136,12 @@ export function MuedvoxLandingContent() {
           <dl className="mt-5 divide-y divide-white/5 border-y border-white/5">
             <div className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr] sm:gap-5">
               <dt className="font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">{t("formats.formatsLabel")}</dt>
-              <dd className="text-[15px] leading-relaxed text-white/70">{t("formats.formats")}</dd>
+              <dd className="text-[15px] leading-relaxed text-white/70">
+                <p>{t("formats.formats")}</p>
+                {/* ★Said plainly, next to the formats (conductor 2026-10-13; kimny decides whether it stays): the
+                    Windows build ships as an unsigned zip, and Windows may warn about it. */}
+                <p className="mt-2 text-sm text-white/45">{t("formats.windowsNote")}</p>
+              </dd>
             </div>
             <div className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr] sm:gap-5">
               <dt className="font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">{t("formats.requirementsLabel")}</dt>

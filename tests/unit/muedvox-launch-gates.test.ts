@@ -180,6 +180,7 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
       expect(surface).toContain(locale === "ja" ? "Mac 版のデモをダウンロード" : "Download the demo for Mac");
       expect(surface).toContain(locale === "ja" ? "Windows 版のデモをダウンロード" : "Download the demo for Windows");
       expect(surface).toContain("https://mued.jp/l/vox-demo-mail");
+      expect(surface).toContain((locale === "ja" ? jaVox : enVox).formats.windowsNote);
       // ★What 1.0.0's demo really does (VOX, mued-vox #205): the harmonies stop, the lead keeps playing — never
       //   "passes audio through unprocessed" (masterchain's sentence), and never "nothing is saved" (the plugin's
       //   own preset file can still be written).
@@ -235,6 +236,8 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
       expect(surface).toContain(LAUNCHED.downloadUrl);
       expect(surface).toContain(LAUNCHED.windowsUrl);
       expect(surface).toContain(locale === "ja" ? "Windows 版の MUEDvox をダウンロード" : "Download MUEDvox for Windows");
+      // ★The page, the demo receipt and the purchase mail say the same sentence about the unsigned zip.
+      expect(surface).toContain((locale === "ja" ? jaVox : enVox).formats.windowsNote);
       expect(surface).toContain(locale === "ja" ? "Mac 版の MUEDvox をダウンロード" : "Download MUEDvox for Mac");
     }
     vi.resetModules();

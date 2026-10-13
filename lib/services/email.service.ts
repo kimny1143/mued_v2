@@ -1125,8 +1125,10 @@ Hoo MCP経由の自動送信
     const windowsLabel = isJa ? 'Windows 版のデモをダウンロード' : 'Download the demo for Windows';
     const macLabel = windowsUrl ? (isJa ? 'Mac 版のデモをダウンロード' : 'Download the demo for Mac') : label;
     const macFormats = windowsUrl ? `Mac: ${formats}` : formats;
-    const windowsHtml = windowsUrl ? `<p><a href="${windowsUrl}" class="button">${windowsLabel}</a></p>` : '';
-    const windowsText = windowsUrl ? `\n${windowsLabel}: ${windowsUrl}` : '';
+    // ★Same sentence as the page (messages muedvox.formats.windowsNote): the Windows build is an unsigned zip.
+    const windowsNote = isJa ? 'Windows 版は署名のない zip です。Windows が警告を出すことがあります。' : 'The Windows version is an unsigned zip. Windows may show a warning.';
+    const windowsHtml = windowsUrl ? `<p><a href="${windowsUrl}" class="button">${windowsLabel}</a></p><p style="color: #6b7280; font-size: 13px;">${windowsNote}</p>` : '';
+    const windowsText = windowsUrl ? `\n${windowsLabel}: ${windowsUrl}\n${windowsNote}` : '';
     return {
       subject,
       html: baseTemplate(`<h2 style="color: #f5a524; margin-top: 0;">MUEDsp MUEDvox</h2><p>${intro}</p><p><a href="${MUEDVOX_DOWNLOAD_URL}" class="button">${macLabel}</a></p>${windowsHtml}<p>${limits}</p><p>${macFormats}</p>${buyHtml}${unsubHtml}`),
@@ -1161,6 +1163,7 @@ Hoo MCP経由の自動送信
       ? (isJa ? 'Mac 版の MUEDvox をダウンロード' : 'Download MUEDvox for Mac')
       : (isJa ? 'MUEDvox をダウンロード' : 'Download MUEDvox');
     const windowsLabel = isJa ? 'Windows 版の MUEDvox をダウンロード' : 'Download MUEDvox for Windows';
+    const windowsNote = isJa ? 'Windows 版は署名のない zip です。Windows が警告を出すことがあります。' : 'The Windows version is an unsigned zip. Windows may show a warning.';
 
     // Install first, then open the portal to retrieve the license.
     const downloadHtml = hasLink
@@ -1173,7 +1176,8 @@ Hoo MCP経由の自動送信
            <a href="${windowsUrl}" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
              ${windowsLabel}
            </a>
-         </p>` : ''}
+         </p>
+         <p style="color: #6b7280; font-size: 13px; text-align: center;">${windowsNote}</p>` : ''}
          <p style="color: #6b7280; font-size: 13px; text-align: center;">${formats}</p>`
       : `<div class="info-box">
            <p style="margin: 0;">${isJa
@@ -1182,7 +1186,7 @@ Hoo MCP経由の自動送信
          </div>`;
     const downloadText = hasLink
       ? (windowsUrl
-        ? `${macLabel}: ${MUEDVOX_DOWNLOAD_URL}\n${windowsLabel}: ${windowsUrl}\n${formats}`
+        ? `${macLabel}: ${MUEDVOX_DOWNLOAD_URL}\n${windowsLabel}: ${windowsUrl}\n${windowsNote}\n${formats}`
         : `${isJa ? 'ダウンロード' : 'Download'}: ${MUEDVOX_DOWNLOAD_URL}\n${formats}`)
       : (isJa
         ? 'インストーラーのダウンロードリンクは、このメールアドレスに折り返しお送りします。届かない場合は、このメールにそのまま返信してください。'
