@@ -17,9 +17,13 @@ const utc = (iso: string) => `${new Date(iso).toISOString().slice(0, 16).replace
 const field = "w-full rounded border border-white/15 bg-black/40 px-3 py-2 text-sm text-white";
 const label = "mb-1 block text-xs text-white/60";
 
-/** Operator screen (kimny only): issue a time-limited MUEDvox key to an address, and see what that address has. */
-export function LicenseGrantsForm({ maxDays }: { maxDays: number }) {
+/** What the operator picks from — the first is the default (MUEDvox: conductor 2026-10-15). */
+export type GrantProductChoice = { key: string; label: string };
+
+/** Operator screen (kimny only): issue a time-limited key to an address, and see what that address has. */
+export function LicenseGrantsForm({ maxDays, products }: { maxDays: number; products: readonly GrantProductChoice[] }) {
   const [email, setEmail] = useState("");
+  const [product, setProduct] = useState(products[0]?.key ?? "");
   const [unit, setUnit] = useState<"days" | "minutes">("days");
   const [amount, setAmount] = useState("14");
   const [reason, setReason] = useState("");
@@ -41,11 +45,12 @@ export function LicenseGrantsForm({ maxDays }: { maxDays: number }) {
       const res = await fetch("/api/admin/license/grants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, product: "muedvox", [unit]: Number(amount), reason }),
+        body: JSON.stringify({ email, product, [unit]: Number(amount), reason }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) { setMessage({ kind: "error", text: `出せませんでした: ${body.error ?? res.status}` }); return; }
-      setMessage({ kind: "ok", text: `出しました。期限 ${utc(body.grant.expiresAt)}。鍵は ${body.grant.email} のポータルに出ます。` });
+      // ★The plug-in shows no expiry (dsp 2026-10-15: "LICENSED" only), so the date must reach the person by mail.
+      setMessage({ kind: "ok", text: `出しました。期限 ${utc(body.grant.expiresAt)}。鍵は ${body.grant.email} のポータルに出ます。期限は画面に出ません。期限の日を本人にメールで伝えてください。` });
       await load(body.grant.email);
     } catch {
       setMessage({ kind: "error", text: "出せませんでした（通信）" });
@@ -58,11 +63,21 @@ export function LicenseGrantsForm({ maxDays }: { maxDays: number }) {
     <div className="mx-auto max-w-2xl px-6 py-10 text-white">
       <h1 className="text-xl font-semibold">期限つきのライセンス（テスター向け）</h1>
       <p className="mt-2 text-sm leading-relaxed text-white/60">
-        MUEDvox の期限つきの鍵を 1 本出します。鍵はメールでは送られません。受け取る人が、下のメールアドレスで mued.jp にサインインすると、ポータルに出ます。
+        期限つきの鍵を 1 本出します。鍵はメールでは送られません。受け取る人が、下のメールアドレスで mued.jp にサインインすると、ポータルに出ます。
         延長は、同じアドレスにもう 1 本出します。出した鍵は取り消せません（期限で切れます）。
+      </p>
+      <p className="mt-2 text-sm leading-relaxed text-white/60" data-testid="grant-expiry-note">
+        プラグインの画面は期限の間も「LICENSED」としか出ず、残りの日数も出ません。期限の日は、鍵を出した時と延長の時のメールで本人に伝えてください。
+        鍵を貼れるのは体験版の状態の時だけなので、延長の鍵は、最初の鍵が切れて DEMO に戻ってから貼ってもらいます。
       </p>
 
       <form onSubmit={issue} className="mt-6 space-y-4" data-testid="grant-form">
+        <div>
+          <label className={label} htmlFor="grant-product">製品</label>
+          <select id="grant-product" value={product} onChange={(e) => setProduct(e.target.value)} className={field}>
+            {products.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+          </select>
+        </div>
         <div>
           <label className={label} htmlFor="grant-email">メールアドレス（相手が返信をくれたアドレスそのもの）</label>
           <input id="grant-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={field} autoComplete="off" />

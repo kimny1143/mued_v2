@@ -29,8 +29,16 @@ export const GRANT_ISSUER_USER_IDS: readonly string[] = [
   "user_33EiZv982KTQ6s6AfTCkbaYqkpR",
 ];
 
-/** Products a grant can be issued for. masterchain has its own trial; add it here only by a reviewed change. */
-export const GRANTABLE_PRODUCTS: readonly PaidProductKey[] = ["muedvox"];
+/**
+ * Products a grant can be issued for — the first is the form's default. ★Add one only by a reviewed change.
+ * masterchain since 2026-10-15 (kimny: 「masterchainにもMUEDvoxと同じレビュワープログラムを入れたい」, via conductor;
+ *   MUEDvox stays the default, the same 90-day cap). dsp 2026-10-15: masterchain 1.0.2 and 1.0.3 read a v2 key with
+ *   scope=masterchain and a value in expires_at as Trial (full sound) with no code change, and after the expiry as no
+ *   key (1.0.2: DEMO EXPIRED; 1.0.3: the gap demo). ★The plug-in shows "LICENSED" while it lasts — no days left, no
+ *   notice — so the date has to be told by mail; and a key can be pasted only in the demo state, so an extension is
+ *   pasted after the first key runs out. (masterchain's own 15-day trial path, MASTERCHAIN_TRIAL_LIVE, stays off.)
+ */
+export const GRANTABLE_PRODUCTS: readonly PaidProductKey[] = ["muedvox", "masterchain"];
 
 export const MIN_GRANT_MINUTES = 1;
 /** 90 days. A longer loan is a decision, not a form value. */
