@@ -162,7 +162,11 @@ export function MuedspLandingContent() {
               {/* ★The price on the page itself (kimny 10/1: 「ページに価格出てないの、まずくないか？」 — 「買い切り $69(USD)
                   だけで良くない？」). The modal then shows FastSpring's figure in the buyer's currency. */}
               {MASTERCHAIN_PURCHASE_LIVE && (
-                <p data-testid="masterchain-price" className="mb-3 text-lg font-semibold text-white">{tmc("priceLive")}</p>
+                <>
+                  <p data-testid="masterchain-price" className="mb-1 text-lg font-semibold text-white">{tmc("priceLive")}</p>
+                  {/* ★$69 fixed, no sales (kimny 10/15 via Chief, keeping the 10/9 decision). */}
+                  <p data-testid="masterchain-no-sale" className="mb-3 text-[15px] text-white/70">{tmc("noSale")}</p>
+                </>
               )}
               {/* ★The closed label says "Coming soon"; an open button says "masterchain を購入" (no price: the modal
                   shows FastSpring's figure in the buyer's currency). */}
