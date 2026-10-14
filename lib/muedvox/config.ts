@@ -101,8 +101,14 @@ export function muedvoxLaunchProblems(state: {
   return problems;
 }
 
-// 1.0.0 (2026-10-13): the second signed build (the first, bea9d181…, was never shipped) and the unsigned Windows
-// zip be75a5d2. sha256 and bytes are pinned in tests/unit/plugin-download-artifact-integrity.test.ts.
-export const MUEDVOX_DOWNLOAD_URL: string = "https://mued.jp/downloads/MUEDvox-1.0.0-installer.pkg";
-export const MUEDVOX_WINDOWS_URL: string = "https://mued.jp/downloads/MUEDvox-1.0.0-win-x64-be75a5d2.zip";
-export const MUEDVOX_WINDOWS_VERSION: string = "1.0.0";
+// 1.0.1 (VOX 2026-10-15): only the demo changed — no time limit, the harmony drops out for about 3 s every 45 s of
+// sound while the lead keeps playing, settings save with the session, saving presets from the plug-in needs a key
+// (mued-vox #213). EULA 2026.10.2 inside (pkg: the consent screen; zip: EULA.txt). Same plug-in ID: a 1.0.0 key works.
+// The pkg is build/dist-1.0.1-eula2 (notarised, stapled); the zip is mued-vox 0875c7c1, unsigned.
+// ★Never ship the first 1.0.1 pkg (3a39b952…) or the zip …-0ac02273 (8738123f…): both carry EULA 2026.10.1, whose
+//   Section 6 describes the 1.0.0 demo (VOX docs/product-facts-1.0.md 「前の物は配らない」).
+// 1.0.0 (2026-10-13, pkg + zip be75a5d2) stays on the shelf under its own URLs.
+// sha256 and bytes are pinned in tests/unit/plugin-download-artifact-integrity.test.ts.
+export const MUEDVOX_DOWNLOAD_URL: string = "https://mued.jp/downloads/MUEDvox-1.0.1-installer.pkg";
+export const MUEDVOX_WINDOWS_URL: string = "https://mued.jp/downloads/MUEDvox-1.0.1-win-x64-0875c7c1.zip";
+export const MUEDVOX_WINDOWS_VERSION: string = "1.0.1";

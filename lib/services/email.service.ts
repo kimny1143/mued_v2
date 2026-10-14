@@ -1093,10 +1093,10 @@ Hoo MCP経由の自動送信
   /**
    * MUEDvox demo receipt. ★The same mail as masterchainDemoDownload with the product's own facts: every sentence is
    * that template's (kimny-approved 9/30–10/1) with the name swapped, except the limits line, which says what
-   * MUEDvox 1.0.0's demo does (VOX read the code, mued-vox #205, via conductor 2026-10-13): only the HARMONIES stop
-   * after 45 seconds per insert — the lead keeps playing, with the FX still on it; re-inserting gives another 45;
-   * settings changed in the demo are not saved with the session (the plugin's own "Save preset…" still writes a
-   * file, so the mail does not say "nothing is saved"). "Buy MUEDvox" inside the plugin is real: the DEMO /
+   * MUEDvox 1.0.1's demo does (mued-vox #213; the wording is conductor's 2026-10-15, the same as the page): no time
+   * limit, the HARMONY drops out for about 3 s every 45 s of sound while the lead keeps playing, settings save with
+   * the session, and saving presets from the plug-in's own menu needs a key (DAW presets still work — the FAQ says
+   * so; the mail keeps the short form). "Buy MUEDvox" inside the plugin is real: the DEMO /
    * LICENSED badge opens the key window, which has it.
    */
   muedvoxDemoDownload(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string; windowsUrl?: string | null }): { subject: string; html: string; text: string } {
@@ -1104,8 +1104,8 @@ Hoo MCP経由の自動送信
     const subject = isJa ? 'MUEDvox デモのダウンロード' : 'Your MUEDvox demo download';
     const intro = isJa ? 'MUEDvox のデモをお試しいただき、ありがとうございます。' : 'Thanks for trying the MUEDvox demo.';
     const limits = isJa
-      ? 'キーを入れなくても、デモとして期限なく使えます。デモでは、挿すたびに、ハモリは最初の 45 秒だけ鳴り、その後は元の歌だけが鳴り続けます（挿し直すと、また 45 秒）。デモ中の設定はセッションに保存されません。ライセンスキーを入れると、これらの制限はなくなります。'
-      : "Without a key, MUEDvox runs as a demo with no time limit. Each time you insert it, the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing (insert it again for another 45 seconds). Settings you change in the demo aren't saved with your session. Entering a license key removes these limits.";
+      ? '体験版は期限なし。45 秒ごとにハモリが 3 秒ほど抜けます（歌は鳴り続けます）。プリセットの保存は製品版のみ。体験版で作ったセッションは、ライセンスを入れた後もそのまま開けます。'
+      : "The demo never expires: every 45 seconds the harmony drops out for about 3 seconds (your lead keeps playing). Saving presets needs a license; sessions made in the demo open unchanged once you add one.";
     const label = isJa ? 'デモをダウンロード' : 'Download the demo';
     const formats = 'AU · VST3 · AAX (Pro Tools) · macOS';
     const buyUrl = `${APP_URL}/l/vox-demo-mail`;
