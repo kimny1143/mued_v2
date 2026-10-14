@@ -286,7 +286,7 @@
   "licenses": {
     "title": "第三者のライセンス",
     "intro": "MUEDsp のプラグインに含まれる、第三者のソフトウェアと書体のライセンスです。",
-    "note": "ライセンスの本文は英語です。各プラグインの THIRD-PARTY-LICENSES.md と FONT-LICENSES.md の内容で、Windows 版だけ・macOS 版だけで使う部品の段（Windows only・macOS only）も含みます。一部の節は、次の版のインストーラーから同梱されます。",
+    "note": "ライセンスの本文は英語です。各プラグインの THIRD-PARTY-LICENSES.md と FONT-LICENSES.md の内容で、Windows 版だけ・macOS 版だけで使う部品の段（Windows only・macOS only）も含みます。",
     "thirdParty": "第三者のソフトウェア",
     "fonts": "書体",
     "plugins": {
@@ -2714,10 +2714,10 @@
       "line": "{previous} のセッションをお持ちの方へ: {version} では CEILING のオートメーションの値が変わります。",
       "detailsLink": "変更点と戻し方を読む",
       "previousLink": "{previous} のインストーラはポータルに残しています",
-      "detailsHeading": "{version} で変わったこと",
+      "detailsHeading": "{since} で変わったこと",
       "lead": "トラックやステムのバスでピークだけを抑えたい時に使えるよう、CEILING の幅を −3〜0 dBTP から −18〜0 dBTP に広げました。既定値（−1 dBTP）と音の処理は変えていません。",
       "added": "1:1 スイッチを追加しました。オンにすると、INPUT は音量を上げる代わりに、その分だけ CEILING を下げます（INPUT +12 dB → CEILING −12 dB）。CEILING に届かない音はそのままの大きさで通り、届くピークだけが抑えられます。オンの間は CEILING のつまみは使われません。INPUT が 0 dB の時、CEILING は 0.0 dBTP になります（既定の −1.0 ではありません）。INPUT を 0 dB より下げても、1:1 の間は何も変わりません。DAW のオートメーションの一覧では、このスイッチは「Unity」と表示されます。",
-      "addedImageAlt": "MUEDlim {version} のプラグイン画面（音が入った状態・1:1 はオン）。左の大きな数字は GAIN REDUCTION −2.7 dB（アンバー）。右に OUTPUT PEAK −9.0・SHORT-TERM −19.7 LUFS・INTEGRATED −18.1 LUFS・CEILING −9.00 dBTP。中央のグラフにはゲインリダクションの履歴（朱の線）だけが上の縁から下がっていて、右の出力メーターは上限 −9.00 を示す。下に INPUT（+9.00 dB）のノブと、薄く表示された CEILING（−9.00 dBTP）のノブ、右に 1:1 のスイッチ（オン・橙の点）。",
+      "addedImageAlt": "MUEDlim {since} のプラグイン画面（音が入った状態・1:1 はオン）。左の大きな数字は GAIN REDUCTION −2.7 dB（アンバー）。右に OUTPUT PEAK −9.0・SHORT-TERM −19.7 LUFS・INTEGRATED −18.1 LUFS・CEILING −9.00 dBTP。中央のグラフにはゲインリダクションの履歴（朱の線）だけが上の縁から下がっていて、右の出力メーターは上限 −9.00 を示す。下に INPUT（+9.00 dB）のノブと、薄く表示された CEILING（−9.00 dBTP）のノブ、右に 1:1 のスイッチ（オン・橙の点）。",
       "display": "ゲインリダクションがグラフで見えるようになりました。ラウドネスのグラフの上の縁から、リミッターがどこでどれだけ抑えたかが時間に沿って下がって表示されます。GR の数字は、直近でいちばん深い値を表示します。1:1 がオンの間は、大きい数字が GAIN REDUCTION になり、ラウドネスは右上に小さく表示されます。出力メーターにはピークホールドの線が付きました。",
       "sessionsHeading": "{previous} で作ったセッションをお持ちの方へ",
       "saved": "保存してあるつまみの値とプリセットは、そのままの値で開きます。1:1 はオフで開きます。",
@@ -2927,7 +2927,7 @@
     "added": "{date} に追加",
     "changes": {
       "muedlim": {
-        "summary": "{version} で CEILING の幅が −18〜0 dBTP に広がり、1:1 スイッチ（INPUT の分だけ CEILING を下げる）が加わりました。{previous} で作ったセッションのうち、VST3／AAX で CEILING にオートメーションを書いたものは、再生される値が下がります（例: −1.0 dB → −6.0 dB）。保存したつまみの値とプリセットは変わりません。AU でも、DAW によって同じように下がる場合があります。",
+        "summary": "{since} で CEILING の幅が −18〜0 dBTP に広がり、1:1 スイッチ（INPUT の分だけ CEILING を下げる）が加わりました。{previous} で作ったセッションのうち、VST3／AAX で CEILING にオートメーションを書いたものは、再生される値が下がります（例: −1.0 dB → −6.0 dB）。保存したつまみの値とプリセットは変わりません。AU でも、DAW によって同じように下がる場合があります。",
         "revert": "{previous} に戻す時: Mac は先に「Uninstall MUEDlim」（/Applications/MUEDlim/）で {version} を消してから {previous} を入れます。Windows は {previous} の MUEDlim.vst3 で置き換えます。1:1 をオンにして保存したセッションは、{previous} では INPUT の分だけ音が大きくなります。",
         "more": "くわしく"
       }

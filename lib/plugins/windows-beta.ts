@@ -31,11 +31,14 @@ export interface WindowsBetaBuild {
 export const WINDOWS_BETA: Record<PluginKey, WindowsBetaBuild> = {
   // ★7ca36065 (dsp build 2026-10-01, from the GitHub CI artifact): MUEDsat 1.0.1 (same code as the Mac 1.0.1),
   //   MUEDrive 1.0.1 with the CHARACTER knob fix, MUEDlim 1.0.0. The 80178027 zips stay on the shelf (pinned).
-  muedsat: { url: "https://mued.jp/downloads/MUEDsat-1.0.1-win-x64-7ca36065.zip", version: "1.0.1" },
+  // ★13684e83 (dsp 2026-10-14): the three free plugins at 1.0.2 — same changes as the Mac 1.0.2 builds, EULA.txt
+  //   2026.10.1. Unsigned. ★Nobody has run these zips on a Windows machine (dsp 2026-10-14). The zips named in the
+  //   notes below (7ca36065, 3b853018) stay on the shelf, pinned as literal URLs.
+  muedsat: { url: "https://mued.jp/downloads/MUEDsat-1.0.2-win-x64-13684e83.zip", version: "1.0.2" },
   // ★3b853018 (dsp #888, mued-dsp main 27284478, 2026-10-09): MUEDlim 1.0.1. The 7ca36065 zip is the portal's
   //   "previous version" (lib/plugins/previous-versions.ts).
-  muedlim: { url: "https://mued.jp/downloads/MUEDlim-1.0.1-win-x64-3b853018.zip", version: "1.0.1" },
-  muedrive: { url: "https://mued.jp/downloads/MUEDrive-1.0.1-win-x64-7ca36065.zip", version: "1.0.1" },
+  muedlim: { url: "https://mued.jp/downloads/MUEDlim-1.0.2-win-x64-13684e83.zip", version: "1.0.2" },
+  muedrive: { url: "https://mued.jp/downloads/MUEDrive-1.0.2-win-x64-13684e83.zip", version: "1.0.2" },
 };
 
 /** The Windows build to show on a portal row — null while the beta is not live or for an unknown key. */

@@ -61,26 +61,28 @@ const MASTERCHAIN_PIN: { sha256: string; bytes: number } | null = {
   // ★1.0.1 key-entry rebuild (2026-10-01, /downloads/keyentry-2026.10/・dsp #854): matched conductor's relay
   //   (`shasum -a 256` / `stat -f%z`) + cmp to dsp's plugin/dist/. The ui-2026.10 build (b9fef6da…/4_296_252) and
   //   the first 1.0.1 (e4846886…/4_276_006) are pinned below as shelf entries.
-  sha256: "2a800e04fe5bee6d992e39db4a8cad15550107d47cde3b1b7994f5b2b3817d51",
-  bytes: 4_321_171,
+  // ★1.0.2 (2026-10-14, /downloads/): measured 08:57 JST on the copy under public/downloads/; matched dsp's message
+  //   and cmp to dsp's plugin/dist/. The key-entry 1.0.1 (2a800e04…/4_321_171) is pinned below as a shelf entry.
+  sha256: "e4d32c83930c5c744d82fc2378877f5c9ed1c50dd4ca74d5ae5014ff7c815b21",
+  bytes: 4_333_680,
 };
 
 const ARTIFACTS = [
   {
     name: "MUEDlim",
     url: MUEDLIM_DOWNLOAD_URL,
-    // 1.0.1 (2026-10-09; measured 13:43 JST on the copy under public/downloads/, after signing + notarization +
-    // staple). 1.0.0 (eula-2026.10) — the portal's "previous version" — and the first 1.0.0 are pinned below.
-    sha256: "3a1a49d21756456a2376d2255883bbdeebb628f35eaeccd560773168a3522360",
-    bytes: 3_302_225,
+    // 1.0.2 (2026-10-14; measured 08:57 JST on the copy under public/downloads/ — shasum -a 256, stat -f%z; matched dsp's
+    // message and cmp to dsp's files). The 1.0.1 file it replaces is pinned below as a literal shelf row.
+    sha256: "3f42b7244c4c62e60dbd5d9f35e5c24d36321b1cc57f2c33aa1b895bb200c0b0",
+    bytes: 3_308_734,
   },
   {
     name: "MUEDsat",
     url: MUEDSAT_DOWNLOAD_URL,
-    // 1.0.1 (2026-10-01, /downloads/): matched dsp's relay + cmp to dsp's plugin/dist/. The 1.0.0 builds are
-    //   pinned as shelf entries below.
-    sha256: "39596b0a813a3ded383f900e29f682d32810ec76af9121c65cbc76c848f6a066",
-    bytes: 3_425_562,
+    // 1.0.2 (2026-10-14; measured 08:57 JST on the copy under public/downloads/ — shasum -a 256, stat -f%z; matched dsp's
+    // message and cmp to dsp's files). The 1.0.1 file it replaces is pinned below as a literal shelf row.
+    sha256: "7e66600e75fbca39250bb47662d3298aee30b954cb345f44eb7d6f9eee1ac1f4",
+    bytes: 3_434_728,
   },
   // ★Shelf: MUEDsat 1.0.0, EULA 2026.10 rebuild — the download until 2026-10-01; mail sent in that window points here.
   {
@@ -92,10 +94,10 @@ const ARTIFACTS = [
   {
     name: "MUEDrive",
     url: MUEDRIVE_DOWNLOAD_URL,
-    // 1.0.1 CHARACTER rebuild (2026-10-01, /downloads/character-2026.10/): matched dsp's relay + cmp to dsp's
-    //   plugin/dist/. The first 1.0.1 (75bf0dcc…/3_616_696) is pinned below as a shelf entry; 1.0.0 was 1f3fc091….
-    sha256: "c3fb7d164ab9907490ef03633757e35400d0acc3d5f49c59fe74be407b36f8f4",
-    bytes: 3_619_132,
+    // 1.0.2 (2026-10-14; measured 08:57 JST on the copy under public/downloads/ — shasum -a 256, stat -f%z; matched dsp's
+    // message and cmp to dsp's files). The 1.0.1 file it replaces is pinned below as a literal shelf row.
+    sha256: "acc43ee6be619f41832a1790fd3b27b01240a29b0bf4a6409f1de159c2bd2325",
+    bytes: 3_626_667,
   },
   // ★Shelf: the first MUEDrive 1.0.1 (2026-09-30 → 2026-10-01). Same name and version as the current one; mail
   //   sent in that window points here. Told apart by sha256.
@@ -105,34 +107,82 @@ const ARTIFACTS = [
     sha256: "75bf0dcc1457559a35fbda9b55ae74c318f51dca754767863d0c080481a40fd4",
     bytes: 3_616_696,
   },
-  // ★Windows VST3 beta — 7ca36065 (dsp 2026-10-01, the zips kimny ran in Parallels). Measured on the copies under
-  //   public/downloads/: shasum -a 256 + bytes matched dsp's relay, cmp-identical to dsp's files AND to the copy
-  //   kimny tested (_[MUED]fileshare/_win-check-20261001b).
+  // ★Windows VST3 — 13684e83 (dsp 2026-10-14), 1.0.2. Measured 08:57 JST on the copies under public/downloads/:
+  //   shasum -a 256 + bytes matched dsp's message, cmp-identical to dsp's build/win-zips/. Unsigned; nobody has run
+  //   them on a Windows machine (dsp). The zips they replace are pinned below as literal shelf rows.
   {
     name: "MUEDsat (Windows beta)",
     url: WINDOWS_BETA.muedsat.url,
-    sha256: "c7c46e065f2f35fe7d9b40ffb46d48c59f68546d926ccf63c28626baf097e128",
-    bytes: 1_210_634,
+    sha256: "1bebb78e969c0f59b4a15d3dbfb014f2912f831d1c90485931c66aa51dd237fe",
+    bytes: 1_213_163,
   },
   {
     name: "MUEDlim (Windows beta)",
     url: WINDOWS_BETA.muedlim.url,
-    // 1.0.1 — 3b853018 (dsp #888 merged as mued-dsp main 27284478, 2026-10-09). Unsigned, like the 1.0.0 zip.
-    // Measured 2026-10-09 13:13 JST on dsp's build/win-zips copy and on the copy under public/downloads/.
-    // (Earlier 1.0.1 candidates — 81aa3e26, 701c0f2a — were withdrawn by dsp before they were pushed or linked.)
-    sha256: "d17e68200e0464deeb7526f72931dfc98117eb54aaabc1eadcc7aebef3f32aa7",
-    bytes: 1_142_661,
+    sha256: "7f308f0aa620069b5990dc0ede7654832bb2dc154a7a2f60f2760a6274774387",
+    bytes: 1_145_017,
   },
   {
     name: "MUEDrive (Windows beta)",
     url: WINDOWS_BETA.muedrive.url,
-    sha256: "96009dae19a384c96b41864fc209db145ac4f16c30a977672c82cebd0e848f7b",
-    bytes: 1_252_194,
+    sha256: "f24a41bcc59f02a9a58b94f4d22f6fc4f38b4c89ab9789d7dd479daab84386d1",
+    bytes: 1_254_574,
   },
-  // ★masterchain for Windows (VST3) — a2678157 (dsp 2026-10-01, PLUG_HOST_RESIZE 0; the build kimny accepted).
+  // ★masterchain for Windows (VST3) — 13684e83 (dsp 2026-10-14), 1.0.2. Same measurement as the three above.
   {
     name: "masterchain (Windows)",
     url: MASTERCHAIN_WINDOWS_URL,
+    sha256: "b95115e4234b10af1653763d05dc32ff2e6e152cbe546af5b5db2afbaf504103",
+    bytes: 1_419_332,
+  },
+  // ★Shelf: the eight 1.0.1 files that were the downloads until the 1.0.2 swap (2026-10-14), as literal URLs. The
+  //   rows above follow the constants, so these would have lost their pins when the constants moved. Mail, purchases
+  //   and portal visits up to the swap point here — the bytes stay fixed. Values are the pins those rows carried.
+  {
+    name: "MUEDlim 1.0.1 (shelf)",
+    url: "https://mued.jp/downloads/MUEDlim-1.0.1-installer.pkg",
+    sha256: "3a1a49d21756456a2376d2255883bbdeebb628f35eaeccd560773168a3522360",
+    bytes: 3_302_225,
+  },
+  {
+    name: "MUEDsat 1.0.1 (shelf)",
+    url: "https://mued.jp/downloads/MUEDsat-1.0.1-installer.pkg",
+    sha256: "39596b0a813a3ded383f900e29f682d32810ec76af9121c65cbc76c848f6a066",
+    bytes: 3_425_562,
+  },
+  {
+    name: "MUEDrive 1.0.1 (character-2026.10, shelf)",
+    url: "https://mued.jp/downloads/character-2026.10/MUEDrive-1.0.1-installer.pkg",
+    sha256: "c3fb7d164ab9907490ef03633757e35400d0acc3d5f49c59fe74be407b36f8f4",
+    bytes: 3_619_132,
+  },
+  {
+    name: "masterchain 1.0.1 (keyentry-2026.10, shelf)",
+    url: "https://mued.jp/downloads/keyentry-2026.10/MUEDsp-masterchain-1.0.1-installer.pkg",
+    sha256: "2a800e04fe5bee6d992e39db4a8cad15550107d47cde3b1b7994f5b2b3817d51",
+    bytes: 4_321_171,
+  },
+  {
+    name: "MUEDsat 1.0.1 (Windows 7ca36065, shelf)",
+    url: "https://mued.jp/downloads/MUEDsat-1.0.1-win-x64-7ca36065.zip",
+    sha256: "c7c46e065f2f35fe7d9b40ffb46d48c59f68546d926ccf63c28626baf097e128",
+    bytes: 1_210_634,
+  },
+  {
+    name: "MUEDlim 1.0.1 (Windows 3b853018, shelf)",
+    url: "https://mued.jp/downloads/MUEDlim-1.0.1-win-x64-3b853018.zip",
+    sha256: "d17e68200e0464deeb7526f72931dfc98117eb54aaabc1eadcc7aebef3f32aa7",
+    bytes: 1_142_661,
+  },
+  {
+    name: "MUEDrive 1.0.1 (Windows 7ca36065, shelf)",
+    url: "https://mued.jp/downloads/MUEDrive-1.0.1-win-x64-7ca36065.zip",
+    sha256: "96009dae19a384c96b41864fc209db145ac4f16c30a977672c82cebd0e848f7b",
+    bytes: 1_252_194,
+  },
+  {
+    name: "masterchain 1.0.1 (Windows a2678157, shelf)",
+    url: "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-win-x64-a2678157.zip",
     sha256: "af9dfe0424105a79171bedcdecabe8dc2bba6f25662f1240d369b32479535d29",
     bytes: 1_416_745,
   },

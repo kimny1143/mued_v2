@@ -73,7 +73,7 @@ describe("portal", () => {
     const on = render(<PluginsPortalView items={[{ ...base, windows: WINDOWS_BETA.muedrive }]} />);
     const link = on.container.querySelector('[data-testid="portal-windows-beta"]');
     expect(link?.getAttribute("href")).toBe(WINDOWS_BETA.muedrive.url);
-    expect(link?.textContent).toContain("MUEDrive 1.0.1 · VST3 · .zip");
+    expect(link?.textContent).toContain(`MUEDrive ${WINDOWS_BETA.muedrive.version} · VST3 · .zip`);
     expect(on.container.textContent).toContain("windows.howto");
     // ★Positive control: the Mac build is still the first download link.
     expect(on.container.querySelector("a[download]")?.getAttribute("href")).toBe(base.downloadUrl);

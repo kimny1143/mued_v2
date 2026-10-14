@@ -73,7 +73,15 @@ export const MUEDRIVE_LIVE = true;
 //     first 1.0.1  75bf0dcc1457559a35fbda9b55ae74c318f51dca754767863d0c080481a40fd4 · 3,616,696 B (/downloads/, pinned on the shelf)
 //   Verified 2026-10-01 on the copy under public/downloads/character-2026.10/: sha256 + bytes matched dsp's relay, cmp
 //   byte-identical to dsp's plugin/dist/, magic `xar!`, Developer ID Installer + notarized, stapler OK, spctl accepted.
-export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/character-2026.10/MUEDrive-1.0.1-installer.pkg";
+// ★1.0.2 (2026-10-14): the Pro Tools plug-in category (Harmonic), the bundled third-party notices and the EULA
+//   (2026.10.1). dsp: no source diff in the audio processing since 1.0.1.
+//   sha256: acc43ee6be619f41832a1790fd3b27b01240a29b0bf4a6409f1de159c2bd2325 · 3,626,667 B (/downloads/)
+//   ★Verified 2026-10-14 08:57 JST on the copy under public/downloads/: shasum -a 256 + bytes matched dsp's message, cmp
+//   byte-identical to dsp's plugin/dist/, magic xar!, Developer ID Installer: glasswerks inc. (F529L4WT3V), notarized,
+//   stapler validate OK, spctl -t install = Notarized Developer ID; pkgutil --expand-full: VST3 / AU / AAX all 1.0.2,
+//   Resources/MUED-EULA-2026.10.1.rtf, and the two notice files equal content/licenses/ (sha256).
+//   ★Both 1.0.1 builds stay where they are (sent mail points at them), pinned as shelf rows.
+export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-1.0.2-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Bumped when a new build ships. NOT a secret.
@@ -87,7 +95,7 @@ export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/character-2026.1
 // ★URL and VERSION now carry the same semver, and tests/unit/plugin-version-matches-download.test.ts
 //   fails if they part again. (The on-screen label is still pinned separately by
 //   tests/unit/components/plugin-version-display.test.tsx — plain semver, never the filename.)
-export const MUEDRIVE_VERSION = "1.0.1";
+export const MUEDRIVE_VERSION = "1.0.2";
 
 // Press / reviewer bypass — DESIGN ROOM ONLY (dormant until a token is set; not a public feature).
 // When non-empty, `?press=<token>` reveals MUEDRIVE_DOWNLOAD_URL directly, skipping the email gate.

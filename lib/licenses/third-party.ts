@@ -23,6 +23,10 @@
 //   ★The page note says so in one sentence (kimny 2026-10-13, via conductor: 「残りも推奨通りでOK」 = write it):
 //   「一部の節は、次の版のインストーラーから同梱されます。」 ★REMOVE that sentence (messages licenses.note, ja + en)
 //   when the four products' 1.0.2 installers — the ones carrying these sections — are on the shelf.
+// ★2026-10-14: the 1.0.2 packages are on the shelf (four .pkg, four Windows .zip). pkgutil --expand-full / unzip →
+//   shasum -a 256: every THIRD-PARTY-LICENSES.md and FONT-LICENSES.md inside them equals the copy here (MUEDsp,
+//   MUEDsat, MUEDlim, MUEDrive; all three Mac formats and the zip). The sentence was removed from the page.
+//   MUEDvox is as noted at its pin below.
 //
 // ★Read with fs at REQUEST time (the root layout makes every route dynamic), so next.config's
 //   outputFileTracingIncludes for "/[locale]/licenses" is LOAD-BEARING — same as /learn.

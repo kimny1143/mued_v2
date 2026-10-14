@@ -36,7 +36,7 @@ export function PluginVersionNotice(props: Props) {
   const { dist, prev } = usePairing(props);
   const t = useTranslations(`${dist.i18nNamespace}.versionNotice`);
   if (!prev) return null;
-  const vars = { version: dist.version, previous: prev.version };
+  const vars = { version: dist.version, previous: prev.version, since: prev.changedIn };
   return (
     <p
       data-testid="plugin-version-notice"
@@ -66,7 +66,7 @@ export function PluginVersionDetails(props: Props) {
   const { dist, prev } = usePairing(props);
   const t = useTranslations(`${dist.i18nNamespace}.versionNotice`);
   if (!prev) return null;
-  const vars = { version: dist.version, previous: prev.version };
+  const vars = { version: dist.version, previous: prev.version, since: prev.changedIn };
   const image = ADDED_IMAGE[props.plugin];
   return (
     <section id={VERSION_NOTES_ID} data-testid="plugin-version-details" className="scroll-mt-20 border-t border-white/5 px-6 py-14">

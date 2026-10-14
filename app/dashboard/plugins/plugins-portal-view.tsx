@@ -30,7 +30,7 @@ export interface PortalViewItem {
    * The previous build kept beside the current one (lib/plugins/previous-versions.ts). ★Absent/null for a
    * module with none — the row then renders exactly as before.
    */
-  previous?: { version: string; macUrl: string; windowsUrl: string | null } | null;
+  previous?: { version: string; macUrl: string; windowsUrl: string | null; changedIn: string } | null;
 }
 
 // Fixed brand display names + shipped formats (technical labels — not translated). Both current free
@@ -235,7 +235,7 @@ export function PluginsPortalView({
                   {it.previous && (
                     <div className={styles.previous} data-testid="portal-previous-version">
                       <p className={styles.howto}>
-                        {t(`changes.${it.pluginKey}.summary`, { version: it.version, previous: it.previous.version })}{" "}
+                        {t(`changes.${it.pluginKey}.summary`, { version: it.version, previous: it.previous.version, since: it.previous.changedIn })}{" "}
                         {PLUGIN_DIST[it.pluginKey as PluginKey] && (
                           <Link href={`/${locale}${PLUGIN_DIST[it.pluginKey as PluginKey].lpPath}#${VERSION_NOTES_ID}`} data-testid="portal-version-notes-link">
                             {t(`changes.${it.pluginKey}.more`)}

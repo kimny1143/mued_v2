@@ -22,7 +22,18 @@ export const MUEDLIM_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Served from the mued.jp
 // static path (public/downloads/). NOT a secret.
-// Package: MUEDlim 1.0.1 (2026-10-09) — CEILING −18 to 0 dBTP (was −3 to 0), the 1:1 switch, the GR graph
+// Package: MUEDlim 1.0.2 (2026-10-14) — no change to the sound or the features since 1.0.1 (dsp: no source diff in
+//   them); the version, the bundled third-party notices and the EULA (2026.10.1) are new.
+//   sha256: 3f42b7244c4c62e60dbd5d9f35e5c24d36321b1cc57f2c33aa1b895bb200c0b0
+//   size:   3,308,734 B
+//   ★Verified 2026-10-14 08:57 JST on the copy under public/downloads/: shasum -a 256 + bytes matched dsp's message, cmp
+//   byte-identical to dsp's plugin/dist/, magic xar!, Developer ID Installer: glasswerks inc. (F529L4WT3V), notarized,
+//   stapler validate OK, spctl -t install = Notarized Developer ID; pkgutil --expand-full: VST3 / AU / AAX all 1.0.2,
+//   Resources/MUED-EULA-2026.10.1.rtf, and the two notice files equal content/licenses/ (sha256).
+//   ★1.0.1 stays at /downloads/MUEDlim-1.0.1-installer.pkg (sent mail points there) and 1.0.0 stays the portal's
+//   "previous version" — both pinned in tests/unit/plugin-download-artifact-integrity.test.ts.
+//
+// Previous — MUEDlim 1.0.1 (2026-10-09) — CEILING −18 to 0 dBTP (was −3 to 0), the 1:1 switch, the GR graph
 //   (mued-dsp main 27284478; facts in its docs/drafts/release_notes_input_muedlim_1.0.1_20261009.md).
 //   ★This build changes what an existing session plays: CEILING automation written in VST3 / AAX with 1.0.0
 //   plays back at 6× the written value. So 1.0.0 stays downloadable beside it (kimny 2026-10-09) — see
@@ -81,7 +92,7 @@ export const MUEDLIM_LIVE = true;
 //   edited. Publishing only under a new name would leave every one of them on the crashing build.
 //   So the old name survives as a compatibility alias (its filename now understates its contents),
 //   and this constant points at the honest new name. Both files are byte-identical.
-export const MUEDLIM_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDlim-1.0.1-installer.pkg";
+export const MUEDLIM_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDlim-1.0.2-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Bumped when a new build ships. NOT a secret.
@@ -95,7 +106,7 @@ export const MUEDLIM_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDlim-1.0.1-ins
 // ★URL and VERSION now carry the same semver, and tests/unit/plugin-version-matches-download.test.ts
 //   fails if they part again. (The on-screen label is still pinned separately by
 //   tests/unit/components/plugin-version-display.test.tsx — plain semver, never the filename.)
-export const MUEDLIM_VERSION = "1.0.1";
+export const MUEDLIM_VERSION = "1.0.2";
 
 // Press / reviewer bypass — DESIGN ROOM ONLY (dormant until a token is set; not a public feature).
 // When non-empty, `?press=<token>` reveals MUEDLIM_DOWNLOAD_URL directly, skipping the email gate.
