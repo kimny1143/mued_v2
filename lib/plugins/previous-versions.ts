@@ -29,6 +29,11 @@ export interface PreviousVersion {
    * (tests/unit/plugin-previous-version.test.tsx pins the pairing).
    */
   besideVersion: string;
+  /**
+   * The version the change came in — what the change note names ("What changed in {since}"). ★Not always the
+   * current version: MUEDlim 1.0.2 changed nothing a session plays, so its note still says 1.0.1.
+   */
+  changedIn: string;
 }
 
 export const PREVIOUS_VERSIONS: Partial<Record<PluginKey, PreviousVersion>> = {
@@ -38,7 +43,9 @@ export const PREVIOUS_VERSIONS: Partial<Record<PluginKey, PreviousVersion>> = {
     version: "1.0.0",
     macUrl: "https://mued.jp/downloads/eula-2026.10/MUEDlim-1.0.0-installer.pkg",
     windowsUrl: "https://mued.jp/downloads/MUEDlim-1.0.0-win-x64-7ca36065.zip",
-    besideVersion: "1.0.1",
+    // 1.0.2 (2026-10-14) changed neither the sound nor the features, so 1.0.0 stays the build to go back to.
+    besideVersion: "1.0.2",
+    changedIn: "1.0.1",
   },
 };
 

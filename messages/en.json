@@ -286,7 +286,7 @@
   "licenses": {
     "title": "Third-party licenses",
     "intro": "The third-party software and font licenses included in the MUEDsp plugins.",
-    "note": "These are the THIRD-PARTY-LICENSES.md and FONT-LICENSES.md files for each plugin, including the sections marked “Windows only” and “macOS only” for parts used only in that version. Some sections will be included in the installers from the next version.",
+    "note": "These are the THIRD-PARTY-LICENSES.md and FONT-LICENSES.md files for each plugin, including the sections marked “Windows only” and “macOS only” for parts used only in that version.",
     "thirdParty": "Third-party software",
     "fonts": "Fonts",
     "plugins": {
@@ -2714,10 +2714,10 @@
       "line": "If you have {previous} sessions: CEILING automation values change in {version}.",
       "detailsLink": "Read what changed and how to go back",
       "previousLink": "The {previous} installer stays in your portal",
-      "detailsHeading": "What changed in {version}",
+      "detailsHeading": "What changed in {since}",
       "lead": "The CEILING range is now −18 to 0 dBTP (was −3 to 0), so you can use MUEDlim to catch peaks on track and stem buses. The default (−1 dBTP) and the processing itself are unchanged.",
       "added": "New: the 1:1 switch. When it is on, INPUT no longer makes the signal louder; it brings CEILING down by the same amount instead (INPUT +12 dB → CEILING −12 dB). Anything below the ceiling passes at its own level, and only the peaks that reach it are limited. The CEILING knob is not used while 1:1 is on. At INPUT 0 dB the ceiling is 0.0 dBTP (not the default −1.0). Turning INPUT below 0 dB does nothing while 1:1 is on. In your DAW's automation list this switch appears as \"Unity\".",
-      "addedImageAlt": "The MUEDlim {version} plugin interface with audio running and 1:1 on. The large amber readout at the left is GAIN REDUCTION −2.7 dB. At the right, OUTPUT PEAK −9.0, SHORT-TERM −19.7 LUFS, INTEGRATED −18.1 LUFS and CEILING −9.00 dBTP. The graph in the center shows only the gain-reduction history (a vermilion line) hanging from its top edge, and the output meter on the right sits at its −9.00 ceiling. Along the bottom, the INPUT knob (+9.00 dB) and a dimmed CEILING knob (−9.00 dBTP), with the 1:1 switch (on, an amber dot) to their right.",
+      "addedImageAlt": "The MUEDlim {since} plugin interface with audio running and 1:1 on. The large amber readout at the left is GAIN REDUCTION −2.7 dB. At the right, OUTPUT PEAK −9.0, SHORT-TERM −19.7 LUFS, INTEGRATED −18.1 LUFS and CEILING −9.00 dBTP. The graph in the center shows only the gain-reduction history (a vermilion line) hanging from its top edge, and the output meter on the right sits at its −9.00 ceiling. Along the bottom, the INPUT knob (+9.00 dB) and a dimmed CEILING knob (−9.00 dBTP), with the 1:1 switch (on, an amber dot) to their right.",
       "display": "Gain reduction is now drawn on the graph. It hangs from the top edge of the loudness graph and shows, over time, where and how much the limiter is reducing. The GR number shows the deepest recent value. While 1:1 is on, the large readout becomes GAIN REDUCTION and loudness moves to the small lines at the top right. The output meter now has a peak-hold line.",
       "sessionsHeading": "If you have sessions made with {previous}",
       "saved": "Saved knob values and presets open with the same values, with 1:1 off.",
@@ -2927,7 +2927,7 @@
     "added": "Added {date}",
     "changes": {
       "muedlim": {
-        "summary": "{version} widens CEILING to −18 to 0 dBTP and adds the 1:1 switch (INPUT brings CEILING down by the same amount). If a session has CEILING automation written in VST3 or AAX, it now plays back lower (for example, −1.0 dB → −6.0 dB). Saved knob values and presets do not change. In AU it may play back lower in the same way, depending on your DAW.",
+        "summary": "{since} widens CEILING to −18 to 0 dBTP and adds the 1:1 switch (INPUT brings CEILING down by the same amount). If a session has CEILING automation written in VST3 or AAX, it now plays back lower (for example, −1.0 dB → −6.0 dB). Saved knob values and presets do not change. In AU it may play back lower in the same way, depending on your DAW.",
         "revert": "To go back to {previous}: on Mac, remove {version} with \"Uninstall MUEDlim\" (in /Applications/MUEDlim/) first, then install {previous}. On Windows, replace MUEDlim.vst3 with the {previous} file. A session saved with 1:1 on plays louder by the INPUT amount in {previous}.",
         "more": "Details"
       }

@@ -74,7 +74,18 @@ export const MASTERCHAIN_DOWNLOAD_URL =
   // ★1.0.1 key-entry rebuild 2026-10-01 (dsp §5 passed・dsp #854): the key screen is drop-first
   //   ("Drop license.key here", then "Load license file…" / "Paste license key") and the open-time scale fix;
   //   EULA 2026.10, notarised. Served from its own directory again; the ui-2026.10 build stays pinned on the shelf.
-  "https://mued.jp/downloads/keyentry-2026.10/MUEDsp-masterchain-1.0.1-installer.pkg";
+  // ★1.0.2 (2026-10-14). dsp's record (git diff of the shipped 1.0.1 commit against ef65378b): the Pro Tools plug-in
+  //   category (#892); the saturation stage shared with MUEDsat no longer lets one sample jump at the moment a knob
+  //   moves (#876 — bit-identical while no knob moves, by #876's measurement; ★how it sounds in masterchain was not
+  //   part of kimny's listening); the license check was split per product internally (#880 — masterchain's key
+  //   handling unchanged, by #880's tests); the bundled third-party notices and the EULA (2026.10.1).
+  //   sha256 e4d32c83930c5c744d82fc2378877f5c9ed1c50dd4ca74d5ae5014ff7c815b21 · 4,333,680 B (/downloads/).
+  //   ★Verified 2026-10-14 08:57 JST on the copy under public/downloads/: shasum -a 256 + bytes matched dsp's message, cmp
+  //   byte-identical to dsp's plugin/dist/, magic xar!, Developer ID Installer: glasswerks inc. (F529L4WT3V), notarized,
+  //   stapler validate OK, spctl -t install = Notarized Developer ID; pkgutil --expand-full: VST3 / AU / AAX all 1.0.2,
+  //   Resources/MUED-EULA-2026.10.1.rtf, and the two notice files equal content/licenses/ (sha256).
+  //   ★The three 1.0.1 builds stay where they are (mails and purchases point at them), pinned as shelf rows.
+  "https://mued.jp/downloads/MUEDsp-masterchain-1.0.2-installer.pkg";
 
 // Purchase rollout — same rule as the trial below: a reviewed code change, never an environment switch.
 // ★CLOSED 2026-09-30 (launch day), kimny 逐語「今日の販売はそもそも間に合わない。最短のルートで進めて
@@ -116,6 +127,10 @@ export const MASTERCHAIN_DEMO_LIVE = true;
 //   MUEDsp-masterchain-1.0.1-win-x64-a2678157.zip · sha256 af9dfe0424105a79171bedcdecabe8dc2bba6f25662f1240d369b32479535d29
 //   · 1,416,745 B — measured on the copy under public/downloads/ (shasum -a 256 / stat -f%z), cmp-identical to the copy
 //   kimny tested (_[MUED]fileshare/_win-check-20261001d).
+// ★1.0.2 — build 13684e83 (2026-10-14): same changes as the Mac 1.0.2, EULA.txt 2026.10.1. VST3 only, unsigned.
+//   ★Nobody has run this zip on a Windows machine (dsp 2026-10-14). The a2678157 zip stays on the shelf, pinned.
+//   MUEDsp-masterchain-1.0.2-win-x64-13684e83.zip · sha256 b95115e4234b10af1653763d05dc32ff2e6e152cbe546af5b5db2afbaf504103
+//   · 1,419,332 B — measured on the copy under public/downloads/, cmp-identical to dsp's build/win-zips/.
 export const MASTERCHAIN_WINDOWS_LIVE = true;
-export const MASTERCHAIN_WINDOWS_URL = "https://mued.jp/downloads/MUEDsp-masterchain-1.0.1-win-x64-a2678157.zip";
-export const MASTERCHAIN_WINDOWS_VERSION = "1.0.1";
+export const MASTERCHAIN_WINDOWS_URL = "https://mued.jp/downloads/MUEDsp-masterchain-1.0.2-win-x64-13684e83.zip";
+export const MASTERCHAIN_WINDOWS_VERSION = "1.0.2";

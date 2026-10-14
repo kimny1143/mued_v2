@@ -49,6 +49,7 @@ const FIXTURE: PreviousVersion = {
   macUrl: "https://mued.jp/downloads/eula-2026.10/MUEDlim-1.0.0-installer.pkg",
   windowsUrl: "https://mued.jp/downloads/MUEDlim-1.0.0-win-x64-7ca36065.zip",
   besideVersion: "9.9.9",
+  changedIn: "9.9.8",
 };
 const row = (over: Partial<PortalViewItem> = {}): PortalViewItem => ({
   pluginKey: "muedlim",
@@ -83,7 +84,7 @@ describe("portal row", () => {
       <PluginsPortalView items={[row({ previous: FIXTURE, windows: { url: "https://mued.jp/downloads/MUEDlim-9.9.9-win-x64-abc.zip", version: "9.9.9" } })]} />,
     );
     const note = getByTestId("portal-previous-version");
-    expect(note.textContent).toContain('changes.muedlim.summary:{"version":"9.9.9","previous":"1.0.0"}');
+    expect(note.textContent).toContain('changes.muedlim.summary:{"version":"9.9.9","previous":"1.0.0","since":"9.9.8"}'); // the change is named by the version it came in
     expect(note.textContent).toContain('changes.muedlim.revert:{"version":"9.9.9","previous":"1.0.0"}');
     expect(getByTestId("portal-version-notes-link").getAttribute("href")).toBe("/ja/muedlim#version-notes");
     expect(getByTestId("portal-previous-mac").getAttribute("href")).toBe(FIXTURE.macUrl);
@@ -139,7 +140,7 @@ describe("<PluginVersionNotice> on the product page", () => {
     expect(existsSync(join(ROOT, "public", img.getAttribute("src")!))).toBe(true);
     expect(img.getAttribute("alt")).toContain("versionNotice.addedImageAlt");
     for (const m of [ja, en]) {
-      expect(m.muedlim.versionNotice.addedImageAlt).toContain("MUEDlim {version}");
+      expect(m.muedlim.versionNotice.addedImageAlt).toContain("MUEDlim {since}");
       expect(m.muedlim.versionNotice.addedImageAlt).toContain("GAIN REDUCTION −2.7 dB");
       expect(m.muedlim.visuals.faceplateAlt).toContain("MUEDlim 1.0.1"); // the hero image is the 1.0.1 screen too
     }
@@ -184,6 +185,10 @@ describe("the entries actually configured", () => {
   it.each(entries)("%s: shown beside the current version, older than it, files on the shelf, pinned, and not the current files", (key, prev) => {
     const dist = PLUGIN_DIST[key];
     expect(prev.besideVersion).toBe(dist.version); // else the entry is configured but never shown
+    // The change came in after the kept build and no later than the current one (1.0.0 < 1.0.1 ≤ 1.0.2).
+    const n = (v: string) => v.split(".").map(Number).reduce((a, x) => a * 1000 + x, 0);
+    expect(n(prev.changedIn)).toBeGreaterThan(n(prev.version));
+    expect(n(prev.changedIn)).toBeLessThanOrEqual(n(dist.version));
     expect(prev.version).not.toBe(dist.version);
     for (const url of [prev.macUrl, prev.windowsUrl].filter((u): u is string => !!u)) {
       expect(url).toMatch(/^https:\/\/mued\.jp\/downloads\//);
@@ -204,6 +209,17 @@ describe("the entries actually configured", () => {
         expect(typeof v === "string" && v.trim().length > 0, `${path} missing`).toBe(true);
       }
     }
+  });
+
+  it("MUEDlim: what changed is named by the version it came in, not by the current version (ja / en)", () => {
+    // 2026-10-14: 1.0.2 changed neither the sound nor the features. With {version} these read "1.0.2 adds the 1:1 switch".
+    for (const m of [ja, en]) {
+      for (const text of [m.muedlim.versionNotice.detailsHeading, m.muedlim.versionNotice.addedImageAlt, m.pluginPortal.changes.muedlim.summary]) {
+        expect(text).toContain("{since}");
+        expect(text).not.toContain("{version}");
+      }
+    }
+    expect(PREVIOUS_VERSIONS.muedlim?.changedIn).toBe("1.0.1");
   });
 
   it("the one line before the form says who it is for and that a value changes (ja / en)", () => {

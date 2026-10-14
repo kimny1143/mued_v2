@@ -40,14 +40,3 @@ describe("/licenses — third-party licenses shipped in the plugins", () => {
     for (const p of LICENSE_PLUGINS) expect(ja.plugins[p]).toBeTruthy();
   });
 });
-
-describe("/licenses — the note while the shelf is behind the page (kimny 2026-10-13)", () => {
-  // ★Temporary by design: the page lists sections the installers on the shelf do not carry yet. Remove the
-  //   sentence — and this test — when the four products' 1.0.2 installers are on the shelf.
-  it("says, in both languages, that some sections ship from the next installer version", () => {
-    const load = (l: string) => JSON.parse(readFileSync(join(ROOT, "messages", `${l}.json`), "utf8")).licenses.note as string;
-    expect(load("ja")).toContain("一部の節は、次の版のインストーラーから同梱されます。");
-    expect(load("en")).toContain("Some sections will be included in the installers from the next version.");
-    expect(load("ja")).not.toContain("と同じ内容"); // the old claim that the page equals the shipped files
-  });
-});
