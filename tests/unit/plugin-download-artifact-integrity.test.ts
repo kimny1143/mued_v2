@@ -202,15 +202,15 @@ const ARTIFACTS = [
     sha256: "968317aea8d69ffca1d0aa2752a563779ae9aad118b59695b211a67df9109099",
     bytes: 1_137_620,
   },
-  // ★MUEDvox 1.0.1 (VOX 2026-10-15). Measured on the copies under public/downloads/ (shasum -a 256, stat -f%z,
-  //   2026-10-15); both match VOX's relayed values. The pkg is build/dist-1.0.1-eula2 (notarised, stapled, EULA
-  //   2026.10.2); the zip is unsigned (mued-vox 0875c7c1, EULA.txt 2026.10.2).
+  // ★MUEDvox 1.0.2 Mac (VOX 2026-10-17 「pkg ok」). Measured on the copy under public/downloads/ (shasum -a 256,
+  //   stat -f%z, 2026-10-17); matches VOX's relayed values. build/dist-1.0.2 (notarised, stapled, EULA 2026.10.2).
   {
-    name: "MUEDvox 1.0.1",
-    url: "https://mued.jp/downloads/MUEDvox-1.0.1-installer.pkg",
-    sha256: "8963c516e2dccc01c6a18a3572d4f503ebf3b15c278c82b46a9ca4deaaa4c115",
-    bytes: 6_552_528,
+    name: "MUEDvox 1.0.2",
+    url: "https://mued.jp/downloads/MUEDvox-1.0.2-installer.pkg",
+    sha256: "a0a1a12f21a354756d62c4be70e30a78db70d51af483ce868dd24a9afac578fa",
+    bytes: 6_554_790,
   },
+  // ★MUEDvox 1.0.1 Windows (VOX 2026-10-15, unsigned, mued-vox 0875c7c1, EULA.txt 2026.10.2; shasum -a 256, stat -f%z).
   {
     name: "MUEDvox 1.0.1 (Windows 0875c7c1)",
     url: "https://mued.jp/downloads/MUEDvox-1.0.1-win-x64-0875c7c1.zip",

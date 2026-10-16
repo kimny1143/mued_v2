@@ -47,7 +47,7 @@ describe("★every paid product's card: plate, then text, then actions", () => {
     const vox = render(<PluginsPortalView items={[]} purchases={[purchase("muedvox")]} />);
     const img = vox.container.querySelector('[data-testid="paid-plate-muedvox"]');
     expect(img?.tagName).toBe("IMG");
-    expect(img?.getAttribute("src")).toContain("MUEDvox-1.0.0-harmony.webp");
+    expect(img?.getAttribute("src")).toContain("MUEDvox-1.0.2-harmony.webp");
     expect(img?.getAttribute("alt")).toBe(""); // decorative: the product name is the heading beside it
     cleanup();
     const mc = render(<PluginsPortalView items={[]} purchases={[purchase("masterchain")]} />);
