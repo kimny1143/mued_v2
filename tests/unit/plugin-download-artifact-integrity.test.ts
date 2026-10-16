@@ -210,12 +210,13 @@ const ARTIFACTS = [
     sha256: "a0a1a12f21a354756d62c4be70e30a78db70d51af483ce868dd24a9afac578fa",
     bytes: 6_554_790,
   },
-  // ★MUEDvox 1.0.1 Windows (VOX 2026-10-15, unsigned, mued-vox 0875c7c1, EULA.txt 2026.10.2; shasum -a 256, stat -f%z).
+  // ★MUEDvox 1.0.2 Windows (VOX 2026-10-17 「1.0.2 ready」: run 38982961640 on mued-vox 1256e08d, unsigned, EULA.txt
+  //   with the 2026.10.2 Section 6). Measured on the copy under public/downloads/ (shasum -a 256, stat -f%z, 2026-10-17).
   {
-    name: "MUEDvox 1.0.1 (Windows 0875c7c1)",
-    url: "https://mued.jp/downloads/MUEDvox-1.0.1-win-x64-0875c7c1.zip",
-    sha256: "4e32c98b627fed173095c24701923f70613ba0d492bfa572a63cf020d95d811d",
-    bytes: 1_137_843,
+    name: "MUEDvox 1.0.2 (Windows 1256e08d)",
+    url: "https://mued.jp/downloads/MUEDvox-1.0.2-win-x64-1256e08d.zip",
+    sha256: "11106b103b8300a313fb7d2cc062a68b09f74d35510c91ec98da1a8fc85df8e0",
+    bytes: 1_138_491,
   },
   // ★Shelf: the first Windows beta zips (dsp build/win-beta-20260930b, 80178027). Never linked (the flag was off
   //   while they were the table's), but public under these URLs since 2026-09-30 — so their bytes stay fixed.

@@ -67,7 +67,7 @@ describe("★ownership: the caller's verified emails only", () => {
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({
       productKey: "muedvox", displayName: "MUEDvox", keyFileName: "MUEDvox.license.key", licenseKey: "KEY-A\n",
-      downloadUrl: MUEDVOX_DOWNLOAD_URL, version: "1.0.2", windows: { url: MUEDVOX_WINDOWS_URL, version: "1.0.1" },
+      downloadUrl: MUEDVOX_DOWNLOAD_URL, version: "1.0.2", windows: { url: MUEDVOX_WINDOWS_URL, version: "1.0.2" },
     });
     expect(items[0]).not.toHaveProperty("purchasedAt");
   });

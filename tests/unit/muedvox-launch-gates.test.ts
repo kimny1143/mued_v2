@@ -33,7 +33,7 @@ describe("★the flags can only be on in a combination that works", () => {
     expect(real()).toEqual({
       live: true, purchaseLive: true, demoLive: true, productEnabled: true,
       downloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-installer.pkg",
-      windowsUrl: "https://mued.jp/downloads/MUEDvox-1.0.1-win-x64-0875c7c1.zip", windowsVersion: "1.0.1",
+      windowsUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-win-x64-1256e08d.zip", windowsVersion: "1.0.2",
       screenshot: "/muedvox/MUEDvox-1.0.2-harmony.webp",
     });
   });
@@ -160,7 +160,7 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
       ok: true, downloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-installer.pkg",
-      windowsDownloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.1-win-x64-0875c7c1.zip",
+      windowsDownloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-win-x64-1256e08d.zip",
     });
     expect(m.send).toHaveBeenCalledTimes(1);
   });
