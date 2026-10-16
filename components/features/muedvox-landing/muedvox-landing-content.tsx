@@ -152,7 +152,9 @@ export function MuedvoxLandingContent() {
                 say something the flow does not do. */}
             {MUEDVOX_PURCHASE_LIVE && (
               <div className="mt-5">
-                <p className="mb-3 text-lg font-semibold text-white">{t("buy.price")}</p>
+                <p className="mb-1 text-lg font-semibold text-white">{t("buy.price")}</p>
+                {/* ★$69 fixed, no sales (kimny 10/15 via Chief, keeping the 10/9 decision). */}
+                <p data-testid="muedvox-no-sale" className="mb-3 text-[15px] text-white/70">{t("buy.noSale")}</p>
                 <PaidBuyButton product={MUEDVOX_BUY} buyLabel={t("buy.button")} />
                 <p className="mt-5 text-[15px] leading-relaxed text-white/70">{t("buy.afterPurchase")}</p>
               </div>

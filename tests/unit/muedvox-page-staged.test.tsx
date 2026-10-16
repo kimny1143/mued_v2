@@ -119,14 +119,14 @@ describe("MUEDvox product page (launched 2026-10-13; the staged state is kept as
     expect(container.textContent).not.toMatch(/3–40|3〜40/);
   });
 
-  it("FAQ subjects: the key / refund answers need purchase, the demo answer needs the demo (open = control)", () => {
+  it("FAQ subjects: the key / price / refund answers need purchase, the demo answer needs the demo (open = control)", () => {
     for (const messages of [en, ja]) {
       const items = messages.muedvox.faq.items as MuedvoxFaqItem[];
       const byId = (open: { purchase: boolean; demo: boolean }) => visibleFaq(items, open).map((i) => i.id);
       expect(byId({ purchase: false, demo: false })).toEqual(["latency", "windows", "protools", "input", "voice", "presets"]);
-      expect(byId({ purchase: true, demo: false })).toEqual(["latency", "windows", "protools", "input", "voice", "presets", "license", "refund"]);
+      expect(byId({ purchase: true, demo: false })).toEqual(["latency", "windows", "protools", "input", "voice", "presets", "license", "price", "refund"]);
       expect(byId({ purchase: false, demo: true })).toEqual(["latency", "windows", "protools", "input", "voice", "presets", "demo"]);
-      expect(byId({ purchase: true, demo: true })).toHaveLength(9);
+      expect(byId({ purchase: true, demo: true })).toHaveLength(10);
     }
   });
 

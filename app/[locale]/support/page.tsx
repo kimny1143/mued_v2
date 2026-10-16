@@ -1,4 +1,4 @@
-import { MASTERCHAIN_DEMO_LIVE } from "@/lib/masterchain/config";
+import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_PURCHASE_LIVE } from "@/lib/masterchain/config";
 import { BrandHeader } from "@/components/brand/brand-header";
 import { useTranslations } from "next-intl";
 import { setRequestLocale, getTranslations } from "next-intl/server";
@@ -39,7 +39,7 @@ export default async function SupportPage({ params }: PageProps) {
 
   // Get translations for structured data (server-side)
   const t = await getTranslations("support");
-  const faqKeys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", ...(MASTERCHAIN_DEMO_LIVE ? ["q10" as const] : []), "q11"] as const;
+  const faqKeys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", ...(MASTERCHAIN_DEMO_LIVE ? ["q10" as const] : []), "q11", ...(MASTERCHAIN_PURCHASE_LIVE ? ["q12" as const] : [])] as const;
 
   // Build FAQPage structured data for SEO
   const faqStructuredData = {
@@ -66,7 +66,7 @@ interface SupportContentProps {
 function SupportContent({ faqStructuredData, locale }: SupportContentProps) {
   const t = useTranslations("support");
 
-  const faqKeys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", ...(MASTERCHAIN_DEMO_LIVE ? ["q10" as const] : []), "q11"] as const;
+  const faqKeys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", ...(MASTERCHAIN_DEMO_LIVE ? ["q10" as const] : []), "q11", ...(MASTERCHAIN_PURCHASE_LIVE ? ["q12" as const] : [])] as const;
 
   return (
     <div className="dark min-h-screen bg-bg-primary">

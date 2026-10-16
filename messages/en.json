@@ -1181,6 +1181,10 @@
         "q11": {
           "question": "At the end of the installation, macOS said the installer “can’t be moved to the Trash”",
           "answer": "The installation is complete. The message means the macOS Installer could not move the used installer (.pkg) to the Trash. Please move the .pkg to the Trash yourself in Finder."
+        },
+        "q12": {
+          "question": "Do you have sales?",
+          "answer": "No. masterchain and MUEDvox are $69 from the start, so there is no sale to wait for. It is the same $69 whenever you buy (amounts shown in other currencies move with exchange rates)."
         }
     },
     "company": {
@@ -2530,6 +2534,7 @@
       "body": "I've bundled the chain I always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details.",
       "priceNote": "One-time $69. Available at launch.",
       "priceLive": "One-time $69 (USD)",
+      "noSale": "No sales. It is $69 whenever you buy.",
       "buyLabel": "Coming soon",
       "buyLabelLive": "Buy masterchain",
       "eulaConsentPrefix": "I have read and agree to the",
