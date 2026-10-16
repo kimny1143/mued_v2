@@ -1,4 +1,4 @@
-# MUEDvox User Manual (1.0.1)
+# MUEDvox User Manual (1.0.2)
 
 MUEDvox makes vocal harmonies, each sung in its own way, from a single lead vocal. For every part you choose the interval it sings and the kind of voice it sings with.
 
@@ -6,12 +6,12 @@ MUEDvox makes vocal harmonies, each sung in its own way, from a single lead voca
 
 ### Mac (AU, VST3, AAX)
 1. Quit your DAW.
-2. Open `MUEDvox-1.0.1-installer.pkg` and follow the steps (an administrator password is required).
+2. Open `MUEDvox-1.0.2-installer.pkg` and follow the steps (an administrator password is required).
 3. Open your DAW and rescan plug-ins.
 
 To uninstall, open `/Applications/MUEDvox/Uninstall MUEDvox.command`. Your license key is kept.
 
-To update from 1.0.0, install the new version over it (Mac: open the new pkg; Windows: replace the `MUEDvox.vst3` folder). Your license key, your presets and your sessions stay as they are.
+To update from 1.0.0 or 1.0.1, install the new version over it (Mac: open the new pkg; Windows: replace the `MUEDvox.vst3` folder). Your license key, your presets and your sessions stay as they are.
 
 ### Windows (VST3, 64-bit)
 1. Quit your DAW.
@@ -103,9 +103,9 @@ Choose them under **PRESET** in the top bar (◀ ▶ step through them). One pre
 
 ## 8. SETTINGS
 
-**SETTINGS** at the bottom left holds two settings for the Live mode. They are saved with the session; presets do not change them.
-- **Live note start** — how soon a harmony note begins (Soft, Fast, Fast+). Sooner starts come with more misread pitches.
-- **Live chord change** — when the chord changes under a held sung note: follow it at once (Follow), or hold until the next sung note (Hold).
+The **gear** at the top right, just left of ACTIVE, opens **SETTINGS**: two settings for the Live mode. Click outside the box, or the gear again, to close it. They are saved with the session; presets do not change them.
+- **Note start** — how soon a harmony note begins (Soft, Fast, Fast+). Sooner starts come with more misread pitches.
+- **Chord change under a held note** — when the chord changes under a held sung note: follow it at once (Follow), or hold until the next sung note (Hold).
 
 ## 9. Troubleshooting
 
@@ -117,7 +117,7 @@ Choose them under **PRESET** in the top bar (◀ ▶ step through them). One pre
 | The track's delay is red in Pro Tools | Render's latency is beyond delay compensation. Once committed, the audio lines up. |
 | The harmonies do not follow the chords | Is Follow MIDI chords on? Does MIDI reach MUEDvox (the keyboard shows it)? In Pro Tools, is it on channel 1? |
 | The top end sounds rough | Turn CLEAN on, or lower DOUBLE. Move REGISTER away from the WHISPER end. |
-| Pitches jump in Live | Set Live note start to Soft under SETTINGS. Live suits a single voice with no backing in it. |
+| Pitches jump in Live | Set Note start to Soft under SETTINGS (the gear). Live suits a single voice with no backing in it. |
 | MUEDvox is not in Pro Tools' AudioSuite menu | AudioSuite is not supported. Use it as an insert, and commit the track in Render. |
 
 ---

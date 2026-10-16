@@ -46,12 +46,12 @@ vi.mock("next/navigation", () => ({
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ host: "mued.jp" }) }));
 afterEach(cleanup);
 
-// ★Copied from mued-vox e1c88af5 (#219 the 1.0.1 text, #220 the trademark line at the end) with
-//   git show e1c88af:docs/manual/MUEDvox-manual.<locale>.md (shasum -a 256, 2026-10-16). Update only together with a
-//   fresh byte copy.
+// ★Copied from mued-vox eaf37abe (#222: the 1.0.2 text — SETTINGS is the gear at the top right) with
+//   git show eaf37abe317026f32ff451f4e0c0dba9b0ab9402:docs/manual/MUEDvox-manual.<locale>.md (shasum -a 256,
+//   2026-10-17). Before: e1c88af5 (1.0.1, never shipped). Update only together with a fresh byte copy.
 const MANUAL_SHA256 = {
-  en: "47bd014f15f25cee0f07f4777c54c2c1e2b720034e3fd8f8b7f618204f455a7e",
-  ja: "f28e13f7add98a5ad5cca4ea6412f4d63bdc5d550f103575df6dfd8201d6bc81",
+  en: "cada02690ec7de167a73fdf93f92917a88f179be231493cc1007c7ac138f825d",
+  ja: "8ca90ac2720d30a3817e850caac93f5b741dccfaddcc52721e89b94b96f2af20",
 };
 
 describe("★the text is VOX's, byte for byte", () => {

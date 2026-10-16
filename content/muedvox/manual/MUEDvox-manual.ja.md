@@ -1,4 +1,4 @@
-# MUEDvox ユーザーマニュアル（1.0.1）
+# MUEDvox ユーザーマニュアル（1.0.2）
 
 MUEDvox は、メインボーカル 1 本から、歌い方の違うハーモニーを作るプラグインです。声部ごとに「どの音程で」「どんな声で」歌うかを決められます。
 
@@ -6,12 +6,12 @@ MUEDvox は、メインボーカル 1 本から、歌い方の違うハーモニ
 
 ### Mac（AU・VST3・AAX）
 1. DAW を終了します。
-2. `MUEDvox-1.0.1-installer.pkg` を開き、画面に従います（管理者のパスワードが要ります）。
+2. `MUEDvox-1.0.2-installer.pkg` を開き、画面に従います（管理者のパスワードが要ります）。
 3. DAW を開き、プラグインを再スキャンします。
 
 アンインストールは `/Applications/MUEDvox/Uninstall MUEDvox.command` を開きます。ライセンスキーは消えません。
 
-1.0.0 から更新する時は、上から入れ直します（Mac は新しい pkg を開く・Windows は `MUEDvox.vst3` フォルダーを置き換える）。ライセンスキー・プリセット・セッションはそのまま使えます。
+1.0.0・1.0.1 から更新する時は、上から入れ直します（Mac は新しい pkg を開く・Windows は `MUEDvox.vst3` フォルダーを置き換える）。ライセンスキー・プリセット・セッションはそのまま使えます。
 
 ### Windows（VST3・64 bit）
 1. DAW を終了します。
@@ -103,9 +103,9 @@ Program EQ、Comp、Sat、Delay、Reverb、Chorus、Flanger、Phaser、Imager �
 
 ## 8. SETTINGS
 
-画面の左下の **SETTINGS** に、Live モードの動きの設定が 2 つあります。セッションに保存され、プリセットでは変わりません。
-- **Live note start** — ハーモニーの音がどれだけ早く出るか（Soft・Fast・Fast+）。早いほど出だしは速く、音程の読み違いは増えます。
-- **Live chord change** — 伸ばしている歌の途中で和音が替わった時、すぐ従う（Follow）か、次の歌の音まで待つ（Hold）か。
+画面の右上、ACTIVE のすぐ左の**歯車**を押すと **SETTINGS** が開き、Live モードの動きの設定が 2 つあります。箱の外か、もう一度歯車を押すと閉じます。セッションに保存され、プリセットでは変わりません。
+- **Note start** — ハーモニーの音がどれだけ早く出るか（Soft・Fast・Fast+）。早いほど出だしは速く、音程の読み違いは増えます。
+- **Chord change under a held note** — 伸ばしている歌の途中で和音が替わった時、すぐ従う（Follow）か、次の歌の音まで待つ（Hold）か。
 
 ## 9. うまくいかない時
 
@@ -117,7 +117,7 @@ Program EQ、Comp、Sat、Delay、Reverb、Chorus、Flanger、Phaser、Imager �
 | Pro Tools でトラックの Delay が赤い | Render の遅れが遅延補正の上限を超えています。コミットすれば位置は合います。 |
 | 和音に従わない | Follow MIDI chords がオンか・MIDI が MUEDvox に届いているか（鍵盤の表示に出ます）・Pro Tools ではチャンネル 1 か。 |
 | 高域がざらつく | CLEAN をオンに、または DOUBLE を下げます。REGISTER を WHISPER の端から離します。 |
-| Live で音程が跳ぶ | SETTINGS の Live note start を Soft に。Live は 1 人の声・伴奏の混ざらない素材向きです。 |
+| Live で音程が跳ぶ | SETTINGS（歯車）の Note start を Soft に。Live は 1 人の声・伴奏の混ざらない素材向きです。 |
 | Pro Tools の AudioSuite に出ない | AudioSuite には対応していません。インサートで使い、Render はコミットしてください。 |
 
 ---
