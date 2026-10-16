@@ -135,6 +135,22 @@ describe("★the row on the page", () => {
     expect(within(card).getByRole("button", { name: locale === "ja" ? "キーをコピー" : "Copy key" })).toBeInTheDocument();
   });
 
+  // ★masterchain grants (#1292, CCO's note): the same card with masterchain's own name, key file and drop target.
+  //   The plate is not pinned here: masterchain has no art of its own yet (it falls back — status ④, kimny decides).
+  it.each(["ja", "en"] as const)("%s: a masterchain grant — its name, its key file, the 「Drop license.key here」 line, not MUEDvox's screen", (locale) => {
+    m.locale = locale;
+    render(<PluginsPortalView items={[]} grants={[grant({
+      productKey: "masterchain", displayName: "masterchain", keyFileName: "MUEDsp-masterchain.license.key", version: "1.0.2",
+      downloadUrl: "https://mued.jp/downloads/MUEDsp-masterchain-1.0.2-installer.pkg", windows: null,
+    })]} />);
+    const card = screen.getByTestId("portal-grant");
+    expect(within(card).getByRole("heading", { level: 3 }).textContent).toBe("masterchain");
+    expect(card.textContent).toContain("Drop license.key here");
+    expect(card.querySelector('[data-testid="paid-plate-muedvox"]')).toBeNull();
+    expect(within(card).getAllByRole("link").map((a) => a.getAttribute("href"))).toContain("https://mued.jp/downloads/MUEDsp-masterchain-1.0.2-installer.pkg");
+    expect(card.textContent).not.toContain("MUEDvox");
+  });
+
   it("no grants → no section (control: with one, the section label is there)", () => {
     const { container, rerender } = render(<PluginsPortalView items={[]} />);
     expect(container.querySelector('[data-testid="portal-grant"]')).toBeNull();
