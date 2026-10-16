@@ -84,6 +84,7 @@
     "heading": "Buy and demo",
     "button": "Buy MUEDvox — $69",
     "price": "One-time purchase, USD 69. Not a subscription.",
+    "noSale": "No sales: the price is the same whenever you buy.",
     "consent": "I have read and agree to the EULA",
     "afterPurchase": "After purchase, the download link and the steps to get your license key are emailed to you. The key itself is in your buyer’s portal on mued.jp (sign in with a code sent to your email; keys are not sent by email). Drag the license.key file onto the plugin, or use \"Load license file…\" or \"Paste license key\". No online activation. No background app."
   },
@@ -136,6 +137,12 @@
         "requires": "demo",
         "question": "What does the demo do?",
         "answer": "The demo never expires: every 45 seconds the harmony drops out for about 3 seconds (your lead keeps playing). Saving presets needs a license; sessions made in the demo open unchanged once you add one. Only saving from MUEDvox’s own preset menu needs a license; presets you save with your DAW work in the demo too."
+      },
+      {
+        "id": "price",
+        "requires": "purchase",
+        "question": "Do you have sales?",
+        "answer": "No. It is $69 from the start, so there is no sale to wait for. It is the same $69 whenever you buy (amounts shown in other currencies move with exchange rates)."
       },
       {
         "id": "refund",
