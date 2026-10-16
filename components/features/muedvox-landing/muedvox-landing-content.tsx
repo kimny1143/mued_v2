@@ -13,6 +13,7 @@ import {
 import { PaidBuyButton, type BuyProduct } from "@/components/features/muedsp-landing/masterchain-buy-button";
 import { ComparePlayer, type ComparePlayerLabels } from "./compare-player";
 import { PaidDemoForm, type DemoFormProduct } from "@/components/features/muedsp-landing/masterchain-try";
+import { muedvoxManualPath } from "@/lib/muedvox/manual-path";
 
 // ★The same Buy button and demo form as masterchain (#1263, #1266), given MUEDvox's own flag, words and image.
 //   Both are client components: their words (muedvox.cart / muedvox.demoForm) reach the browser only while the
@@ -73,8 +74,10 @@ export function MuedvoxLandingContent() {
               <a href="#before-after" className="mr-6 mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("hero.hear")}</a>
             )}
             {MUEDVOX_DEMO_LIVE && (
-              <a href="#demo" className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("hero.demo")}</a>
+              <a href="#demo" className="mr-6 mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("hero.demo")}</a>
             )}
+            {/* The manual (conductor 2026-10-16: a tester asked for one). */}
+            <Link href={muedvoxManualPath(locale)} data-testid="muedvox-manual-link" className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("manual.link")}</Link>
           </div>
         </section>
         {MUEDVOX_AUDIO_EXAMPLES.length > 0 && (
@@ -181,6 +184,9 @@ export function MuedvoxLandingContent() {
               </div>
             ))}
           </dl>
+          <p className="mt-5 text-[15px] leading-relaxed text-white/70">
+            <Link href={muedvoxManualPath(locale)} data-testid="muedvox-faq-manual-link" className="text-[#f5a524] underline underline-offset-2 transition-colors hover:text-[#ffc35a]">{t("manual.faqLink")}</Link>
+          </p>
         </Section>
         <Section id="legal" title={t("legal.heading")}>
           <Link href={`/${locale}/eula`} className="mt-5 inline-flex text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("legal.eula")}</Link>
