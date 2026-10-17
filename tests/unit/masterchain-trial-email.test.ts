@@ -36,9 +36,10 @@ describe("masterchain trial email — portal-only keys", () => {
         expect(surface).not.toContain("Paste license from clipboard");
         expect(surface).toContain(locale === "ja" ? "このメールアドレスでサインイン" : "sign in with this email address");
         expect(surface).toContain("2026-10-13 16:30 UTC");
-        expect(surface).toContain("DEMO EXPIRED");
-        expect(surface).toContain(locale === "ja" ? "音声は加工されずに通過" : "audio through unprocessed");
-        expect(surface).not.toMatch(/bypass|バイパス/i); // ★the plugin says "DEMO EXPIRED", not "bypassed" (dsp 2026-09-30)
+        // ★1.0.3 (dsp 3a977b86): after the trial it runs as the demo — no "DEMO EXPIRED" screen, no "bypass".
+        expect(surface).toContain(locale === "ja" ? "ライセンスキーを入れるまでデモとして動きます。45 秒ごとに約 3 秒" : "runs as the demo until you enter a license key: every 45 seconds");
+        expect(surface).not.toContain("DEMO EXPIRED");
+        expect(surface).not.toMatch(/bypass|バイパス/i);
         expect(surface).not.toMatch(/mute|silent|無音|unsubscribe|utm_|ご購入|Thank you for buying/i);
         if (url) expect(surface).toContain(URL);
         else {

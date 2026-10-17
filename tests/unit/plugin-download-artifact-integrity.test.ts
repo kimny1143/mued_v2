@@ -63,8 +63,10 @@ const MASTERCHAIN_PIN: { sha256: string; bytes: number } | null = {
   //   the first 1.0.1 (e4846886…/4_276_006) are pinned below as shelf entries.
   // ★1.0.2 (2026-10-14, /downloads/): measured 08:57 JST on the copy under public/downloads/; matched dsp's message
   //   and cmp to dsp's plugin/dist/. The key-entry 1.0.1 (2a800e04…/4_321_171) is pinned below as a shelf entry.
-  sha256: "e4d32c83930c5c744d82fc2378877f5c9ed1c50dd4ca74d5ae5014ff7c815b21",
-  bytes: 4_333_680,
+  // ★1.0.3 (2026-10-17, /downloads/): measured on the copy under public/downloads/ (shasum -a 256 / stat -f%z); matched
+  //   dsp's message and cmp to dsp's plugin/dist/. 1.0.2 (e4d32c83…/4_333_680) is pinned below as a shelf entry.
+  sha256: "917ea0d63b02c1af452fbf24791335455e58b38c6132b60ee138c329a246ad7b",
+  bytes: 4_332_757,
 };
 
 const ARTIFACTS = [
@@ -128,10 +130,24 @@ const ARTIFACTS = [
     sha256: "f24a41bcc59f02a9a58b94f4d22f6fc4f38b4c89ab9789d7dd479daab84386d1",
     bytes: 1_254_574,
   },
-  // ★masterchain for Windows (VST3) — 13684e83 (dsp 2026-10-14), 1.0.2. Same measurement as the three above.
+  // ★masterchain for Windows (VST3) — 7d3d881b (dsp 2026-10-17), 1.0.3. Same measurement as the three above.
   {
     name: "masterchain (Windows)",
     url: MASTERCHAIN_WINDOWS_URL,
+    sha256: "2cb9e1ae84da3c4dfb2d673a1ade59236233078934600a9b172df3793307c299",
+    bytes: 1_419_529,
+  },
+  // ★Shelf: masterchain 1.0.2 (2026-10-14 → 2026-10-17 the download). Mail, purchases and portal visits in those days
+  //   point here — the bytes stay fixed. Values are the pins those rows carried.
+  {
+    name: "masterchain 1.0.2 (shelf)",
+    url: "https://mued.jp/downloads/MUEDsp-masterchain-1.0.2-installer.pkg",
+    sha256: "e4d32c83930c5c744d82fc2378877f5c9ed1c50dd4ca74d5ae5014ff7c815b21",
+    bytes: 4_333_680,
+  },
+  {
+    name: "masterchain 1.0.2 (Windows 13684e83, shelf)",
+    url: "https://mued.jp/downloads/MUEDsp-masterchain-1.0.2-win-x64-13684e83.zip",
     sha256: "b95115e4234b10af1653763d05dc32ff2e6e152cbe546af5b5db2afbaf504103",
     bytes: 1_419_332,
   },

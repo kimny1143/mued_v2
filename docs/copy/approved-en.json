@@ -40,7 +40,7 @@
     "muedsp.buyTry.cartTitle": "Cart",
     "muedsp.buyTry.cartTotal": "Total",
     "muedsp.buyTry.checkoutLoading": "Preparing checkout…",
-    "muedsp.buyTry.demoNote": "The demo has no time limit. Each insert processes the first 45 seconds of audio, then passes audio through unprocessed. Settings and presets aren't saved.",
+    "muedsp.buyTry.demoNote": "The demo has no time limit: every 45 seconds, processing drops out for about 3 seconds and your original audio plays through. Settings save with your session. A license removes the gaps.",
     "muedsp.buyTry.downloadMac": "Download demo for Mac",
     "muedsp.buyTry.downloadWindows": "Download demo for Windows",
     "muedsp.buyTry.emailLabel": "Email (to try it)",

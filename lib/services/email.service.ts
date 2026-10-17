@@ -946,7 +946,7 @@ Hoo MCP経由の自動送信
     const links = [{ label: ja ? 'Mac 版デモをダウンロード（AU / VST3 / AAX）' : 'Download the Mac demo (AU / VST3 / AAX)', url: MASTERCHAIN_DOWNLOAD_URL }];
     const windows = masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION);
     if (windows) links.push({ label: ja ? 'Windows 版デモをダウンロード（VST3）' : 'Download the Windows demo (VST3)', url: windows.url });
-    const limits = ja ? 'デモは期限なし。挿すたびに最初の45秒分の音声を処理し、その後は原音を通します。設定・プリセットは保存できません。' : "The demo has no time limit. Each insert processes the first 45 seconds of audio, then passes audio through unprocessed. Settings and presets aren't saved.";
+    const limits = ja ? 'デモは期限なし。45 秒ごとに約 3 秒、処理が外れて元の音が通ります。設定はセッションに保存されます。ライセンスキーを入れると、この抜けはなくなります。' : "The demo has no time limit: every 45 seconds, processing drops out for about 3 seconds and your original audio plays through. Settings save with your session. A license removes the gaps.";
     const closing = ja ? '引き続き、よろしくお願いいたします。' : 'Happy mixing,';
     const unsubscribe = ja ? '配信停止' : 'Unsubscribe';
     return {
@@ -960,7 +960,7 @@ Hoo MCP経由の自動送信
     const isJa = data.locale === 'ja';
     const subject = isJa ? 'MUEDsp masterchain デモのダウンロード' : 'Your MUEDsp masterchain demo download';
     const intro = isJa ? "MUEDsp masterchain のデモをお試しいただき、ありがとうございます。" : "Thanks for trying the MUEDsp masterchain demo.";
-    const limits = isJa ? "キーを入れなくても、デモとして期限なく使えます。デモでは、挿してから、音を 45 秒ぶん処理するまではすべて効き、その後はプラグインを挿し直すまで原音のまま通ります。設定は保存されず、プリセットも保存できません。ライセンスキーを入れると、これらの制限はなくなります。" : "Without a key, masterchain runs as a demo with no time limit. In the demo it processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved and presets can't be saved. Entering a license key removes these limits.";
+    const limits = isJa ? "masterchain はキーを入れなくてもデモとして動き、期限はありません。デモでは、音の 45 秒ごとに約 3 秒、処理が外れて元の音のまま通ります。設定はセッションにふつうに保存され、デモで作ったセッションはライセンスキーを入れた後もそのまま開けます。ライセンスキーを入れると、この抜けはなくなります。" : "Without a key, masterchain runs as a demo with no time limit. In the demo, every 45 seconds of audio, processing drops out for about 3 seconds and your original audio plays through. Settings save with your session as usual, and sessions made in the demo open unchanged once you enter a license key. Entering a license key removes the gaps.";
     const label = isJa ? 'デモをダウンロード' : 'Download the demo';
     const formats = 'VST3 · AU · AAX (Pro Tools) · macOS';
     // ★How to buy and where the key goes (conductor 2026-09-30, d). Short link, so the utm lives in one table
@@ -1222,8 +1222,8 @@ Hoo MCP経由の自動送信
     const { portal, howTo } = masterchainPortalInstructions(isJa);
     const ends = isJa ? `試用期限: ${expiry}` : `Trial expiry: ${expiry}`;
     const after = isJa
-      ? '試用期間が終了すると、新しいライセンスキーを入力するまで「DEMO EXPIRED」画面が表示され、音声は加工されずに通過します。'
-      : 'When the trial ends, the plugin keeps passing audio through unprocessed and shows "DEMO EXPIRED" until you enter a license key.';
+      ? 'トライアルが終わると、ライセンスキーを入れるまでデモとして動きます。45 秒ごとに約 3 秒、処理が外れて元の音が通ります。'
+      : 'When the trial ends, the plugin runs as the demo until you enter a license key: every 45 seconds, processing drops out for about 3 seconds.';
     const esc = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const downloadHtml = MASTERCHAIN_DOWNLOAD_URL
       ? `<a href="${MASTERCHAIN_DOWNLOAD_URL}">${isJa ? 'masterchain をダウンロード' : 'Download masterchain'}</a>`
