@@ -10,6 +10,7 @@ import styles from "./plugins-portal.module.css";
 import type { PaidProductKey } from "@/lib/plugins/paid-products";
 import { MASTERCHAIN_TRIAL_LIVE } from "@/lib/masterchain/config";
 import { MUEDVOX_SCREENSHOT } from "@/lib/muedvox/config";
+import { muedvoxManualPath } from "@/lib/muedvox/manual-path";
 import { LicenseKeyActions } from "@/components/features/license/license-key-actions";
 import { formatUtcMinute } from "@/lib/masterchain/format";
 
@@ -415,6 +416,7 @@ function PurchaseCard({
                 <p className={styles.howto}>{t("windows.howto")}</p>
               </>
             )}
+            <ManualLink productKey={item.productKey} displayName={item.displayName} />
           </>
         )}
       </div>
@@ -441,6 +443,18 @@ function PurchaseCard({
   );
 }
 
+/** The product's manual, for the products that have one (MUEDvox: conductor 2026-10-16). */
+function ManualLink({ productKey, displayName }: { productKey: string; displayName: string }) {
+  const t = useTranslations("pluginPortal");
+  const locale = useLocale();
+  if (productKey !== "muedvox") return null;
+  return (
+    <p className={styles.howto}>
+      <Link href={muedvoxManualPath(locale)} data-testid="portal-manual-link">{t("manualLink", { product: displayName })}</Link>
+    </p>
+  );
+}
+
 /** A tester's time-limited key. Same downloads and key actions as a purchase; its own words — no "purchased". */
 function GrantCard({ item }: { item: GrantViewItem }) {
   const t = useTranslations("pluginPortal");
@@ -458,6 +472,7 @@ function GrantCard({ item }: { item: GrantViewItem }) {
         <LicenseKeyActions licenseKey={item.licenseKey} fileName={item.keyFileName} label={t("purchased.licenseLabel")} copyLabel={t("purchased.copy")} copiedLabel={t("purchased.copied")} failedLabel={t("purchased.copyFailed")} downloadLabel={t("purchased.download")} />
         <p className={styles.howto}>{t("purchased.howto", { product: item.displayName, masterchain: item.productKey === "masterchain" ? "yes" : "no" })}</p>
         {item.windows && <p className={styles.howto}>{t("windows.howto")}</p>}
+        <ManualLink productKey={item.productKey} displayName={item.displayName} />
       </div>
       <div className={styles.action}>
         {item.version && (

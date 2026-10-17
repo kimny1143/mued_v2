@@ -91,6 +91,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ? [
           { url: `${MUED}/ja/muedvox`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
           { url: `${MUED}/en/muedvox`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
+          { url: `${MUED}/ja/muedvox/manual`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.5 },
+          { url: `${MUED}/en/muedvox/manual`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.5 },
         ]
       : []),
     ...(MUEDSP_LIVE

@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
     "/learn/[slug]": ["./content/learn/**/*.md"],
     // lib/licenses/third-party.ts reads these at request time (same reason as /learn).
     "/[locale]/licenses": ["./content/licenses/**/*.md"],
+    // lib/muedvox/manual.ts reads these at request time.
+    "/[locale]/muedvox/manual": ["./content/muedvox/manual/*.md"],
   },
   experimental: {
     // The design preview restored pre-rollout globals.css from the build cache despite

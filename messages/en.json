@@ -2916,6 +2916,7 @@
     }
   },
   "pluginPortal": {
+    "manualLink": "{product} user manual",
     "eyebrow": "Your rack",
     "title": "Your plugins",
     "lede": "Every plugin you own, always current. Grab the latest build anytime — no email link to dig up.",
