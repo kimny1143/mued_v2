@@ -40,7 +40,7 @@
     "muedsp.buyTry.cartTitle": "カート",
     "muedsp.buyTry.cartTotal": "合計",
     "muedsp.buyTry.checkoutLoading": "購入画面を準備しています…",
-    "muedsp.buyTry.demoNote": "デモは期限なし。挿すたびに最初の 45 秒分の音声を処理し、その後は原音を通します。設定・プリセットは保存できません。",
+    "muedsp.buyTry.demoNote": "デモは期限なし。45 秒ごとに約 3 秒、処理が外れて元の音が通ります。設定はセッションに保存されます。ライセンスキーを入れると、この抜けはなくなります。",
     "muedsp.buyTry.downloadMac": "Mac 版デモをダウンロード",
     "muedsp.buyTry.downloadWindows": "Windows 版デモをダウンロード",
     "muedsp.buyTry.emailLabel": "メールアドレス（試す時に使います）",
@@ -94,5 +94,7 @@
       "subject": "[MUEDsp] masterchain のダウンロードとライセンスの受け取り"
     }
   },
-  "promiseLines": []
+  "promiseLines": [
+    "masterchain はキーを入れなくてもデモとして動き、期限はありません。デモでは、音の 45 秒ごとに約 3 秒、処理が外れて元の音のまま通ります。設定はセッションにふつうに保存され、デモで作ったセッションはライセンスキーを入れた後もそのまま開けます。ライセンスキーを入れると、この抜けはなくなります。"
+  ]
 }

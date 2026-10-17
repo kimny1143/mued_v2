@@ -180,6 +180,10 @@ export const SHORT_LINKS: readonly ShortLink[] = [
   //   row. ★mc-trial points at /en/muedsp until the trial sign-up page ships, then is repointed to it.
   //   EN because the plugin UI is English; repointing to a locale-aware page is a one-row change.
   //   ★2026-09-30: localeFromBrowser — a browser that prefers Japanese lands on /ja/muedsp (conductor).
+  //   ★utm_content 'demo_expired' = the Buy on the plugin's demo screen, whatever that screen is in the version:
+  //   1.0.2 and earlier = the DEMO EXPIRED screen; 1.0.3 = the screen shown during the 3 s gap every 45 s (dsp
+  //   3a977b86). Both versions send the same slug, so a new name would not separate them — keep the name
+  //   (MUED/conductor 2026-10-15).
   { slug: 'mc-trial', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_trial', utmContent: 'demo_expired', localeFromBrowser: true },
   { slug: 'mc-buy', host: 'mued.jp', path: '/en/muedsp', utmSource: 'muedsp_plugin', utmMedium: 'inapp', utmCampaign: 'masterchain_buy', utmContent: 'demo_expired', localeFromBrowser: true },
   // ★Two more baked into masterchain 1.0.1 (dsp, conductor 2026-09-30) — same rule: the slug never changes.

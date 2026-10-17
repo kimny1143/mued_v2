@@ -1176,7 +1176,7 @@
         },
         "q10": {
           "question": "Can I try it before I buy?",
-          "answer": "Yes. Without a key, masterchain runs as a demo with no time limit. In the demo it processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved and presets can't be saved. Entering a license key removes these limits."
+          "answer": "Yes. Without a key, masterchain runs as a demo with no time limit. In the demo, every 45 seconds of audio, processing drops out for about 3 seconds and your original audio plays through. Settings save with your session as usual, and sessions made in the demo open unchanged once you enter a license key. Entering a license key removes the gaps."
         },
         "q11": {
           "question": "At the end of the installation, macOS said the installer “can’t be moved to the Trash”",
@@ -2570,7 +2570,7 @@
       "try": "Try masterchain",
       "emailLabel": "Email (to try it)",
       "emailPlaceholder": "you@example.com",
-      "demoNote": "The demo has no time limit. Each insert processes the first 45 seconds of audio, then passes audio through unprocessed. Settings and presets aren't saved.",
+      "demoNote": "The demo has no time limit: every 45 seconds, processing drops out for about 3 seconds and your original audio plays through. Settings save with your session. A license removes the gaps.",
       "downloadMac": "Download demo for Mac",
       "downloadWindows": "Download demo for Windows",
       "signInNote": "Sign in to mued.jp with the email you use at checkout to get your license key in your portal.",
@@ -2611,7 +2611,7 @@
       "title": "MUEDsp masterchain — {days}-day trial",
       "intro": "Try masterchain on your own tracks for {days} days.",
       "signInHint": "You can sign in with a code sent to your email.",
-      "bypass": "Without a valid key or after expiry, the plugin passes audio through unprocessed and shows \"DEMO EXPIRED\".",
+      "bypass": "When the trial ends (or without a valid key), the plugin runs as the demo until you enter a license key: every 45 seconds, processing drops out for about 3 seconds.",
       "cta": "Try free for {days} days",
       "start": "Start the {days}-day trial",
       "consentPrefix": "I have read and agree to the",
@@ -2969,7 +2969,7 @@
       "howto": "Download license.key and drag it onto masterchain (\"Drop license.key here\"). If drop doesn't work in your DAW, use \"Load license file…\", or copy the key and press \"Paste license key\".",
       "ends": "Trial ends {date} (UTC)",
       "ended": "Trial ended",
-      "bypass": "After the trial ends, the plugin passes audio through unprocessed and shows \"DEMO EXPIRED\" until you enter a license key."
+      "bypass": "When the trial ends, the plugin runs as the demo until you enter a license key: every 45 seconds, processing drops out for about 3 seconds."
     },
     "purchased": {
       "label": "Purchased",

@@ -24,8 +24,8 @@ it.each(["ja", "en"] as const)("renders truthful direct links and a broadcast un
   const mail = emailTemplates.masterchainDemoFollowup(locale);
   expect(mail.html).toContain(`<html lang="${locale}">`);
   expect(mail.html).toContain("{{{RESEND_UNSUBSCRIBE_URL}}}");
-  expect(mail.html).toContain("/downloads/MUEDsp-masterchain-1.0.2-installer.pkg");
-  expect(mail.html).toContain("MUEDsp-masterchain-1.0.2-win-x64-13684e83.zip");
+  expect(mail.html).toContain("/downloads/MUEDsp-masterchain-1.0.3-installer.pkg");
+  expect(mail.html).toContain("MUEDsp-masterchain-1.0.3-win-x64-7d3d881b.zip");
   expect(mail.html).toContain(locale === "ja" ? 'Windows 版デモをダウンロード（VST3）' : 'Download the Windows demo (VST3)');
   expect(mail.html).not.toContain("class=\"header\"");
   expect(mail.text).toContain("45");

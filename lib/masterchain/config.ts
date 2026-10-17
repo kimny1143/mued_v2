@@ -85,7 +85,13 @@ export const MASTERCHAIN_DOWNLOAD_URL =
   //   stapler validate OK, spctl -t install = Notarized Developer ID; pkgutil --expand-full: VST3 / AU / AAX all 1.0.2,
   //   Resources/MUED-EULA-2026.10.1.rtf, and the two notice files equal content/licenses/ (sha256).
   //   ★The three 1.0.1 builds stay where they are (mails and purchases point at them), pinned as shelf rows.
-  "https://mued.jp/downloads/MUEDsp-masterchain-1.0.2-installer.pkg";
+  // ★1.0.3 (2026-10-17, dsp main 3a977b86 #905): the demo changed — no time limit, about 3 s of dry audio every 45 s of
+  //   sound (0.25 s ramp, 2.5 s dry, 0.25 s back), settings save with the session, an expired trial key is the demo
+  //   (no "DEMO EXPIRED" screen). EULA 2026.10.2 inside (MUED-EULA-2026.10.2.rtf daeb3244…). dsp: ALL AS EXPECTED.
+  //   sha256 917ea0d63b02c1af452fbf24791335455e58b38c6132b60ee138c329a246ad7b · 4,332,757 B (/downloads/).
+  //   ★Verified 2026-10-17 on the copy under public/downloads/: shasum -a 256 + bytes matched dsp's message, cmp
+  //   byte-identical to dsp's plugin/dist/, notarized, stapler validate OK. 1.0.2 stays on the shelf, pinned.
+  "https://mued.jp/downloads/MUEDsp-masterchain-1.0.3-installer.pkg";
 
 // Purchase rollout — same rule as the trial below: a reviewed code change, never an environment switch.
 // ★CLOSED 2026-09-30 (launch day), kimny 逐語「今日の販売はそもそも間に合わない。最短のルートで進めて
@@ -132,5 +138,9 @@ export const MASTERCHAIN_DEMO_LIVE = true;
 //   MUEDsp-masterchain-1.0.2-win-x64-13684e83.zip · sha256 b95115e4234b10af1653763d05dc32ff2e6e152cbe546af5b5db2afbaf504103
 //   · 1,419,332 B — measured on the copy under public/downloads/, cmp-identical to dsp's build/win-zips/.
 export const MASTERCHAIN_WINDOWS_LIVE = true;
-export const MASTERCHAIN_WINDOWS_URL = "https://mued.jp/downloads/MUEDsp-masterchain-1.0.2-win-x64-13684e83.zip";
-export const MASTERCHAIN_WINDOWS_VERSION = "1.0.2";
+// ★1.0.3 — build 7d3d881b (2026-10-17): the same demo change as the Mac 1.0.3, EULA.txt 2026.10.2. VST3 only, unsigned.
+//   ★Nobody has run this zip on a Windows machine (dsp 2026-10-17). The 13684e83 zip stays on the shelf, pinned.
+//   MUEDsp-masterchain-1.0.3-win-x64-7d3d881b.zip · sha256 2cb9e1ae84da3c4dfb2d673a1ade59236233078934600a9b172df3793307c299
+//   · 1,419,529 B — measured on the copy under public/downloads/, cmp-identical to dsp's build/win-zips/.
+export const MASTERCHAIN_WINDOWS_URL = "https://mued.jp/downloads/MUEDsp-masterchain-1.0.3-win-x64-7d3d881b.zip";
+export const MASTERCHAIN_WINDOWS_VERSION = "1.0.3";

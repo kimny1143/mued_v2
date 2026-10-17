@@ -9,13 +9,14 @@ it.each(["ja", "en"] as const)("renders the %s receipt with the download and dem
     expect(body).toContain(MASTERCHAIN_DOWNLOAD_URL);
     expect(body).toContain("VST3 · AU · AAX (Pro Tools) · macOS");
     expect(body).toContain(locale === "ja" ? "MUEDsp masterchain のデモをお試しいただき、ありがとうございます。" : "Thanks for trying the MUEDsp masterchain demo.");
-    expect(body).toContain(locale === "ja" ? "キーを入れなくても、デモとして期限なく使えます。デモでは、挿してから、音を 45 秒ぶん処理するまではすべて効き、その後はプラグインを挿し直すまで原音のまま通ります。設定は保存されず、プリセットも保存できません。ライセンスキーを入れると、これらの制限はなくなります。" : "Without a key, masterchain runs as a demo with no time limit. In the demo it processes the first 45 seconds of audio after you insert it, then passes audio through unprocessed until you reinsert it. Settings aren't saved and presets can't be saved. Entering a license key removes these limits.");
+    // ★1.0.3 (dsp 3a977b86, conductor's wording B 2026-10-17): about 3 s of dry audio every 45 s, settings save.
+    expect(body).toContain(locale === "ja" ? "masterchain はキーを入れなくてもデモとして動き、期限はありません。デモでは、音の 45 秒ごとに約 3 秒、処理が外れて元の音のまま通ります。設定はセッションにふつうに保存され、デモで作ったセッションはライセンスキーを入れた後もそのまま開けます。ライセンスキーを入れると、この抜けはなくなります。" : "Without a key, masterchain runs as a demo with no time limit. In the demo, every 45 seconds of audio, processing drops out for about 3 seconds and your original audio plays through. Settings save with your session as usual, and sessions made in the demo open unchanged once you enter a license key. Entering a license key removes the gaps.");
     expect(body).not.toMatch(/unsubscribe|dashboard\/plugins|アップデート|updates/i);
     // ★Without consent: the transactional receipt only — no buy paragraph, no tagged link (kimny 9/30, CCO #1182).
     expect(body).not.toContain("/l/mc-demo-mail");
     expect(body).not.toMatch(/製品ページから購入|buy it from the product page/);
-    // ★The demo rule changed on 2026-09-30 (kimny): 45 s of processed audio per insert, not a fade every 45 s.
-    expect(body).not.toMatch(/45 秒ごと|every 45 seconds|一瞬抜け|fades out/);
+    // ★1.0.2's rule (45 s per insert, then pass-through until reinserted; settings not saved) is gone in 1.0.3.
+    expect(body).not.toMatch(/挿し直す|reinsert|first 45 seconds|設定は保存されず|aren't saved|プリセットも保存できません|presets can't be saved/);
   }
 });
 

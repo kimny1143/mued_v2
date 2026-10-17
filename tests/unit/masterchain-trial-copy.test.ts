@@ -41,8 +41,9 @@ describe("trial translations", () => {
   it.each([en, ja])("never describes the bypass as lost audio", (messages) => {
     for (const block of [messages.muedsp.trial, messages.pluginPortal.trial]) {
       expect(JSON.stringify(block)).not.toMatch(/mute|silent|無音|音が出ない/i);
-      // ★The plugin's own words since 1.0.1 (dsp 2026-09-30): "DEMO EXPIRED", and no "bypass" for the demo state.
-      expect(block.bypass).toContain("DEMO EXPIRED");
+      // ★1.0.3 (dsp 3a977b86): an expired trial key is the demo — no "DEMO EXPIRED" screen any more; still no "bypass".
+      expect(block.bypass).toMatch(/45 秒ごとに約 3 秒|every 45 seconds, processing drops out for about 3 seconds/);
+      expect(block.bypass).not.toContain("DEMO EXPIRED");
       expect(block.bypass).not.toMatch(/bypass|バイパス/i);
     }
   });
