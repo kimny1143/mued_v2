@@ -355,7 +355,7 @@
       {
         "heading": "6. Demo Mode (Paid Products)",
         "blocks": [
-          "Prior to entering a valid license key, the paid version of the Software operates in a demonstration mode with no time limit. Each time the Software is inserted or loaded, it processes the first forty-five (45) seconds of audio and then passes audio through unprocessed until it is inserted or loaded again. Settings changed in demonstration mode are not saved, and presets cannot be saved. Entering a valid license key removes these limitations. Use of demonstration mode is subject to this Agreement."
+          "Prior to entering a valid license key, the paid version of the Software operates in a demonstration mode with no time limit. In demonstration mode, after every forty-five (45) seconds of audio the Software interrupts its processing for approximately three (3) seconds (for MUEDvox, the generated harmony is interrupted), and then resumes. Presets cannot be saved from within the Software in demonstration mode. Entering a valid license key removes these limitations. Use of demonstration mode is subject to this Agreement."
         ]
       },
       {
@@ -453,7 +453,7 @@
         ]
       }
     ],
-    "effectiveDate": "October 13, 2026",
+    "effectiveDate": "October 15, 2026",
     "dateLabel": "Last updated"
   },
   "terms": {

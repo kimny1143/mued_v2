@@ -151,7 +151,7 @@ it("MUEDvox card uses its name, its filename and its own plate (its screen, not 
     expect(screen.getByRole("heading", { name: "MUEDvox" })).toBeTruthy();
     // ★It has a plate (2026-10-13: with none, the text was laid out in the 96px plate column) — its own screen.
     expect(container.querySelector("svg.faceplate")).toBeNull();
-    expect(container.querySelector('[data-testid="paid-plate-muedvox"]')?.getAttribute("src")).toContain("MUEDvox-1.0.0-harmony.webp");
+    expect(container.querySelector('[data-testid="paid-plate-muedvox"]')?.getAttribute("src")).toContain("MUEDvox-1.0.2-harmony.webp");
     expect(screen.queryByTestId("portal-masterchain-windows-note")).toBeNull();
     expect(screen.getByTestId("portal-masterchain-windows")).toHaveTextContent("MUEDvox 1.0.0");
     fireEvent.click(screen.getByRole("button", { name: "purchased.download" }));

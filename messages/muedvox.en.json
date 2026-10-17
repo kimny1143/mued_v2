@@ -90,7 +90,7 @@
   },
   "demo": {
     "button": "Download the demo",
-    "body": "The demo has no time limit. Each time you insert it, the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing (insert it again for another 45 seconds). Settings you change in the demo aren’t saved with your session.",
+    "body": "The demo never expires: every 45 seconds the harmony drops out for about 3 seconds (your lead keeps playing). Saving presets needs a license; sessions made in the demo open unchanged once you add one.",
     "refundNote": "The demo lets you check that it runs in your setup before you buy."
   },
   "faq": {
@@ -136,7 +136,7 @@
         "id": "demo",
         "requires": "demo",
         "question": "What does the demo do?",
-        "answer": "It is the full plugin with no time limit. Each time you insert it, the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing (insert it again for another 45 seconds). Settings you change in the demo aren't saved with your session."
+        "answer": "The demo never expires: every 45 seconds the harmony drops out for about 3 seconds (your lead keeps playing). Saving presets needs a license; sessions made in the demo open unchanged once you add one. Only saving from MUEDvox’s own preset menu needs a license; presets you save with your DAW work in the demo too."
       },
       {
         "id": "price",
@@ -183,7 +183,7 @@
     "try": "Try MUEDvox",
     "emailLabel": "Email (to try it)",
     "emailPlaceholder": "you@example.com",
-    "demoNote": "The demo has no time limit. Each time you insert it, the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing (insert it again for another 45 seconds). Settings you change in the demo aren’t saved with your session.",
+    "demoNote": "The demo never expires: every 45 seconds the harmony drops out for about 3 seconds (your lead keeps playing). Saving presets needs a license; sessions made in the demo open unchanged once you add one.",
     "emailNotice": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
     "success": "Your download has started. If it didn't, use the link in the email.",
     "errors": {

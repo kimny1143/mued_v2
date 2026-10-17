@@ -28,13 +28,13 @@ const LAUNCHED = {
 };
 
 describe("★the flags can only be on in a combination that works", () => {
-  it("the real configuration is consistent, and it is the launched one (2026-10-13)", () => {
+  it("the real configuration is consistent, and it is the launched one (2026-10-13; 1.0.1 since 2026-10-15)", () => {
     expect(config.muedvoxLaunchProblems(real())).toEqual([]);
     expect(real()).toEqual({
       live: true, purchaseLive: true, demoLive: true, productEnabled: true,
-      downloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.0-installer.pkg",
-      windowsUrl: "https://mued.jp/downloads/MUEDvox-1.0.0-win-x64-be75a5d2.zip", windowsVersion: "1.0.0",
-      screenshot: "/muedvox/MUEDvox-1.0.0-harmony.webp",
+      downloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-installer.pkg",
+      windowsUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-win-x64-1256e08d.zip", windowsVersion: "1.0.2",
+      screenshot: "/muedvox/MUEDvox-1.0.2-harmony.webp",
     });
   });
 
@@ -159,8 +159,8 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
     const res = await post();
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
-      ok: true, downloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.0-installer.pkg",
-      windowsDownloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.0-win-x64-be75a5d2.zip",
+      ok: true, downloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-installer.pkg",
+      windowsDownloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-win-x64-1256e08d.zip",
     });
     expect(m.send).toHaveBeenCalledTimes(1);
   });
@@ -198,11 +198,12 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
       expect(surface).toContain(locale === "ja" ? "Windows 版のデモをダウンロード" : "Download the demo for Windows");
       expect(surface).toContain("https://mued.jp/l/vox-demo-mail");
       expect(surface).toContain((locale === "ja" ? jaVox : enVox).formats.windowsNote);
-      // ★What 1.0.0's demo really does (VOX, mued-vox #205): the harmonies stop, the lead keeps playing — never
-      //   "passes audio through unprocessed" (masterchain's sentence), and never "nothing is saved" (the plugin's
-      //   own preset file can still be written).
-      expect(surface).toContain(locale === "ja" ? "ハモリは最初の 45 秒だけ鳴り、その後は元の歌だけが鳴り続けます" : "the harmonies play for the first 45 seconds; after that only your lead vocal keeps playing");
-      expect(surface).toContain(locale === "ja" ? "デモ中の設定はセッションに保存されません" : "aren't saved with your session");
+      // ★What 1.0.1's demo really does (mued-vox #213; conductor's wording 2026-10-15): the harmony drops out for
+      //   about 3 s every 45 s while the lead keeps playing — never "passes audio through unprocessed" (masterchain's
+      //   sentence) — and the session survives a license. 1.0.0's "insert again" / "not saved" lines are gone.
+      expect(surface).toContain(locale === "ja" ? "45 秒ごとにハモリが 3 秒ほど抜けます（歌は鳴り続けます）" : "every 45 seconds the harmony drops out for about 3 seconds (your lead keeps playing)");
+      expect(surface).toContain(locale === "ja" ? "ライセンスを入れた後もそのまま開けます" : "sessions made in the demo open unchanged");
+      expect(surface).not.toMatch(/挿し直す|保存されません|insert it again|aren't saved/);
       expect(surface).not.toMatch(/unprocessed|原音のまま/);
       expect(surface).toContain(locale === "ja" ? "プラグインの中の Buy MUEDvox からも開けます" : "Buy MUEDvox inside the plugin opens it too");
       expect(surface).not.toMatch(/masterchain/i); // nothing of the other product's mail
@@ -236,13 +237,20 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
     expect(row("vox-portal")).toMatchObject({ host: "mued.jp", path: "/dashboard/plugins", utmSource: "muedsp_plugin", utmMedium: "inapp" });
   });
 
-  it.each([["ja", jaVox], ["en", enVox]] as const)("%s: the page says the same thing about the demo as the mail — harmonies stop, the lead keeps playing", (_l, vox) => {
+  it.each([["ja", jaVox], ["en", enVox]] as const)("%s: the page says the same thing about the demo as the mail — the harmony drops out, the lead keeps playing", (_l, vox) => {
     for (const text of [vox.demo.body, vox.demoForm.demoNote, vox.faq.items.find((i) => i.id === "demo")!.answer]) {
       expect(text).toMatch(/45/);
       expect(text).not.toMatch(/unprocessed|原音のまま/);
-      expect(text).toMatch(/元の歌だけが鳴り続けます|only your lead vocal keeps playing/);
-      expect(text).toMatch(/セッションに保存されません|saved with your session/);
+      expect(text).toMatch(/ハモリが 3 秒ほど抜けます（歌は鳴り続けます）|the harmony drops out for about 3 seconds \(your lead keeps playing\)/);
+      expect(text).toMatch(/そのまま開けます|open unchanged/);
+      expect(text).not.toMatch(/挿し直す|保存されません|insert it again|saved with your session/);
     }
+  });
+
+  it.each([["ja", jaVox], ["en", enVox]] as const)("%s: the FAQ keeps the preset line narrow — the plug-in's own menu, not the DAW's presets (VOX 2026-10-15)", (_l, vox) => {
+    const faq = vox.faq.items.find((i) => i.id === "demo")!.answer;
+    expect(faq).toMatch(/DAW/);
+    expect(faq).toMatch(/プリセットメニュー|preset menu/);
   });
 
   it.each(["ja", "en"] as const)("the purchase mail (%s): with a Windows zip, a link for each OS; without one, the mail as it was", async (locale) => {
