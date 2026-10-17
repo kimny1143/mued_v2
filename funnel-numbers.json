@@ -1,21 +1,21 @@
 {
-  "reachable_contacts": 1104,
-  "net_new_day": 10,
+  "reachable_contacts": 1113,
+  "net_new_day": 6,
   "target": 5000,
-  "remaining_to_target": 3896,
-  "remaining_to_1000": -104,
-  "portal_registrations": 150,
-  "measured_at": "2026-10-16T06:15:05.533Z",
+  "remaining_to_target": 3887,
+  "remaining_to_1000": -113,
+  "portal_registrations": 151,
+  "measured_at": "2026-10-17T06:00:30.235Z",
   "trigger": "schedule",
-  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/38860004155",
-  "source_report": "reports/plugin-funnel/2026-10-15.json",
+  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/39008213547",
+  "source_report": "reports/plugin-funnel/2026-10-16.json",
   "newsletters": [
     {
       "id": "e6e2db80-d3f7-4f3d-ae2d-a6d6db429bfd",
       "name": "MUEDvox tester call — group of 20 (2026-10-14)",
       "sent_at": "2026-10-14T08:01:23.643Z",
       "delivered": 78,
-      "unique_opened": 52,
+      "unique_opened": 53,
       "unique_clicked": 10,
       "unsubscribed": 0,
       "bounced": 0,
@@ -51,7 +51,7 @@
       "name": "MUEDsp on Windows — masterchain + free 3 (2026-10-01)",
       "sent_at": "2026-10-01T08:31:35.053Z",
       "delivered": 982,
-      "unique_opened": 299,
+      "unique_opened": 300,
       "unique_clicked": 54,
       "unsubscribed": 12,
       "bounced": 29,
@@ -111,46 +111,46 @@
     "since": "2026-09-23T06:51:00.000Z",
     "all_time": {
       "from": "2026-09-23T06:51:00.000Z",
-      "until": "2026-10-16T06:14:54.399Z",
+      "until": "2026-10-17T06:00:18.638Z",
       "total": {
-        "sent": 351,
+        "sent": 362,
         "bounced": 6,
-        "reached": 343,
-        "clicked": 266,
-        "opened": 38,
-        "delivered": 39,
+        "reached": 354,
+        "clicked": 275,
+        "opened": 39,
+        "delivered": 40,
         "complained": 0,
         "other": 2,
-        "unique_recipients": 236,
-        "unique_clicked_recipients": 193,
-        "unique_opened_or_clicked_recipients": 211
+        "unique_recipients": 245,
+        "unique_clicked_recipients": 200,
+        "unique_opened_or_clicked_recipients": 219
       },
       "by_product": {
         "muedsat": {
-          "sent": 81,
+          "sent": 82,
           "bounced": 1,
-          "reached": 79,
-          "clicked": 63,
+          "reached": 80,
+          "clicked": 64,
           "opened": 8,
           "delivered": 8,
           "complained": 0,
           "other": 1,
-          "unique_recipients": 77,
-          "unique_clicked_recipients": 62,
-          "unique_opened_or_clicked_recipients": 69
+          "unique_recipients": 78,
+          "unique_clicked_recipients": 63,
+          "unique_opened_or_clicked_recipients": 70
         },
         "muedlim": {
-          "sent": 197,
+          "sent": 207,
           "bounced": 4,
-          "reached": 193,
-          "clicked": 149,
-          "opened": 21,
-          "delivered": 23,
+          "reached": 203,
+          "clicked": 157,
+          "opened": 22,
+          "delivered": 24,
           "complained": 0,
           "other": 0,
-          "unique_recipients": 174,
-          "unique_clicked_recipients": 139,
-          "unique_opened_or_clicked_recipients": 155
+          "unique_recipients": 182,
+          "unique_clicked_recipients": 145,
+          "unique_opened_or_clicked_recipients": 162
         },
         "muedrive": {
           "sent": 73,
@@ -168,13 +168,13 @@
       }
     },
     "last_24h": {
-      "from": "2026-10-15T06:14:54.399Z",
-      "until": "2026-10-16T06:14:54.399Z",
+      "from": "2026-10-16T06:00:18.638Z",
+      "until": "2026-10-17T06:00:18.638Z",
       "total": {
-        "sent": 12,
+        "sent": 11,
         "bounced": 0,
-        "reached": 12,
-        "clicked": 10,
+        "reached": 11,
+        "clicked": 9,
         "opened": 1,
         "delivered": 1,
         "complained": 0,
@@ -185,43 +185,43 @@
       },
       "by_product": {
         "muedsat": {
-          "sent": 2,
+          "sent": 1,
           "bounced": 0,
-          "reached": 2,
-          "clicked": 2,
+          "reached": 1,
+          "clicked": 1,
           "opened": 0,
           "delivered": 0,
           "complained": 0,
           "other": 0,
-          "unique_recipients": 2,
-          "unique_clicked_recipients": 2,
-          "unique_opened_or_clicked_recipients": 2
+          "unique_recipients": 1,
+          "unique_clicked_recipients": 1,
+          "unique_opened_or_clicked_recipients": 1
         },
         "muedlim": {
-          "sent": 8,
+          "sent": 10,
           "bounced": 0,
-          "reached": 8,
-          "clicked": 6,
+          "reached": 10,
+          "clicked": 8,
           "opened": 1,
           "delivered": 1,
           "complained": 0,
           "other": 0,
-          "unique_recipients": 7,
-          "unique_clicked_recipients": 5,
-          "unique_opened_or_clicked_recipients": 6
+          "unique_recipients": 8,
+          "unique_clicked_recipients": 6,
+          "unique_opened_or_clicked_recipients": 7
         },
         "muedrive": {
-          "sent": 2,
+          "sent": 0,
           "bounced": 0,
-          "reached": 2,
-          "clicked": 2,
+          "reached": 0,
+          "clicked": 0,
           "opened": 0,
           "delivered": 0,
           "complained": 0,
           "other": 0,
-          "unique_recipients": 2,
-          "unique_clicked_recipients": 2,
-          "unique_opened_or_clicked_recipients": 2
+          "unique_recipients": 0,
+          "unique_clicked_recipients": 0,
+          "unique_opened_or_clicked_recipients": 0
         }
       }
     }
@@ -231,13 +231,13 @@
     "launch_at": "2026-09-30T22:13:13.198Z",
     "all_time": {
       "from": "2026-09-30T22:13:13.198Z",
-      "until": "2026-10-16T06:14:54.399Z",
+      "until": "2026-10-17T06:00:18.638Z",
       "demo_downloads": 6,
       "purchases": 1
     },
     "last_24h": {
-      "from": "2026-10-15T06:14:54.399Z",
-      "until": "2026-10-16T06:14:54.399Z",
+      "from": "2026-10-16T06:00:18.638Z",
+      "until": "2026-10-17T06:00:18.638Z",
       "demo_downloads": 0,
       "purchases": 0
     },
@@ -250,10 +250,10 @@
     }
   },
   "denominator_trend": {
-    "as_of": "2026-10-15",
-    "last7_avg": 8.14,
-    "prior14_avg": 6.21,
-    "ratio": 1.31,
+    "as_of": "2026-10-16",
+    "last7_avg": 8.29,
+    "prior14_avg": 5.93,
+    "ratio": 1.4,
     "alert": false,
     "reason": null,
     "threshold": 0.5,
