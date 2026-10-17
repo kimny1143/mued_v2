@@ -105,7 +105,8 @@ export function muedvoxLaunchProblems(state: {
 // 1.0.2 (VOX 2026-10-17 「1.0.2 ready」): the 1.0.1 demo, plus SETTINGS moved to a gear at the top right, left of
 // ACTIVE (mued-vox #221・#222 eaf37abe). The pkg is build/dist-1.0.2 (notarised, stapled, EULA 2026.10.2 inside);
 // the zip is run 38982961640 on mued-vox 1256e08d (= eaf37abe + one docs commit), unsigned, EULA.txt 2026.10.2.
-// ★1.0.1 was never distributed (conductor 2026-10-16: straight to 1.0.2) — its pkg and zip never reached main.
+// ★1.0.1 was never distributed (conductor 2026-10-16: straight to 1.0.2). Its pkg and zip stay on the shelf,
+//   unlinked: the URL was in this branch's history, so plugin-download-retention keeps them.
 // 1.0.1 (VOX 2026-10-15): only the demo changed — no time limit, the harmony drops out for about 3 s every 45 s of
 // sound while the lead keeps playing, settings save with the session, saving presets from the plug-in needs a key
 // (mued-vox #213). EULA 2026.10.2 inside (pkg: the consent screen; zip: EULA.txt). Same plug-in ID: a 1.0.0 key works.
