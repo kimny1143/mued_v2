@@ -37,7 +37,7 @@ describe("staged EULA page", () => {
     expect(page).not.toContain("PlaceholderSections");
   });
 
-  it("★2026.10.2: the English text governs; /ja shows the reference note; last updated 2026-10-15 as in dsp's RTF", () => {
+  it("★2026.10.3: the English text governs; /ja shows the reference note; last updated 2026-10-19 as in dsp's RTF", () => {
     // Version 2026.10 is the lawyer's draft (2026-09-30) staged for the release PR. The same version
     //   string must mean the same text as dsp's installer RTF, so EULA_VERSION moves with dsp.
     const load = (l: string) => JSON.parse(readFileSync(join(ROOT, "messages", `${l}.json`), "utf8")).eula;
@@ -45,8 +45,10 @@ describe("staged EULA page", () => {
     //   (#895) — conductor's call. The EN string is what dsp puts in the RTF's [DATE]. (2026.10 was October 1.)
     // 2026.10.2 (kimny 2026-10-15 「EULA直しましょう。」 via conductor): Section 6 follows the new demo (MUEDvox 1.0.1,
     //   masterchain 1.0.3); mued-dsp #904 (2fd3df69) dated it October 15.
-    expect(load("en").effectiveDate).toBe("October 15, 2026");
-    expect(load("ja").effectiveDate).toBe("2026年10月15日");
+    // 2026.10.3 (kimny 2026-10-19 「Aで。」 via conductor): one sentence in Section 6 for MUEDvox 1.1.0's Save MIDI;
+    //   mued-dsp #911 (261ac04a) dated it October 19.
+    expect(load("en").effectiveDate).toBe("October 19, 2026");
+    expect(load("ja").effectiveDate).toBe("2026年10月19日");
     // ★CCO #1171 A / conductor (a): the governing text says "Last updated", so the page says it too —
     //   the label comes from the source line, never the page's own "Effective date" / 「施行日」.
     expect(load("en").dateLabel).toBe("Last updated");
@@ -133,7 +135,7 @@ describe("staged EULA page", () => {
   });
 });
 
-describe("★EULA 2026.10.2 — the web text IS dsp's installer text", () => {
+describe("★EULA 2026.10.3 — the web text IS dsp's installer text", () => {
   // mued-dsp plugin/_shared/eula/EULA-en.md is the English text the installer RTF is built from;
   //   docs/legal/eula/EULA-<version>-en.md is a byte copy of it. ★Update a pin only together with a fresh byte
   //   copy, after comparing with the sha dsp sends for its MERGED file.
@@ -142,7 +144,13 @@ describe("★EULA 2026.10.2 — the web text IS dsp's installer text", () => {
   // 2026.10.2 (kimny 2026-10-15 「EULA直しましょう。」 via conductor): mued-dsp main 2fd3df69 (#904) — Section 6 (Demo
   //   Mode) and "Last updated: October 15, 2026"; nothing else. Copied with git show 2fd3df69:plugin/_shared/eula/EULA-en.md
   //   (shasum -a 256, 2026-10-15). The same Section 6 is in mued-vox 0875c7c1's EULA-win.txt (VOX #217).
-  const DSP_EULA_EN_SHA256 = "0d0e08e0142afa2f9280f652857af9d53ea1a83b803f81bd07dd89c8cb94c7b4";
+  // 2026.10.3 (kimny 2026-10-19 「Aで。」 via conductor): mued-dsp main 261ac04a (#911) — Section 6 gains "For MUEDvox,
+  //   MIDI files cannot be exported from within the Software in demonstration mode." and "Last updated: October 19,
+  //   2026"; nothing else. Copied with git show 261ac04a:plugin/_shared/eula/EULA-en.md (shasum -a 256, 2026-10-19).
+  //   The masterchain, MUEDlim, MUEDsat and MUEDrive builds keep 2026.10.2 inside until their next update (kimny 「A」).
+  const DSP_EULA_EN_SHA256 = "73a1e247ad057921a95ceb76b3586e954483f1362fab0740a81b5dacc29682e2";
+  // ★2026.10.2 stays too, byte for byte: the October 17–19 buyers agreed to it (eula_version 2026.10.2).
+  const DSP_EULA_2026_10_2_EN_SHA256 = "0d0e08e0142afa2f9280f652857af9d53ea1a83b803f81bd07dd89c8cb94c7b4";
   // ★2026.10.1 stays too, byte for byte: the October 13–15 buyers agreed to it (eula_version 2026.10.1).
   const DSP_EULA_2026_10_1_EN_SHA256 = "bb39f5890672d9890bd68ab1e0863decc38cded6151ac4bf7815c2123c5d5b33";
   // ★2026.10 stays in the repo, byte for byte: it is the text the October 1 buyers agreed to (their order rows
@@ -161,6 +169,9 @@ describe("★EULA 2026.10.2 — the web text IS dsp's installer text", () => {
     const md1 = readFileSync(join(ROOT, "docs", "legal", "eula", "EULA-2026.10.1-en.md"));
     expect(createHash("sha256").update(md1).digest("hex")).toBe(DSP_EULA_2026_10_1_EN_SHA256);
     expect(readFileSync(join(ROOT, "docs", "legal", "eula", "EULA-2026.10.1-ja.md"), "utf8")).toContain("最終更新日: 2026年10月13日");
+    const md2 = readFileSync(join(ROOT, "docs", "legal", "eula", "EULA-2026.10.2-en.md"));
+    expect(createHash("sha256").update(md2).digest("hex")).toBe(DSP_EULA_2026_10_2_EN_SHA256);
+    expect(readFileSync(join(ROOT, "docs", "legal", "eula", "EULA-2026.10.2-ja.md"), "utf8")).toContain("最終更新日: 2026年10月15日");
   });
 
   it.each(["en", "ja"] as const)("★Section 6 (%s) describes the demo that ships: a ~3 s gap every 45 s, no settings line", (locale) => {
@@ -170,6 +181,8 @@ describe("★EULA 2026.10.2 — the web text IS dsp's installer text", () => {
     expect(six).toMatch(locale === "en" ? /approximately three \(3\) seconds/ : /約 3 秒間/);
     // The 2026.10.1 wording (stops until reloaded; settings not saved) is the opposite of 1.0.1's demo.
     expect(six).not.toMatch(locale === "en" ? /inserted or loaded again|Settings changed/ : /もう一度挿す|設定は保存されず/);
+    // 2026.10.3: MUEDvox 1.1.0's Save MIDI is greyed out in the demo.
+    expect(six).toMatch(locale === "en" ? /For MUEDvox, MIDI files cannot be exported/ : /MUEDvox の場合は、デモモードでは、本ソフトウェアの中から MIDI ファイルを書き出すことはできません/);
   });
 
   it.each(["en", "ja"] as const)("messages.%s.eula is exactly the conversion of its source (nobody hand-edited it)", (locale) => {
