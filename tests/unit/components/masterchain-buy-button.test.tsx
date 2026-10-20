@@ -117,7 +117,7 @@ describe("the cart", () => {
     expect(eula).not.toHaveAttribute("open");
     expect(within(eula).getByText("cartEula").closest("summary")).not.toBeNull();
     expect(within(eula).getByText("Body text.")).toBeInTheDocument(); // the EULA text itself
-    expect(eula).toHaveTextContent("Version: 2026.10.2");
+    expect(eula).toHaveTextContent("Version: 2026.10.3");
   });
 
   it("the order says what you get — product, formats, the product's own screen, where the key is, the next screen", async () => {

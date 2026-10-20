@@ -218,7 +218,23 @@ const ARTIFACTS = [
     sha256: "968317aea8d69ffca1d0aa2752a563779ae9aad118b59695b211a67df9109099",
     bytes: 1_137_620,
   },
-  // ★MUEDvox 1.0.2 Mac (VOX 2026-10-17 「pkg ok」). Measured on the copy under public/downloads/ (shasum -a 256,
+  // ★MUEDvox 1.1.0 Mac (VOX 2026-10-20, D9 OK: build/dist-1.1.0, signed and notarised, EULA 2026.10.3). Measured on
+  //   the copy under public/downloads/ (shasum -a 256, stat -f%z, 2026-10-20 09:28 JST); matches VOX's relayed values.
+  {
+    name: "MUEDvox 1.1.0",
+    url: "https://mued.jp/downloads/MUEDvox-1.1.0-installer.pkg",
+    sha256: "96c97d79eb32ec13399700c7a50663bfe93d6d55f0b94d35709727985dc54608",
+    bytes: 6_726_715,
+  },
+  // ★MUEDvox 1.1.0 Windows (VOX 2026-10-20: run 39347284671 on mued-vox main 0580272a, unsigned, VST3 x64, EULA
+  //   2026.10.3). Measured on the copy under public/downloads/ (shasum -a 256, stat -f%z, 2026-10-20 09:28 JST).
+  {
+    name: "MUEDvox 1.1.0 (Windows 0580272a)",
+    url: "https://mued.jp/downloads/MUEDvox-1.1.0-win-x64-0580272a.zip",
+    sha256: "a981b084f44e0a857082785fdf21b98b9d89e1e7e2ae4481be1f0e77824673e0",
+    bytes: 1_161_403,
+  },
+  // ★Shelf from 1.1.0 on (linked 2026-10-17 → 2026-10-20): MUEDvox 1.0.2 Mac (VOX 2026-10-17 「pkg ok」). Measured on the copy under public/downloads/ (shasum -a 256,
   //   stat -f%z, 2026-10-17); matches VOX's relayed values. build/dist-1.0.2 (notarised, stapled, EULA 2026.10.2).
   {
     name: "MUEDvox 1.0.2",

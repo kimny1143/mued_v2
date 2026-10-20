@@ -1,4 +1,4 @@
-# MUEDvox User Manual (1.0.2)
+# MUEDvox User Manual (1.1.0)
 
 MUEDvox makes vocal harmonies, each sung in its own way, from a single lead vocal. For every part you choose the interval it sings and the kind of voice it sings with.
 
@@ -6,12 +6,12 @@ MUEDvox makes vocal harmonies, each sung in its own way, from a single lead voca
 
 ### Mac (AU, VST3, AAX)
 1. Quit your DAW.
-2. Open `MUEDvox-1.0.2-installer.pkg` and follow the steps (an administrator password is required).
+2. Open `MUEDvox-1.1.0-installer.pkg` and follow the steps (an administrator password is required).
 3. Open your DAW and rescan plug-ins.
 
 To uninstall, open `/Applications/MUEDvox/Uninstall MUEDvox.command`. Your license key is kept.
 
-To update from 1.0.0 or 1.0.1, install the new version over it (Mac: open the new pkg; Windows: replace the `MUEDvox.vst3` folder). Your license key, your presets and your sessions stay as they are.
+To update from 1.0.0, 1.0.1 or 1.0.2, install the new version over it (Mac: open the new pkg; Windows: replace the `MUEDvox.vst3` folder). Your license key, your presets and your sessions stay as they are.
 
 ### Windows (VST3, 64-bit)
 1. Quit your DAW.
@@ -81,7 +81,7 @@ The half circle at the upper right shows every part's place and level. Drag a pa
 - **Follow MIDI chords** — when on, the harmonies follow the MIDI chords sent to MUEDvox. A chord means the same in any octave (it is read by note name). While no MIDI arrives, the harmonies follow the scale.
   - How MIDI is sent depends on the DAW. In Pro Tools, choose MUEDvox as the output of a MIDI or instrument track (send on **MIDI channel 1**).
 - **Avoid parallel 5ths** — keeps the parts from moving in parallel fifths with the lead.
-- The **KEYBOARD** at the bottom is a display only: the MIDI that arrives, and the notes the parts sing.
+- The **KEYBOARD** at the bottom is a display only: the MIDI that arrives, and the notes the parts sing. Its top left has **Save MIDI…** (chapter 9).
 
 ## 6. The FX page
 
@@ -107,7 +107,24 @@ The **gear** at the top right, just left of ACTIVE, opens **SETTINGS**: two sett
 - **Note start** — how soon a harmony note begins (Soft, Fast, Fast+). Sooner starts come with more misread pitches.
 - **Chord change under a held note** — when the chord changes under a held sung note: follow it at once (Follow), or hold until the next sung note (Hold).
 
-## 9. Troubleshooting
+## 9. Saving the harmony as MIDI
+
+MUEDvox can write the notes its harmony parts sang as a MIDI file, one track per part, to edit, print or play with other sounds.
+
+1. Set the Mode to **Render** or **Track** and play the song (or the part of it you want). While the DAW plays, MUEDvox keeps the notes of the parts you hear. The count at the top left of the keyboard ("N notes · N passes") goes up.
+2. Click **Save MIDI…** and choose a name and a place. The file is a Standard MIDI File (type 1): one track for each part (MUEDvox V1–V4, MUEDvox Bass), with the song's tempo and time signature.
+3. Bring it into the DAW at the very start of the song (bar 1): drag the file onto the arrangement, or import it (in Pro Tools: File > Import > MIDI). The notes land on the bars where they were sung.
+
+What is kept:
+- The notes each part sings, at the pitch MUEDvox gave it (the scale, or the chord when Follow MIDI chords is on), from the start to the end of each sung note. The singer's slides and vibrato are not in the file.
+- Only the parts you hear: a part that is off, muted (M) or left out of a solo is not kept, and nothing is kept while the Harmony is off. Nothing is kept in the Live mode or while the DAW is stopped.
+- Playing the same bars again replaces them: the newest pass is kept, whether it has notes there or not. A loop keeps its last time round.
+- Short slides into a note and short drops at its end (under a tenth of a second) are made part of that note. Quick runs and short syllables stay as they are.
+- **Clear** forgets everything kept so far.
+
+In the demo, **Save MIDI…** is greyed out and reads "(needs a license)".
+
+## 10. Troubleshooting
 
 | What happens | Where to look |
 |---|---|
@@ -118,6 +135,8 @@ The **gear** at the top right, just left of ACTIVE, opens **SETTINGS**: two sett
 | The harmonies do not follow the chords | Is Follow MIDI chords on? Does MIDI reach MUEDvox (the keyboard shows it)? In Pro Tools, is it on channel 1? |
 | The top end sounds rough | Turn CLEAN on, or lower DOUBLE. Move REGISTER away from the WHISPER end. |
 | Pitches jump in Live | Set Note start to Soft under SETTINGS (the gear). Live suits a single voice with no backing in it. |
+| Save MIDI… keeps no notes | Is the Mode Render or Track, and is the DAW playing? Is the Harmony on, and are the parts on and not muted? If the keyboard reads "No song position from the host", the DAW does not send its position to plug-ins. |
+| The MIDI file's notes are off the bars | Bring the file in at the very start of the song (bar 1), not at the playhead. |
 | MUEDvox is not in Pro Tools' AudioSuite menu | AudioSuite is not supported. Use it as an insert, and commit the track in Render. |
 
 ---

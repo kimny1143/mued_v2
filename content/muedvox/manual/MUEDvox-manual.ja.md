@@ -1,4 +1,4 @@
-# MUEDvox ユーザーマニュアル（1.0.2）
+# MUEDvox ユーザーマニュアル（1.1.0）
 
 MUEDvox は、メインボーカル 1 本から、歌い方の違うハーモニーを作るプラグインです。声部ごとに「どの音程で」「どんな声で」歌うかを決められます。
 
@@ -6,12 +6,12 @@ MUEDvox は、メインボーカル 1 本から、歌い方の違うハーモニ
 
 ### Mac（AU・VST3・AAX）
 1. DAW を終了します。
-2. `MUEDvox-1.0.2-installer.pkg` を開き、画面に従います（管理者のパスワードが要ります）。
+2. `MUEDvox-1.1.0-installer.pkg` を開き、画面に従います（管理者のパスワードが要ります）。
 3. DAW を開き、プラグインを再スキャンします。
 
 アンインストールは `/Applications/MUEDvox/Uninstall MUEDvox.command` を開きます。ライセンスキーは消えません。
 
-1.0.0・1.0.1 から更新する時は、上から入れ直します（Mac は新しい pkg を開く・Windows は `MUEDvox.vst3` フォルダーを置き換える）。ライセンスキー・プリセット・セッションはそのまま使えます。
+1.0.0・1.0.1・1.0.2 から更新する時は、上から入れ直します（Mac は新しい pkg を開く・Windows は `MUEDvox.vst3` フォルダーを置き換える）。ライセンスキー・プリセット・セッションはそのまま使えます。
 
 ### Windows（VST3・64 bit）
 1. DAW を終了します。
@@ -81,7 +81,7 @@ Render の時は、鍵盤の上に遅れの注意が 1 行出ます。**Details 
 - **Follow MIDI chords** — オンの時、MUEDvox に送った MIDI の和音にハーモニーが従います。和音はどのオクターブで弾いても同じです（音名で読みます）。MIDI が来ていない間は、スケールに従います。
   - MIDI の送り方は DAW によります。Pro Tools では、MIDI またはインストゥルメントのトラックの出力に MUEDvox を選びます（**MIDI チャンネル 1** で送ってください）。
 - **Avoid parallel 5ths** — 声部が元の歌と平行 5 度で動くのを避けます。
-- 画面の下の **KEYBOARD** は表示だけです。届いている MIDI と、鳴っている声部の音が見えます。
+- 画面の下の **KEYBOARD** は表示だけです。届いている MIDI と、鳴っている声部の音が見えます。左上に **Save MIDI…** があります（9 章）。
 
 ## 6. FX のページ
 
@@ -107,7 +107,24 @@ Program EQ、Comp、Sat、Delay、Reverb、Chorus、Flanger、Phaser、Imager �
 - **Note start** — ハーモニーの音がどれだけ早く出るか（Soft・Fast・Fast+）。早いほど出だしは速く、音程の読み違いは増えます。
 - **Chord change under a held note** — 伸ばしている歌の途中で和音が替わった時、すぐ従う（Follow）か、次の歌の音まで待つ（Hold）か。
 
-## 9. うまくいかない時
+## 9. ハーモニーを MIDI に保存する
+
+ハーモニーの声部が歌った音を、声部ごとのトラックの MIDI ファイルに書き出せます。譜面にしたり、直したり、別の音色で鳴らしたりできます。
+
+1. Mode を **Render** か **Track** にして、曲（または使いたい所）を再生します。DAW が再生している間、聞こえている声部の音が溜まります。鍵盤の左上の数（「N notes · N passes」）が増えます。
+2. **Save MIDI…** を押し、名前と場所を選びます。ファイルは Standard MIDI File（type 1）です。声部ごとに 1 トラック（MUEDvox V1〜V4・MUEDvox Bass）で、曲のテンポと拍子が入ります。
+3. DAW に、曲の頭（1 小節目）に合わせて入れます: ファイルをアレンジに drag するか、読み込みます（Pro Tools は File > Import > MIDI）。音は歌った小節の位置に来ます。
+
+溜まる物:
+- 各声部が歌う音を、MUEDvox が割り当てた高さ（スケール、または Follow MIDI chords が on の時は和音）で、歌の音の始まりから終わりまで。しゃくりやビブラートなど歌の揺れは入りません。
+- 聞こえている声部だけです。off・ミュート（M）・ソロの外の声部は溜まりません。Harmony を消している間も溜まりません。Live モードの時と、DAW が止まっている間も溜まりません。
+- 同じ小節をもう一度再生すると、その小節は置き換わります（新しい方を残す・そこで音が無くても）。ループは最後の周が残ります。
+- 音の頭の短いしゃくりと終わりの短い落ち（0.1 秒未満）は、その音に含めます。速い節回しや短い言葉はそのまま残ります。
+- **Clear** で、それまで溜まった物を全部消します。
+
+デモでは **Save MIDI…** は灰色で「(needs a license)」と出ます。
+
+## 10. うまくいかない時
 
 | 起きている事 | 見る所 |
 |---|---|
@@ -118,6 +135,8 @@ Program EQ、Comp、Sat、Delay、Reverb、Chorus、Flanger、Phaser、Imager �
 | 和音に従わない | Follow MIDI chords がオンか・MIDI が MUEDvox に届いているか（鍵盤の表示に出ます）・Pro Tools ではチャンネル 1 か。 |
 | 高域がざらつく | CLEAN をオンに、または DOUBLE を下げます。REGISTER を WHISPER の端から離します。 |
 | Live で音程が跳ぶ | SETTINGS（歯車）の Note start を Soft に。Live は 1 人の声・伴奏の混ざらない素材向きです。 |
+| Save MIDI… に音が溜まらない | Mode は Render か Track か・DAW は再生しているか。Harmony は on か・声部は on でミュートされていないか。鍵盤に「No song position from the host」と出ていたら、DAW が曲の位置を plug-in に渡していません。 |
+| MIDI ファイルの音が小節とずれる | 再生位置ではなく、曲の頭（1 小節目）に合わせて入れてください。 |
 | Pro Tools の AudioSuite に出ない | AudioSuite には対応していません。インサートで使い、Render はコミットしてください。 |
 
 ---
