@@ -102,6 +102,11 @@ export function muedvoxLaunchProblems(state: {
   return problems;
 }
 
+// 1.1.0 (VOX 2026-10-20, D9 all OK: signature, pkg, MIDI placement in Pro Tools and Logic, Windows): Save MIDI…
+// writes the harmony parts as a Standard MIDI File (licensed only; greyed out in the demo). The pkg is
+// build/dist-1.1.0 (signed, notarised); the zip is run 39347284671 on mued-vox main 0580272a, unsigned, VST3 x64.
+// Both carry EULA 2026.10.3 (Section 6: the demo cannot write MIDI). Publishing is kimny's call (the merge).
+// ★1.0.2 stays on the shelf under its own URLs, unlinked (plugin-download-retention).
 // 1.0.2 (VOX 2026-10-17 「1.0.2 ready」): the 1.0.1 demo, plus SETTINGS moved to a gear at the top right, left of
 // ACTIVE (mued-vox #221・#222 eaf37abe). The pkg is build/dist-1.0.2 (notarised, stapled, EULA 2026.10.2 inside);
 // the zip is run 38982961640 on mued-vox 1256e08d (= eaf37abe + one docs commit), unsigned, EULA.txt 2026.10.2.
@@ -115,6 +120,6 @@ export function muedvoxLaunchProblems(state: {
 //   Section 6 describes the 1.0.0 demo (VOX docs/product-facts-1.0.md 「前の物は配らない」).
 // 1.0.0 (2026-10-13, pkg + zip be75a5d2) stays on the shelf under its own URLs.
 // sha256 and bytes are pinned in tests/unit/plugin-download-artifact-integrity.test.ts.
-export const MUEDVOX_DOWNLOAD_URL: string = "https://mued.jp/downloads/MUEDvox-1.0.2-installer.pkg";
-export const MUEDVOX_WINDOWS_URL: string = "https://mued.jp/downloads/MUEDvox-1.0.2-win-x64-1256e08d.zip";
-export const MUEDVOX_WINDOWS_VERSION: string = "1.0.2";
+export const MUEDVOX_DOWNLOAD_URL: string = "https://mued.jp/downloads/MUEDvox-1.1.0-installer.pkg";
+export const MUEDVOX_WINDOWS_URL: string = "https://mued.jp/downloads/MUEDvox-1.1.0-win-x64-0580272a.zip";
+export const MUEDVOX_WINDOWS_VERSION: string = "1.1.0";

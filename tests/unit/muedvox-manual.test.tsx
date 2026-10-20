@@ -46,12 +46,12 @@ vi.mock("next/navigation", () => ({
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ host: "mued.jp" }) }));
 afterEach(cleanup);
 
-// ★Copied from mued-vox eaf37abe (#222: the 1.0.2 text — SETTINGS is the gear at the top right) with
-//   git show eaf37abe317026f32ff451f4e0c0dba9b0ab9402:docs/manual/MUEDvox-manual.<locale>.md (shasum -a 256,
-//   2026-10-17). Before: e1c88af5 (1.0.1, never shipped). Update only together with a fresh byte copy.
+// ★Copied from mued-vox badbaae0 (#229: the 1.1.0 text — 9. Saving the harmony as MIDI) with
+//   git show badbaae06d768405247339725273bf953600b916:docs/manual/MUEDvox-manual.<locale>.md (shasum -a 256,
+//   2026-10-20). Before: eaf37abe (1.0.2, 2026-10-17), e1c88af5 (1.0.1, never shipped). Update only together with a fresh byte copy.
 const MANUAL_SHA256 = {
-  en: "cada02690ec7de167a73fdf93f92917a88f179be231493cc1007c7ac138f825d",
-  ja: "8ca90ac2720d30a3817e850caac93f5b741dccfaddcc52721e89b94b96f2af20",
+  en: "3f6bb4a436758a493e3a056d98b2ea69a63bd33084383a0219e6817ca7614ba5",
+  ja: "bb5b78728fcf5e0f903baad0ac93d5f95d59424757d38e806c2fc1f321e6e9a9",
 };
 
 describe("★the text is VOX's, byte for byte", () => {

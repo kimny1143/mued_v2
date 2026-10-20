@@ -28,12 +28,12 @@ const LAUNCHED = {
 };
 
 describe("★the flags can only be on in a combination that works", () => {
-  it("the real configuration is consistent, and it is the launched one (2026-10-13; 1.0.1 since 2026-10-15)", () => {
+  it("the real configuration is consistent, and it is the launched one (2026-10-13; 1.1.0 since 2026-10-20)", () => {
     expect(config.muedvoxLaunchProblems(real())).toEqual([]);
     expect(real()).toEqual({
       live: true, purchaseLive: true, demoLive: true, productEnabled: true,
-      downloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-installer.pkg",
-      windowsUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-win-x64-1256e08d.zip", windowsVersion: "1.0.2",
+      downloadUrl: "https://mued.jp/downloads/MUEDvox-1.1.0-installer.pkg",
+      windowsUrl: "https://mued.jp/downloads/MUEDvox-1.1.0-win-x64-0580272a.zip", windowsVersion: "1.1.0",
       screenshot: "/muedvox/MUEDvox-1.0.2-harmony.webp",
     });
   });
@@ -159,8 +159,8 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
     const res = await post();
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
-      ok: true, downloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-installer.pkg",
-      windowsDownloadUrl: "https://mued.jp/downloads/MUEDvox-1.0.2-win-x64-1256e08d.zip",
+      ok: true, downloadUrl: "https://mued.jp/downloads/MUEDvox-1.1.0-installer.pkg",
+      windowsDownloadUrl: "https://mued.jp/downloads/MUEDvox-1.1.0-win-x64-0580272a.zip",
     });
     expect(m.send).toHaveBeenCalledTimes(1);
   });
