@@ -6,10 +6,12 @@
 export const MUEDVOX_LIVE = true;
 export const MUEDVOX_PURCHASE_LIVE = true;
 export const MUEDVOX_DEMO_LIVE = true;
-// The HARMONY page of 1.0.2, LICENSED, Natural (VOX 2026-10-16, conductor (a)): the gear (SETTINGS) at the top right,
-// as the 1.0.2 manual says. MUEDvox-1.0.2-harmony-2400x1800.png sha256 e36ab8e2…93aa → cwebp -q 90 (2400×1800,
-// e767bf4d…c53c). The 1.0.0 screen (SETTINGS at the bottom left) stays in public/muedvox/, unlinked.
-export const MUEDVOX_SCREENSHOT: string = "/muedvox/MUEDvox-1.0.2-harmony.webp";
+// The HARMONY page of 1.1.0, LICENSED, Natural (VOX 2026-10-20, conductor (a) on CCO's #1299 note): the shipped 1.1.0
+// in VST3 SDK editorhost. Same framing as 1.0.2; only two strips differ — Save MIDI… · Clear · notes · passes at the
+// left of the keyboard strip, and "MUEDvox 1.1.0 · build Oct 19 2026" at the bottom left (VOX's pixel compare).
+// MUEDvox-1.1.0-harmony-2400x1800.png sha256 db00bbff…2ed5 → webp (2400×1800, e94e2ac5…46a7).
+// Earlier screens (1.0.0 SETTINGS bottom left; 1.0.2 gear top right) stay in public/muedvox/, unlinked.
+export const MUEDVOX_SCREENSHOT: string = "/muedvox/MUEDvox-1.1.0-harmony.webp";
 // The listening examples on the page (kimny 2026-10-14: two songs, vocal +4 dB — 001 is 20 s, 003 is 26.3 s, cut by kimny:
 //   「これでお願い」). The songs differ in length; the four takes of one song do not.
 // ★The songs and their files are this list and nothing else: to swap a file, re-encode it under the same name
