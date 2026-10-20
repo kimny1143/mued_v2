@@ -34,7 +34,7 @@ describe("★the flags can only be on in a combination that works", () => {
       live: true, purchaseLive: true, demoLive: true, productEnabled: true,
       downloadUrl: "https://mued.jp/downloads/MUEDvox-1.1.0-installer.pkg",
       windowsUrl: "https://mued.jp/downloads/MUEDvox-1.1.0-win-x64-0580272a.zip", windowsVersion: "1.1.0",
-      screenshot: "/muedvox/MUEDvox-1.0.2-harmony.webp",
+      screenshot: "/muedvox/MUEDvox-1.1.0-harmony.webp",
     });
   });
 
