@@ -13,3 +13,8 @@
 ## blocked_by から移した部分（W39・W38）
 
 ★★**(W39 更新・2026-10-12T21:23:15+09:00) 穴は埋めた。残り＝①429 の出し直しは実際の Resend で未確認（次に 429 が来た日の log）②埋めた 10/8 分・10/9 分の総数と last_24h の欄はその日の値ではない（下流への注記は conductor に渡した）。** ★★**(W38・2026-10-09T16:32:57+09:00) MUEDlim 1.0.1 で未確認のまま出した物**: ①ポータルの「以前の版」の行の実際の画面（サインインが要る・試験は描画と href まで）②案内メールの実物 ③Safari・Firefox・実機 ④Mac の戻し方（Uninstall → 1.0.0）は誰も実際に試していない＝kimny の実機の結果待ち⑤オートメーション × 6 は Mac の VST3 の実物だけ（AAX は source・AU は未確認＝文は「場合があります」）⑥DAW の一覧の「Unity」は source の param 名で、実際の host では見ていない ⑦画像は standalone の画面。違う結果が来たら文を直す。**
+
+
+## blocked_by から移した部分（W37・W36・W34・W31・2026-10-22）
+
+★★**(W37・2026-10-08T20:38:35+09:00) GA4 の数は 2026-10-08 20:35 JST から「同意する」を選んだ人の分だけ**（#1208）。それより前の数と並べる時は、この境を書く。** ★★**(W36・2026-10-08T11:31:16+09:00) Colima の profile ci は Mac の再起動で自動で上がらない**（10/7 13:07 JST の再起動から 10/8 11:14 JST まで runner 0 台・CI は queued のまま待つ）。手順＝`colima start --profile ci`。自動起動の仕込みは発売後の CI の見直しで（conductor 10/8）。** ★★**(W34・2026-10-04T12:28:19+09:00) gate の 3 つの行（sales-impact・copy-approval・guard-change）は HTML コメントの中の行も数える**（CCO #1229 の注記）＝`<!-- guard-change: … -->` だけで ok になり、画面では見えない。次に守りを触る PR で withoutFences と同じ所で <!-- --> も除く（guard-change 行は kimny の承認が要る）。** ★★**(W31・2026-10-01T14:54:22+09:00) masterchain の Windows の倍率の切り替え（開いたまま 50→100→150→75）は未確認のまま出した**（kimny 逐語「いや、もう縮尺はいいから。デプロイすすめて」）。効かない報告が来たら PLUG_HOST_RESIZE 1＋ConstrainEditorResize で新しい zip（lib/masterchain/config.ts の注釈）。**
