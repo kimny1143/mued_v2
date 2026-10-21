@@ -80,6 +80,7 @@ The half circle at the upper right shows every part's place and level. Drag a pa
 - **SCALE** — choose the key and a scale by name. Click any of the 12 notes to make your own scale (its name becomes Custom). The key and the scale are saved with the session; presets do not change them.
 - **Follow MIDI chords** — when on, the harmonies follow the MIDI chords sent to MUEDvox. A chord means the same in any octave (it is read by note name). While no MIDI arrives, the harmonies follow the scale.
   - How MIDI is sent depends on the DAW. In Pro Tools, choose MUEDvox as the output of a MIDI or instrument track (send on **MIDI channel 1**).
+  - In Logic Pro, make a software instrument track and put MUEDvox in its instrument slot, under **AU MIDI-controlled Effects**. In **Side Chain** at the top of the plug-in window, pick the vocal track, and put the chord MIDI on the software instrument track. **Mute the vocal track**: Side Chain still receives it, and the original vocal plays through MUEDvox's Lead.
 - **Avoid parallel 5ths** — keeps the parts from moving in parallel fifths with the lead.
 - The **KEYBOARD** at the bottom is a display only: the MIDI that arrives, and the notes the parts sing. Its top left has **Save MIDI…** (chapter 9).
 
@@ -137,8 +138,10 @@ In the demo, **Save MIDI…** is greyed out and reads "(needs a license)".
 | Pitches jump in Live | Set Note start to Soft under SETTINGS (the gear). Live suits a single voice with no backing in it. |
 | Save MIDI… keeps no notes | Is the Mode Render or Track, and is the DAW playing? Is the Harmony on, and are the parts on and not muted? If the keyboard reads "No song position from the host", the DAW does not send its position to plug-ins. |
 | The MIDI file's notes are off the bars | Bring the file in at the very start of the song (bar 1), not at the playhead. |
+| In Logic, MUEDvox is not in the inserts, or chords cannot be sent | Put it in a software instrument track's instrument slot under AU MIDI-controlled Effects, and pick the vocal track in Side Chain (chapter 5). |
+| In Logic, the original vocal sounds doubled | Mute the vocal track. Side Chain still receives it (chapter 5). |
 | MUEDvox is not in Pro Tools' AudioSuite menu | AudioSuite is not supported. Use it as an insert, and commit the track in Render. |
 
 ---
 
-VST and VST3 are trademarks of Steinberg Media Technologies GmbH, registered in Europe and other countries. Audio Units (AU) is a trademark of Apple Inc. AAX is a trademark of Avid Technology, Inc. Pro Tools and AudioSuite are trademarks of Avid Technology, Inc. Mac is a trademark of Apple Inc. Windows is a trademark of Microsoft Corporation.
+VST and VST3 are trademarks of Steinberg Media Technologies GmbH, registered in Europe and other countries. Audio Units (AU) is a trademark of Apple Inc. AAX is a trademark of Avid Technology, Inc. Pro Tools and AudioSuite are trademarks of Avid Technology, Inc. Mac and Logic Pro are trademarks of Apple Inc. Windows is a trademark of Microsoft Corporation.
