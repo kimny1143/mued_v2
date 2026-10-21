@@ -24,8 +24,6 @@ import {
   User,
   Bell,
   Brain,
-  Terminal,
-  ChevronRight,
   Mail,
 } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-context';
@@ -411,34 +409,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
-              </div>
-            </SettingsSection>
-
-            {/* Hoo MCP Setup */}
-            <SettingsSection
-              title={t.settings.hooMcp.title}
-              description={t.settings.hooMcp.description}
-              icon={<Terminal className="w-5 h-5 text-accent" />}
-            >
-              <div className="space-y-2">
-                <Link
-                  href="/connect"
-                  className="flex items-center justify-between py-3 px-4 bg-accent/10 hover:bg-accent/20 border border-accent/20 rounded-xl transition-colors group"
-                >
-                  <span className="text-sm text-accent group-hover:text-[#ffc76b] transition-colors">
-                    🦉 {t.settings.hooMcp.connectGuide}
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-accent/50 group-hover:text-accent transition-colors" />
-                </Link>
-                <Link
-                  href="/dashboard/settings/mcp"
-                  className="flex items-center justify-between py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors group"
-                >
-                  <span className="text-sm text-white/70 group-hover:text-white transition-colors">
-                    {t.settings.hooMcp.openGuide}
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
-                </Link>
               </div>
             </SettingsSection>
 

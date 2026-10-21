@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useClerk } from '@clerk/nextjs';
-import { ArrowRight, SlidersHorizontal, Settings, Upload, Plug, LogOut } from 'lucide-react';
+import { ArrowRight, SlidersHorizontal, Settings, Upload, LogOut } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-context';
 
 export function AccountSection() {
@@ -22,12 +22,11 @@ export function AccountSection() {
   // user who owns nothing still lands somewhere useful — and gating the row on entitlements would
   // cost a DB read on every dashboard render while hiding the only in-product path to the free
   // plugins from exactly the people who have none. Listed first because it is a destination; the
-  // three below are configuration.
+  // two below are configuration.
   const links = [
     { label: hub.account.plugins,  href: '/dashboard/plugins',  icon: SlidersHorizontal },
     { label: hub.account.settings, href: '/dashboard/settings', icon: Settings },
     { label: hub.account.import,   href: '/dashboard/import',   icon: Upload  },
-    { label: hub.account.mcp,      href: '/dashboard/settings/mcp', icon: Plug },
   ];
 
   return (
