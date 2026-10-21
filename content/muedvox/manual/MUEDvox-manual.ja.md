@@ -80,6 +80,7 @@ Render の時は、鍵盤の上に遅れの注意が 1 行出ます。**Details 
 - **SCALE** — Key とスケールの名前を選びます。12 個の音名をクリックすると自分のスケールを作れます（名前は Custom になります。Key とスケールはセッションに保存され、プリセットでは変わりません）。
 - **Follow MIDI chords** — オンの時、MUEDvox に送った MIDI の和音にハーモニーが従います。和音はどのオクターブで弾いても同じです（音名で読みます）。MIDI が来ていない間は、スケールに従います。
   - MIDI の送り方は DAW によります。Pro Tools では、MIDI またはインストゥルメントのトラックの出力に MUEDvox を選びます（**MIDI チャンネル 1** で送ってください）。
+  - Logic Pro では、ソフトウェア音源トラックを作り、その音源の枠に **AU MIDI-controlled Effects**（英語の表示の名前）から MUEDvox を挿します。プラグインの窓の上の **Side Chain** で歌のトラックを選び、和音の MIDI はそのソフトウェア音源トラックに置きます。**歌のトラックはミュートしてください**（ミュートしても Side Chain には音が届き、元の歌は MUEDvox の Lead から鳴ります）。
 - **Avoid parallel 5ths** — 声部が元の歌と平行 5 度で動くのを避けます。
 - 画面の下の **KEYBOARD** は表示だけです。届いている MIDI と、鳴っている声部の音が見えます。左上に **Save MIDI…** があります（9 章）。
 
@@ -137,8 +138,10 @@ Program EQ、Comp、Sat、Delay、Reverb、Chorus、Flanger、Phaser、Imager �
 | Live で音程が跳ぶ | SETTINGS（歯車）の Note start を Soft に。Live は 1 人の声・伴奏の混ざらない素材向きです。 |
 | Save MIDI… に音が溜まらない | Mode は Render か Track か・DAW は再生しているか。Harmony は on か・声部は on でミュートされていないか。鍵盤に「No song position from the host」と出ていたら、DAW が曲の位置を plug-in に渡していません。 |
 | MIDI ファイルの音が小節とずれる | 再生位置ではなく、曲の頭（1 小節目）に合わせて入れてください。 |
+| Logic でインサートに MUEDvox が無い・和音を送れない | ソフトウェア音源トラックの音源の枠に AU MIDI-controlled Effects から挿し、Side Chain で歌のトラックを選びます（5 章）。 |
+| Logic で元の歌が 2 重に聞こえる | 歌のトラックをミュートします。Side Chain には音が届きます（5 章）。 |
 | Pro Tools の AudioSuite に出ない | AudioSuite には対応していません。インサートで使い、Render はコミットしてください。 |
 
 ---
 
-VST および VST3 は、欧州その他の国で登録された Steinberg Media Technologies GmbH の商標です。Audio Units（AU）は Apple Inc. の商標です。AAX は Avid Technology, Inc. の商標です。Pro Tools および AudioSuite は Avid Technology, Inc. の商標です。Mac は Apple Inc. の商標です。Windows は Microsoft Corporation の商標です。
+VST および VST3 は、欧州その他の国で登録された Steinberg Media Technologies GmbH の商標です。Audio Units（AU）は Apple Inc. の商標です。AAX は Avid Technology, Inc. の商標です。Pro Tools および AudioSuite は Avid Technology, Inc. の商標です。Mac および Logic Pro は Apple Inc. の商標です。Windows は Microsoft Corporation の商標です。

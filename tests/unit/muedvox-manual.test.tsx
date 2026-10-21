@@ -46,12 +46,13 @@ vi.mock("next/navigation", () => ({
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ host: "mued.jp" }) }));
 afterEach(cleanup);
 
-// ★Copied from mued-vox badbaae0 (#229: the 1.1.0 text — 9. Saving the harmony as MIDI) with
-//   git show badbaae06d768405247339725273bf953600b916:docs/manual/MUEDvox-manual.<locale>.md (shasum -a 256,
-//   2026-10-20). Before: eaf37abe (1.0.2, 2026-10-17), e1c88af5 (1.0.1, never shipped). Update only together with a fresh byte copy.
+// ★Copied from mued-vox a8cc05e9 (#236: 1.1.0 + sending chords from Logic Pro in ch.5, two Logic rows in ch.10) with
+//   git show a8cc05e9c594e9a0bb3492e2dc62c526334cc678:docs/manual/MUEDvox-manual.<locale>.md (shasum -a 256,
+//   2026-10-21). Before: badbaae0 (1.1.0, 2026-10-20), eaf37abe (1.0.2, 2026-10-17), e1c88af5 (1.0.1, never shipped).
+//   Update only together with a fresh byte copy.
 const MANUAL_SHA256 = {
-  en: "3f6bb4a436758a493e3a056d98b2ea69a63bd33084383a0219e6817ca7614ba5",
-  ja: "bb5b78728fcf5e0f903baad0ac93d5f95d59424757d38e806c2fc1f321e6e9a9",
+  en: "c50f6a52b3796932358250ff799eddf7f93d8a855a72f9a9ebc0193c6faa4b5c",
+  ja: "1b435b4c57a48ab7cd8440f38f006c868225e56ccfeef43108f07efba39f8121",
 };
 
 describe("★the text is VOX's, byte for byte", () => {
