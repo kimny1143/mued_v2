@@ -1,7 +1,7 @@
 /**
  * MCP API Key Management
  *
- * POST   — Generate a new API key (returns raw key once)
+ * POST   — Retired (410): keys are no longer issued
  * DELETE — Revoke an existing API key
  * GET    — List active keys for the current user
  */
@@ -13,66 +13,14 @@ import { eq, and, isNull } from "drizzle-orm";
 import { resolveClerkUserId } from "@/lib/middleware/with-auth";
 import { getUserIdFromClerkId } from "@/lib/utils/auth-helpers";
 
-async function sha256(input: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(input);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function generateRawKey(): string {
-  const chars =
-    "abcdefghijklmnopqrstuvwxyz0123456789";
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return (
-    "mcp_" + Array.from(bytes, (b) => chars[b % chars.length]).join("")
+// POST — no longer issues keys. ★The old Hoo MCP server is retired (kimny 2026-10-22「畳む」), so a new
+// key would open nothing; 410 rather than 404 says the route is gone on purpose. Revoking (DELETE) and
+// listing (GET) stay, so a holder of one of the remaining keys can still remove it.
+export async function POST() {
+  return NextResponse.json(
+    { error: "Hoo MCP has been retired. New API keys are no longer issued." },
+    { status: 410 }
   );
-}
-
-// POST — Generate new API key
-export async function POST(request: NextRequest) {
-  const clerkId = await resolveClerkUserId(request);
-  if (!clerkId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  let internalUserId: string;
-  try {
-    internalUserId = await getUserIdFromClerkId(clerkId);
-  } catch (err) {
-    const status = (err as { status?: number }).status === 404 ? 404 : 500;
-    const error = status === 404 ? "User not found" : "Internal server error";
-    return NextResponse.json({ error }, { status });
-  }
-
-  // Revoke any existing active keys (one active key per user)
-  await db
-    .update(mcpApiKeys)
-    .set({ revokedAt: new Date() })
-    .where(
-      and(eq(mcpApiKeys.userId, internalUserId), isNull(mcpApiKeys.revokedAt))
-    );
-
-  // Generate new key
-  const rawKey = generateRawKey();
-  const keyHash = await sha256(rawKey);
-  const keyPrefix = rawKey.slice(0, 8); // "mcp_xxxx"
-
-  await db.insert(mcpApiKeys).values({
-    userId: internalUserId,
-    keyPrefix,
-    keyHash,
-    name: "default",
-  });
-
-  return NextResponse.json({
-    success: true,
-    data: {
-      key: rawKey, // Only returned once
-      prefix: keyPrefix,
-    },
-  });
 }
 
 // DELETE — Revoke API key

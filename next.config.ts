@@ -115,6 +115,13 @@ const nextConfig: NextConfig = {
       { source: '/refund', destination: '/en/refund', permanent: false },
       // Third-party licenses (EULA Section 9 links here). Same 307 treatment as the legal set above.
       { source: '/licenses', destination: '/en/licenses', permanent: false },
+      // ★The old Hoo MCP is retired (kimny 2026-10-22「畳む」): /connect was the page that made the API
+      // key for it, reached from the April MCP Registry listing. A redirect here runs before the auth
+      // middleware, so a visitor never lands on sign-in for it. Temporary, so it can be undone.
+      { source: '/connect', destination: '/', permanent: false },
+      { source: '/connect/:path*', destination: '/', permanent: false },
+      // The dashboard's own key screen goes too (it also made keys). Revoking stays: DELETE /api/mcp/api-key.
+      { source: '/dashboard/settings/mcp', destination: '/dashboard/settings', permanent: false },
       // Convenience redirects for short paths → canonical /dial/* paths
       {
         source: '/waitlist',
