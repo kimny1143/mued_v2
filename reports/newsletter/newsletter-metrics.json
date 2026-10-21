@@ -1,6 +1,6 @@
 {
   "schema": "newsletter-metrics/v1",
-  "generated_at": "2026-10-20T15:27:05+09:00",
+  "generated_at": "2026-10-21T15:27:18+09:00",
   "source": "Resend API（/emails/metrics・/broadcasts/{id}/clicked-links）。plugin-funnel-collector が毎朝書き出す（mued_v2 scripts/emit-newsletter-metrics.ts）。",
   "notes": [
     "「押した人」には配信停止のリンクを押した人も入る（Resend の数え方）。製品へのリンクの数は下のリンク別を見る。",
@@ -12,6 +12,202 @@
     "リンク別は、同じ言語・同じ種類のリンクを 1 行にまとめた。1 行の中に URL が 2 つ以上ある時、押した人の数は足し算なので、両方押した人は 2 回数えている（上限の値）。"
   ],
   "broadcasts": [
+    {
+      "id": "bac65c0c-7bcf-43fd-b005-2bb9b6e53eaf",
+      "label": "MUEDvox is here ・ MUEDvox を発売します",
+      "subject": "MUEDvox is here ・ MUEDvox を発売します",
+      "sent_at": "2026-10-20T17:01:36+09:00",
+      "campaign": "email_muedvox-launch",
+      "totals": {
+        "sent": 1104,
+        "delivered": 1083,
+        "bounced": 21,
+        "bounced_transient": 21,
+        "bounced_permanent": 0,
+        "suppressed": 29,
+        "unique_opened": 266,
+        "unique_clicked": 43,
+        "unsubscribed": 9,
+        "complained": 0
+      },
+      "rates": {
+        "delivery": 98.1,
+        "open": 24.56,
+        "click": 3.97,
+        "unsubscribe": 0.83,
+        "complaint": 0
+      },
+      "hourly": [
+        {
+          "hour": "17",
+          "opened": 109,
+          "clicked": 9,
+          "unsubscribed": 4
+        },
+        {
+          "hour": "18",
+          "opened": 25,
+          "clicked": 4,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "19",
+          "opened": 19,
+          "clicked": 5,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "20",
+          "opened": 14,
+          "clicked": 3,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "21",
+          "opened": 16,
+          "clicked": 3,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "22",
+          "opened": 13,
+          "clicked": 4,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "23",
+          "opened": 19,
+          "clicked": 3,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌00",
+          "opened": 13,
+          "clicked": 1,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "翌01",
+          "opened": 10,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌02",
+          "opened": 6,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌03",
+          "opened": 6,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌04",
+          "opened": 4,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌05",
+          "opened": 8,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌06",
+          "opened": 8,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌07",
+          "opened": 9,
+          "clicked": 3,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "翌08",
+          "opened": 3,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌09",
+          "opened": 5,
+          "clicked": 3,
+          "unsubscribed": 1
+        },
+        {
+          "hour": "翌10",
+          "opened": 3,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌11",
+          "opened": 3,
+          "clicked": 1,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌12",
+          "opened": 2,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌13",
+          "opened": 1,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌14",
+          "opened": 1,
+          "clicked": 0,
+          "unsubscribed": 0
+        },
+        {
+          "hour": "翌15",
+          "opened": 1,
+          "clicked": 0,
+          "unsubscribed": 0
+        }
+      ],
+      "links": [
+        {
+          "label": "英語の製品ページ",
+          "lang": "en",
+          "kind": "product",
+          "unique": 31,
+          "clicks": 39
+        },
+        {
+          "label": "日本語の製品ページ",
+          "lang": "ja",
+          "kind": "product",
+          "unique": 4,
+          "clicks": 8
+        },
+        {
+          "label": "/en/eula",
+          "lang": "en",
+          "kind": "eula",
+          "unique": 1,
+          "clicks": 4
+        },
+        {
+          "label": "配信停止",
+          "lang": "",
+          "kind": "unsubscribe",
+          "unique": 10,
+          "clicks": 16
+        }
+      ]
+    },
     {
       "id": "86c01ff0-b9f1-4ef4-b3ce-5ef3960d23f7",
       "label": "MUEDlim 1.0.1 — CEILING −18 / 1:1 / GR graph (2026-10-09)",
@@ -25,14 +221,14 @@
         "bounced_transient": 20,
         "bounced_permanent": 1,
         "suppressed": 27,
-        "unique_opened": 355,
+        "unique_opened": 357,
         "unique_clicked": 54,
         "unsubscribed": 4,
         "complained": 0
       },
       "rates": {
         "delivery": 97.96,
-        "open": 35.18,
+        "open": 35.38,
         "click": 5.35,
         "unsubscribe": 0.4,
         "complaint": 0
@@ -226,14 +422,14 @@
         "bounced_transient": 29,
         "bounced_permanent": 0,
         "suppressed": 27,
-        "unique_opened": 302,
+        "unique_opened": 303,
         "unique_clicked": 54,
         "unsubscribed": 12,
         "complained": 0
       },
       "rates": {
         "delivery": 97.13,
-        "open": 30.75,
+        "open": 30.86,
         "click": 5.5,
         "unsubscribe": 1.22,
         "complaint": 0
@@ -427,14 +623,14 @@
         "bounced_transient": 20,
         "bounced_permanent": 1,
         "suppressed": 26,
-        "unique_opened": 293,
+        "unique_opened": 294,
         "unique_clicked": 58,
         "unsubscribed": 12,
         "complained": 0
       },
       "rates": {
         "delivery": 97.94,
-        "open": 29.3,
+        "open": 29.4,
         "click": 5.8,
         "unsubscribe": 1.2,
         "complaint": 0
