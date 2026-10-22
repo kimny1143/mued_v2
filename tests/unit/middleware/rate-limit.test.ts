@@ -26,9 +26,7 @@ vi.mock('@upstash/ratelimit', () => ({
 }));
 
 vi.mock('@upstash/redis', () => ({
-  Redis: class MockRedis {
-    constructor() {}
-  },
+  Redis: vi.fn(function MockRedis() {}),
 }));
 
 vi.mock('@clerk/nextjs/server', () => ({
@@ -300,6 +298,36 @@ describe('rate-limit module', () => {
       vi.resetModules();
       const dev = await import('@/lib/middleware/rate-limit');
       expect(await dev.checkRateLimit('strict', 'ip:203.0.113.10')).toBeNull();
+    });
+
+    it('★a malformed Upstash URL (the constructor throws) is treated as unconfigured: production still limits', async () => {
+      process.env.UPSTASH_REDIS_REST_URL = 'https://ok.upstash.io ';
+      process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.stubEnv('NODE_ENV', 'production');
+      try {
+        const { Redis } = await import('@upstash/redis');
+        vi.mocked(Redis as any).mockImplementation(() => { throw new Error('invalid URL'); });
+        const { checkRateLimit } = await import('@/lib/middleware/rate-limit');
+        for (let i = 0; i < 5; i++) await checkRateLimit('strict', 'ip:203.0.113.12');
+        expect((await checkRateLimit('strict', 'ip:203.0.113.12'))?.success).toBe(false);
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    });
+
+    it('the memory map is capped: a full map evicts old windows instead of growing', async () => {
+      process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
+      process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
+      mockLimit.mockRejectedValue(new Error('down'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const { checkRateLimit } = await import('@/lib/middleware/rate-limit');
+      // ★The known cost (CCO, #1303): eviction resets the oldest key's count. Pinned so it is a choice.
+      for (let i = 0; i < 6; i++) await checkRateLimit('strict', 'ip:victim');
+      expect((await checkRateLimit('strict', 'ip:victim'))?.success).toBe(false);
+      for (let i = 0; i < 10_000; i++) await checkRateLimit('strict', `ip:flood-${i}`);
+      expect((await checkRateLimit('strict', 'ip:victim'))?.success).toBe(true);
     });
 
     it('the window ends: a refused key is allowed again once its window has passed', async () => {

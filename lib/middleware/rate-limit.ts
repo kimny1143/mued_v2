@@ -23,10 +23,21 @@ function getRedis(): Redis | null {
   }
 
   if (!redis) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
+    // The constructor throws on a malformed URL (not https, a trailing space — CCO measured both on
+    // #1303). Outside a try that would fail every caller open; treated as unconfigured instead, so
+    // production still counts in memory.
+    try {
+      redis = new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      });
+    } catch (error) {
+      if (!hasLoggedWarning) {
+        hasLoggedWarning = true;
+        console.error("[RateLimit] Upstash client could not be created, using in-memory limits:", error);
+      }
+      return null;
+    }
   }
   return redis;
 }
