@@ -229,6 +229,97 @@ describe('rate-limit module', () => {
     });
   });
 
+  // ★2026-10-22: production's Upstash host stopped resolving and every check failed open, so the public
+  //   email-sending forms had no limit at all. These pin the fallback that replaced "allow everything".
+  describe('in-memory fallback', () => {
+    it('★Upstash throws: the same numbers are still enforced (the 6th "research" call is refused)', async () => {
+      process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
+      process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
+      mockLimit.mockRejectedValue(new Error('getaddrinfo ENOTFOUND'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const { checkRateLimit } = await import('@/lib/middleware/rate-limit');
+      const results = [];
+      for (let i = 0; i < 6; i++) results.push(await checkRateLimit('research', 'ip:203.0.113.7'));
+
+      expect(results.slice(0, 5).every((r) => r?.success === true)).toBe(true);
+      expect(results[5]).toMatchObject({ success: false, limit: 5, remaining: 0 });
+    });
+
+    it('★after one Upstash failure it is skipped for a while (each failed call cost ~4.6 s in production)', async () => {
+      process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
+      process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
+      mockLimit.mockReset();
+      mockLimit.mockRejectedValue(new Error('getaddrinfo ENOTFOUND'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const { checkRateLimit } = await import('@/lib/middleware/rate-limit');
+      for (let i = 0; i < 4; i++) await checkRateLimit('api', 'ip:203.0.113.8');
+
+      expect(mockLimit).toHaveBeenCalledTimes(1);
+    });
+
+    it('★rateLimit() answers 429 from the fallback, not "allow"', async () => {
+      process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
+      process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
+      mockLimit.mockRejectedValue(new Error('getaddrinfo ENOTFOUND'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(auth).mockResolvedValue({ userId: null } as any);
+
+      const { rateLimit } = await import('@/lib/middleware/rate-limit');
+      const request = () => new Request('http://localhost:3000/api/muedlim/subscribe', {
+        method: 'POST',
+        headers: { 'x-forwarded-for': '203.0.113.9' },
+      });
+      for (let i = 0; i < 5; i++) expect(await rateLimit(request(), 'research')).toBeNull();
+      const refused = await rateLimit(request(), 'research');
+      expect(refused?.status).toBe(429);
+      expect(Number(refused?.headers.get('Retry-After'))).toBeGreaterThan(0);
+    });
+
+    it('keys are separate: one address hitting the limit does not block another', async () => {
+      process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
+      process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
+      mockLimit.mockRejectedValue(new Error('down'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const { checkRateLimit } = await import('@/lib/middleware/rate-limit');
+      for (let i = 0; i < 6; i++) await checkRateLimit('plugin-email', 'plugin-email:a@example.com');
+      expect((await checkRateLimit('plugin-email', 'plugin-email:a@example.com'))?.success).toBe(false);
+      expect((await checkRateLimit('plugin-email', 'plugin-email:b@example.com'))?.success).toBe(true);
+    });
+
+    it('★unconfigured in production: limited in memory (not disabled); unconfigured elsewhere: no limit', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.stubEnv('NODE_ENV', 'production');
+      const prod = await import('@/lib/middleware/rate-limit');
+      for (let i = 0; i < 5; i++) await prod.checkRateLimit('strict', 'ip:203.0.113.10');
+      expect((await prod.checkRateLimit('strict', 'ip:203.0.113.10'))?.success).toBe(false);
+      vi.unstubAllEnvs();
+
+      vi.resetModules();
+      const dev = await import('@/lib/middleware/rate-limit');
+      expect(await dev.checkRateLimit('strict', 'ip:203.0.113.10')).toBeNull();
+    });
+
+    it('the window ends: a refused key is allowed again once its window has passed', async () => {
+      process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
+      process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
+      mockLimit.mockRejectedValue(new Error('down'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.useFakeTimers();
+      try {
+        const { checkRateLimit } = await import('@/lib/middleware/rate-limit');
+        for (let i = 0; i < 6; i++) await checkRateLimit('strict', 'ip:203.0.113.11');
+        expect((await checkRateLimit('strict', 'ip:203.0.113.11'))?.success).toBe(false);
+        vi.advanceTimersByTime(61_000);
+        expect((await checkRateLimit('strict', 'ip:203.0.113.11'))?.success).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   describe('rate limit types', () => {
     beforeEach(() => {
       process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
