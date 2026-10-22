@@ -1,7 +1,7 @@
 {
-  "last_publish_at": "2026-10-21T06:27:26Z",
+  "last_publish_at": "2026-10-22T06:29:45Z",
   "trigger": "schedule",
   "workflow": "plugin-funnel-collector",
-  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/39555309174",
-  "report": "reports/plugin-funnel/2026-10-20.json"
+  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/39734137149",
+  "report": "reports/plugin-funnel/2026-10-21.json"
 }
