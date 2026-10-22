@@ -18,3 +18,12 @@
 ## blocked_by から移した部分（W37・W36・W34・W31・2026-10-22）
 
 ★★**(W37・2026-10-08T20:38:35+09:00) GA4 の数は 2026-10-08 20:35 JST から「同意する」を選んだ人の分だけ**（#1208）。それより前の数と並べる時は、この境を書く。** ★★**(W36・2026-10-08T11:31:16+09:00) Colima の profile ci は Mac の再起動で自動で上がらない**（10/7 13:07 JST の再起動から 10/8 11:14 JST まで runner 0 台・CI は queued のまま待つ）。手順＝`colima start --profile ci`。自動起動の仕込みは発売後の CI の見直しで（conductor 10/8）。** ★★**(W34・2026-10-04T12:28:19+09:00) gate の 3 つの行（sales-impact・copy-approval・guard-change）は HTML コメントの中の行も数える**（CCO #1229 の注記）＝`<!-- guard-change: … -->` だけで ok になり、画面では見えない。次に守りを触る PR で withoutFences と同じ所で <!-- --> も除く（guard-change 行は kimny の承認が要る）。** ★★**(W31・2026-10-01T14:54:22+09:00) masterchain の Windows の倍率の切り替え（開いたまま 50→100→150→75）は未確認のまま出した**（kimny 逐語「いや、もう縮尺はいいから。デプロイすすめて」）。効かない報告が来たら PLUG_HOST_RESIZE 1＋ConstrainEditorResize で新しい zip（lib/masterchain/config.ts の注釈）。**
+
+
+## blocked_by の末尾（2026-10-22T21:51:11+09:00 に退避・逐語）
+
+★★**(W29) 返金で本番未確認の形: partial・chargeback・「作成」の後の Cancel**（台帳 2a）。#1197 以降、completed でない return.created は記録だけ（processed＋注記）＝最初の 1 件で、Confirm の後に別の event が来るかを照らす。** ★★**(W27) サポートの注意: 同じファイル名の版が複数（/downloads/・ui-2026.10・keyentry-2026.10）。見分けは URL。** ★★**(W0c) 特商法の表示価格と FastSpring の突き合わせ（conductor / kimny）。** ★★**(W22) remaining_to_1000 の削除（次の funnel PR）。** ★★**(W16) 【保留】有料 final の R2 URL。** ★★**(W15) 版の parser の 1 本化。** ★★**(W0b) 旧版の file を消さない。** ★全文＝退避ファイル。
+
+## blocked_by の W26（content課への通知の中身・2026-10-22T21:51:20+09:00 に退避・逐語）
+
+★★**(W26) content課への canonical 通知が未送信**（セッションが居ない・2026-10-07T01:11:41+09:00 も ListAgents に content課なし）。10/17 分: MUEDvox 1.0.2（歯車）・masterchain 1.0.3（新しい体験版）・EULA 2026.10.2・マニュアルのページ（#1294）・$69 固定（#1289）（2026-10-17T21:43:57+09:00 も ListAgents に content課なし）。10/14 分②: 4 製品 1.0.2（#1286・MUEDsat は Drive のクリックの直し・masterchain と MUEDrive は Pro Tools の棚の分類・MUEDlim は音と機能の変更なし・EULA 2026.10.1 と表記を同梱・Windows も 1.0.2・2026-10-14T09:56 も ListAgents に content課なし）。10/14 分①: MUEDvox の LP に試聴のプレイヤー（#1281・Sample #1・#2・Before／After × ミックス／歌だけ・2026-10-14T07:49 も ListAgents に content課なし）。送る内容（10/8 分を追加・この日も ListAgents に content課なし）: Cookie の同意の表示と privacy 第 6・9 項（#1208・GA4 は同意した人だけ）。10/6 分: カート（#1231・EULA はボタンの文で同意）・形式に Windows VST3（#1238）・購入者をお知らせへ（#1238・カートで告知）・masterchain の画像が LICENSED の画面に（#1243）・外報の画像の固定 URL（#1242）・/muedlim と /learn から masterchain への導線（#1240・#1241）・無料 LP のチェック欄の句を削除（#1240）。以前の分: EULA 2026.10・返金ポリシー・masterchain 1.0.1（keyentry の版）・MUEDsat 1.0.1（THD の実測・画像）・FAQ q11・購入の開始と購入の流れ（#1191）・llms.txt（#1188）・案内メールの言語（#1193）・鍵の入れ方（ドロップが主）。**
