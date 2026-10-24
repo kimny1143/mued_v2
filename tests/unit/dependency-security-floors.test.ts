@@ -46,16 +46,45 @@ const FLOORS: Floor[] = [
   {
     key: "next",
     where: "dependencies",
-    lastVulnerable: "16.2.11",
-    firstFixed: "16.3.3",
-    advisory: "Image Optimization API (AVIF): unauthenticated RCE — fixed in >=16.3.3 (PR #986)",
+    lastVulnerable: "16.4.0",
+    firstFixed: "16.4.1",
+    // Earlier floor: 16.3.3 for the AVIF Image Optimization RCE (PR #986).
+    advisory: "GHSA-2464-fhr4-w9xw / GHSA-673q-mjm6-r5xr (RCE) / GHSA-p3m5-59mp-jv5r (DoS) — fixed in >=16.4.1",
+  },
+  {
+    key: "@sentry/nextjs",
+    where: "dependencies",
+    lastVulnerable: "10.75.1",
+    firstFixed: "10.75.2",
+    advisory: "GHSA-mchm-gjx6-7h55 (middleware bypass via the tunnel route) — fixed in >=10.75.2",
+  },
+  {
+    key: "puppeteer",
+    where: "dependencies",
+    lastVulnerable: "25.12.0",
+    firstFixed: "25.13.0",
+    advisory: "via chromium-bidi → zod GHSA-mrhx; 25.13.0+ pins chromium-bidi 157 (its own zod 4.6.7)",
+  },
+  {
+    key: "undici",
+    where: "overrides",
+    lastVulnerable: "6.29.0",
+    firstFixed: "6.29.1",
+    advisory: "GHSA-xjj6-f33q-929c / GHSA-4qv8-2p9j-2685 (DoS) — fixed in >=6.29.1",
+  },
+  {
+    key: "dompurify@3",
+    where: "overrides",
+    lastVulnerable: "3.4.16",
+    firstFixed: "3.4.17",
+    advisory: "GHSA-mrv2-3pqr-j5jr (IN_PLACE hook leaves executable markup) and older — fixed in >=3.4.17",
   },
   {
     key: "sharp",
     where: "overrides",
-    lastVulnerable: "0.35.3",
-    firstFixed: "0.35.4",
-    advisory: "GHSA-g89c-p67h-r497 / GHSA-2jg2-4ch7-h545 (bundled libheif) — fixed in >=0.35.4",
+    lastVulnerable: "0.35.4",
+    firstFixed: "0.35.5",
+    advisory: "GHSA-2464-fhr4-w9xw workaround (next's Image Optimization RCE needs sharp >=0.35.5); earlier GHSA-g89c-p67h-r497 / GHSA-2jg2-4ch7-h545",
   },
   {
     key: "js-yaml@3",
@@ -113,10 +142,12 @@ describe("dependency security floors", () => {
     //   nothing anywhere said so. ★An emptied FLOORS would have removed every floor check while the
     //   suite stayed green — the exact shape #987 guards against three files over
     //   (`files.length > 20`), applied here to its own table.
-    expect(FLOORS.length).toBeGreaterThanOrEqual(3);
-    // ★Names too, not just a count: a table trimmed to three unrelated rows would still pass a
-    //   bare length check, and these three are the ones #986 actually had to move.
-    expect(FLOORS.map((f) => f.key).sort()).toEqual(["js-yaml@3", "next", "sharp"]);
+    expect(FLOORS.length).toBeGreaterThanOrEqual(7);
+    // ★Names too, not just a count: a table trimmed to unrelated rows would still pass a bare length
+    //   check. The first three are the ones #986 had to move; the other four came with 2026-10-25.
+    expect(FLOORS.map((f) => f.key).sort()).toEqual(
+      ["@sentry/nextjs", "dompurify@3", "js-yaml@3", "next", "puppeteer", "sharp", "undici"],
+    );
   });
 
   it("★minOf() refuses a range shape it was not built for", () => {

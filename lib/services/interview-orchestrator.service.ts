@@ -50,7 +50,7 @@ export const GenerateInterviewInputSchema = z.object({
       to: z.number(),
     }).optional(),
   }).optional(),
-  previousQuestions: z.array(z.string()).optional(),
+  previousQuestions: z.array(z.string()).max(100).optional(), // ★same bound as the route (zod GHSA-mrhx)
 });
 
 /**
@@ -60,11 +60,12 @@ export const GenerateInterviewOutputSchema = z.object({
   questions: z.array(InterviewQuestionSchema).min(2).max(3),
   confidence: z.number().min(0).max(1),
   generationMethod: z.enum(['ai', 'template', 'fallback']),
+  // Output schemas below are types only today (never .parse'd); bounded anyway so a future parse is too.
   similarLogs: z.array(z.object({
     logId: z.string().uuid(),
     similarity: z.number(),
     content: z.string(),
-  })),
+  })).max(100),
   focusArea: z.string(),
   intentHypothesis: z.string(),
 });
@@ -109,7 +110,7 @@ export const InterviewHistoryItemSchema = z.object({
  */
 export const InterviewHistorySchema = z.object({
   sessionId: z.string().uuid(),
-  questions: z.array(InterviewHistoryItemSchema),
+  questions: z.array(InterviewHistoryItemSchema).max(1000),
   totalQuestions: z.number().int().min(0),
   answeredCount: z.number().int().min(0),
 });

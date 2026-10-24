@@ -24,7 +24,7 @@ import { withAuthResolved } from '@/lib/middleware/with-auth';
 const GenerateQuestionsRequestSchema = z.object({
   sessionId: z.string().uuid('Invalid session ID format'),
   userShortNote: z.string().min(1, 'User note cannot be empty').max(500, 'Note too long (max 500 chars)'),
-  previousQuestions: z.array(z.string()).optional(),
+  previousQuestions: z.array(z.string()).max(100).optional(), // ★2-3 questions per round; bounds zod GHSA-mrhx
 });
 
 // ========================================

@@ -39,7 +39,7 @@ export const GenerateQuestionsInputSchema = z.object({
   focusArea: focusAreaSchema,
   intentHypothesis: z.string().min(1),
   userShortNote: z.string().min(1),
-  previousQuestions: z.array(z.string()).optional(),
+  previousQuestions: z.array(z.string()).max(100).optional(), // ★same bound as the route (zod GHSA-mrhx)
 });
 
 /**

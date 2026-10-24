@@ -23,7 +23,7 @@ const hooChatRequestSchema = z.object({
       role: z.enum(['user', 'assistant']),
       content: z.string().min(1).max(10000),
     })
-  ).min(1),
+  ).min(1).max(200), // ★a long chat is a few dozen turns; bounds the input for zod GHSA-mrhx
 });
 
 // ========================================

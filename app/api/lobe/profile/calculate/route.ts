@@ -20,8 +20,9 @@ const gameResultSchema = z.object({
   completedAt: z.string(),
 });
 
+// ★.max(50): GAME_ORDER has 7 games, one result each; bounds the input for zod GHSA-mrhx.
 const requestSchema = z.object({
-  gameResults: z.array(gameResultSchema),
+  gameResults: z.array(gameResultSchema).max(50),
 });
 
 export const POST = withAuth(async ({ userId, request }) => {

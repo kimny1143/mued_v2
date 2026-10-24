@@ -37,6 +37,7 @@
 import { execFileSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
 import { auditVerdict, bypassExpired, mayRefetch } from "@/lib/ci/audit-verdict";
+import { AUDIT_ALLOWLIST } from "@/lib/ci/audit-allowlist";
 
 // ★ Delete this script and restore a plain `npm audit` once the registry is healthy.
 //   Extending this date must be a deliberate decision by whoever hits the failure — that is the point.
@@ -122,7 +123,7 @@ function askOnce(): { verdict: ReturnType<typeof auditVerdict>; rawPreview: stri
   // stdout, a proxy returning HTML, npm missing entirely, and today's undecoded-gzip all look
   // identical. Keep the first bytes so the next person can tell which. (Same reason #763 prints the
   // cause chain instead of just the message.)
-  return { verdict: auditVerdict(parsed), rawPreview: raw.trim().slice(0, 200).replace(/\s+/g, " ") };
+  return { verdict: auditVerdict(parsed, { entries: AUDIT_ALLOWLIST, now: new Date() }), rawPreview: raw.trim().slice(0, 200).replace(/\s+/g, " ") };
 }
 
 const startedAt = Date.now();
@@ -161,6 +162,18 @@ if (verdict.kind === "clean") {
   console.log(
     `✓ audit: no high/critical in production dependencies (low ${verdict.low} / moderate ${verdict.moderate})`,
   );
+  // ★An allowed advisory is still a finding. Say it on every run, so green never reads as "none".
+  if (verdict.excused?.length) {
+    const entries = AUDIT_ALLOWLIST.map((e) => `${e.advisory} (${e.package}) until ${e.until}`).join(", ");
+    console.warn(
+      `::warning::Allowed by lib/ci/audit-allowlist.ts, not fixed: ${verdict.excused.join(", ")} — ${entries}`,
+    );
+    summary(
+      `### ⚠ Security audit passed with allowed advisories\n\n` +
+        verdict.excused.map((n) => `- ${n}`).join("\n") +
+        `\n\nAllowlist: ${entries}. After the date, the gate fails again.`,
+    );
+  }
   process.exit(0);
 }
 

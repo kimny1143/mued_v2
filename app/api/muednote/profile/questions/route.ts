@@ -176,11 +176,13 @@ export const GET = withAuthResolved(async ({ internalUserId }) => {
 // POST — Submit answers
 // ========================================
 
+// ★Bounds (zod GHSA-mrhx, lib/ci/audit-allowlist.ts): PROFILE_QUESTIONS has 8 entries, so 50 answers
+// and 50 choices per answer are well above anything the form can send.
 const answerSchema = z.object({
   answers: z.array(z.object({
     questionId: z.string(),
-    value: z.union([z.string(), z.array(z.string())]),
-  })),
+    value: z.union([z.string(), z.array(z.string()).max(50)]),
+  })).max(50),
 });
 
 export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, request }) => {
