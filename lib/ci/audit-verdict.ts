@@ -65,14 +65,17 @@ function isExcused(
   name: string,
   vulns: NonNullable<AuditReportish["vulnerabilities"]>,
   allow: AuditAllowContext,
-  seen: Set<string> = new Set(),
+  path: ReadonlySet<string> = new Set(),
 ): boolean {
-  if (seen.has(name)) return true; // cycle: decided by the other members of the cycle
-  seen.add(name);
+  // ★A cycle proves nothing: a↔b with no advisory would otherwise excuse both (CCO, #1307). Fail closed.
+  // `path` is the current chain only, not every package seen, so a diamond (puppeteer → chromium-bidi
+  // directly and through puppeteer-core) is evaluated on both branches rather than read as a cycle.
+  if (path.has(name)) return false;
+  const here = new Set(path).add(name);
   const via = vulns[name]?.via;
   if (!via || via.length === 0) return false; // nothing to attribute the severity to ⇒ not excused
   return via.every((v) => {
-    if (typeof v === "string") return isExcused(v, vulns, allow, seen);
+    if (typeof v === "string") return isExcused(v, vulns, allow, here);
     if (!BLOCKING_SEVERITIES.has(v.severity ?? "")) return true;
     return allow.entries.some(
       (e) =>

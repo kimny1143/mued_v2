@@ -11,6 +11,7 @@ import { userProfileRepository } from '@/lib/repositories/user-profiles.reposito
 import { profileGeneratorService } from '@/lib/services/profile-generator.service';
 import { logger } from '@/lib/utils/logger';
 import { z } from 'zod';
+import { boundedArray } from "@/lib/validation/bounded-array";
 
 // ========================================
 // GET — Retrieve profile (generate if missing)
@@ -52,21 +53,21 @@ export const GET = withAuthResolved(async ({ internalUserId, clerkUserId }) => {
 // PATCH — User corrections
 // ========================================
 
-// ★Each list has .max(50): the profile shows a handful of tags; 50 is far above any real list and
-// bounds the input for zod GHSA-mrhx (lib/ci/audit-allowlist.ts).
+// ★Each list is at most 50 (a profile shows a handful of tags). boundedArray rejects a longer one
+// before parsing its elements — see lib/validation/bounded-array.ts.
 const patchSchema = z.object({
   bio: z.string().max(200).nullable().optional(),
   musical: z.object({
-    genres: z.array(z.string()).max(50).optional(),
-    instruments: z.array(z.string()).max(50).optional(),
-    influences: z.array(z.string()).max(50).optional(),
+    genres: boundedArray(z.string(), { max: 50 }).optional(),
+    instruments: boundedArray(z.string(), { max: 50 }).optional(),
+    influences: boundedArray(z.string(), { max: 50 }).optional(),
     productionStyle: z.string().max(200).nullable().optional(),
     mixingPreferences: z.string().max(200).nullable().optional(),
   }).optional(),
   creative: z.object({
-    focusAreas: z.array(z.string()).max(50).optional(),
-    strengths: z.array(z.string()).max(50).optional(),
-    growthAreas: z.array(z.string()).max(50).optional(),
+    focusAreas: boundedArray(z.string(), { max: 50 }).optional(),
+    strengths: boundedArray(z.string(), { max: 50 }).optional(),
+    growthAreas: boundedArray(z.string(), { max: 50 }).optional(),
     workPatterns: z.string().max(200).nullable().optional(),
   }).optional(),
 });

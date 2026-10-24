@@ -16,8 +16,11 @@ export const AUDIT_ALLOWLIST: readonly AuditAllowance[] = [
     until: "2026-12-31",
     reason:
       "Memory exhaustion validating a large array with no length limit. The only fix is zod 4.6.6+ " +
-      "(a major upgrade from our 3.25). The advisory names zod 4's $ZodArray; our schemas use the v3 " +
-      "API, and every API z.array now has a .max() (same PR), which bounds the input on our side.",
+      "(a major upgrade from our 3.25). zod 3 has the same shape: .max() runs after every element is " +
+      "parsed (CCO measured 2.25M issues, 1.2 s, 838 MB RSS for one 4.5 MB request). So every z.array " +
+      "in app/api and lib now goes through boundedArray, which rejects an over-long array before " +
+      "parsing it (measured: 1 issue, 1 ms). Remaining exposure: zod/v4 inside ai-sdk, which " +
+      "validates model responses (bounded by the model's output), not request bodies.",
     removeWhen: "The app moves to zod 4 (status.md blocked_by). Delete this entry in that PR.",
   },
 ];

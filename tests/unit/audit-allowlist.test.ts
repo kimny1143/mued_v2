@@ -91,6 +91,28 @@ describe("audit allowlist", () => {
     expect(v.names).toEqual(["next (critical)"]);
   });
 
+  it("★a dependency cycle with no allowed advisory blocks (fails closed)", () => {
+    const v = auditVerdict(
+      report({ a: { severity: "high", via: ["b"] }, b: { severity: "high", via: ["a"] } }),
+      { entries: [allowZod], now: before },
+    );
+    expect(v.kind).toBe("vulnerable");
+  });
+
+  it("a diamond is not a cycle: both branches through the excused package are excused", () => {
+    // The 2026-10-25 shape before the puppeteer bump: puppeteer → chromium-bidi and puppeteer-core → chromium-bidi → zod.
+    const v = auditVerdict(
+      report({
+        zod: { severity: "high", via: [adv(ZOD, "high")] },
+        "chromium-bidi": { severity: "high", via: ["zod"] },
+        "puppeteer-core": { severity: "high", via: ["chromium-bidi"] },
+        puppeteer: { severity: "high", via: ["chromium-bidi", "puppeteer-core"] },
+      }),
+      { entries: [allowZod], now: before },
+    );
+    expect(v.kind).toBe("clean");
+  });
+
   it("ignores low/moderate advisories on an excused package", () => {
     const v = auditVerdict(
       report({ zod: { severity: "high", via: [adv(ZOD, "high"), adv("GHSA-aaaa-bbbb-cccc", "moderate")] } }),

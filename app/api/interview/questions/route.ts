@@ -10,6 +10,7 @@ import { interviewQuestions, sessions } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { boundedArray } from "@/lib/validation/bounded-array";
 import { analyzerService } from '@/lib/services/analyzer.service';
 import { interviewerService } from '@/lib/services/interviewer.service';
 import { ragService } from '@/lib/services/rag.service';
@@ -24,7 +25,7 @@ import { withAuthResolved } from '@/lib/middleware/with-auth';
 const GenerateQuestionsRequestSchema = z.object({
   sessionId: z.string().uuid('Invalid session ID format'),
   userShortNote: z.string().min(1, 'User note cannot be empty').max(500, 'Note too long (max 500 chars)'),
-  previousQuestions: z.array(z.string()).max(100).optional(), // ★2-3 questions per round; bounds zod GHSA-mrhx
+  previousQuestions: boundedArray(z.string(), { max: 100 }).optional(), // ★2-3 questions per round
 });
 
 // ========================================

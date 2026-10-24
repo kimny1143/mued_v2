@@ -26,6 +26,7 @@ import { sql, eq, and, desc } from 'drizzle-orm';
 import { logger } from '@/lib/utils/logger';
 import { calculateRAGMetrics, type RAGMetrics } from '@/lib/utils/rag-metrics';
 import { z } from 'zod';
+import { boundedArray } from "@/lib/validation/bounded-array";
 import { createHash } from 'crypto';
 
 // ========================================
@@ -106,7 +107,7 @@ export const FindSimilarLogsInputSchema = z.object({
 const UpsertEmbeddingInputSchema = z.object({
   sourceType: z.enum(['session', 'template', 'log_entry']),
   sourceId: z.string().uuid(),
-  embedding: z.array(z.number()).length(1536),
+  embedding: boundedArray(z.number(), { min: 1536, max: 1536 }),
   metadata: z.record(z.unknown()).optional(),
 });
 

@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import { boundedArray } from "@/lib/validation/bounded-array";
 import { withAuth } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
 import {
@@ -20,9 +21,9 @@ const gameResultSchema = z.object({
   completedAt: z.string(),
 });
 
-// ★.max(50): GAME_ORDER has 7 games, one result each; bounds the input for zod GHSA-mrhx.
+// ★At most 50: GAME_ORDER has 7 games, one result each.
 const requestSchema = z.object({
-  gameResults: z.array(gameResultSchema).max(50),
+  gameResults: boundedArray(gameResultSchema, { max: 50 }),
 });
 
 export const POST = withAuth(async ({ userId, request }) => {

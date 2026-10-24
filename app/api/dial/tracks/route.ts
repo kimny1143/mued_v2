@@ -12,6 +12,7 @@
  */
 
 import { z } from 'zod';
+import { boundedArray } from "@/lib/validation/bounded-array";
 import { eq, and } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
@@ -39,7 +40,7 @@ const trackUpdateSchema = z.object({
 
 const batchUpdateSchema = z.object({
   sessionId: z.string().uuid(),
-  updates: z.array(trackUpdateSchema).min(1).max(50),
+  updates: boundedArray(trackUpdateSchema, { min: 1, max: 50 }),
 });
 
 export const PATCH = withDialAuth(async (auth) => {
