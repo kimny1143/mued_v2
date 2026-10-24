@@ -27,3 +27,13 @@
 ## blocked_by の W26（content課への通知の中身・2026-10-22T21:51:20+09:00 に退避・逐語）
 
 ★★**(W26) content課への canonical 通知が未送信**（セッションが居ない・2026-10-07T01:11:41+09:00 も ListAgents に content課なし）。10/17 分: MUEDvox 1.0.2（歯車）・masterchain 1.0.3（新しい体験版）・EULA 2026.10.2・マニュアルのページ（#1294）・$69 固定（#1289）（2026-10-17T21:43:57+09:00 も ListAgents に content課なし）。10/14 分②: 4 製品 1.0.2（#1286・MUEDsat は Drive のクリックの直し・masterchain と MUEDrive は Pro Tools の棚の分類・MUEDlim は音と機能の変更なし・EULA 2026.10.1 と表記を同梱・Windows も 1.0.2・2026-10-14T09:56 も ListAgents に content課なし）。10/14 分①: MUEDvox の LP に試聴のプレイヤー（#1281・Sample #1・#2・Before／After × ミックス／歌だけ・2026-10-14T07:49 も ListAgents に content課なし）。送る内容（10/8 分を追加・この日も ListAgents に content課なし）: Cookie の同意の表示と privacy 第 6・9 項（#1208・GA4 は同意した人だけ）。10/6 分: カート（#1231・EULA はボタンの文で同意）・形式に Windows VST3（#1238）・購入者をお知らせへ（#1238・カートで告知）・masterchain の画像が LICENSED の画面に（#1243）・外報の画像の固定 URL（#1242）・/muedlim と /learn から masterchain への導線（#1240・#1241）・無料 LP のチェック欄の句を削除（#1240）。以前の分: EULA 2026.10・返金ポリシー・masterchain 1.0.1（keyentry の版）・MUEDsat 1.0.1（THD の実測・画像）・FAQ q11・購入の開始と購入の流れ（#1191）・llms.txt（#1188）・案内メールの言語（#1193）・鍵の入れ方（ドロップが主）。**
+
+
+## 2026-10-24 退避（#1303・#1304 merge 時に status.md から外した段・逐語）
+
+- next_action: ★★**(手番 2026-10-22T22:16:34+09:00) ⓪ #1303: CCO 再 PASS・conductor OK 済み＝CI 緑＋kimny「1303 merge」で gate → 本番で 7 回測って conductor と CCO へ。① #1304（.npmrc ignore-scripts=true）CCO PASS（5614854292）・Vercel Preview 通過・conductor OK（2026-10-22T22:20:05+09:00）＝#1303 の後に CI 緑＋kimny「1304 merge」で gate。hoo-mcp に lockfile が無い件（deploy-hoo-mcp.yml の npm ci が落ちる）は Worker を止める PR でまとめる。**
+
+- next_action: ★★**(手番 2026-10-22T21:51:11+09:00) ⓪ #1303（rate limit のメモリの代わり）の CCO の PASS 待ち → kimny「1303 merge」で gate → 本番で 7 回測って conductor へ（blocked_by の先頭）。**
+
+- blocked_by: ★★**(2026-10-22T21:51:11+09:00) #1303 rate limit（conductor 依頼・Chief メモ d79e8c7）: 本番の Upstash は env の名前はあるが host が ENOTFOUND（set-cowbird-41295）＝全部の制限が fail-open だった（21:41 実測・7 回とも 400）。#1303 で Upstash が答えない時はメモリで同じ数を数える・advisory/slots に 60/分。conductor 決定＝(a) メモリで運用。CCO PASS は 06a480b2 に出た（review 5614602821）が、指摘 2 つ（client が作れない時の fail-open・上限の試験）を取り込んで head は 247d98ea（2026-10-22T22:06:54+09:00）＝CCO 再 PASS 済み（review 5614781660・2026-10-22T22:14:28+09:00）→ conductor OK（247d98ea）→ CI 緑待ち → kimny がこの窓で「1303 merge」→ gate で押す → 本番で壊れた JSON を muedlim/subscribe に 7 回・何回目で 429 か・遅れ（前は 1 回 ~4.6 秒）を conductor へ。Upstash を作り直すか（b）env を消すか（c）は kimny の判断待ち（CCO 注記: RoEx の cr 上限 dial-analyze 等はメモリだとインスタンスが変わると数え直し＝本当の直しは (b)）。同じ PR で lib/middleware/rate-limit.ts の getRedis のコメント「not https」を直す（CCO 訂正: http でも作れる・投げるのは URL でない時と末尾の空白だけ・挙動は同じ）。旧 Hoo MCP の Worker を止める PR の時に workers/hoo-mcp/.mcpregistry_* 2 つを手元で消す（untracked＝diff に出ない・PR 本文に書く）。**
+
