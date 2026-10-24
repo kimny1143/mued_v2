@@ -13,7 +13,7 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { PLUGIN_DIST, HONEYPOT_FIELD, type PluginKey } from "@/lib/plugins/registry";
+import { PLUGIN_DIST, HONEYPOT_FIELD, HONEYPOT_INPUT_PROPS, type PluginKey } from "@/lib/plugins/registry";
 import { trackCtaClick } from "@/lib/analytics/gtag";
 
 type Status = "idle" | "submitting" | "success" | "error";
@@ -148,10 +148,8 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
         <label htmlFor={`${inputId}-hp`}>Leave this field empty</label>
         <input
           id={`${inputId}-hp`}
-          type="text"
           name={HONEYPOT_FIELD}
-          tabIndex={-1}
-          autoComplete="off"
+          {...HONEYPOT_INPUT_PROPS}
           value={honeypot}
           onChange={(e) => setHoneypot(e.target.value)}
         />

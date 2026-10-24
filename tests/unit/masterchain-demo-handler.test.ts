@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MUEDSP_AUDIENCE_ID } from "@/lib/plugins/registry";
 import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_URL } from "@/lib/masterchain/config";
 
-const m = vi.hoisted(() => ({ live: true, windows: true, create: vi.fn(), get: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn(), alert: vi.fn() }));
+const m = vi.hoisted(() => ({ live: true, windows: true, create: vi.fn(), get: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn(), warn: vi.fn(), alert: vi.fn() }));
 vi.mock("@/lib/masterchain/config", async (original) => ({
   ...await original<typeof import("@/lib/masterchain/config")>(),
   get MASTERCHAIN_DEMO_LIVE() { return m.live; },
@@ -14,7 +14,7 @@ vi.mock("@/lib/masterchain/config", async (original) => ({
 vi.mock("resend", () => ({ Resend: class { contacts = { create: m.create, get: m.get }; } }));
 vi.mock("@/lib/services/email.service", () => ({ emailService: { sendMasterchainDemoDownload: m.send, isConfigured: () => true, sendAdminAlert: m.alert } }));
 vi.mock("@/lib/middleware/rate-limit", () => ({ rateLimit: m.ip, checkRateLimit: m.emailLimit }));
-vi.mock("@/lib/utils/logger", () => ({ logger: { error: m.error } }));
+vi.mock("@/lib/utils/logger", () => ({ logger: { error: m.error, warn: m.warn } }));
 vi.mock("@/db", () => { throw new Error("Demo must not import DB"); });
 vi.mock("@/lib/plugins/entitlements", () => { throw new Error("Demo must not record ownership"); });
 import { handleMasterchainDemo, handlePaidDemo, type DemoProduct } from "@/lib/masterchain/demo-handler";
@@ -117,6 +117,8 @@ describe("masterchain demo", () => {
     expect(m.send).not.toHaveBeenCalled();
     expect(m.create).not.toHaveBeenCalled();
     expect(m.emailLimit).not.toHaveBeenCalled();
+    // A real user caught here must leave a trace in production (info is a no-op there).
+    expect(m.warn).toHaveBeenCalledTimes(1);
   });
   it("has no DB, entitlement, purchase or trial imports", () => {
     const source = readFileSync("lib/masterchain/demo-handler.ts", "utf8");

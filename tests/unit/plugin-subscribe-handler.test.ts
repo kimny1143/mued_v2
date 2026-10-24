@@ -200,6 +200,8 @@ describe("handlePluginSubscribe — bot defense (honeypot + per-email rate limit
     expect(json.data.subscribed).toBe(false);
     expect(mockSendSat).not.toHaveBeenCalled(); // no welcome email = no quota burn
     expect(mockAdd).not.toHaveBeenCalled();
+    // warn, not info: info is a no-op in production, and a real user caught here left no trace (2026-10-24).
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("honeypot tripped"), expect.anything());
   });
 
   it("empty honeypot → normal path (regression 0 for real users)", async () => {

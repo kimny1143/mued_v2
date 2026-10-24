@@ -75,9 +75,10 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
   // Honeypot — a filled decoy field means a bot. SILENTLY no-op (same 200 shape as the not-live path)
   // so the bot can't distinguish a block from a success, and NO welcome email is sent (protects the
   // shared Resend send quota — the root vulnerability behind the 2026-07-16 launch-wave quota
-  // exhaustion). Logged at info for observability of bot pressure; never alerts.
+  // exhaustion). Logged at warn (logger.info is a no-op in production — a real user caught here on
+  // 2026-10-24 left no trace at all); never alerts. The response stays the same.
   if (isHoneypotTripped((parsed.data as Record<string, unknown>)[HONEYPOT_FIELD])) {
-    logger.info(`[${plugin}/subscribe] honeypot tripped — bot submit dropped (no email sent)`, { plugin });
+    logger.warn(`[${plugin}/subscribe] honeypot tripped — bot submit dropped (no email sent)`, { plugin });
     return apiSuccess({ subscribed: false });
   }
 

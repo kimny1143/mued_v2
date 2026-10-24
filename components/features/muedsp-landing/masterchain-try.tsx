@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { MASTERCHAIN_DEMO_LIVE } from "@/lib/masterchain/config";
 import { trackCtaClick } from "@/lib/analytics/gtag";
+import { HONEYPOT_FIELD, HONEYPOT_INPUT_PROPS } from "@/lib/plugins/registry";
 import { detectDemoOs, planDemoDownload, type DemoDownloadPlan } from "@/lib/masterchain/demo-download";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -106,8 +107,9 @@ export function PaidDemoForm({ product }: { product: DemoFormProduct }) {
   return (
     <form id="demo" onSubmit={tryDemo} noValidate className="max-w-xl scroll-mt-20 space-y-4" aria-busy={status === "submitting"}>
       <div style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
-        <label htmlFor={`${product.key}-demo-website`}>{locale === "ja" ? "この欄は空欄のままにしてください" : "Leave this field empty"}</label>
-        <input id={`${product.key}-demo-website`} name="website" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+        {/* name/id were "website", a word autofill knows. The JSON body key stays `website` (server contract). */}
+        <label htmlFor={`${product.key}-demo-hp`}>{locale === "ja" ? "この欄は空欄のままにしてください" : "Leave this field empty"}</label>
+        <input id={`${product.key}-demo-hp`} name={HONEYPOT_FIELD} {...HONEYPOT_INPUT_PROPS} value={website} onChange={(e) => setWebsite(e.target.value)} />
       </div>
       {status === "success" ? (
         <div role="status" className="space-y-2">
