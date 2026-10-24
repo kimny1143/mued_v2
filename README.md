@@ -106,8 +106,10 @@ MUED is a product suite for music creators — from ear training to AI-powered m
 git clone <repository-url>
 cd mued_v2
 
-# Install dependencies
+# Install dependencies (.npmrc sets ignore-scripts=true, so dependencies' install scripts do not run)
 npm install
+# Once per machine: puppeteer's Chrome (its postinstall no longer fetches it). Used by the PDF scripts.
+npx puppeteer browsers install chrome
 
 # Set up environment variables
 cp .env.local.example .env.local
