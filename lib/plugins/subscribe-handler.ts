@@ -86,7 +86,7 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
 
   // Per-EMAIL rate limit (complements the IP-keyed bucket above). Caps welcome sends for a single
   // address so a retry-storm or single-address abuser can't burn the shared Resend send quota one
-  // email at a time. Fail-open (checkRateLimit returns null when Upstash is unconfigured). A 429 here
+  // email at a time. Without Upstash, checkRateLimit enforces the same 5/hour in memory (per instance). A 429 here
   // surfaces as the form's generic "try again" error — honest (a real temporary limit), never a false
   // "sent". Generous window (5/hour) so a legit resend still works.
   // ★ Fail-open on ANY error, not just unconfigured. checkRateLimit only returns null when Upstash is
