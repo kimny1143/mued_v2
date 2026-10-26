@@ -71,7 +71,11 @@ export async function handlePaidDemo(request: NextRequest, product: DemoProduct)
   const success = () =>
     NextResponse.json(windowsUrl ? { ok: true, downloadUrl, windowsDownloadUrl: windowsUrl } : { ok: true, downloadUrl });
   const { email, locale, website } = parsed.data;
-  if (isHoneypotTripped(website)) return success();
+  if (isHoneypotTripped(website)) {
+    // warn, not info: info is a no-op in production, and a real user caught here must leave a trace.
+    logger.warn(`[${product.tag}] honeypot tripped — demo link not sent`);
+    return success();
+  }
   if (isDisposableEmail(email)) return NextResponse.json({ error: "disposable_email" }, { status: 422 });
 
   const emailLimit = await checkRateLimit("plugin-email", `plugin-email:${email}`).catch(() => null);

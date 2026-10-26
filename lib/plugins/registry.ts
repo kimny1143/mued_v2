@@ -127,3 +127,18 @@ export const HONEYPOT_FIELD = "contact_ref" as const;
 export function isHoneypotTripped(value: unknown): boolean {
   return typeof value === "string" && value.trim().length > 0;
 }
+
+// Attributes for every honeypot <input>. autoComplete="off" alone is not honored by every browser or
+// password manager, so the opt-outs that 1Password / LastPass / Bitwarden / Dashlane read are added
+// too. A real user whose extension filled the field got "sent" on screen and no email (2026-10-24,
+// a MUEDlim download: 3 tries, 0 sends in Resend). Not aria-hidden: a focusable input inside an
+// aria-hidden subtree fails axe `aria-hidden-focus`; the off-screen box + "leave empty" label cover it.
+export const HONEYPOT_INPUT_PROPS = {
+  type: "text",
+  tabIndex: -1,
+  autoComplete: "off",
+  "data-1p-ignore": "true",
+  "data-lpignore": "true",
+  "data-bwignore": "true",
+  "data-form-type": "other",
+} as const;
