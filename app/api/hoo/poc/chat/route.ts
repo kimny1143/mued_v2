@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { boundedArray } from "@/lib/validation/bounded-array";
 import { withAuthResolved } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiValidationError, apiServerError, apiError } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
@@ -18,12 +19,13 @@ import { logger } from '@/lib/utils/logger';
 
 const hooChatRequestSchema = z.object({
   model: z.enum(['claude-sonnet-4', 'claude-haiku', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gpt-4.1-mini', 'gpt-5-mini']),
-  messages: z.array(
+  messages: boundedArray(
     z.object({
       role: z.enum(['user', 'assistant']),
       content: z.string().min(1).max(10000),
-    })
-  ).min(1),
+    }),
+    { min: 1, max: 200 }, // ★a long chat is a few dozen turns
+  ),
 });
 
 // ========================================

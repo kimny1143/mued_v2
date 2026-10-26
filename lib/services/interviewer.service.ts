@@ -13,6 +13,7 @@
  */
 
 import { z } from 'zod';
+import { boundedArray } from "@/lib/validation/bounded-array";
 import { createChatCompletion } from '@/lib/openai';
 import { logger } from '@/lib/utils/logger';
 import { db } from '@/db';
@@ -39,7 +40,7 @@ export const GenerateQuestionsInputSchema = z.object({
   focusArea: focusAreaSchema,
   intentHypothesis: z.string().min(1),
   userShortNote: z.string().min(1),
-  previousQuestions: z.array(z.string()).optional(),
+  previousQuestions: boundedArray(z.string(), { max: 100 }).optional(), // ★same bound as the route
 });
 
 /**
@@ -56,7 +57,7 @@ export const InterviewQuestionSchema = z.object({
  * Output schema for generateQuestions
  */
 export const GenerateQuestionsOutputSchema = z.object({
-  questions: z.array(InterviewQuestionSchema).min(2).max(3),
+  questions: boundedArray(InterviewQuestionSchema, { min: 2, max: 3 }),
   confidence: z.number().min(0).max(1),
   generationMethod: z.enum(['ai', 'template', 'fallback']),
 });

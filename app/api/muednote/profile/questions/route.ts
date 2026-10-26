@@ -15,6 +15,7 @@ import { profileGeneratorService } from '@/lib/services/profile-generator.servic
 import { DEFAULT_PROFILE_DATA, type UserProfileData } from '@/db/schema/user-profiles';
 import { logger } from '@/lib/utils/logger';
 import { z } from 'zod';
+import { boundedArray } from "@/lib/validation/bounded-array";
 
 // ========================================
 // Question Templates
@@ -176,11 +177,13 @@ export const GET = withAuthResolved(async ({ internalUserId }) => {
 // POST — Submit answers
 // ========================================
 
+// ★Bounds: PROFILE_QUESTIONS has 8 entries, so 50 answers and 50 choices per answer are well above
+// anything the form can send. boundedArray checks the length before parsing elements.
 const answerSchema = z.object({
-  answers: z.array(z.object({
+  answers: boundedArray(z.object({
     questionId: z.string(),
-    value: z.union([z.string(), z.array(z.string())]),
-  })),
+    value: z.union([z.string(), boundedArray(z.string(), { max: 50 })]),
+  }), { max: 50 }),
 });
 
 export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, request }) => {

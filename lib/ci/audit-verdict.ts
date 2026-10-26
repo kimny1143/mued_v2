@@ -16,12 +16,19 @@
  */
 
 export type AuditVerdict =
-  | { kind: "clean"; low: number; moderate: number }
+  | { kind: "clean"; low: number; moderate: number; excused?: string[] }
   | { kind: "vulnerable"; blocking: number; names: string[] }
   | { kind: "not-performed"; reason: string };
 
+/** One advisory npm reports for a package (`via` entries that are objects). */
+interface AuditVia {
+  url?: string;
+  severity?: string;
+  name?: string;
+}
+
 interface AuditReportish {
-  vulnerabilities?: Record<string, { severity?: string }>;
+  vulnerabilities?: Record<string, { severity?: string; via?: Array<string | AuditVia> }>;
   metadata?: { vulnerabilities?: Record<string, number> };
   statusCode?: number;
   uri?: string;
@@ -29,10 +36,63 @@ interface AuditReportish {
 }
 
 /**
+ * One advisory the gate lets through, for one package, until a date. See lib/ci/audit-allowlist.ts.
+ * ★Per advisory, never per package: a second high advisory on the same package still blocks.
+ */
+export interface AuditAllowance {
+  advisory: string; // GHSA id, matched against the end of the advisory URL
+  package: string;
+  until: string; // YYYY-MM-DD (UTC end of day). After it the entry matches nothing ⇒ red again.
+  reason: string;
+  removeWhen: string;
+}
+
+export interface AuditAllowContext {
+  entries: readonly AuditAllowance[];
+  now: Date;
+}
+
+const BLOCKING_SEVERITIES = new Set(["high", "critical"]);
+
+/**
+ * Is this package's high/critical status fully explained by allowed advisories?
+ *
+ * Every high/critical advisory of its own must be an unexpired allowance for THIS package, and every
+ * package it inherits from (string `via`) must itself be excused. Low/moderate advisories don't
+ * block, so they don't need excusing.
+ */
+function isExcused(
+  name: string,
+  vulns: NonNullable<AuditReportish["vulnerabilities"]>,
+  allow: AuditAllowContext,
+  path: ReadonlySet<string> = new Set(),
+): boolean {
+  // ★A cycle proves nothing: a↔b with no advisory would otherwise excuse both (CCO, #1307). Fail closed.
+  // `path` is the current chain only, not every package seen, so a diamond (puppeteer → chromium-bidi
+  // directly and through puppeteer-core) is evaluated on both branches rather than read as a cycle.
+  if (path.has(name)) return false;
+  const here = new Set(path).add(name);
+  const via = vulns[name]?.via;
+  if (!via || via.length === 0) return false; // nothing to attribute the severity to ⇒ not excused
+  return via.every((v) => {
+    if (typeof v === "string") return isExcused(v, vulns, allow, here);
+    if (!BLOCKING_SEVERITIES.has(v.severity ?? "")) return true;
+    return allow.entries.some(
+      (e) =>
+        e.package === (v.name ?? name) &&
+        (v.url ?? "").endsWith(e.advisory) &&
+        !bypassExpired(e.until, allow.now),
+    );
+  });
+}
+
+/**
  * @param parsed  `npm audit --json` output, already JSON.parse'd — or null when it was unparseable
  *                (itself an endpoint-side symptom: npm 11 returned undecoded gzip).
+ * @param allow   Advisories that may pass until their date. Applied ONLY to a real report: a payload
+ *                without `metadata` is schema drift, and drift is not the place to start excusing.
  */
-export function auditVerdict(parsed: AuditReportish | null): AuditVerdict {
+export function auditVerdict(parsed: AuditReportish | null, allow?: AuditAllowContext): AuditVerdict {
   const isRealReport = !!(parsed && parsed.vulnerabilities && parsed.metadata);
 
   if (!isRealReport) {
@@ -82,10 +142,23 @@ export function auditVerdict(parsed: AuditReportish | null): AuditVerdict {
   const blocking = (sev.high ?? 0) + (sev.critical ?? 0);
 
   if (blocking > 0) {
-    const names = Object.entries(parsed!.vulnerabilities!)
-      .filter(([, v]) => v.severity === "high" || v.severity === "critical")
+    const vulns = parsed!.vulnerabilities!;
+    const flagged = Object.entries(vulns).filter(([, v]) => BLOCKING_SEVERITIES.has(v.severity ?? ""));
+    const excused = allow ? flagged.filter(([name]) => isExcused(name, vulns, allow)) : [];
+    // ★Only a full, named explanation turns red into green. If the map names fewer packages than
+    // metadata counts, something is unaccounted for — keep blocking.
+    if (excused.length > 0 && excused.length === flagged.length && flagged.length >= blocking) {
+      return {
+        kind: "clean",
+        low: sev.low ?? 0,
+        moderate: sev.moderate ?? 0,
+        excused: excused.map(([name, v]) => `${name} (${v.severity})`),
+      };
+    }
+    const names = flagged
+      .filter(([name]) => !excused.some(([n]) => n === name))
       .map(([name, v]) => `${name} (${v.severity})`);
-    return { kind: "vulnerable", blocking, names };
+    return { kind: "vulnerable", blocking: names.length > 0 ? names.length : blocking, names };
   }
 
   return { kind: "clean", low: sev.low ?? 0, moderate: sev.moderate ?? 0 };

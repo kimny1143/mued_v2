@@ -22,6 +22,7 @@
  */
 
 import { z } from 'zod';
+import { boundedArray } from "@/lib/validation/bounded-array";
 import { logger } from '@/lib/utils/logger';
 import { sessionRepository } from '@/lib/repositories';
 import { analyzerService, type AnalyzeSessionInput } from './analyzer.service';
@@ -50,21 +51,22 @@ export const GenerateInterviewInputSchema = z.object({
       to: z.number(),
     }).optional(),
   }).optional(),
-  previousQuestions: z.array(z.string()).optional(),
+  previousQuestions: boundedArray(z.string(), { max: 100 }).optional(), // ★same bound as the route
 });
 
 /**
  * Output schema for generateInterviewQuestions
  */
 export const GenerateInterviewOutputSchema = z.object({
-  questions: z.array(InterviewQuestionSchema).min(2).max(3),
+  questions: boundedArray(InterviewQuestionSchema, { min: 2, max: 3 }),
   confidence: z.number().min(0).max(1),
   generationMethod: z.enum(['ai', 'template', 'fallback']),
-  similarLogs: z.array(z.object({
+  // Output schemas below are types only today (never .parse'd); bounded anyway so a future parse is too.
+  similarLogs: boundedArray(z.object({
     logId: z.string().uuid(),
     similarity: z.number(),
     content: z.string(),
-  })),
+  }), { max: 100 }),
   focusArea: z.string(),
   intentHypothesis: z.string(),
 });
@@ -109,7 +111,7 @@ export const InterviewHistoryItemSchema = z.object({
  */
 export const InterviewHistorySchema = z.object({
   sessionId: z.string().uuid(),
-  questions: z.array(InterviewHistoryItemSchema),
+  questions: boundedArray(InterviewHistoryItemSchema, { max: 1000 }),
   totalQuestions: z.number().int().min(0),
   answeredCount: z.number().int().min(0),
 });
