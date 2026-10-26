@@ -1,6 +1,6 @@
 {
   "schema": "newsletter-metrics/v1",
-  "generated_at": "2026-10-25T15:38:50+09:00",
+  "generated_at": "2026-10-26T15:49:25+09:00",
   "source": "Resend API（/emails/metrics・/broadcasts/{id}/clicked-links）。plugin-funnel-collector が毎朝書き出す（mued_v2 scripts/emit-newsletter-metrics.ts）。",
   "notes": [
     "「押した人」には配信停止のリンクを押した人も入る（Resend の数え方）。製品へのリンクの数は下のリンク別を見る。",
@@ -25,14 +25,14 @@
         "bounced_transient": 21,
         "bounced_permanent": 0,
         "suppressed": 29,
-        "unique_opened": 290,
+        "unique_opened": 292,
         "unique_clicked": 48,
         "unsubscribed": 10,
         "complained": 0
       },
       "rates": {
         "delivery": 98.1,
-        "open": 26.78,
+        "open": 26.96,
         "click": 4.43,
         "unsubscribe": 0.92,
         "complaint": 0
@@ -233,14 +233,14 @@
         "bounced_transient": 20,
         "bounced_permanent": 1,
         "suppressed": 27,
-        "unique_opened": 357,
+        "unique_opened": 358,
         "unique_clicked": 54,
         "unsubscribed": 4,
         "complained": 0
       },
       "rates": {
         "delivery": 97.96,
-        "open": 35.38,
+        "open": 35.48,
         "click": 5.35,
         "unsubscribe": 0.4,
         "complaint": 0
