@@ -91,6 +91,13 @@ export function getStoredFirstTouch(): FirstTouch | undefined {
   } catch {
     ft = undefined;
   }
+  // ★A stored gaClientId was captured under whatever choice held THEN. Without consent NOW it is dropped, the same
+  //   rule as readGaClientId (CCO #1311: otherwise the saved id reaches /api/dial/checkout after 「必須のみ」).
+  if (ft?.gaClientId && readConsent(document.cookie) !== "all") {
+    const { gaClientId: _dropped, ...rest } = ft;
+    void _dropped;
+    ft = Object.keys(rest).length > 0 ? rest : undefined;
+  }
   if (!ft?.gaClientId) {
     const ga = readGaClientId();
     if (ga) ft = { ...(ft ?? {}), gaClientId: ga };

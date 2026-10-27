@@ -7,7 +7,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { CONSENT_COOKIE } from "@/lib/analytics/consent";
-import { readGaClientId } from "@/lib/dial/first-touch-client";
+import { DIAL_FIRST_TOUCH_KEY, getStoredFirstTouch, readGaClientId } from "@/lib/dial/first-touch-client";
 import ja from "@/messages/ja.json";
 import en from "@/messages/en.json";
 
@@ -46,6 +46,28 @@ describe("readGaClientId — the purchase and dial first-touch read", () => {
     if (value) document.cookie = `${CONSENT_COOKIE}=${value}; Path=/`;
     expect(names()).toContain("_ga");
     expect(readGaClientId()).toBeUndefined();
+  });
+});
+
+describe("getStoredFirstTouch — dial's saved first-touch (CCO FAIL on #1311)", () => {
+  beforeEach(() => window.localStorage.clear());
+  const save = (ft: Record<string, unknown>) => window.localStorage.setItem(DIAL_FIRST_TOUCH_KEY, JSON.stringify(ft));
+
+  it.each([["no choice", null], ["'essential'", "essential"]])("drops a SAVED gaClientId with %s, keeps the rest", (_label, value) => {
+    if (value) document.cookie = `${CONSENT_COOKIE}=${value}; Path=/`;
+    save({ capturedAt: "2026-10-01T00:00:00Z", utmSource: "threads", gaClientId: "111.222" });
+    const ft = getStoredFirstTouch();
+    expect(ft?.gaClientId).toBeUndefined();
+    expect(ft).toEqual({ capturedAt: "2026-10-01T00:00:00Z", utmSource: "threads" });
+  });
+  it("keeps a saved gaClientId with 'all'", () => {
+    document.cookie = `${CONSENT_COOKIE}=all; Path=/`;
+    save({ capturedAt: "2026-10-01T00:00:00Z", gaClientId: "111.222" });
+    expect(getStoredFirstTouch()?.gaClientId).toBe("111.222");
+  });
+  it("a saved payload that held only the id becomes nothing without consent", () => {
+    save({ gaClientId: "111.222" });
+    expect(getStoredFirstTouch()).toBeUndefined();
   });
 });
 
