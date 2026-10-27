@@ -197,7 +197,7 @@
   "privacy": {
     "title": "Privacy Policy",
     "lastUpdated": "Last updated: October 27, 2026",
-    "intro": "glasswerks inc. (\"we,\" \"our,\" or \"us\") operates the MUED website (mued.jp) and its products, including MUEDnote (the \"App\") and the MUEDsp plugins. This Privacy Policy explains how we collect, use, and protect your information when you use them.",
+    "intro": "glasswerks inc. (\"we,\" \"our,\" or \"us\") operates the MUED website (mued.jp) and its products, including MUEDnote (the \"App\") and the MUEDsp and MUEDvox plugins. This Privacy Policy explains how we collect, use, and protect your information when you use them.",
     "section1": {
       "title": "1. Information We Collect",
       "description": "We collect the following types of information:",
@@ -228,6 +228,7 @@
       "neon": "Neon (Database)",
       "resend": "Resend (Email delivery and mailing-list management — download links, transactional emails, and product-update emails)",
       "stripe": "Stripe (Payment processing)",
+      "fastspring": "FastSpring (Plugin payments and order processing, as the merchant of record)",
       "vercel": "Vercel (Hosting, site analytics, and file storage)",
       "cloudflare": "Cloudflare (File delivery and storage, bot protection)",
       "roex": "RoEx (Audio analysis, mixing and mastering of uploaded audio)",

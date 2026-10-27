@@ -114,6 +114,12 @@ function PrivacyContent({ locale }: { locale: string }) {
                 </a>
               </li>
               <li>
+                <strong>{t("section3.fastspring")}</strong>:{" "}
+                <a href="https://fastspring.com/privacy/" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://fastspring.com/privacy/
+                </a>
+              </li>
+              <li>
                 <strong>{t("section3.vercel")}</strong>:{" "}
                 <a href="https://vercel.com/legal/privacy-policy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
                   https://vercel.com/legal/privacy-policy
