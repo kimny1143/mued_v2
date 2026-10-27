@@ -30,12 +30,12 @@ export const viewport: Viewport = {
 // ★Site-wide defaults = the home page's own og/twitter (app/[locale]/page.tsx). Pages that set no twitter:* fell
 //   back to the old MUED tagline here (conductor 2026-10-01); keep these in step with the home page.
 export const metadata: Metadata = {
-  title: "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
+  title: "MUED — 音楽制作の道具。マスタリングとボーカルハーモナイザー。",
   description:
     "音楽制作のための道具。マスタリングのチェーンをまるごと1つのプラグインにした MUEDsp masterchain、調とコードに沿うボーカルハーモナイザー MUEDvox、無料のプラグイン（MUEDsat・MUEDlim・MUEDrive）。",
   metadataBase: new URL("https://mued.jp"),
   openGraph: {
-    title: "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
+    title: "MUED — 音楽制作の道具。マスタリングとボーカルハーモナイザー。",
     description:
       "音楽制作のための道具。マスタリングのチェーンをまるごと1つのプラグインにした MUEDsp masterchain、調とコードに沿うボーカルハーモナイザー MUEDvox、無料のプラグイン（MUEDsat・MUEDlim・MUEDrive）。",
     url: "https://mued.jp",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
+    title: "MUED — 音楽制作の道具。マスタリングとボーカルハーモナイザー。",
     description:
       "音楽制作のための道具。マスタリングのチェーンをまるごと1つのプラグインにした MUEDsp masterchain、調とコードに沿うボーカルハーモナイザー MUEDvox、無料のプラグイン（MUEDsat・MUEDlim・MUEDrive）。",
     images: SHARE_IMAGES,

@@ -61,7 +61,7 @@
   "landing": {
     "v2": {
       "meta": {
-        "title": "MUED — Tools for music production: mixing, mastering, ear training.",
+        "title": "MUED — Tools for music production: mastering, vocal harmonies.",
         "description": "Tools for music production — MUEDsp masterchain (a whole mastering chain, in one plugin), MUEDvox (a vocal harmonizer that follows your key and chords), and the free plugins MUEDsat, MUEDlim and MUEDrive."
       },
       "philosophy": {
