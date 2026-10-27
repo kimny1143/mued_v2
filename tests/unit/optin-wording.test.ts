@@ -33,9 +33,13 @@ describe.each([["ja", ja, vja], ["en", en, ven]] as const)("%s news consent word
     }
   });
 
-  it("the privacy policy's purpose for news is tied to the checkbox", () => {
-    expect(messages.privacy.section2.items.deliver).toContain(
-      locale === "ja" ? "フォームのチェック欄で希望された方に MUEDsp のお知らせ" : "news from MUEDsp to those who ticked the box on the form",
-    );
+  // News goes to two groups, and the policy names both (CCO #1315): those who ticked a form's box, and buyers, whom
+  //   the cart tells (cartAudienceNote, kimny 10/6 「購入者をメールに入れます」 — conductor 10/28: unchanged).
+  it("the privacy policy's purpose for news names the checkbox and the buyers the cart tells", () => {
+    const deliver = messages.privacy.section2.items.deliver;
+    expect(deliver).toContain(locale === "ja" ? "フォームのチェック欄で希望された方" : "to those who ticked the box on the form");
+    expect(deliver).toContain(locale === "ja" ? "ご購入の際にその旨をお知らせした購入者の方" : "to buyers, who are told so at checkout");
+    // The cart really does tell them — the sentence the policy points to exists.
+    expect(messages.muedsp.buyTry.cartAudienceNote).toContain(locale === "ja" ? "MUEDsp のお知らせ" : "news from MUEDsp");
   });
 });
