@@ -13,6 +13,7 @@ import { z } from "zod";
 import { apiError, apiSuccess, apiValidationError } from "@/lib/api-response";
 import { rateLimit, checkRateLimit } from "@/lib/middleware/rate-limit";
 import { addPluginSubscriber, isPluginAudienceEnabled } from "@/lib/plugins/audience";
+import { alertAudienceAddFailed } from "@/lib/plugins/audience-alert";
 import { recordPluginEntitlement } from "@/lib/plugins/entitlements";
 import { emailService, type EmailResult } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
@@ -122,16 +123,8 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
   });
   if (audienceConfigured && !listCaptured) {
     logger.error(`[${plugin}/subscribe] audience add failed — lead not captured to Resend`, { plugin });
-    const alertEmail = process.env.OPERATOR_ALERT_EMAIL;
-    if (alertEmail && emailService.isConfigured()) {
-      // Best-effort operator alert — never blocks the response.
-      void emailService
-        .sendAdminAlert(
-          alertEmail,
-          `[${plugin}/subscribe] Resend audience add failed for a subscriber — lead not captured. Check Resend / audience config.`,
-        )
-        .catch((err) => logger.error(`[${plugin}/subscribe] operator alert failed`, { error: String(err) }));
-    }
+    // Best-effort operator alert, at most once a day (every failure is in the log line above) — never blocks.
+    void alertAudienceAddFailed(`${plugin}/subscribe`);
   }
 
   // 2) Deliver the download-link email SYNCHRONOUSLY — it carries the DL link (= the deliverable), so

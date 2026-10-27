@@ -89,6 +89,10 @@ const RULES = {
   // exhaustion showed retries self-amplify). Generous enough that a legit "it didn't arrive, resend"
   // still works; tight enough to cap runaway loops. Used with checkRateLimit("plugin-email", email).
   "plugin-email": { algorithm: "sliding", tokens: 5, window: "1 h" },
+  // One operator email a day for "a subscriber did not reach the Resend list" (lib/plugins/audience-alert.ts).
+  // ★Not a request limit: every failure is still logged at error; only the inbox alert is capped. Shared across
+  //   instances while Upstash works; on the in-memory fallback it is one a day PER INSTANCE.
+  "operator-alert-daily": { algorithm: "fixed", tokens: 1, window: "1 d" },
 } satisfies Record<string, Rule>;
 
 export type RateLimitType = keyof typeof RULES;
