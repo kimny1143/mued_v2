@@ -131,7 +131,7 @@ describe("★the modes are 1.0.0's: Render / Track / Live (mued-vox docs/product
 });
 
 describe("★the demo entrance and the mails — MUEDvox's own, and shut until its flag and its installer exist", () => {
-  const m = vi.hoisted(() => ({ live: false, url: "", win: "", send: vi.fn(), create: vi.fn(), get: vi.fn() }));
+  const m = vi.hoisted(() => ({ live: false, url: "", win: "", send: vi.fn(), create: vi.fn(), get: vi.fn(), record: vi.fn(async () => true) }));
   beforeEach(() => {
     vi.resetModules();
     m.live = false; m.url = ""; m.win = "";
@@ -144,12 +144,14 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
     }));
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://mued.jp");
   });
-  afterEach(() => { vi.unstubAllEnvs(); vi.doUnmock("@/lib/muedvox/config"); vi.doUnmock("@/lib/services/email.service"); vi.doUnmock("resend"); vi.doUnmock("@/lib/middleware/rate-limit"); });
+  afterEach(() => { vi.unstubAllEnvs(); vi.doUnmock("@/lib/muedvox/config"); vi.doUnmock("@/lib/services/email.service"); vi.doUnmock("resend"); vi.doUnmock("@/lib/middleware/rate-limit"); vi.doUnmock("@/lib/masterchain/demo-signups"); });
 
   async function post() {
     vi.doMock("resend", () => ({ Resend: class { contacts = { create: m.create, get: m.get }; } }));
     vi.doMock("@/lib/middleware/rate-limit", () => ({ rateLimit: async () => null, checkRateLimit: async () => null }));
     vi.doMock("@/lib/services/email.service", () => ({ emailService: { sendMuedvoxDemoDownload: m.send, sendMasterchainDemoDownload: vi.fn(), isConfigured: () => true, sendAdminAlert: vi.fn() } }));
+    // The sign-up record (0065) goes to the DB; a unit test never writes one.
+    vi.doMock("@/lib/masterchain/demo-signups", () => ({ recordDemoSignup: m.record }));
     vi.stubEnv("RESEND_API_KEY", "test");
     const { POST } = await import("@/app/api/muedvox/demo/route");
     return POST(new NextRequest("https://mued.jp/api/muedvox/demo", { method: "POST", body: JSON.stringify({ email: "person@example.com", locale: "ja" }) }));
@@ -164,6 +166,8 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
       windowsDownloadUrl: "https://mued.jp/downloads/MUEDvox-1.1.0-win-x64-0580272a.zip",
     });
     expect(m.send).toHaveBeenCalledTimes(1);
+    // ★Recorded under MUEDvox's own key, not masterchain's (0065).
+    expect(m.record).toHaveBeenCalledWith(expect.objectContaining({ productKey: "muedvox", email: "person@example.com", locale: "ja" }));
   });
 
   it("★the flag off: 404 and touches nothing, whatever the URLs say (the state before launch, and the way to close it)", async () => {
