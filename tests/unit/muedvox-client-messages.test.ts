@@ -43,7 +43,12 @@ describe("★road 2 — the JS chunks: MUEDvox's words are not in the files clie
     //   the note is `demo.body`, which IS in the population below.
     const { cart: _cart, demoForm: _demoForm, ...own } = vox;
     void _cart; void _demoForm;
-    const sentences = strings(own).filter((text) => text.length >= 20);
+    // ★`legal.eulaLink` is left out too: it is the name of the public EULA page, and the privacy policy names the same
+    //   document in the same words (privacy.section1.items.purchase, #1310). Pinned to that exact name, so a reworded
+    //   link — which could be MUEDvox's own copy — is back in the population.
+    const PUBLIC_DOCUMENT_NAMES: Record<string, string> = { en: "End User License Agreement (EULA)", ja: "使用許諾契約（EULA）" };
+    expect(own.legal.eulaLink).toBe(PUBLIC_DOCUMENT_NAMES[_locale]);
+    const sentences = strings(own).filter((text) => text.length >= 20 && text !== own.legal.eulaLink);
     expect(sentences.length).toBeGreaterThan(20);
     for (const text of sentences) expect(shipped.includes(JSON.stringify(text).slice(1, -1)), text).toBe(false);
   });
