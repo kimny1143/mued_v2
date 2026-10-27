@@ -3,7 +3,7 @@
  *
  * The same contract as recordPluginEntitlement (tests/unit/plugin-entitlements.test.ts), which the handler test
  * cannot see because it mocks the recorder whole (CCO #1312): (1) one row, lower-cased email, ON CONFLICT
- * (email, product_key) DO NOTHING; (2) an empty email is a no-op; (3) a DB error is swallowed → false, never throws.
+ * (email, product_key) DO UPDATE of the two consent columns only, by OR (they turn on, never off); (2) an empty email is a no-op; (3) a DB error is swallowed → false, never throws.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,10 +11,10 @@ const logError = vi.fn();
 vi.mock("@/lib/utils/logger", () => ({ logger: { error: (...a: unknown[]) => logError(...a), warn: vi.fn(), info: vi.fn() } }));
 
 const mockOnConflict = vi.fn();
-const mockValues = vi.fn(() => ({ onConflictDoNothing: mockOnConflict }));
+const mockValues = vi.fn(() => ({ onConflictDoUpdate: mockOnConflict }));
 const mockInsert = vi.fn(() => ({ values: mockValues }));
 vi.mock("@/db", () => ({ db: { insert: (...a: unknown[]) => mockInsert(...a) } }));
-vi.mock("@/db/schema", () => ({ demoSignups: { email: "email_col", productKey: "product_col" } }));
+vi.mock("@/db/schema", () => ({ demoSignups: { email: "email_col", productKey: "product_col", newsConsent: "news_consent_col", audienceAdded: "audience_added_col" } }));
 
 import { recordDemoSignup } from "@/lib/masterchain/demo-signups";
 
@@ -26,7 +26,7 @@ beforeEach(() => {
 });
 
 describe("recordDemoSignup", () => {
-  it("inserts one lower-cased row with onConflictDoNothing on (email, product_key) → true", async () => {
+  it("inserts one lower-cased row, upserting on (email, product_key) → true", async () => {
     const ok = await recordDemoSignup({ ...base, email: "  Person@Example.COM " });
     expect(ok).toBe(true);
     expect(mockInsert).toHaveBeenCalledTimes(1);
@@ -39,7 +39,20 @@ describe("recordDemoSignup", () => {
       newsConsent: false,
       audienceAdded: false,
     });
-    expect(mockOnConflict).toHaveBeenCalledExactlyOnceWith({ target: ["email_col", "product_col"] });
+    expect(mockOnConflict).toHaveBeenCalledTimes(1);
+    expect(mockOnConflict.mock.calls[0][0].target).toEqual(["email_col", "product_col"]);
+  });
+
+  // CCO #1312: unticked first, ticked on the second try → the person is on the list, so the row must say so.
+  //   The update touches ONLY the two consent columns, and only by OR with the existing value (true is never undone).
+  it("★a repeat sign-up can only turn the consent columns on — OR with the stored value, nothing else updated", async () => {
+    await recordDemoSignup({ ...base, email: "a@b.co", newsConsent: true, audienceAdded: true });
+    const { set } = mockOnConflict.mock.calls[0][0] as { set: Record<string, { queryChunks: unknown[] }> };
+    expect(Object.keys(set).sort()).toEqual(["audienceAdded", "newsConsent"]);
+    const render = (chunk: { queryChunks: unknown[] }) =>
+      chunk.queryChunks.map((c) => (typeof c === "string" ? c : (c as { value?: string[] }).value?.join("") ?? "")).join("");
+    expect(render(set.newsConsent)).toBe("news_consent_col OR excluded.news_consent");
+    expect(render(set.audienceAdded)).toBe("audience_added_col OR excluded.audience_added");
   });
 
   it("passes firstTouch, newsConsent and audienceAdded through", async () => {

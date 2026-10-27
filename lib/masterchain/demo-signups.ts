@@ -2,8 +2,10 @@
 // past the free tier's contact limit that meant nowhere we own (kimny 2026-10-27 「直そう。」).
 //
 // BEST-EFFORT / FAIL-OPEN, the same rule as recordPluginEntitlement: the browser already has the download and the
-// receipt is the deliverable, so a write failure must NEVER surface to the caller or block either. Idempotent
-// (UNIQUE(email, product_key) → onConflictDoNothing): a repeat request keeps the first row.
+// receipt is the deliverable, so a write failure must NEVER surface to the caller or block either. One row per
+// (email, product_key): a repeat request keeps the first row's facts, but the two consent columns can only turn ON
+// (CCO #1312: someone who first leaves the box unticked and ticks it on a second try is on the list — the row must say so).
+import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { demoSignups } from "@/db/schema";
 import { logger } from "@/lib/utils/logger";
@@ -38,7 +40,14 @@ export async function recordDemoSignup(opts: {
         // ★Never true without consent, whatever the caller says: the column means "a consenting person is on the list".
         audienceAdded: opts.newsConsent && opts.audienceAdded,
       })
-      .onConflictDoNothing({ target: [demoSignups.email, demoSignups.productKey] });
+      .onConflictDoUpdate({
+        target: [demoSignups.email, demoSignups.productKey],
+        // ★OR, never overwrite: once true, a later unticked request does not take it back.
+        set: {
+          newsConsent: sql`${demoSignups.newsConsent} OR excluded.news_consent`,
+          audienceAdded: sql`${demoSignups.audienceAdded} OR excluded.audience_added`,
+        },
+      });
     return true;
   } catch (err) {
     logger.error(`[demo-signups] record failed (${opts.productKey})`, { error: String(err) });
