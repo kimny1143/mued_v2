@@ -10,6 +10,10 @@
     "hear": "Hear it",
     "demo": "Try the demo"
   },
+  "video": {
+    "title": "How to use MUEDvox (video)",
+    "play": "Play the video"
+  },
   "beforeAfter": {
     "heading": "Hear the same vocal, then the harmonies",
     "caption": "Before and After are matched in level.",
@@ -96,6 +100,7 @@
   "manual": {
     "description": "How to use MUEDvox: installing and licensing, Mode, the parts, scale and chords, FX, presets and troubleshooting.",
     "back": "← Back to MUEDvox",
+    "videoLink": "Watch the how-to video",
     "link": "User manual",
     "faqLink": "For everything else, see the user manual."
   },

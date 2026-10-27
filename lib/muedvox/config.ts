@@ -12,6 +12,18 @@ export const MUEDVOX_DEMO_LIVE = true;
 // MUEDvox-1.1.0-harmony-2400x1800.png sha256 db00bbff…2ed5 → webp (2400×1800, e94e2ac5…46a7).
 // Earlier screens (1.0.0 SETTINGS bottom left; 1.0.2 gear top right) stay in public/muedvox/, unlinked.
 export const MUEDVOX_SCREENSHOT: string = "/muedvox/MUEDvox-1.1.0-harmony.webp";
+
+/**
+ * The how-to video on YouTube (@MUEDjp, English — kimny 2026-10-27). ★The only place the ID lives: a re-upload (VOX is
+ * making a higher-quality cut) changes the ID, and this one line is the whole swap. The page and the manual both read it.
+ */
+export const MUEDVOX_VIDEO_ID = "RfAbM6xO8cY";
+export const muedvoxVideo = (id: string = MUEDVOX_VIDEO_ID) => ({
+  watchUrl: `https://youtu.be/${id}`,
+  // ★No cookies and no player until the visitor presses play (the facade shows only this still).
+  embedUrl: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`,
+  thumbnailUrl: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+});
 // The listening examples on the page (kimny 2026-10-14: two songs, vocal +4 dB — 001 is 20 s, 003 is 26.3 s, cut by kimny:
 //   「これでお願い」). The songs differ in length; the four takes of one song do not.
 // ★The songs and their files are this list and nothing else: to swap a file, re-encode it under the same name

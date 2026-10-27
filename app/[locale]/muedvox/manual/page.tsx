@@ -8,7 +8,7 @@ import { BrandMark } from "@/components/brand/brand-mark";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
 import { locales, type Locale } from "@/lib/i18n/config";
-import { MUEDVOX_LIVE, muedvoxPageVisible } from "@/lib/muedvox/config";
+import { MUEDVOX_LIVE, muedvoxPageVisible, muedvoxVideo } from "@/lib/muedvox/config";
 import { readMuedvoxManual, splitManual, type ManualLocale } from "@/lib/muedvox/manual";
 
 interface PageProps {
@@ -69,6 +69,8 @@ export default async function MuedvoxManualPage({ params }: PageProps) {
       <main className="border-t border-white/5 px-6 py-14">
         <article className="mx-auto max-w-3xl" data-testid="muedvox-manual">
           <Link href={`/${locale}/muedvox`} className="text-sm text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("back")}</Link>
+          {/* The how-to video on YouTube (kimny 10/27). The ID lives only in lib/muedvox/config.ts. */}
+          <a href={muedvoxVideo().watchUrl} target="_blank" rel="noopener noreferrer" data-testid="muedvox-manual-video-link" className="ml-6 text-sm text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("videoLink")} ↗</a>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-white">{title}</h1>
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={md}>{body}</ReactMarkdown>
         </article>
