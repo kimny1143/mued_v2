@@ -68,6 +68,7 @@ function PrivacyContent({ locale }: { locale: string }) {
               <li>{t("section1.items.usage")}</li>
               <li>{t("section1.items.downloads")}</li>
               <li>{t("section1.items.purchase")}</li>
+              <li>{t("section1.items.otherSignups")}</li>
             </ul>
           </section>
 

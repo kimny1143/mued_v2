@@ -207,7 +207,8 @@
         "voiceMemo": "Voice Memos: Audio recordings you create and their transcriptions",
         "usage": "Usage Data: Anonymized data about how you use the App",
         "downloads": "Download and demo sign-up information: the email address you enter when downloading a free plugin or signing up for a demo version, the product, the date and time, the display language, and the page you signed up on and where you came from",
-        "purchase": "Purchase information: the purchase-notification information that FastSpring provides for the purpose of issuing your license key (email address, order number, product, amount and currency, country), how you reached the purchase (referrer and campaign tags, and, if you consented to measurement, the Google Analytics identifier), the license key we issued, the record of your acceptance of the End User License Agreement (EULA), and the record of any refund. Payment information is collected and held solely by FastSpring"
+        "purchase": "Purchase information: the purchase-notification information that FastSpring provides for the purpose of issuing your license key (email address, order number, product, amount and currency, country), how you reached the purchase (referrer and campaign tags, and, if you consented to measurement, the Google Analytics identifier), the license key we issued, the record of your acceptance of the End User License Agreement (EULA), and the record of any refund. Payment information is collected and held solely by FastSpring",
+        "otherSignups": "Other sign-up information: the email addresses, and their records, from time-limited tester license keys we handed out and from past trial and interest sign-ups"
       }
     },
     "section2": {
@@ -240,7 +241,7 @@
     "section4": {
       "title": "4. Data Storage",
       "description1": "Your data is stored on servers located in the United States. We implement appropriate technical and organizational measures to protect your data.",
-      "description2": "Account data is retained until you delete your account or for as long as necessary to provide our services. Download, demo sign-up and purchase information is kept as the record of those downloads and purchases, and is not deleted when you unsubscribe from the news. To have it deleted, contact us at the address in Section 8."
+      "description2": "Account data is retained until you delete your account or for as long as necessary to provide our services. Download, demo sign-up, purchase and other sign-up information (tester license keys, past trial and interest sign-ups) is kept as the record of those sign-ups, downloads and purchases, and is not deleted when you unsubscribe from the news. To have it deleted, contact us at the address in Section 8."
     },
     "section5": {
       "title": "5. Your Rights",
