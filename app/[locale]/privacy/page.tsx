@@ -66,6 +66,8 @@ function PrivacyContent({ locale }: { locale: string }) {
               <li>{t("section1.items.workLog")}</li>
               <li>{t("section1.items.voiceMemo")}</li>
               <li>{t("section1.items.usage")}</li>
+              <li>{t("section1.items.downloads")}</li>
+              <li>{t("section1.items.purchase")}</li>
             </ul>
           </section>
 
@@ -78,6 +80,7 @@ function PrivacyContent({ locale }: { locale: string }) {
               <li>{t("section2.items.transcribe")}</li>
               <li>{t("section2.items.support")}</li>
               <li>{t("section2.items.improve")}</li>
+              <li>{t("section2.items.deliver")}</li>
             </ul>
           </section>
 
