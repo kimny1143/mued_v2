@@ -196,8 +196,8 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: October 8, 2026",
-    "intro": "glasswerks inc. (\"we,\" \"our,\" or \"us\") operates MUEDnote (the \"App\"). This Privacy Policy explains how we collect, use, and protect your information when you use our App.",
+    "lastUpdated": "Last updated: October 27, 2026",
+    "intro": "glasswerks inc. (\"we,\" \"our,\" or \"us\") operates the MUED website (mued.jp) and its products, including MUEDnote (the \"App\") and the MUEDsp and MUEDvox plugins. This Privacy Policy explains how we collect, use, and protect your information when you use them.",
     "section1": {
       "title": "1. Information We Collect",
       "description": "We collect the following types of information:",
@@ -205,7 +205,10 @@
         "account": "Account Information: Email address and authentication credentials",
         "workLog": "Work Log Data: Focus/break session records and timestamps",
         "voiceMemo": "Voice Memos: Audio recordings you create and their transcriptions",
-        "usage": "Usage Data: Anonymized data about how you use the App"
+        "usage": "Usage Data: Anonymized data about how you use the App",
+        "downloads": "Download and demo sign-up information: the email address you enter when downloading a free plugin or signing up for a demo version, the product, the date and time, the display language, and the page you signed up on and where you came from",
+        "purchase": "Purchase information: the purchase-notification information that FastSpring provides for the purpose of issuing your license key (email address, order number, product, amount and currency, country), how you reached the purchase (referrer and campaign tags, and, if you consented to measurement, the Google Analytics identifier), the license key we issued, the record of your acceptance of the End User License Agreement (EULA), and the record of any refund. Payment information is collected and held solely by FastSpring",
+        "otherSignups": "Other sign-up information: the email addresses, and their records, from time-limited tester license keys we handed out and from past trial and interest sign-ups"
       }
     },
     "section2": {
@@ -215,7 +218,8 @@
         "provide": "Provide and operate the App's features",
         "transcribe": "Transcribe voice memos and provide AI-powered analysis",
         "support": "Provide customer support",
-        "improve": "Improve our services and develop new features"
+        "improve": "Improve our services and develop new features",
+        "deliver": "Send download links and their receipts and the steps to get your license key, and send news from MUEDsp (you can unsubscribe from the news at any time)"
       }
     },
     "section3": {
@@ -225,6 +229,7 @@
       "neon": "Neon (Database)",
       "resend": "Resend (Email delivery and mailing-list management — download links, transactional emails, and product-update emails)",
       "stripe": "Stripe (Payment processing)",
+      "fastspring": "FastSpring (Plugin payments and order processing, as the merchant of record)",
       "vercel": "Vercel (Hosting, site analytics, and file storage)",
       "cloudflare": "Cloudflare (File delivery and storage, bot protection)",
       "roex": "RoEx (Audio analysis, mixing and mastering of uploaded audio)",
@@ -236,7 +241,7 @@
     "section4": {
       "title": "4. Data Storage",
       "description1": "Your data is stored on servers located in the United States. We implement appropriate technical and organizational measures to protect your data.",
-      "description2": "Data is retained until you delete your account or for as long as necessary to provide our services."
+      "description2": "Account data is retained until you delete your account or for as long as necessary to provide our services. Download, demo sign-up, purchase and other sign-up information (tester license keys, past trial and interest sign-ups) is kept as the record of those sign-ups, downloads and purchases, and is not deleted when you unsubscribe from the news. To have it deleted, contact us at the address in Section 8."
     },
     "section5": {
       "title": "5. Your Rights",

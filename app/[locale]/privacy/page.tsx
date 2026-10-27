@@ -66,6 +66,9 @@ function PrivacyContent({ locale }: { locale: string }) {
               <li>{t("section1.items.workLog")}</li>
               <li>{t("section1.items.voiceMemo")}</li>
               <li>{t("section1.items.usage")}</li>
+              <li>{t("section1.items.downloads")}</li>
+              <li>{t("section1.items.purchase")}</li>
+              <li>{t("section1.items.otherSignups")}</li>
             </ul>
           </section>
 
@@ -78,6 +81,7 @@ function PrivacyContent({ locale }: { locale: string }) {
               <li>{t("section2.items.transcribe")}</li>
               <li>{t("section2.items.support")}</li>
               <li>{t("section2.items.improve")}</li>
+              <li>{t("section2.items.deliver")}</li>
             </ul>
           </section>
 
@@ -108,6 +112,12 @@ function PrivacyContent({ locale }: { locale: string }) {
                 <strong>{t("section3.stripe")}</strong>:{" "}
                 <a href="https://stripe.com/privacy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
                   https://stripe.com/privacy
+                </a>
+              </li>
+              <li>
+                <strong>{t("section3.fastspring")}</strong>:{" "}
+                <a href="https://fastspring.com/privacy/" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://fastspring.com/privacy/
                 </a>
               </li>
               <li>
