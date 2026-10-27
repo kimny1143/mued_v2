@@ -159,8 +159,8 @@
     ]
   },
   "legal": {
-    "heading": "EULA・第三者ソフトウェア",
     "eula": "EULA",
+    "eulaLink": "使用許諾契約（EULA）",
     "thirdParty": "MUEDvox は第三者ソフトウェアを含みます。必要な表示はプラグインに同梱しています。",
     "footer": "東京の glasswerks が制作。サポート: support@mued.jp"
   },

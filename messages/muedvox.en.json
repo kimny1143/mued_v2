@@ -159,8 +159,8 @@
     ]
   },
   "legal": {
-    "heading": "EULA and third-party software",
     "eula": "EULA",
+    "eulaLink": "End User License Agreement (EULA)",
     "thirdParty": "MUEDvox includes third-party software. The required notices are included with the plugin.",
     "footer": "Made by glasswerks in Tokyo. Support: support@mued.jp"
   },

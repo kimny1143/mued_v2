@@ -96,4 +96,13 @@ describe.each(["en", "ja"] as const)("%s", (l) => {
     expect(line.textContent).toContain(MESSAGES[l].muedsp.masterchain.eyebrow);
     expect(line.textContent).toContain(MESSAGES[l].muedsp.related.masterchain);
   });
+
+  it("/muedvox keeps the EULA one click away — beside Buy and in the footer — without a section of its own", () => {
+    const { container, getByTestId } = render(<MuedvoxLandingContent />);
+    expect(getByTestId("muedvox-eula-link").getAttribute("href")).toBe(`/${l}/eula`);
+    expect(getByTestId("muedvox-eula-link").textContent).toBe(MESSAGES[l].muedvox.legal.eulaLink);
+    expect(hrefs(container.querySelector("footer")!)).toContain(`/${l}/eula`);
+    expect(container.querySelector("footer")!.textContent).toContain(MESSAGES[l].muedvox.legal.thirdParty);
+    expect(container.querySelector("#legal")).toBeNull();
+  });
 });

@@ -163,6 +163,10 @@ export function MuedvoxLandingContent() {
                 <p data-testid="muedvox-no-sale" className="mb-3 text-[15px] text-white/70">{t("buy.noSale")}</p>
                 <PaidBuyButton product={MUEDVOX_BUY} buyLabel={t("buy.button")} />
                 <p className="mt-5 text-[15px] leading-relaxed text-white/70">{t("buy.afterPurchase")}</p>
+                {/* ★One line, not a section (kimny 10/27 「EULAのセクションもこんなにデカデカといらない」). The EULA text
+                    itself is unchanged and still opens in the cart before the consent button; this is the way to read
+                    it in full before opening the cart. */}
+                <Link href={`/${locale}/eula`} data-testid="muedvox-eula-link" className="mt-4 inline-flex text-sm text-white/55 underline underline-offset-2 transition-colors hover:text-white/80">{t("legal.eulaLink")}</Link>
               </div>
             )}
             {/* The form carries id="demo" itself (the hero's 「デモを試す」 lands on it) and its own note. */}
@@ -199,13 +203,17 @@ export function MuedvoxLandingContent() {
             <Link href={muedvoxManualPath(locale)} data-testid="muedvox-faq-manual-link" className="text-[#f5a524] underline underline-offset-2 transition-colors hover:text-[#ffc35a]">{t("manual.faqLink")}</Link>
           </p>
         </Section>
-        <Section id="legal" title={t("legal.heading")}>
-          <Link href={`/${locale}/eula`} className="mt-5 inline-flex text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("legal.eula")}</Link>
-          <p className="mt-5 text-[15px] leading-relaxed text-white/70">{t("legal.thirdParty")}</p>
-        </Section>
       </main>
       <footer className="border-t border-white/5 px-6 py-10">
-        <div className="mx-auto max-w-3xl"><p className="text-sm text-white/50">{t("legal.footer")}</p></div>
+        <div className="mx-auto max-w-3xl space-y-2.5">
+          <p className="text-sm text-white/50">{t("legal.footer")}</p>
+          {/* The EULA link also lives here, so it stays reachable when Buy and the demo are closed. */}
+          <p className="text-xs leading-relaxed text-white/40">
+            <Link href={`/${locale}/eula`} className="underline underline-offset-2 transition-colors hover:text-white/70">{t("legal.eula")}</Link>
+            {" · "}
+            {t("legal.thirdParty")}
+          </p>
+        </div>
       </footer>
     </div>
   );
