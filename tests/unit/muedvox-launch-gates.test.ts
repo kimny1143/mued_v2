@@ -167,7 +167,7 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
     });
     expect(m.send).toHaveBeenCalledTimes(1);
     // ★Recorded under MUEDvox's own key, not masterchain's (0065).
-    expect(m.record).toHaveBeenCalledWith(expect.objectContaining({ productKey: "muedvox", email: "person@example.com", locale: "ja" }));
+    expect(m.record).toHaveBeenCalledWith(expect.objectContaining({ productKey: "muedvox", source: "muedvox_lp", email: "person@example.com", locale: "ja" }));
   });
 
   it("★the flag off: 404 and touches nothing, whatever the URLs say (the state before launch, and the way to close it)", async () => {

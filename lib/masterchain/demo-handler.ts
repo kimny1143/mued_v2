@@ -24,6 +24,8 @@ export interface DemoProduct {
   readonly tag: string;
   /** The product_key its sign-ups are recorded under in demo_signups (0065). */
   readonly key: DemoProductKey;
+  /** The page its demo form is on, recorded as demo_signups.source. */
+  readonly source: string;
   readonly live: boolean;
   readonly downloadUrl: string;
   /** The Windows build's URL, or null while that product has none. */
@@ -35,6 +37,7 @@ export interface DemoProduct {
 export const MASTERCHAIN_DEMO: DemoProduct = {
   tag: "masterchain/demo",
   key: "masterchain",
+  source: "muedsp_lp",
   get live() { return MASTERCHAIN_DEMO_LIVE; },
   get downloadUrl() { return MASTERCHAIN_DOWNLOAD_URL; },
   // ★windowsDownloadUrl only once masterchain for Windows ships; until then the response is exactly as before.
@@ -117,6 +120,6 @@ export async function handlePaidDemo(request: NextRequest, product: DemoProduct)
           utmTerm: utm.utm_term ?? null,
         }
       : null;
-  await recordDemoSignup({ productKey: product.key, email, locale, firstTouch, audienceAdded: captured }).catch(() => false);
+  await recordDemoSignup({ productKey: product.key, source: product.source, email, locale, firstTouch, audienceAdded: captured }).catch(() => false);
   return success();
 }

@@ -139,6 +139,7 @@ describe("masterchain demo", () => {
     await handleMasterchainDemo(request({ email: " Person@Example.com ", locale: "ja", utm_source: "threads", utm_campaign: "launch" }));
     expect(m.record).toHaveBeenCalledExactlyOnceWith({
       productKey: "masterchain",
+      source: "muedsp_lp",
       email: "person@example.com",
       locale: "ja",
       firstTouch: { utmSource: "threads", utmMedium: null, utmCampaign: "launch", utmContent: null, utmTerm: null },
@@ -171,7 +172,8 @@ describe("masterchain demo", () => {
     await handleMasterchainDemo(request());
     expect(m.record).not.toHaveBeenCalled();
   });
-  it("has no DB, entitlement, purchase or trial imports", () => {
+  // ★DIRECT imports only: the sign-up record (0065) reaches the DB through ./demo-signups, which this does not follow.
+  it("has no direct DB, entitlement, purchase or trial imports", () => {
     const source = readFileSync("lib/masterchain/demo-handler.ts", "utf8");
     const imports = source.match(/^import .*$/gm)?.join("\n");
     expect(imports).not.toMatch(/(?:@\/db|database|entitlement|trial|purchase|repository)/i);

@@ -13,6 +13,8 @@ export type DemoProductKey = "masterchain" | "muedvox";
 /** Returns true when the insert ran, false on a guard or a swallowed error. Never throws. */
 export async function recordDemoSignup(opts: {
   productKey: DemoProductKey;
+  /** The page the form was on, e.g. 'muedvox_lp' (the privacy policy's 「登録したページ」). */
+  source: string;
   email: string;
   locale: "ja" | "en";
   firstTouch: Record<string, unknown> | null;
@@ -26,6 +28,7 @@ export async function recordDemoSignup(opts: {
       .values({
         email,
         productKey: opts.productKey,
+        source: opts.source,
         locale: opts.locale,
         firstTouch: opts.firstTouch,
         // The demo forms always show 「ダウンロードリンクの送付と、MUEDsp のお知らせに…」 (kimny 2026-10-04).

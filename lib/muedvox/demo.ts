@@ -7,6 +7,7 @@ import { MUEDVOX_DEMO_LIVE, MUEDVOX_DOWNLOAD_URL, MUEDVOX_WINDOWS_URL } from "./
 export const MUEDVOX_DEMO: DemoProduct = {
   tag: "muedvox/demo",
   key: "muedvox",
+  source: "muedvox_lp",
   // ★Both, not either: with the flag on but no installer URL the handler would answer `downloadUrl: ""` and the
   //   form would "start" a download of nothing. tests/unit/muedvox-launch-gates.test.ts pins the same rule on the flags.
   get live() { return MUEDVOX_DEMO_LIVE && MUEDVOX_DOWNLOAD_URL !== ""; },
