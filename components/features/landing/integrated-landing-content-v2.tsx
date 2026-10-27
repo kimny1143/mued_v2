@@ -84,8 +84,6 @@ export function IntegratedLandingContentV2() {
             >
               {t("hero.cta")}
             </a>
-            {/* 設計者の事実1行 (kimny: 置く) — who made it, stated plainly. */}
-            <p className="mx-auto mt-8 max-w-xl text-sm text-white/50">{t("designer")}</p>
           </div>
         </section>
 

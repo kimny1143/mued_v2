@@ -32,12 +32,12 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
   description:
-    "現役の作編曲家／ミックスエンジニアが作る、音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。",
+    "音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。",
   metadataBase: new URL("https://mued.jp"),
   openGraph: {
     title: "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
     description:
-      "現役の作編曲家／ミックスエンジニアが作る、音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。",
+      "音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。",
     url: "https://mued.jp",
     siteName: "MUED",
     images: SHARE_IMAGES,
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
     description:
-      "現役の作編曲家／ミックスエンジニアが作る、音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。",
+      "音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。",
     images: SHARE_IMAGES,
   },
 };

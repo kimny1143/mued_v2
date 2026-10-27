@@ -360,7 +360,6 @@ export async function StudioShowroom({
           <div className={styles.container}>
             <Image src="/hoo-animated.svg" width={70} height={45} alt="" />
             <p>{portal("philosophy.quote")}</p>
-            <span>{portal("designer")}</span>
           </div>
         </section>
       </main>

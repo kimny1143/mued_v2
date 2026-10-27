@@ -60,10 +60,9 @@
   },
   "landing": {
     "v2": {
-      "designer": "Designed and developed by a working composer-arranger — drawn from the realities of each craft.",
       "meta": {
         "title": "MUED — Tools for music production: mixing, mastering, ear training.",
-        "description": "Tools for music production, made by a working composer and mix engineer — MUEDial (AI mixing), MUEDsp (mastering plugins), and MUEDear (ear training)."
+        "description": "Tools for music production — MUEDial (AI mixing), MUEDsp (mastering plugins), and MUEDear (ear training)."
       },
       "philosophy": {
         "quote": "Output is AI. Judgment and desire are human."

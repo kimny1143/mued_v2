@@ -60,10 +60,9 @@
   },
   "landing": {
     "v2": {
-      "designer": "現役の作編曲家による設計・開発。それぞれの現場からの着想",
       "meta": {
         "title": "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
-        "description": "現役の作編曲家／ミックスエンジニアが作る、音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。"
+        "description": "音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。"
       },
       "philosophy": {
         "quote": "出力はAI、判断と欲は、人間。"
