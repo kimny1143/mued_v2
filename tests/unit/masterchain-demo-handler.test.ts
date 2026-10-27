@@ -135,22 +135,28 @@ describe("masterchain demo", () => {
     // A real user caught here must leave a trace in production (info is a no-op there).
     expect(m.warn).toHaveBeenCalledTimes(1);
   });
-  it("records the sign-up in our own DB after the receipt (0065), with the list result", async () => {
-    await handleMasterchainDemo(request({ email: " Person@Example.com ", locale: "ja", utm_source: "threads", utm_campaign: "launch" }));
+  it("records the sign-up in our own DB after the receipt (0065), with the consent and the list result", async () => {
+    await handleMasterchainDemo(request({ email: " Person@Example.com ", locale: "ja", marketingOptIn: true, utm_source: "threads", utm_campaign: "launch" }));
     expect(m.record).toHaveBeenCalledExactlyOnceWith({
       productKey: "masterchain",
       source: "muedsp_lp",
       email: "person@example.com",
       locale: "ja",
       firstTouch: { utmSource: "threads", utmMedium: null, utmCampaign: "launch", utmContent: null, utmTerm: null },
+      newsConsent: true,
       audienceAdded: true,
     });
     expect(m.send.mock.invocationCallOrder[0]).toBeLessThan(m.record.mock.invocationCallOrder[0]);
   });
-  it("records audienceAdded: false when the list add failed — the record is how a re-import finds them", async () => {
+  it("records audienceAdded: false when a consenting person's list add failed — the record is how a re-import finds them", async () => {
     m.create.mockResolvedValue({ data: null, error: { message: "contact limit" } });
+    await handleMasterchainDemo(request({ email: "person@example.com", marketingOptIn: true }));
+    expect(m.record).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ newsConsent: true, audienceAdded: false, firstTouch: null }));
+  });
+  it("not ticked: still recorded, with newsConsent false and no list add", async () => {
     await handleMasterchainDemo(request());
-    expect(m.record).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ audienceAdded: false, firstTouch: null }));
+    expect(m.create).not.toHaveBeenCalled();
+    expect(m.record).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ newsConsent: false, audienceAdded: false }));
   });
   it.each(["rejection", "false"])("a failed DB record (%s) does not block the download or the receipt", async (mode) => {
     if (mode === "rejection") m.record.mockRejectedValue(new Error("db down"));

@@ -120,6 +120,8 @@ export async function handlePaidDemo(request: NextRequest, product: DemoProduct)
           utmTerm: utm.utm_term ?? null,
         }
       : null;
-  await recordDemoSignup({ productKey: product.key, source: product.source, email, locale, firstTouch, audienceAdded: captured }).catch(() => false);
+  await recordDemoSignup({
+    productKey: product.key, source: product.source, email, locale, firstTouch, newsConsent: marketingOptIn, audienceAdded: captured,
+  }).catch(() => false);
   return success();
 }

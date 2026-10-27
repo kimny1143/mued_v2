@@ -18,7 +18,7 @@ vi.mock("@/db/schema", () => ({ demoSignups: { email: "email_col", productKey: "
 
 import { recordDemoSignup } from "@/lib/masterchain/demo-signups";
 
-const base = { productKey: "muedvox" as const, source: "muedvox_lp", locale: "ja" as const, firstTouch: null, audienceAdded: false };
+const base = { productKey: "muedvox" as const, source: "muedvox_lp", locale: "ja" as const, firstTouch: null, newsConsent: false, audienceAdded: false };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -36,15 +36,20 @@ describe("recordDemoSignup", () => {
       source: "muedvox_lp",
       locale: "ja",
       firstTouch: null,
-      newsNoticeShown: true,
+      newsConsent: false,
       audienceAdded: false,
     });
     expect(mockOnConflict).toHaveBeenCalledExactlyOnceWith({ target: ["email_col", "product_col"] });
   });
 
-  it("passes firstTouch and audienceAdded through", async () => {
-    await recordDemoSignup({ ...base, email: "a@b.co", firstTouch: { utmSource: "threads" }, audienceAdded: true });
-    expect(mockValues).toHaveBeenCalledWith(expect.objectContaining({ firstTouch: { utmSource: "threads" }, audienceAdded: true }));
+  it("passes firstTouch, newsConsent and audienceAdded through", async () => {
+    await recordDemoSignup({ ...base, email: "a@b.co", firstTouch: { utmSource: "threads" }, newsConsent: true, audienceAdded: true });
+    expect(mockValues).toHaveBeenCalledWith(expect.objectContaining({ firstTouch: { utmSource: "threads" }, newsConsent: true, audienceAdded: true }));
+  });
+
+  it("★audience_added is never true without consent — the column means 'a consenting person is on the list'", async () => {
+    await recordDemoSignup({ ...base, email: "a@b.co", newsConsent: false, audienceAdded: true });
+    expect(mockValues).toHaveBeenCalledWith(expect.objectContaining({ newsConsent: false, audienceAdded: false }));
   });
 
   it("an empty email is a guarded no-op (no insert) → false", async () => {

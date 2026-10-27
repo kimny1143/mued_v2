@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS demo_signups (
   source text NOT NULL,
   locale text,
   first_touch jsonb,
-  news_notice_shown boolean NOT NULL,
+  news_consent boolean NOT NULL,
   audience_added boolean NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT uq_demo_signups_email_product UNIQUE (email, product_key)
@@ -21,5 +21,5 @@ CREATE INDEX IF NOT EXISTS idx_demo_signups_email ON demo_signups (email);
 
 COMMENT ON TABLE demo_signups IS 'Who asked for a paid product demo (masterchain, MUEDvox). Not an entitlement; the portal does not read it.';
 COMMENT ON COLUMN demo_signups.source IS 'The page the demo form was on (muedsp_lp = /muedsp for masterchain, muedvox_lp = /muedvox).';
-COMMENT ON COLUMN demo_signups.audience_added IS 'Whether the Resend list add succeeded at sign-up time (false = the list is missing this person).';
-COMMENT ON COLUMN demo_signups.news_notice_shown IS 'The form told the person the address is used for MUEDsp news (kimny 2026-10-04: tell and send).';
+COMMENT ON COLUMN demo_signups.news_consent IS 'The person ticked the form''s MUEDsp news checkbox (default off; kimny 2026-10-28 「B」).';
+COMMENT ON COLUMN demo_signups.audience_added IS 'Whether a consenting person was added to the Resend list at sign-up time (always false when news_consent is false; news_consent AND NOT audience_added = the list is missing this person).';

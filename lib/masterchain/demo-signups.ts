@@ -18,6 +18,9 @@ export async function recordDemoSignup(opts: {
   email: string;
   locale: "ja" | "en";
   firstTouch: Record<string, unknown> | null;
+  /** The form's news checkbox (kimny 2026-10-28 「B」). */
+  newsConsent: boolean;
+  /** Added to the Resend list — only ever true with newsConsent. */
   audienceAdded: boolean;
 }): Promise<boolean> {
   const email = opts.email?.trim().toLowerCase();
@@ -31,9 +34,9 @@ export async function recordDemoSignup(opts: {
         source: opts.source,
         locale: opts.locale,
         firstTouch: opts.firstTouch,
-        // The demo forms always show 「ダウンロードリンクの送付と、MUEDsp のお知らせに…」 (kimny 2026-10-04).
-        newsNoticeShown: true,
-        audienceAdded: opts.audienceAdded,
+        newsConsent: opts.newsConsent,
+        // ★Never true without consent, whatever the caller says: the column means "a consenting person is on the list".
+        audienceAdded: opts.newsConsent && opts.audienceAdded,
       })
       .onConflictDoNothing({ target: [demoSignups.email, demoSignups.productKey] });
     return true;
