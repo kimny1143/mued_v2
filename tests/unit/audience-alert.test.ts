@@ -39,6 +39,14 @@ describe("alertAudienceAddFailed", () => {
     expect(sendAdminAlert.mock.calls[0]).toEqual(["ops@example.com", expect.stringContaining("at most once a day")]);
   });
 
+  it("still sends nothing 23 hours later — the window is a day, not an hour", async () => {
+    const { alertAudienceAddFailed } = await import("@/lib/plugins/audience-alert");
+    await alertAudienceAddFailed("muedlim/subscribe");
+    vi.setSystemTime(new Date("2026-10-29T00:00:00Z"));
+    await alertAudienceAddFailed("muedlim/subscribe");
+    expect(sendAdminAlert).toHaveBeenCalledTimes(1);
+  });
+
   it("sends again once the day's window has passed", async () => {
     const { alertAudienceAddFailed } = await import("@/lib/plugins/audience-alert");
     await alertAudienceAddFailed("muedlim/subscribe");
