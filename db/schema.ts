@@ -362,3 +362,4 @@ export * from './schema/masterchain';
 // User portal — free-module ownership records (plugin_entitlements, P-1)
 // ========================================
 export * from './schema/plugin-entitlements';
+export * from './schema/demo-signups';
