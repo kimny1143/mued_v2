@@ -17,7 +17,8 @@ export const MUEDVOX_SCREENSHOT: string = "/muedvox/MUEDvox-1.1.0-harmony.webp";
 // ★The songs and their files are this list and nothing else: to swap a file, re-encode it under the same name
 //   (scripts/muedvox/encode-lp-audio.sh <folder of wavs>); to add or drop a song, add or drop a row.
 // Four takes per song, same length and same start: the mix and the vocal alone, each before and after MUEDvox.
-// Source: lp/audio-final-20261014-rev4/*.wav (48 kHz 24 bit) → mp3 192 kbps CBR.
+// Source: lp/audio-final-20261027-rev7-render110-preset-balance/*.wav (48 kHz 24 bit) → mp3 192 kbps CBR.
+//   rev7 (kimny 2026-10-28 「差し替えok」): the after takes are Render mode; the before takes are unchanged from rev4.
 // ★The song names stay off the page (kimny 2026-10-14: 「サンプルの曲名は伏せましょう。Sample #1 #2」): the title is
 //   what is shown and read aloud, the same in ja and en; the files carry only the number.
 export type MuedvoxAudioTake = "mix_before" | "mix_after" | "vocal_before" | "vocal_after";
