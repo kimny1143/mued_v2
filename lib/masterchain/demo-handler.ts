@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { addContactIfAbsent } from "@/lib/plugins/audience";
+import { alertAudienceAddFailed } from "@/lib/plugins/audience-alert";
 import { z } from "zod";
 import { rateLimit, checkRateLimit } from "@/lib/middleware/rate-limit";
 import { MUEDSP_AUDIENCE_ID, isHoneypotTripped } from "@/lib/plugins/registry";
@@ -86,11 +87,10 @@ export async function handlePaidDemo(request: NextRequest, product: DemoProduct)
   // ★A subscriber who did not reach the list is a lost lead AND a promise we did not keep — alert
   //   the operator, like the free three (lib/plugins/subscribe-handler.ts). Configured-only: without the
   //   Resend key there is no list to reach, which is not a failure worth waking anyone for.
-  const alertEmail = process.env.OPERATOR_ALERT_EMAIL;
-  if (!captured && process.env.RESEND_API_KEY && alertEmail && emailService.isConfigured()) {
-    void emailService
-      .sendAdminAlert(alertEmail, `[${product.tag}] Resend audience add failed for a subscriber — lead not captured. Check Resend / MUEDsp audience.`)
-      .catch((err) => logger.error(`[${product.tag}] operator alert failed`, { error: String(err) }));
+  //   ★Every failure is logged here; the operator email is capped at one a day (lib/plugins/audience-alert.ts).
+  if (!captured && process.env.RESEND_API_KEY) {
+    logger.error(`[${product.tag}] audience add failed — lead not captured to Resend`);
+    void alertAudienceAddFailed(product.tag);
   }
   // The browser receives the download directly; the receipt is best-effort, never an entitlement.
   try {
