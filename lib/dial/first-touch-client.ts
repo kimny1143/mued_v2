@@ -13,6 +13,7 @@
  * checkout or payment flow.
  */
 import type { FirstTouch } from './first-touch';
+import { readConsent } from '@/lib/analytics/consent';
 
 /** localStorage key holding the first-touch payload (first-wins, never overwritten). */
 export const DIAL_FIRST_TOUCH_KEY = 'dial_first_touch';
@@ -34,6 +35,10 @@ const UTM_PARAM_MAP: Array<[string, keyof FirstTouch]> = [
  */
 export function readGaClientId(): string | undefined {
   try {
+    // ★Only with consent (privacy policy: 「計測に同意された場合は Google アナリティクスの識別子」). A `_ga` cookie can
+    //   outlive the choice — set before the 2026-10-08 banner, or left by a page that kept gtag.js after 「必須のみ」 —
+    //   so the cookie's presence is not consent. Purchases and dial sessions both read the id through here.
+    if (readConsent(document.cookie) !== "all") return undefined;
     const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/);
     if (!match) return undefined;
     const parts = match[1].split('.');

@@ -27,6 +27,13 @@ type Props = {
   copy: { ja: CookieConsentCopy; en: CookieConsentCopy };
 };
 
+/** Expire every GA4 cookie (`_ga`, `_ga_*`) on this host and on the parent domain gtag.js writes to. */
+function expireAnalyticsCookies() {
+  for (const name of analyticsCookieNames(document.cookie)) {
+    for (const expiry of expireCookieStrings(name, window.location.hostname)) document.cookie = expiry;
+  }
+}
+
 /** Both choices wear exactly this — same border, same size, same weight — so neither reads as the "right" answer. */
 export const CHOICE_BUTTON_CLASS =
   "rounded-md border border-white/25 px-3 py-1.5 text-center font-medium text-slate-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5a524]";
@@ -44,7 +51,12 @@ export function CookieConsent({ gaMeasurementId, copy }: Props) {
   const [reopened, setReopened] = useState(false);
 
   useEffect(() => {
-    setConsent(readConsent(document.cookie));
+    const stored = readConsent(document.cookie);
+    // ★Without "all", no GA4 cookie should exist. Old ones can: set before the 2026-10-08 banner, or re-written by a
+    //   page that still had gtag.js when the visitor switched to 「必須のみ」. Clear them on every load, so the
+    //   policy's 「同意された場合は」 holds by construction, not by the visitor having clicked on the right page.
+    if (stored !== "all") expireAnalyticsCookies();
+    setConsent(stored);
     const reopen = () => setReopened(true);
     window.addEventListener(OPEN_COOKIE_SETTINGS_EVENT, reopen);
     return () => window.removeEventListener(OPEN_COOKIE_SETTINGS_EVENT, reopen);
@@ -56,9 +68,7 @@ export function CookieConsent({ gaMeasurementId, copy }: Props) {
       // Switching away from "all" on a page where gtag.js already ran: stop further hits and
       // remove the measurement cookies it set.
       if (gaMeasurementId) (window as unknown as Record<string, unknown>)[`ga-disable-${gaMeasurementId}`] = true;
-      for (const name of analyticsCookieNames(document.cookie)) {
-        for (const expiry of expireCookieStrings(name, window.location.hostname)) document.cookie = expiry;
-      }
+      expireAnalyticsCookies();
     }
     if (next === "all" && gaMeasurementId) {
       // Back from "essential" on a page where gtag.js already ran ("all" → "essential" → "all"):
