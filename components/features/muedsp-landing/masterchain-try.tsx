@@ -16,7 +16,7 @@ type DemoError = "invalid_email" | "disposable_email" | "rate_limited" | "generi
  * masterchain's demo ("Try"). The purchase lives beside masterchain's heading (MasterchainBuyButton).
  * ★Same parts and order as the free three's form (components/features/muedsat-landing/muedsat-signup-form.tsx —
  *   kimny 2026-10-04: 「無料の方はデカいオレンジのボタンをただ押すだけなら赤いメッセージ…どっちがわかりやすいか、
- *   押しやすいか明白だ」): [email | filled orange Try] → email-use notice (news + unsubscribe; kimny 2026-10-04) → one short line.
+ *   押しやすいか明白だ」): [email | filled orange Try] → the news checkbox (default off; kimny 2026-10-28 「B」) → what the email is for → one short line.
  *   Try is always pressable; a malformed email answers with the red message instead of a greyed-out button.
  *   Only once: no second receipt after a successful send.
  */
@@ -35,7 +35,7 @@ export type DemoFormProduct = {
   /** POST endpoint answering { ok, downloadUrl, windowsDownloadUrl? }. */
   endpoint: string;
   /** messages namespaces: the form (try / emailLabel / emailPlaceholder / demoNote), the demo
-   *  (emailNotice / success / errors.*) and the two-OS words (demoChoose / demoOtherMac / demoOtherWindows). */
+   *  (consent / emailNotice / success / errors.*) and the two-OS words (demoChoose / demoOtherMac / demoOtherWindows). */
   messages: { form: string; demo: string; windows: string };
 };
 
@@ -53,6 +53,7 @@ export function PaidDemoForm({ product }: { product: DemoFormProduct }) {
   const locale = useLocale();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [website, setWebsite] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [error, setError] = useState<DemoError>("generic");
@@ -80,7 +81,7 @@ export function PaidDemoForm({ product }: { product: DemoFormProduct }) {
       const response = await fetch(product.endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), locale, website, ...attribution }),
+        body: JSON.stringify({ email: email.trim(), locale, marketingOptIn, website, ...attribution }),
       });
       const data = await response.json();
       if (!response.ok || !data.ok || typeof data.downloadUrl !== "string") {
@@ -153,6 +154,17 @@ export function PaidDemoForm({ product }: { product: DemoFormProduct }) {
               {t("try")}
             </button>
           </div>
+          <label className="flex items-start gap-2 text-sm text-white/65">
+            <input
+              type="checkbox"
+              name="marketingOptIn"
+              checked={marketingOptIn}
+              onChange={(e) => setMarketingOptIn(e.target.checked)}
+              disabled={busy}
+              className="mt-1 accent-[#f5a524]"
+            />
+            <span>{td("consent")}</span>
+          </label>
         </>
       )}
       <p className="text-sm text-white/65">{td("emailNotice")}</p>

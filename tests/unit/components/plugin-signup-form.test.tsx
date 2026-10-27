@@ -21,10 +21,13 @@ afterEach(() => {
 });
 
 describe.each(["muedsat", "muedlim", "muedrive"] as const)("%s signup notice", (plugin) => {
-  it("shows the notice without a checkbox and omits the legacy field from POST", async () => {
+  // kimny 2026-10-28 「B」: a news checkbox, default off; the POST says exactly what the box says.
+  it.each([false, true])("the news checkbox starts unticked and the POST carries it (ticked: %s)", async (tick) => {
     render(<MuedsatSignupForm plugin={plugin} />);
     const namespace = PLUGIN_DIST[plugin].i18nNamespace;
-    expect(screen.queryByRole("checkbox")).toBeNull();
+    const box = screen.getByRole("checkbox", { name: `${namespace}.form.consent` });
+    expect(box).not.toBeChecked();
+    if (tick) fireEvent.click(box);
     expect(screen.getByText(`${namespace}.form.note`)).toBeVisible();
     fireEvent.change(screen.getByRole("textbox", { name: `${namespace}.form.emailLabel` }), {
       target: { value: "listener@example.com" },
@@ -33,7 +36,7 @@ describe.each(["muedsat", "muedlim", "muedrive"] as const)("%s signup notice", (
     await waitFor(() => expect(screen.getByRole("status")).toBeInTheDocument());
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [endpoint, options] = fetchMock.mock.calls[0];
-    expect(JSON.parse(options.body)).not.toHaveProperty("marketingOptIn");
+    expect(JSON.parse(options.body).marketingOptIn).toBe(tick);
     expect(screen.getByText(`${namespace}.form.note`)).toBeVisible();
     expect(endpoint).toBe(PLUGIN_DIST[plugin].subscribeEndpoint);
     expect(JSON.parse(options.body)).toEqual(expect.objectContaining({

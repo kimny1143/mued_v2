@@ -196,7 +196,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: October 27, 2026",
+    "lastUpdated": "Last updated: October 28, 2026",
     "intro": "glasswerks inc. (\"we,\" \"our,\" or \"us\") operates the MUED website (mued.jp) and its products, including MUEDnote (the \"App\") and the MUEDsp and MUEDvox plugins. This Privacy Policy explains how we collect, use, and protect your information when you use them.",
     "section1": {
       "title": "1. Information We Collect",
@@ -219,7 +219,7 @@
         "transcribe": "Transcribe voice memos and provide AI-powered analysis",
         "support": "Provide customer support",
         "improve": "Improve our services and develop new features",
-        "deliver": "Send download links and their receipts and the steps to get your license key, and send news from MUEDsp (you can unsubscribe from the news at any time)"
+        "deliver": "Send download links and their receipts and the steps to get your license key, and send news from MUEDsp to those who ticked the box on the form (you can unsubscribe from the news at any time)"
       }
     },
     "section3": {
@@ -2601,7 +2601,8 @@
     "demo": {
       "emailLabel": "Email",
       "emailPlaceholder": "you@example.com",
-      "emailNotice": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
+      "emailNotice": "We'll email you a copy of the download link.",
+      "consent": "Email me news from MUEDsp (unsubscribe anytime)",
       "note": "The download starts right away. I'll send one email with the download link to this address as a receipt.",
       "submit": "Download the demo",
       "success": "Your download has started. If it didn't, use the link in the email.",
@@ -2749,7 +2750,8 @@
       "emailPlaceholder": "your@email",
       "submit": "Download MUEDlim",
       "submitting": "Sending…",
-      "note": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
+      "note": "We'll email you the download link.",
+      "consent": "Email me news from MUEDsp (unsubscribe anytime)",
       "successTitle": "Check your email.",
       "successBody": "I've emailed you the download link. If it doesn't arrive, check your spam folder.",
       "errorEmail": "Please enter a valid email address.",
@@ -2830,7 +2832,8 @@
       "emailPlaceholder": "your@email",
       "submit": "Download MUEDrive",
       "submitting": "Sending…",
-      "note": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
+      "note": "We'll email you the download link.",
+      "consent": "Email me news from MUEDsp (unsubscribe anytime)",
       "successTitle": "Check your email.",
       "successBody": "I've emailed you the download link. If it doesn't arrive, check your spam folder.",
       "errorEmail": "Please enter a valid email address.",
@@ -2898,7 +2901,8 @@
       "emailPlaceholder": "your@email",
       "submit": "Download MUEDsat",
       "submitting": "Sending…",
-      "note": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
+      "note": "We'll email you the download link.",
+      "consent": "Email me news from MUEDsp (unsubscribe anytime)",
       "successTitle": "Check your inbox.",
       "successBody": "We've sent your download link. If it's not there, check your spam folder.",
       "errorEmail": "Please enter a valid email address.",

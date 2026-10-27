@@ -11,5 +11,5 @@ export const MUEDVOX_DEMO: DemoProduct = {
   get live() { return MUEDVOX_DEMO_LIVE && MUEDVOX_DOWNLOAD_URL !== ""; },
   get downloadUrl() { return MUEDVOX_DOWNLOAD_URL; },
   get windowsUrl() { return MUEDVOX_WINDOWS_URL || null; },
-  sendReceipt: (email, locale) => emailService.sendMuedvoxDemoDownload({ email }, { locale }),
+  sendReceipt: (email, locale, marketingOptIn) => emailService.sendMuedvoxDemoDownload({ email }, { locale, marketingOptIn }),
 };

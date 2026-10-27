@@ -80,3 +80,25 @@ describe.each(cases)("$plugin notice-based welcome", ({ plugin, template, sender
     });
   });
 });
+
+// kimny 2026-10-28 「B」: without the checkbox the welcome is the download mail only — no news, no list to leave.
+describe.each(cases)("$plugin welcome without news consent", ({ plugin, template, sender }) => {
+  describe.each(["ja", "en"] as const)("%s", (locale) => {
+    it("carries the download link but no news line, no unsubscribe link and no List-Unsubscribe header", async () => {
+      const send = vi.spyOn(emailService, "send").mockResolvedValue({ success: true });
+      const render = vi.spyOn(emailTemplates, template);
+      await emailService[sender]({ email: "listener@example.com" }, { locale, marketingOptIn: false });
+      expect(render).toHaveBeenCalledTimes(1);
+      expect(render.mock.calls[0][0].unsubscribeUrl).toBeUndefined();
+      const sent = send.mock.calls[0][0];
+      for (const format of ["html", "text"] as const) {
+        expect(sent[format]).toContain(PLUGIN_DIST[plugin].downloadUrl);
+        expect(sent[format]?.includes(news(plugin, locale, format))).toBe(false);
+        expect(sent[format]).not.toContain("/api/plugins/unsubscribe");
+      }
+      expect(sent.headers).toBeUndefined();
+      send.mockRestore();
+      render.mockRestore();
+    });
+  });
+});

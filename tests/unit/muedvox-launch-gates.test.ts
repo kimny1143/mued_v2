@@ -99,6 +99,7 @@ describe("★the Buy button and the demo form have every word they read", () => 
       emailPlaceholder: buyTry.emailPlaceholder,
       demoNote: vox.demo.body,
       emailNotice: demo.emailNotice,
+      consent: demo.consent,
       success: demo.success,
       errors: demo.errors,
       demoChoose: windows.demoChoose,
@@ -184,7 +185,8 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
     const res = await post();
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, downloadUrl: LAUNCHED.downloadUrl, windowsDownloadUrl: LAUNCHED.windowsUrl });
-    expect(m.send).toHaveBeenCalledExactlyOnceWith({ email: "person@example.com" }, { locale: "ja" });
+    // Not ticked: the receipt goes, without news (kimny 2026-10-28 「B」).
+    expect(m.send).toHaveBeenCalledExactlyOnceWith({ email: "person@example.com" }, { locale: "ja", marketingOptIn: false });
   });
 
   it.each(["ja", "en"] as const)("the demo receipt (%s): MUEDvox's name, both links named for their OS, the product-page short link, a way off the list", async (locale) => {
@@ -210,10 +212,10 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
       expect(surface).toContain("unsubscribe?x=1");
     }
     expect(mail.subject).toBe(locale === "ja" ? "MUEDvox デモのダウンロード" : "Your MUEDvox demo download");
-    // The send always carries the one-click header: the demo always adds to the list.
+    // With the checkbox ticked the person is on the list, so the send carries the one-click header.
     const send = vi.spyOn(emailService, "send").mockResolvedValue({ success: true });
     vi.stubEnv("PLUGIN_UNSUBSCRIBE_TOKEN_SECRET", "test-secret");
-    await emailService.sendMuedvoxDemoDownload({ email: "person@example.com" }, { locale });
+    await emailService.sendMuedvoxDemoDownload({ email: "person@example.com" }, { locale, marketingOptIn: true });
     const sent = send.mock.calls[0][0] as { headers?: Record<string, string>; tags?: { value: string }[] };
     expect(sent.headers?.["List-Unsubscribe"]).toMatch(/^<https:\/\/.+>$/);
     // ★The scope must be one the unsubscribe route accepts AND that withdraws from the shared MUEDsp list — the
@@ -224,6 +226,16 @@ describe("★the demo entrance and the mails — MUEDvox's own, and shut until i
     expect(route).toMatch(/scope === "masterchain"\s*\?\s*unsubscribeMuedspContact\(email\)/);
     expect(sent.headers?.["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
     expect(sent.tags?.[0].value).toBe("muedvox_demo_download");
+    // Not ticked: on no list — no header, no unsubscribe link, no product-page pitch; the download links stay.
+    await emailService.sendMuedvoxDemoDownload({ email: "person@example.com" }, { locale });
+    const plain = send.mock.calls[1][0] as { headers?: Record<string, string>; html: string; text: string };
+    expect(plain.headers).toBeUndefined();
+    for (const surface of [plain.html, plain.text]) {
+      expect(surface).toContain(LAUNCHED.downloadUrl);
+      expect(surface).not.toContain("/api/plugins/unsubscribe");
+      expect(surface).not.toContain("https://mued.jp/l/vox-demo-mail");
+    }
+    send.mockRestore();
   });
 
   it("the short link in the receipt exists and lands on MUEDvox's page", () => {

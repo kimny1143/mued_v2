@@ -244,26 +244,37 @@ describe.each([
   ["muedsat", mockSendSat],
   ["muedlim", mockSendLim],
   ["muedrive", mockSendDrive],
-] as const)("%s notice-based subscription", (plugin, send) => {
+] as const)("%s news consent (kimny 2026-10-28 「B」: checkbox, default off)", (plugin, send) => {
   beforeEach(() => { PLUGIN_DIST.muedlim.live = true; });
   afterEach(() => { PLUGIN_DIST.muedlim.live = false; });
 
-  it.each([undefined, false, true])("ignores legacy client value %s: captures audience and enables news with unsubscribe", async (marketingOptIn) => {
-    const body = { email: "a@b.com", locale: "ja", ...(marketingOptIn === undefined ? {} : { marketingOptIn }) };
-    const res = await handlePluginSubscribe(plugin, req(body));
+  it("ticked: on the list, and the welcome carries news and the unsubscribe link", async () => {
+    const res = await handlePluginSubscribe(plugin, req({ email: "a@b.com", locale: "ja", marketingOptIn: true }));
     expect(res.status).toBe(200);
     expect((await res.json()).data.subscribed).toBe(true);
     expect(send).toHaveBeenCalledExactlyOnceWith({ email: "a@b.com" }, { locale: "ja", marketingOptIn: true });
-    expect(mockRecord).toHaveBeenCalledExactlyOnceWith(plugin, {
-      email: "a@b.com", source: `${plugin}_lp`, firstTouch: null, locale: "ja",
-    });
     expect(mockAdd).toHaveBeenCalledExactlyOnceWith(plugin, { email: "a@b.com", locale: "ja" });
     expect(mockEnabled).toHaveBeenCalledWith(plugin);
     expect(mockAlert).not.toHaveBeenCalled();
     expect(logger.error).not.toHaveBeenCalled();
   });
 
-  it.each(["true", "false", 1, null, {}, []])("rejects non-boolean legacy field %j before side effects", async (marketingOptIn) => {
+  it.each([undefined, false])("not ticked (%s): the download link still goes out, but no list and no news", async (marketingOptIn) => {
+    const body = { email: "a@b.com", locale: "ja", ...(marketingOptIn === undefined ? {} : { marketingOptIn }) };
+    const res = await handlePluginSubscribe(plugin, req(body));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.subscribed).toBe(true);
+    expect(send).toHaveBeenCalledExactlyOnceWith({ email: "a@b.com" }, { locale: "ja", marketingOptIn: false });
+    expect(mockRecord).toHaveBeenCalledExactlyOnceWith(plugin, {
+      email: "a@b.com", source: `${plugin}_lp`, firstTouch: null, locale: "ja",
+    });
+    expect(mockAdd).not.toHaveBeenCalled();
+    // ★Not being on the list is not a failed add: no alert, no error line.
+    expect(mockAlert).not.toHaveBeenCalled();
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it.each(["true", "false", 1, null, {}, []])("rejects a non-boolean marketingOptIn %j before side effects", async (marketingOptIn) => {
     const res = await handlePluginSubscribe(plugin, req({ email: "a@b.com", marketingOptIn }));
     expect(res.status).toBe(400);
     expect(mockAdd).not.toHaveBeenCalled();

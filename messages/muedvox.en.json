@@ -190,7 +190,8 @@
     "emailLabel": "Email (to try it)",
     "emailPlaceholder": "you@example.com",
     "demoNote": "The demo never expires: every 45 seconds the harmony drops out for about 3 seconds (your lead keeps playing). Saving presets needs a license; sessions made in the demo open unchanged once you add one.",
-    "emailNotice": "We'll use your email to send the download link and news from MUEDsp. Unsubscribe anytime.",
+    "emailNotice": "We'll email you a copy of the download link.",
+    "consent": "Email me news from MUEDsp (unsubscribe anytime)",
     "success": "Your download has started. If it didn't, use the link in the email.",
     "errors": {
       "invalid_email": "Please enter a valid email address.",
