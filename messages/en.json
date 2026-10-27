@@ -55,14 +55,14 @@
     "footerLine": "Tools for making music. Made by music makers.",
     "footerNavigation": "Footer navigation",
     "privacy": "Privacy",
-    "legal": "Legal"
+    "legal": "Legal",
+    "voxCta": "See MUEDvox"
   },
   "landing": {
     "v2": {
-      "designer": "Designed and developed by a working composer-arranger — drawn from the realities of each craft.",
       "meta": {
-        "title": "MUED — Tools for music production: mixing, mastering, ear training.",
-        "description": "Tools for music production, made by a working composer and mix engineer — MUEDial (AI mixing), MUEDsp (mastering plugins), and MUEDear (ear training)."
+        "title": "MUED — Tools for music production: mastering, vocal harmonies.",
+        "description": "Tools for music production — MUEDsp masterchain (a whole mastering chain, in one plugin), MUEDvox (a vocal harmonizer that follows your key and chords), and the free plugins MUEDsat, MUEDlim and MUEDrive."
       },
       "philosophy": {
         "quote": "Output is AI. Judgment and desire are human."
@@ -2677,6 +2677,10 @@
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
       "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon & Intel)"
+    },
+    "related": {
+      "vox": "See MUEDvox",
+      "masterchain": "See MUEDsp masterchain"
     }
   },
   "muedlim": {

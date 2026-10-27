@@ -420,6 +420,56 @@
   white-space: nowrap;
 }
 
+/* MUEDvox — the second paid product, under masterchain's figure. */
+.paidSecond {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  align-items: center;
+  margin-top: 64px;
+}
+
+.paidSecondImage img {
+  width: 100%;
+  height: auto;
+  border-radius: 9px;
+  box-shadow: 0 25px 36px #25251d32;
+}
+
+.paidSecondCopy {
+  max-width: 390px;
+}
+
+.paidSecondCopy h3 {
+  font-size: clamp(32px, 3.6vw, 48px);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.055em;
+}
+
+.paidSecondCopy p {
+  margin-top: 14px;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.paidSecondCopy .paidSecondPrice {
+  margin: 6px 0 22px;
+  font-size: 13px;
+  color: #595b53;
+}
+
+@media (max-width: 599px) {
+  .paidSecond {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-top: 44px;
+  }
+  .paidSecondCopy p {
+    font-size: 14px;
+  }
+}
+
 .collectionIntro {
   margin-top: 64px;
   display: flex;

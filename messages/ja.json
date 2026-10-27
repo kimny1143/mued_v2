@@ -55,14 +55,14 @@
     "footerLine": "クリエイター自身が作る、制作のための道具。",
     "footerNavigation": "フッターナビゲーション",
     "privacy": "プライバシー",
-    "legal": "特定商取引法に基づく表記"
+    "legal": "特定商取引法に基づく表記",
+    "voxCta": "MUEDvox を見る"
   },
   "landing": {
     "v2": {
-      "designer": "現役の作編曲家による設計・開発。それぞれの現場からの着想",
       "meta": {
-        "title": "MUED — 音楽制作の道具。ミックス、マスタリング、耳の訓練。",
-        "description": "現役の作編曲家／ミックスエンジニアが作る、音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。"
+        "title": "MUED — 音楽制作の道具。マスタリングとボーカルハーモナイザー。",
+        "description": "音楽制作のための道具。マスタリングのチェーンをまるごと1つのプラグインにした MUEDsp masterchain、調とコードに沿うボーカルハーモナイザー MUEDvox、無料のプラグイン（MUEDsat・MUEDlim・MUEDrive）。"
       },
       "philosophy": {
         "quote": "出力はAI、判断と欲は、人間。"
@@ -2677,6 +2677,10 @@
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
       "format": "VST3 · AU · AAX（Pro Tools）· macOS（Universal — Apple Silicon / Intel）"
+    },
+    "related": {
+      "vox": "MUEDvox を見る",
+      "masterchain": "MUEDsp masterchain を見る"
     }
   },
   "muedlim": {

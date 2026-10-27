@@ -2,7 +2,7 @@
 // the demo are open, and the webhook issues keys (PAID_PRODUCTS.muedvox.enabled).
 // ★To close Buy in a hurry, set MUEDVOX_PURCHASE_LIVE and MUEDVOX_DEMO_LIVE to false together
 //   (muedvoxLaunchProblems: the demo's receipt sends people to the Buy button).
-// ★The announcement is later (about a week): the link from /muedsp and the llms.txt line are NOT in yet.
+// ★The links from the top page and /muedsp are in (#1308); the llms.txt line is NOT in yet.
 export const MUEDVOX_LIVE = true;
 export const MUEDVOX_PURCHASE_LIVE = true;
 export const MUEDVOX_DEMO_LIVE = true;
