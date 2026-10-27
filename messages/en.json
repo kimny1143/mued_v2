@@ -207,7 +207,7 @@
         "voiceMemo": "Voice Memos: Audio recordings you create and their transcriptions",
         "usage": "Usage Data: Anonymized data about how you use the App",
         "downloads": "Download and demo sign-up information: the email address you enter when downloading a free plugin or signing up for a demo version, the product, the date and time, the display language, and the page you signed up on and where you came from",
-        "purchase": "Purchase information: the purchase-notification information that FastSpring provides for the purpose of issuing your license key (email address, order number, product, amount and currency, country), the license key we issued, and the record of your acceptance of the End User License Agreement (EULA). Payment information is collected and held solely by FastSpring"
+        "purchase": "Purchase information: the purchase-notification information that FastSpring provides for the purpose of issuing your license key (email address, order number, product, amount and currency, country), how you reached the purchase (referrer and campaign tags, and, if you consented to measurement, the Google Analytics identifier), the license key we issued, the record of your acceptance of the End User License Agreement (EULA), and the record of any refund. Payment information is collected and held solely by FastSpring"
       }
     },
     "section2": {
