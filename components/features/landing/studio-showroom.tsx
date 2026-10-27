@@ -6,6 +6,7 @@ import { Fragment } from "react";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
+import { MUEDVOX_LIVE, MUEDVOX_SCREENSHOT } from "@/lib/muedvox/config";
 import styles from "./studio-showroom.module.css";
 const modules = [
   {
@@ -43,6 +44,9 @@ export async function StudioShowroom({
   const homePath = `/${locale}${preview ? "/redesign/studio" : ""}`;
   const t = await getTranslations({ locale, namespace: "studioShowroom" });
   const portal = await getTranslations({ locale, namespace: "landing.v2" });
+  // ★MUEDvox's own approved words (the muedvox namespace, joined in on the server by lib/i18n/request.ts) — the card adds no copy of its own
+  //   beyond the link label. Shown only while the product page is LIVE, so it never links to a 404.
+  const vox = await getTranslations({ locale, namespace: "muedvox" });
   return (
     <div className={styles.showroom}>
       <a className={styles.skip} href="#studio-main">
@@ -194,6 +198,36 @@ export async function StudioShowroom({
                 <span>{t("mockNote")}</span>
               </figcaption>
             </figure>
+
+            {/* ★The second paid product, beside masterchain (kimny 10/27 「LPのtopからの遷移、作ってなくない？」 —
+                the 10/3 launch plan's 「入口 2」). */}
+            {MUEDVOX_LIVE && (
+              <div className={styles.paidSecond}>
+                <div className={styles.paidSecondImage}>
+                  <Image
+                    src={MUEDVOX_SCREENSHOT}
+                    width={1200}
+                    height={900}
+                    alt={vox("screen.alt")}
+                    sizes="(min-width: 900px) 520px, 92vw"
+                  />
+                </div>
+                <div className={styles.paidSecondCopy}>
+                  <h3>MUEDvox</h3>
+                  <p>{vox("hero.title")}</p>
+                  <p className={styles.paidSecondPrice}>{vox("buy.price")}</p>
+                  <ProductLink
+                    href={`/${locale}/muedvox`}
+                    product="muedvox"
+                    location="portal_master_vox"
+                    preview={preview}
+                    className={styles.textLink}
+                  >
+                    {t("voxCta")} <ArrowUpRight size={20} aria-hidden="true" />
+                  </ProductLink>
+                </div>
+              </div>
+            )}
 
             <div className={styles.collectionIntro}>
               <h3>{t("modulesTitle")}</h3>

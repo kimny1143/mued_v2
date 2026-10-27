@@ -14,6 +14,7 @@ import { PaidBuyButton, type BuyProduct } from "@/components/features/muedsp-lan
 import { ComparePlayer, type ComparePlayerLabels } from "./compare-player";
 import { PaidDemoForm, type DemoFormProduct } from "@/components/features/muedsp-landing/masterchain-try";
 import { muedvoxManualPath } from "@/lib/muedvox/manual-path";
+import { RelatedProductLine } from "@/components/features/muedsp-landing/related-product-line";
 
 // ★The same Buy button and demo form as masterchain (#1263, #1266), given MUEDvox's own flag, words and image.
 //   Both are client components: their words (muedvox.cart / muedvox.demoForm) reach the browser only while the
@@ -53,6 +54,8 @@ export function visibleFaq(items: readonly MuedvoxFaqItem[], open: { purchase: b
 export function MuedvoxLandingContent() {
   const locale = useLocale();
   const t = useTranslations("muedvox");
+  const tmc = useTranslations("muedsp.masterchain");
+  const trel = useTranslations("muedsp.related");
   const points = t.raw("points.items") as { title: string; body: string }[];
   const faq = t.raw("faq.items") as MuedvoxFaqItem[];
   const compareLabels = t.raw("beforeAfter.player") as ComparePlayerLabels;
@@ -170,6 +173,12 @@ export function MuedvoxLandingContent() {
                 </Suspense>
               </div>
             )}
+            <RelatedProductLine
+              testId="muedvox-related-masterchain"
+              line={tmc("eyebrow")}
+              href={`/${locale}/muedsp?from=muedvox`}
+              label={trel("masterchain")}
+            />
           </Section>
         )}
         <Section id="faq" title={t("faq.heading")}>

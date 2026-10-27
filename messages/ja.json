@@ -55,7 +55,8 @@
     "footerLine": "クリエイター自身が作る、制作のための道具。",
     "footerNavigation": "フッターナビゲーション",
     "privacy": "プライバシー",
-    "legal": "特定商取引法に基づく表記"
+    "legal": "特定商取引法に基づく表記",
+    "voxCta": "MUEDvox を見る"
   },
   "landing": {
     "v2": {
@@ -2677,6 +2678,10 @@
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
       "format": "VST3 · AU · AAX（Pro Tools）· macOS（Universal — Apple Silicon / Intel）"
+    },
+    "related": {
+      "vox": "MUEDvox を見る",
+      "masterchain": "MUEDsp masterchain を見る"
     }
   },
   "muedlim": {

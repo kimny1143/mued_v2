@@ -28,6 +28,8 @@ import { type PluginKey } from "@/lib/plugins/registry";
 import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 import { WINDOWS_BETA_LIVE } from "@/lib/plugins/windows-beta";
+import { MUEDVOX_LIVE } from "@/lib/muedvox/config";
+import { RelatedProductLine } from "./related-product-line";
 import { MasterchainBuyButton } from "@/components/features/muedsp-landing/masterchain-buy-button";
 import { MasterchainTry } from "@/components/features/muedsp-landing/masterchain-try";
 import {
@@ -98,6 +100,10 @@ export function MuedspLandingContent() {
   const tdAbout = useTranslations("muedrive.about");
   const tdViz = useTranslations("muedrive.visuals");
   const tw = useTranslations("muedsp.windows");
+  // ★The muedvox namespace reaches the browser only while MUEDvox is LIVE (lib/muedvox/config.ts clientMessages) —
+  //   the same flag that shows the line below, so these words are never read without it.
+  const tvox = useTranslations("muedvox");
+  const trel = useTranslations("muedsp.related");
 
   return (
     <div className="brand-product dark min-h-screen bg-[var(--bg-base)] text-white">
@@ -216,6 +222,14 @@ export function MuedspLandingContent() {
               >
                 {isJa ? "発売時に知らせる（MUEDsat の登録でお知らせにチェック） ↓" : "Get notified at launch (sign up for MUEDsat and tick the updates box) ↓"}
               </a>
+            )}
+            {MUEDVOX_LIVE && (
+              <RelatedProductLine
+                testId="muedsp-related-vox"
+                line={tvox("hero.title")}
+                href={`/${locale}/muedvox?from=muedsp`}
+                label={trel("vox")}
+              />
             )}
           </div>
         </section>

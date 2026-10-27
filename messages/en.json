@@ -55,7 +55,8 @@
     "footerLine": "Tools for making music. Made by music makers.",
     "footerNavigation": "Footer navigation",
     "privacy": "Privacy",
-    "legal": "Legal"
+    "legal": "Legal",
+    "voxCta": "See MUEDvox"
   },
   "landing": {
     "v2": {
@@ -2677,6 +2678,10 @@
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
       "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon & Intel)"
+    },
+    "related": {
+      "vox": "See MUEDvox",
+      "masterchain": "See MUEDsp masterchain"
     }
   },
   "muedlim": {
