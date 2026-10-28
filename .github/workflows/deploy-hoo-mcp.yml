@@ -1,7 +1,10 @@
 # Deploy Hoo MCP Worker to Cloudflare
 #
-# Triggers on push to main when workers/hoo-mcp/** files change.
-# Prevents the manual-deploy漏れ issue (PR#132 incident).
+# ★Manual only. The Worker is retired (kimny 2026-10-22「畳む」; workers.dev disabled 2026-10-28), so a push
+#   to workers/hoo-mcp/** no longer deploys it. The code is kept so it can be brought back.
+#   It never deployed from CI anyway: all 6 runs (2026-04-20 to 2026-10-24) failed at "Validate required
+#   secrets" (the Cloudflare secrets are not set here). Before running it by hand, also track
+#   workers/hoo-mcp/package-lock.json, or `npm ci` fails next.
 #
 # Required GitHub Secrets:
 #   CLOUDFLARE_API_TOKEN  — API token with "Workers Scripts: Edit" permission
@@ -10,10 +13,7 @@
 name: Deploy Hoo MCP
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'workers/hoo-mcp/**'
+  workflow_dispatch:
 
 jobs:
   deploy:

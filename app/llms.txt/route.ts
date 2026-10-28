@@ -22,15 +22,6 @@ const MUED_CONTENT = `# MUED — 音楽制作の道具
 
 HooはMUEDのAIアシスタントです。MUEDial（AIミキシング）で、ユーザーの制作ジャンルや要望を聞き取り、ミックスの判断を「ディレクター目線」でサポートします。
 
-## Hoo MCP
-
-音楽制作AIツールとの連携API。外部AIクライアント（Claude、Cursor等）からHooの機能をAPIとして利用可能。
-
-- **URL**: https://hoo-mcp.glasswerkskimny.workers.dev
-- **認証**: ユーザー発行APIキー（mued.jpダッシュボード → 設定 → MCP）
-- **ツール数**: 14ツール（プロファイル取得・会話履歴・MUEDial連携等）
-- **公式レジストリ**: \`io.github.kimny1143/hoo-mcp\` として登録済み
-
 ## 運営会社
 
 **glasswerks inc.**（株式会社グラスワークス）
@@ -40,7 +31,6 @@ HooはMUEDのAIアシスタントです。MUEDial（AIミキシング）で、�
 ## 関連サービス
 
 - **MUEDial**: AIミキシング・マスタリングサービス（https://dial.mued.jp）
-- **Hoo MCP**: AI向けAPIサービス（https://hoo-mcp.glasswerkskimny.workers.dev）
 `;
 
 const MUEDIAL_CONTENT = `# MUEDial — AIミキシング・マスタリングサービス
@@ -99,7 +89,6 @@ MUEDialは、ステムファイルをアップロードしてAIと話すだけ�
 ## 関連サービス
 
 - **MUED**: glasswerks inc. の音楽制作の道具のブランド（https://mued.jp）
-- **Hoo MCP**: AI向けAPIサービス（https://hoo-mcp.glasswerkskimny.workers.dev）
 `;
 
 const ADVISORY_CONTENT = `
