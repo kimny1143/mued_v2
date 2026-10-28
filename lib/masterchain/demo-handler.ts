@@ -10,6 +10,7 @@ import { logger } from "@/lib/utils/logger";
 import { MASTERCHAIN_DEMO_LIVE, MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION } from "./config";
 import { masterchainWindowsBuild } from "@/lib/plugins/windows-beta";
 import { isDisposableEmail } from "./key-issuance";
+import { recordDemoSignup, type DemoProductKey } from "./demo-signups";
 
 /**
  * What the demo entrance needs to know about the product it hands out (C9 PR-C). The flow is the same for every
@@ -21,6 +22,10 @@ import { isDisposableEmail } from "./key-issuance";
 export interface DemoProduct {
   /** Log / alert tag and the audience-add source, e.g. "masterchain/demo". */
   readonly tag: string;
+  /** The product_key its sign-ups are recorded under in demo_signups (0065). */
+  readonly key: DemoProductKey;
+  /** The page its demo form is on, recorded as demo_signups.source. */
+  readonly source: string;
   readonly live: boolean;
   readonly downloadUrl: string;
   /** The Windows build's URL, or null while that product has none. */
@@ -31,6 +36,8 @@ export interface DemoProduct {
 
 export const MASTERCHAIN_DEMO: DemoProduct = {
   tag: "masterchain/demo",
+  key: "masterchain",
+  source: "muedsp_lp",
   get live() { return MASTERCHAIN_DEMO_LIVE; },
   get downloadUrl() { return MASTERCHAIN_DOWNLOAD_URL; },
   // ★windowsDownloadUrl only once masterchain for Windows ships; until then the response is exactly as before.
@@ -100,5 +107,21 @@ export async function handlePaidDemo(request: NextRequest, product: DemoProduct)
   } catch (error) {
     logger.error(`[${product.tag}] receipt threw`, { error: String(error) });
   }
+  // ★Our own record of the sign-up (0065) — the Resend list alone is not one once it is full. After the receipt,
+  //   like the free three's entitlement: never affects the response (recordDemoSignup never throws).
+  const utm = parsed.data;
+  const firstTouch =
+    utm.utm_source || utm.utm_medium || utm.utm_campaign || utm.utm_content || utm.utm_term
+      ? {
+          utmSource: utm.utm_source ?? null,
+          utmMedium: utm.utm_medium ?? null,
+          utmCampaign: utm.utm_campaign ?? null,
+          utmContent: utm.utm_content ?? null,
+          utmTerm: utm.utm_term ?? null,
+        }
+      : null;
+  await recordDemoSignup({
+    productKey: product.key, source: product.source, email, locale, firstTouch, newsConsent: marketingOptIn, audienceAdded: captured,
+  }).catch(() => false);
   return success();
 }

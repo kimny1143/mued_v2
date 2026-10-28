@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MUEDSP_AUDIENCE_ID } from "@/lib/plugins/registry";
 import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_URL } from "@/lib/masterchain/config";
 
-const m = vi.hoisted(() => ({ live: true, windows: true, create: vi.fn(), get: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn(), warn: vi.fn(), alert: vi.fn() }));
+const m = vi.hoisted(() => ({ live: true, windows: true, create: vi.fn(), get: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn(), warn: vi.fn(), alert: vi.fn(), record: vi.fn() }));
 vi.mock("@/lib/masterchain/config", async (original) => ({
   ...await original<typeof import("@/lib/masterchain/config")>(),
   get MASTERCHAIN_DEMO_LIVE() { return m.live; },
@@ -15,6 +15,8 @@ vi.mock("resend", () => ({ Resend: class { contacts = { create: m.create, get: m
 vi.mock("@/lib/services/email.service", () => ({ emailService: { sendMasterchainDemoDownload: m.send, isConfigured: () => true, sendAdminAlert: m.alert } }));
 vi.mock("@/lib/middleware/rate-limit", () => ({ rateLimit: m.ip, checkRateLimit: m.emailLimit }));
 vi.mock("@/lib/utils/logger", () => ({ logger: { error: m.error, warn: m.warn } }));
+// ★The handler itself still never imports the DB: its one write (0065) goes through recordDemoSignup, mocked here.
+vi.mock("@/lib/masterchain/demo-signups", () => ({ recordDemoSignup: m.record }));
 vi.mock("@/db", () => { throw new Error("Demo must not import DB"); });
 vi.mock("@/lib/plugins/entitlements", () => { throw new Error("Demo must not record ownership"); });
 import { handleMasterchainDemo, handlePaidDemo, type DemoProduct } from "@/lib/masterchain/demo-handler";
@@ -34,6 +36,8 @@ beforeEach(() => {
   m.get.mockResolvedValue({ data: null, error: { statusCode: 404, name: "not_found", message: "Contact not found" } }); // Resend's measured "no such contact" (2026-10-04)
   m.send.mockResolvedValue({ success: true });
   m.alert.mockResolvedValue({ success: true });
+  m.record.mockReset();
+  m.record.mockResolvedValue(true);
   vi.stubEnv("OPERATOR_ALERT_EMAIL", "ops@example.com");
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -131,7 +135,51 @@ describe("masterchain demo", () => {
     // A real user caught here must leave a trace in production (info is a no-op there).
     expect(m.warn).toHaveBeenCalledTimes(1);
   });
-  it("has no DB, entitlement, purchase or trial imports", () => {
+  it("records the sign-up in our own DB after the receipt (0065), with the consent and the list result", async () => {
+    await handleMasterchainDemo(request({ email: " Person@Example.com ", locale: "ja", marketingOptIn: true, utm_source: "threads", utm_campaign: "launch" }));
+    expect(m.record).toHaveBeenCalledExactlyOnceWith({
+      productKey: "masterchain",
+      source: "muedsp_lp",
+      email: "person@example.com",
+      locale: "ja",
+      firstTouch: { utmSource: "threads", utmMedium: null, utmCampaign: "launch", utmContent: null, utmTerm: null },
+      newsConsent: true,
+      audienceAdded: true,
+    });
+    expect(m.send.mock.invocationCallOrder[0]).toBeLessThan(m.record.mock.invocationCallOrder[0]);
+  });
+  it("records audienceAdded: false when a consenting person's list add failed — the record is how a re-import finds them", async () => {
+    m.create.mockResolvedValue({ data: null, error: { message: "contact limit" } });
+    await handleMasterchainDemo(request({ email: "person@example.com", marketingOptIn: true }));
+    expect(m.record).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ newsConsent: true, audienceAdded: false, firstTouch: null }));
+  });
+  it("not ticked: still recorded, with newsConsent false and no list add", async () => {
+    await handleMasterchainDemo(request());
+    expect(m.create).not.toHaveBeenCalled();
+    expect(m.record).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ newsConsent: false, audienceAdded: false }));
+  });
+  it.each(["rejection", "false"])("a failed DB record (%s) does not block the download or the receipt", async (mode) => {
+    if (mode === "rejection") m.record.mockRejectedValue(new Error("db down"));
+    else m.record.mockResolvedValue(false);
+    const res = await handleMasterchainDemo(request());
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(success);
+    expect(m.send).toHaveBeenCalledTimes(1);
+  });
+  it("a failed receipt still records the sign-up", async () => {
+    m.send.mockResolvedValue({ success: false, error: "quota" });
+    await handleMasterchainDemo(request());
+    expect(m.record).toHaveBeenCalledTimes(1);
+  });
+  it("records nothing for a honeypot hit, a disposable address or a rate-limited request", async () => {
+    await handleMasterchainDemo(request({ email: "person@example.com", website: "bot" }));
+    await handleMasterchainDemo(request({ email: "bot@mailinator.com" }));
+    m.emailLimit.mockResolvedValue({ success: false });
+    await handleMasterchainDemo(request());
+    expect(m.record).not.toHaveBeenCalled();
+  });
+  // ★DIRECT imports only: the sign-up record (0065) reaches the DB through ./demo-signups, which this does not follow.
+  it("has no direct DB, entitlement, purchase or trial imports", () => {
     const source = readFileSync("lib/masterchain/demo-handler.ts", "utf8");
     const imports = source.match(/^import .*$/gm)?.join("\n");
     expect(imports).not.toMatch(/(?:@\/db|database|entitlement|trial|purchase|repository)/i);
