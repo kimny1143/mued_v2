@@ -9,9 +9,11 @@ import {
   MUEDVOX_SCREENSHOT,
   MUEDVOX_PURCHASE_LIVE,
   MUEDVOX_DEMO_LIVE,
+  MUEDVOX_VIDEO_ID,
 } from "@/lib/muedvox/config";
 import { PaidBuyButton, type BuyProduct } from "@/components/features/muedsp-landing/masterchain-buy-button";
 import { ComparePlayer, type ComparePlayerLabels } from "./compare-player";
+import { MuedvoxVideo } from "./muedvox-video";
 import { PaidDemoForm, type DemoFormProduct } from "@/components/features/muedsp-landing/masterchain-try";
 import { muedvoxManualPath } from "@/lib/muedvox/manual-path";
 import { RelatedProductLine } from "@/components/features/muedsp-landing/related-product-line";
@@ -81,6 +83,13 @@ export function MuedvoxLandingContent() {
             )}
             {/* The manual (conductor 2026-10-16: a tester asked for one). */}
             <Link href={muedvoxManualPath(locale)} data-testid="muedvox-manual-link" className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]">{t("manual.link")}</Link>
+            {/* The how-to video (kimny 10/27, English on both locales for now). The ID is MUEDVOX_VIDEO_ID in config. */}
+            {MUEDVOX_VIDEO_ID && (
+              <figure id="video" className="scroll-mt-20">
+                <MuedvoxVideo title={t("video.title")} playLabel={t("video.play")} />
+                <figcaption className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">{t("video.title")}</figcaption>
+              </figure>
+            )}
           </div>
         </section>
         {MUEDVOX_AUDIO_EXAMPLES.length > 0 && (

@@ -5,7 +5,7 @@
  * This renders the three real components with the real message files and reads the hrefs and the words off the
  * markup, so removing a link (or its LIVE gate opening onto a missing key) fails here rather than on a phone.
  */
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import enMain from "@/messages/en.json";
 import jaMain from "@/messages/ja.json";
@@ -53,6 +53,8 @@ vi.mock("next/navigation", () => ({
 import { StudioShowroom } from "@/components/features/landing/studio-showroom";
 import { MuedspLandingContent } from "@/components/features/muedsp-landing/muedsp-landing-content";
 import { MuedvoxLandingContent } from "@/components/features/muedvox-landing/muedvox-landing-content";
+import { MUEDVOX_VIDEO_ID } from "@/lib/muedvox/config";
+import { contentSecurityPolicy } from "@/lib/security/content-security-policy";
 
 beforeEach(() => {
   (globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = class {
@@ -104,5 +106,23 @@ describe.each(["en", "ja"] as const)("%s", (l) => {
     expect(hrefs(container.querySelector("footer")!)).toContain(`/${l}/eula`);
     expect(container.querySelector("footer")!.textContent).toContain(MESSAGES[l].muedvox.legal.thirdParty);
     expect(container.querySelector("#legal")).toBeNull();
+  });
+
+  it("/muedvox shows the how-to video as a still until play — then the youtube-nocookie player, and the CSP allows both", () => {
+    const { getByTestId } = render(<MuedvoxLandingContent />);
+    const box = getByTestId("muedvox-video");
+    // ★Before play: nothing from YouTube but the still, and the still is a real link (works with no JS).
+    expect(box.querySelector("iframe")).toBeNull();
+    expect(box.querySelector("a")!.getAttribute("href")).toBe(`https://youtu.be/${MUEDVOX_VIDEO_ID}`);
+    expect(box.querySelector("img")!.getAttribute("src")).toBe(`https://i.ytimg.com/vi/${MUEDVOX_VIDEO_ID}/hqdefault.jpg`);
+    fireEvent.click(box.querySelector("a")!);
+    const frame = box.querySelector("iframe")!;
+    expect(new URL(frame.getAttribute("src")!).origin).toBe("https://www.youtube-nocookie.com");
+    expect(frame.getAttribute("src")).toContain(`/embed/${MUEDVOX_VIDEO_ID}`);
+    expect(frame.getAttribute("title")).toBe(MESSAGES[l].muedvox.video.title);
+    const csp = contentSecurityPolicy({ isProduction: true });
+    expect(csp).toMatch(/frame-src [^;]*https:\/\/www\.youtube-nocookie\.com/);
+    expect(csp).toMatch(/img-src [^;]*https:\/\/i\.ytimg\.com/);
+    expect(csp).not.toMatch(/frame-src [^;]*https:\/\/www\.youtube\.com/);
   });
 });

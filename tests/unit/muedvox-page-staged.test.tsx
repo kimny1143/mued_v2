@@ -83,7 +83,7 @@ describe("MUEDvox product page (launched 2026-10-13; the staged state is kept as
     vi.resetModules();
     vi.doMock("@/lib/muedvox/config", async (original) => ({
       ...await original<typeof import("@/lib/muedvox/config")>(),
-      MUEDVOX_LIVE: false, MUEDVOX_PURCHASE_LIVE: false, MUEDVOX_DEMO_LIVE: false, MUEDVOX_SCREENSHOT: "", MUEDVOX_AUDIO_EXAMPLES: [],
+      MUEDVOX_LIVE: false, MUEDVOX_PURCHASE_LIVE: false, MUEDVOX_DEMO_LIVE: false, MUEDVOX_SCREENSHOT: "", MUEDVOX_AUDIO_EXAMPLES: [], MUEDVOX_VIDEO_ID: "",
     }));
     const { MuedvoxLandingContent: Staged } = await import("@/components/features/muedvox-landing/muedvox-landing-content");
     vi.doUnmock("@/lib/muedvox/config");
