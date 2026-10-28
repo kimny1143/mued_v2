@@ -71,9 +71,9 @@ export async function addMasterchainContact(
 
 /**
  * A new buyer onto the MUEDsp news list — the shared audience the free downloads and the demo use
- * (MUEDSP_AUDIENCE_ID). kimny 2026-10-06 (conductor relay): 「購入者をメールに入れます。」 — told and sent: the cart
- * shows the notice (muedsp.buyTry.cartAudienceNote) and sends marketingConsent "true" only from that screen, so
- * orders from before it (no notice) are not added. Lookup first: an unsubscribed person stays unsubscribed.
+ * (MUEDSP_AUDIENCE_ID). Only buyers who ticked the cart's news checkbox (muedsp.buyTry.cartConsent, default off —
+ * kimny 2026-10-28 (b), replacing 10/6 「購入者をメールに入れます。」): the cart sends marketingConsent "true" only then.
+ * Lookup first: an unsubscribed person stays unsubscribed.
  * Returns false when unconfigured or on failure. Never throws.
  */
 export async function addBuyerToMuedspNews(email: string): Promise<boolean> {

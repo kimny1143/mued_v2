@@ -153,10 +153,10 @@ export function PaidBuyButton({ product, buyLabel }: { product: BuyProduct; buyL
           product={product}
           onClose={close}
           checkoutReady={checkoutReady}
-          onAgree={() => {
-            // ★marketingConsent "true" = this order was placed from the cart that shows the news notice
-            //   (cartAudienceNote) — the webhook adds the buyer to the MUEDsp news list only then (kimny 10/6).
-            if (openCheckout({ eulaAccepted: true, marketingConsent: true, product: product.key })) {
+          onAgree={(marketingConsent) => {
+            // ★marketingConsent = the cart's news checkbox, as ticked (default off — kimny 2026-10-28 (b), which replaces
+            //   10/6 「購入者をメールに入れます」). The webhook adds the buyer to the MUEDsp news list only when it is true.
+            if (openCheckout({ eulaAccepted: true, marketingConsent, product: product.key })) {
               setOpen(false);
               // The FastSpring popup opened — the step after "pressed Buy".
               countClick(product.key, "cart_checkout");
@@ -215,9 +215,11 @@ function useOrderQuote(checkoutReady: boolean, product: PaidProductKey): QuoteSt
  *   からは白地でお願いします」): measured from the live popup (2026-10-01) — white panel, total #356eec, secondary
  *   #767676, divider #eeeeee, system fonts. Sizes are the mock's (cart-ja.html).
  */
-function CartModal({ product, onClose, onAgree, checkoutReady }: { product: BuyProduct; onClose: () => void; onAgree: () => void; checkoutReady: boolean }) {
+function CartModal({ product, onClose, onAgree, checkoutReady }: { product: BuyProduct; onClose: () => void; onAgree: (marketingConsent: boolean) => void; checkoutReady: boolean }) {
   const t = useTranslations("eula");
   const tb = useTranslations(product.messages);
+  // Unticked every time the cart opens (the modal unmounts on close).
+  const [newsConsent, setNewsConsent] = useState(false);
   const locale = useLocale();
   const isJa = locale === "ja";
   const titleId = useId();
@@ -374,11 +376,24 @@ function CartModal({ product, onClose, onAgree, checkoutReady }: { product: BuyP
               <EulaArticles articles={content.articles} newTab />
             </div>
           </details>
+          {/* ★The news checkbox (kimny 2026-10-28 (b)): the same label as the free and demo forms, default off, and the
+              button does not wait for it. It sits above the button, because pressing the button leaves the cart. */}
+          <label className="mt-4 flex items-start gap-2 text-xs leading-[1.6] text-[#555]">
+            <input
+              type="checkbox"
+              name="marketingOptIn"
+              data-testid="cart-consent"
+              checked={newsConsent}
+              onChange={(e) => setNewsConsent(e.target.checked)}
+              className="mt-0.5 accent-[#ffbe3d]"
+            />
+            <span>{tb("cartConsent")}</span>
+          </label>
           {/* ★The buy colour (BUY_BUTTON_CLASS: #ffbe3d — kimny 10/4 「購入とデモ（および無料）とで区別したい」), full width;
               no glow on the white panel. The words are the consent. */}
           <button
             type="button"
-            onClick={onAgree}
+            onClick={() => onAgree(newsConsent)}
             disabled={!checkoutReady}
             aria-disabled={!checkoutReady}
             className="mt-5 block w-full rounded-[6px] bg-[#ffbe3d] px-5 py-3.5 text-[15px] font-semibold text-black transition-colors hover:bg-[#ffc95e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffbe3d] disabled:cursor-not-allowed disabled:opacity-50"
@@ -386,9 +401,6 @@ function CartModal({ product, onClose, onAgree, checkoutReady }: { product: BuyP
             {checkoutReady ? tb("agreeAndContinue") : tb("checkoutLoading")}
           </button>
           <p className="mt-2.5 text-xs leading-[1.6] text-[#767676]">{tb("cartNextScreen")}</p>
-          {/* ★Told before buying (kimny 10/4 「告げて送る＋解除」, 10/6 「購入者をメールに入れます。」) — the same wording as
-              the free and demo forms. Pressing the button above sends marketingConsent "true" with the order. */}
-          <p data-testid="cart-audience-note" className="mt-1.5 text-xs leading-[1.6] text-[#767676]">{tb("cartAudienceNote")}</p>
         </div>
       </div>
     </div>

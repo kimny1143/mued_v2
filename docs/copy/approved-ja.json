@@ -37,7 +37,7 @@
     "muedsat.form.successBody": "ダウンロードリンクをメールでお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
     "muedsat.form.successTitle": "メールをご確認ください。",
     "muedsp.buyTry.agreeAndContinue": "EULA に同意して購入手続きに進む",
-    "muedsp.buyTry.cartAudienceNote": "購入時のメールアドレスを、MUEDsp のお知らせにも使用します。配信はいつでも解除できます。",
+    "muedsp.buyTry.cartConsent": "MUEDsp のお知らせをメールで受け取る（いつでも解除できます）",
     "muedsp.buyTry.cartEula": "使用許諾契約（EULA）",
     "muedsp.buyTry.cartNextScreen": "次の画面（FastSpring）で支払いとメールアドレスを入力します。",
     "muedsp.buyTry.cartTitle": "カート",

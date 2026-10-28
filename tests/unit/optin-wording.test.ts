@@ -33,13 +33,17 @@ describe.each([["ja", ja, vja], ["en", en, ven]] as const)("%s news consent word
     }
   });
 
-  // News goes to two groups, and the policy names both (CCO #1315): those who ticked a form's box, and buyers, whom
-  //   the cart tells (cartAudienceNote, kimny 10/6 「購入者をメールに入れます」 — conductor 10/28: unchanged).
-  it("the privacy policy's purpose for news names the checkbox and the buyers the cart tells", () => {
+  // kimny 2026-10-28 (b), replacing 10/6 「購入者をメールに入れます」: buyers too only with a box — the cart's, default off.
+  it("both carts carry the same checkbox label as the forms, and no notice that buyers get news anyway", () => {
+    for (const cart of [messages.muedsp.buyTry, vox.cart] as Record<string, string>[]) {
+      expect(cart.cartConsent).toBe(CONSENT[locale]);
+      expect("cartAudienceNote" in cart).toBe(false);
+    }
+  });
+
+  it("the privacy policy's purpose for news is the checkbox only (the cart's included) — no buyer clause", () => {
     const deliver = messages.privacy.section2.items.deliver;
-    expect(deliver).toContain(locale === "ja" ? "フォームのチェック欄で希望された方" : "to those who ticked the box on the form");
-    expect(deliver).toContain(locale === "ja" ? "ご購入の際にその旨をお知らせした購入者の方" : "to buyers, who are told so at checkout");
-    // The cart really does tell them — the sentence the policy points to exists.
-    expect(messages.muedsp.buyTry.cartAudienceNote).toContain(locale === "ja" ? "MUEDsp のお知らせ" : "news from MUEDsp");
+    expect(deliver).toContain(locale === "ja" ? "フォームのチェック欄（ご購入の際のものを含む）で希望された方" : "to those who ticked the box on a form (including the one at checkout)");
+    expect(deliver).not.toMatch(locale === "ja" ? /購入者/ : /buyers/);
   });
 });
