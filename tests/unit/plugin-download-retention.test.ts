@@ -222,5 +222,7 @@ it(
       `Missing retained delivery artifact(s):\n${filenames(missing).map((name) => `- ${name}`).join("\n")}`,
     ).toEqual([]);
   },
-  30_000,
+  // It walks every commit that touched a download source, so it slows as history grows: ~18 s on CI and ~24 s
+  // alone locally (2026-10), and it hit 30 s in full local runs, where the other files compete for the CPU.
+  90_000,
 );
