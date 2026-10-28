@@ -29,3 +29,8 @@
 ★★**(2026-10-28T08:00:39+09:00) EULA「ご同意いただいた場合に限り」が購入者について合っていない（カートは注記だけで名簿に入れる・kimny 10/6）。直すなら EULA 2026.10.4（注文の eula_version・trial の literal・installer に 2026.10.3）か、カートにチェック欄。kimny に (a) 版上げ／(b) カートにチェック欄／(c) 保留 を確認中（conductor と当課は b を推奨）。答えが来たら別の PR。**
 
 ★★**(2026-10-28T07:51:25+09:00) 期限 2026-11-16T04:13Z（Resend の請求期間の区切り＝解約したお知らせ用 plan が効き始める・conductor の推測）: #1310 は本番に出た（ef9a6a91）。残り: kimny が 0065（blob 46137433）を本番に適用 → #1315 merge → #1312 を main に戻して merge。間に合えば取りこぼし 0。10/27 23 時台 UTC の時点で連絡先 1262/5000＝上限はまだ効いていない（conductor が get-usage で確認）。過ぎるとデモの登録は自社のどこにも残らない。**
+
+
+## 2026-10-29T01:05:29+09:00 に next_action の先頭から外した段（逐語）
+
+★★**(手番 2026-10-29T00:56:49+09:00) ⓪ 開いている PR 2 本: #1319（MUEDvox の使い方の動画・ID 5xISWqAEzvE・Tier 2・head e3e75ab9・preview https://muedv2-git-feat-muedvox-howto-video-glasswerks.vercel.app/en/muedvox を conductor に送った）＝CCO PASS＋CI 緑＋kimny が preview を見る → conductor の OK で gate merge。#1317（試験だけ・gate が test の .ts を code と数え --tier1 を拒否＝Tier 2 に変えて CCO に peer review を依頼・CI 緑）＝PASS で gate merge。#1318 は merged cfa55e93（本番: llms.txt の hoo-mcp 0・/connect 307→/・Worker 404・Deploy Hoo MCP は走らず・Chief に 1 行）。**
