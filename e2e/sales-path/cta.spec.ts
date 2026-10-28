@@ -149,7 +149,12 @@ for (const locale of Object.keys(LOCALES) as Locale[]) {
       expectSameShape(shape, model);
       await expectBelowEmail(page, shape, '#masterchain-demo-email');
       await expect(page.locator('#demo input[type="email"]')).toHaveCount(1);
-      await expect(page.locator('#demo input[type="password"], #demo input[type="checkbox"]')).toHaveCount(0);
+      await expect(page.locator('#demo input[type="password"]')).toHaveCount(0);
+      // ★One checkbox only: the news consent (kimny 2026-10-28 「B」), unticked, and the button does not wait for it
+      //   (not disabled — checked by expectSameShape above). #1236 allowed no checkbox at all; this is the one exception.
+      await expect(page.locator('#demo input[type="checkbox"]')).toHaveCount(1);
+      const consent = page.locator("#demo").getByRole("checkbox", { name: m.muedsp.demo.consent, exact: true });
+      await expect(consent).not.toBeChecked();
     });
 
     /**
