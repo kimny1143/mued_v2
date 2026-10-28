@@ -2037,54 +2037,10 @@
       "title": "Account",
       "description": "Account information"
     },
-    "hooMcp": {
-      "title": "Hoo MCP Connection",
-      "description": "Connect Hoo to AI apps like Claude Desktop, Cursor, etc.",
-      "connectGuide": "Take Hoo with you (setup wizard)",
-      "openGuide": "API key management"
-    },
     "notifications": {
       "title": "Notifications",
       "description": "Notification and reminder preferences",
       "comingSoon": "Notification settings coming soon"
-    },
-    "mcp": {
-      "backToSettings": "Settings",
-      "title": "Hoo MCP Setup",
-      "subtitle": "Connect Hoo to your editor or AI app",
-      "copy": "Copy",
-      "copied": "Copied",
-      "loading": "Loading...",
-      "step1": {
-        "title": "1. Generate API key",
-        "keyWarning": "This key is shown only once. Copy and store it securely.",
-        "activeKey": "Active key: ",
-        "generating": "Generating...",
-        "regenerate": "Regenerate",
-        "revoke": "Revoke",
-        "generate": "Generate API key"
-      },
-      "step2": {
-        "title": "2. Select your host"
-      },
-      "step3": {
-        "title": "3. Config file location"
-      },
-      "step4": {
-        "title": "4. Copy and paste this config",
-        "hint": "Generate an API key to auto-embed the Bearer token"
-      },
-      "whatIsMcp": {
-        "title": "What is MCP?",
-        "description": "Model Context Protocol (MCP) is an open protocol for providing AI assistants with external tools and data. Connecting Hoo lets you use Hoo's personality and your profile directly within AI apps like Claude Desktop or Cursor."
-      },
-      "hosts": {
-        "claude-desktop": "~/Library/Application Support/Claude/claude_desktop_config.json (macOS)\n%APPDATA%/Claude/claude_desktop_config.json (Windows)",
-        "claude-code": "Project root: .mcp.json",
-        "cursor": "Project root: .cursor/mcp.json",
-        "windsurf": "~/.codeium/windsurf/mcp_config.json",
-        "cline": "VS Code Settings → cline.mcpServers"
-      }
     }
   },
   "connect": {

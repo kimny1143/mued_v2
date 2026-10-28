@@ -6,7 +6,6 @@ import { buildSignInRedirectTarget } from "@/lib/middleware/sign-in-redirect";
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/lobe(.*)",
-  "/connect(.*)",
 ]);
 
 const isPublicRoute = createRouteMatcher([

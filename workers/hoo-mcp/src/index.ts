@@ -427,7 +427,7 @@ const worker = {
             capabilities: { tools: {} },
             links: {
               homepage: "https://mued.jp",
-              setup: "https://mued.jp/connect",
+              setup: "https://mued.jp",
               template:
                 "https://glasswerks.gumroad.com/l/claude-code-template-pro?utm_source=hoo-mcp&utm_medium=server-card&utm_campaign=mcp_registry&utm_content=template-link",
             },

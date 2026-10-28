@@ -15,7 +15,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "description": "Bearer token for API key authentication. Generate at https://mued.jp/connect",
+          "description": "Bearer token for API key authentication. Retired: no new keys are issued. See https://mued.jp",
           "isRequired": true,
           "isSecret": true
         }

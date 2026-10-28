@@ -57,6 +57,39 @@ describe("★the old Hoo MCP issues no new keys", () => {
     expect(readFileSync(join(ROOT, "app/sitemap.ts"), "utf8")).not.toContain("/connect");
   });
 
+  // ★After the Worker was stopped (workers.dev disabled 2026-10-28): what is left pointing at it.
+  it("the middleware no longer guards /connect (the redirect in next.config.ts runs first)", () => {
+    const source = readFileSync(join(ROOT, "middleware.ts"), "utf8");
+    expect(source).toContain('"/lobe(.*)"'); // the matcher list is still read here
+    expect(source).not.toContain("/connect");
+  });
+
+  it("the app no longer calls the Worker, and its unused screen copy is gone", () => {
+    expect(existsSync(join(ROOT, "app/api/mcp/test-connection"))).toBe(false);
+    for (const locale of ["en", "ja"]) {
+      const settings = JSON.parse(readFileSync(join(ROOT, `messages/${locale}.json`), "utf8")).settings;
+      expect(settings.hoo, `${locale}: the settings namespace is still read here`).toBeDefined();
+      expect(Object.keys(settings)).not.toContain("hooMcp");
+      expect(Object.keys(settings)).not.toContain("mcp");
+    }
+  });
+
+  it("llms.txt no longer offers Hoo MCP", () => {
+    const source = readFileSync(join(ROOT, "app/llms.txt/route.ts"), "utf8");
+    expect(source).toContain("## 運営会社"); // the file is the one that was read
+    expect(source).not.toMatch(/hoo-mcp|Hoo MCP/i);
+  });
+
+  it("a redeploy cannot turn the public URL back on, and pushes do not deploy", () => {
+    expect(readFileSync(join(ROOT, "workers/hoo-mcp/wrangler.toml"), "utf8")).toMatch(/^workers_dev = false$/m);
+    const workflow = readFileSync(join(ROOT, ".github/workflows/deploy-hoo-mcp.yml"), "utf8");
+    expect(workflow).toMatch(/^ {2}workflow_dispatch:$/m);
+    expect(workflow).not.toMatch(/^ {2}push:/m);
+    for (const file of ["workers/hoo-mcp/server.json", "workers/hoo-mcp/src/index.ts"]) {
+      expect(readFileSync(join(ROOT, file), "utf8"), file).not.toContain("mued.jp/connect");
+    }
+  });
+
   it("nothing in app/ or components/ links to either screen", () => {
     const files = [...sourceFiles(join(ROOT, "app")), ...sourceFiles(join(ROOT, "components"))];
     expect(files.length).toBeGreaterThan(100); // the walk reached the tree

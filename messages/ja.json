@@ -2037,54 +2037,10 @@
       "title": "アカウント",
       "description": "アカウント情報"
     },
-    "hooMcp": {
-      "title": "Hoo MCP 接続",
-      "description": "Claude Desktop、Cursor等のAIアプリにHooを接続",
-      "connectGuide": "Hooを連れ出す（セットアップウィザード）",
-      "openGuide": "APIキー管理"
-    },
     "notifications": {
       "title": "通知",
       "description": "通知とリマインダーの設定",
       "comingSoon": "通知設定は近日公開予定です"
-    },
-    "mcp": {
-      "backToSettings": "設定",
-      "title": "Hoo MCP セットアップ",
-      "subtitle": "お使いのエディタやAIアプリにHooを接続します",
-      "copy": "コピー",
-      "copied": "コピー済み",
-      "loading": "読み込み中...",
-      "step1": {
-        "title": "1. APIキーを生成",
-        "keyWarning": "このキーは一度だけ表示されます。コピーして安全に保管してください。",
-        "activeKey": "アクティブなキー: ",
-        "generating": "生成中...",
-        "regenerate": "再生成",
-        "revoke": "失効",
-        "generate": "APIキーを生成"
-      },
-      "step2": {
-        "title": "2. ホストを選択"
-      },
-      "step3": {
-        "title": "3. 設定ファイルの場所"
-      },
-      "step4": {
-        "title": "4. 設定JSONをコピーして貼り付け",
-        "hint": "APIキーを生成すると、Bearer tokenが自動で埋め込まれます"
-      },
-      "whatIsMcp": {
-        "title": "MCPとは？",
-        "description": "Model Context Protocol（MCP）はAIアシスタントに外部ツールやデータを提供するオープンプロトコルです。Hooを接続すると、Claude DesktopやCursorなどのAIアプリ内で直接Hooの人格・あなたのプロファイルを活用できます。"
-      },
-      "hosts": {
-        "claude-desktop": "~/Library/Application Support/Claude/claude_desktop_config.json (macOS)\n%APPDATA%/Claude/claude_desktop_config.json (Windows)",
-        "claude-code": "プロジェクトルート: .mcp.json",
-        "cursor": "プロジェクトルート: .cursor/mcp.json",
-        "windsurf": "~/.codeium/windsurf/mcp_config.json",
-        "cline": "VS Code 設定 → cline.mcpServers"
-      }
     }
   },
   "connect": {
