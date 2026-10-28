@@ -181,7 +181,7 @@
     "cartEula": "使用許諾契約（EULA）",
     "agreeAndContinue": "EULA に同意して購入手続きに進む",
     "cartNextScreen": "次の画面（FastSpring）で支払いとメールアドレスを入力します。",
-    "cartAudienceNote": "購入時のメールアドレスを、MUEDsp のお知らせにも使用します。配信はいつでも解除できます。",
+    "cartConsent": "MUEDsp のお知らせをメールで受け取る（いつでも解除できます）",
     "checkoutLoading": "購入画面を準備しています…",
     "modalClose": "閉じる"
   },

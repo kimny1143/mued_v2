@@ -63,7 +63,7 @@ describe("★the Buy button and the demo form have every word they read", () => 
   // are the same code (#1263, #1266), so a key masterchain has and MUEDvox lacks would render as a raw key.
   const cartKeys = ["signInNote", "thanks", "thanksPortal", "orderProduct", "orderFormats", "orderPrice", "orderTaxNote", "orderTaxIncluded",
     "orderTaxAdded", "orderPriceLoading", "orderKeyNote", "cartTitle", "cartTotal", "cartEula", "agreeAndContinue", "cartNextScreen",
-    "cartAudienceNote", "checkoutLoading", "modalClose"];
+    "cartConsent", "checkoutLoading", "modalClose"];
   const used = (file: string, fn: string) => [...readFileSync(file, "utf8").matchAll(new RegExp(`\\b${fn}\\(["\`]([A-Za-z.]+)`, "g"))].map((m) => m[1]);
 
   it.each([["ja", jaVox, ja], ["en", enVox, en]] as const)("%s: muedvox.cart covers what PaidBuyButton reads", (_l, vox, main) => {

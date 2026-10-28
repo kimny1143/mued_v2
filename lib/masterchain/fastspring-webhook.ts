@@ -438,12 +438,12 @@ export async function handleFastspringOrderCompleted(
     }
   }
 
-  // FAIL-OPEN — the buyer onto the MUEDsp news list + the buyers list, ONLY when the order says the notice was
-  // shown: kimny 2026-10-06 (conductor relay) 「購入者をメールに入れます。」 under kimny's 10/4 rule — tell, send, and
-  // let them unsubscribe. Orders from before the notice carry "false" and are not added (conductor 10/6: new
-  // purchases only). Lookup first in both: an unsubscribed person stays unsubscribed.
-  // ★`marketingConsent` is the tag's historical name (#670, when a checkbox was planned). Since 2026-10-06 it means
-  //   "this order was placed from the cart that shows the news notice" — not a ticked box. The cart sets it.
+  // FAIL-OPEN — the buyer onto the MUEDsp news list + the buyers list, ONLY when the buyer ticked the cart's news
+  // checkbox (default off): kimny 2026-10-28 (b), which replaces 10/6 「購入者をメールに入れます。」 (every buyer, after a
+  // notice). Orders without the tick carry "false" and are not added. Lookup first in both: an unsubscribed person
+  // stays unsubscribed.
+  // ★`marketingConsent` is the cart's checkbox, as ticked. Between 2026-10-06 and the cart checkbox it meant "placed
+  //   from the cart that showed the news notice" (always "true" from the cart); orders from then keep that meaning.
   // ★AFTER the delivery (CCO #1238): the email is what the buyer paid for; a slow Resend must not delay it, hold the
   //   transaction, or widen the window in which a FastSpring retry could re-send. Awaited (a fire-and-forget call
   //   can be cut off when the function returns) but capped at AUDIENCE_ADD_TIMEOUT_MS; a timeout counts as "not

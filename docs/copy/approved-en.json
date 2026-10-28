@@ -37,7 +37,7 @@
     "muedsat.form.successBody": "We've sent your download link. If it's not there, check your spam folder.",
     "muedsat.form.successTitle": "Check your inbox.",
     "muedsp.buyTry.agreeAndContinue": "Agree to the EULA and continue to checkout",
-    "muedsp.buyTry.cartAudienceNote": "We'll also use your purchase email for news from MUEDsp. Unsubscribe anytime.",
+    "muedsp.buyTry.cartConsent": "Email me news from MUEDsp (unsubscribe anytime)",
     "muedsp.buyTry.cartEula": "End-User License Agreement (EULA)",
     "muedsp.buyTry.cartNextScreen": "Payment and email are entered on the next screen (FastSpring).",
     "muedsp.buyTry.cartTitle": "Cart",

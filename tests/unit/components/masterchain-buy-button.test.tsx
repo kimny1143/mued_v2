@@ -89,24 +89,43 @@ describe("the Buy button", () => {
 });
 
 describe("the cart", () => {
-  it("★opens on Buy; no checkbox — the button's words are the consent and it opens checkout with the EULA accepted", async () => {
+  it("★opens on Buy; the button's words are the EULA consent — the only checkbox is the news one, unticked (kimny 10/28 (b))", async () => {
     await renderButton();
     await waitFor(() => expect(loadCheckoutScript).toHaveBeenCalled());
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(dialog).toHaveAccessibleName("cartTitle");
-    expect(within(dialog).queryByRole("checkbox")).toBeNull();
+    // ★One checkbox: the news consent, with the forms' label, not ticked. The button does not wait for it.
+    expect(within(dialog).getAllByRole("checkbox")).toHaveLength(1);
+    const consent = within(dialog).getByRole("checkbox", { name: "cartConsent" });
+    expect(consent).not.toBeChecked();
     const go = await screen.findByRole("button", { name: "agreeAndContinue" });
     expect(go).toBeEnabled();
     // ★The button sits outside the EULA text — nothing has to be opened or scrolled to reach it.
     expect(screen.getByTestId("eula-modal-body")).not.toContainElement(go);
-    // ★The news notice is on the screen the button is pressed from (kimny 10/4 「告げて送る」, 10/6) …
-    expect(within(dialog).getByTestId("cart-audience-note")).toHaveTextContent("cartAudienceNote");
+    // ★The box comes before the button: pressing the button leaves the cart.
+    expect(consent.compareDocumentPosition(go) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(dialog).queryByTestId("cart-audience-note")).toBeNull();
     fireEvent.click(go);
-    // … and the order says so: marketingConsent true → the webhook adds the buyer to the MUEDsp news list.
-    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: true, product: "masterchain" });
+    // Not ticked → the order says false → the webhook leaves the buyer off the MUEDsp news list.
+    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: false, product: "masterchain" });
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("★ticked → the order carries marketingConsent true; reopened → unticked again", async () => {
+    await renderButton();
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "cartConsent" }));
+    expect(screen.getByRole("checkbox", { name: "cartConsent" })).toBeChecked();
+    openCheckout.mockReturnValueOnce(false); // the popup did not open → the cart stays, still ticked
+    fireEvent.click(await screen.findByRole("button", { name: "agreeAndContinue" }));
+    expect(openCheckout).toHaveBeenLastCalledWith({ eulaAccepted: true, marketingConsent: true, product: "masterchain" });
+    expect(screen.getByRole("checkbox", { name: "cartConsent" })).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "agreeAndContinue" }));
+    expect(openCheckout).toHaveBeenLastCalledWith({ eulaAccepted: true, marketingConsent: true, product: "masterchain" });
+    fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
+    expect(screen.getByRole("checkbox", { name: "cartConsent" })).not.toBeChecked();
   });
 
   it("★the EULA is one line that opens in place (closed at first), with the full text inside", async () => {
@@ -247,7 +266,7 @@ describe("★the product the button sells, and the two clicks that are counted (
     fireEvent.click(screen.getByRole("button", { name: "Buy masterchain" }));
     await waitFor(() => expect(requestQuote).toHaveBeenCalledWith("masterchain"));
     fireEvent.click(await screen.findByRole("button", { name: "agreeAndContinue" }));
-    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: true, product: "masterchain" });
+    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: false, product: "masterchain" });
   });
 
   it("★pressing Buy is counted once, and the FastSpring step only when the popup really opened", async () => {
@@ -281,7 +300,7 @@ describe("★the product the button sells, and the two clicks that are counted (
     expect(trackCtaClick).toHaveBeenCalledWith("muedvox", "buy_button", "checkout");
     expect(within(screen.getByTestId("cart")).getByRole("presentation", { hidden: true })).toHaveAttribute("src", expect.stringContaining("screen.webp"));
     fireEvent.click(await screen.findByRole("button", { name: "agreeAndContinue" }));
-    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: true, product: "muedvox" });
+    expect(openCheckout).toHaveBeenCalledWith({ eulaAccepted: true, marketingConsent: false, product: "muedvox" });
   });
 
   it("★★a counting call that throws never costs the purchase — the cart opens and the popup step completes (CCO #1263)", async () => {
