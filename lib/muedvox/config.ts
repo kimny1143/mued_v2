@@ -21,9 +21,11 @@ export const MUEDVOX_SCREENSHOT: string = "/muedvox/MUEDvox-1.1.0-harmony.webp";
 export const MUEDVOX_VIDEO_ID: string = "5xISWqAEzvE"; // "" = no video on the page or in the manual
 export const muedvoxVideo = (id: string = MUEDVOX_VIDEO_ID) => ({
   watchUrl: `https://youtu.be/${id}`,
-  // ★No cookies and no player until the visitor presses play (the facade shows only this still).
+  // ★Nothing goes to YouTube until the visitor presses play (CCO #1319 FAIL → conductor (b) 2026-10-29): the still
+  //   is our own file, and only the player comes from youtube-nocookie, after the tap.
   embedUrl: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`,
-  thumbnailUrl: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+  // YouTube's own still for the video (maxresdefault, 1280×720) as webp. ★A new ID needs its file here too (a test checks).
+  stillPath: `/muedvox/video-${id}.webp`,
 });
 // The listening examples on the page (kimny 2026-10-14: two songs, vocal +4 dB — 001 is 20 s, 003 is 26.3 s, cut by kimny:
 //   「これでお願い」). The songs differ in length; the four takes of one song do not.

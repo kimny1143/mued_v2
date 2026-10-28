@@ -196,7 +196,7 @@
   },
   "privacy": {
     "title": "プライバシーポリシー",
-    "lastUpdated": "最終更新日: 2026年10月28日",
+    "lastUpdated": "最終更新日: 2026年10月29日",
     "intro": "株式会社グラスワークス（以下「当社」）は、MUED のウェブサイト（mued.jp）と、MUEDnote（以下「本アプリ」）、MUEDsp と MUEDvox のプラグインなどの製品を運営しています。本プライバシーポリシーは、これらのご利用時における情報の収集、使用、保護について説明するものです。",
     "section1": {
       "title": "1. 収集する情報",
@@ -236,6 +236,7 @@
       "openai": "OpenAI（AI 機能 — テキストの解析・生成）",
       "anthropic": "Anthropic（Claude — AI による会話・分析）",
       "googleAnalytics": "Google Analytics 4 / Google BigQuery（アクセス解析・データ分析）",
+      "youtube": "YouTube（Google LLC）（埋め込んだ動画の再生 — 再生ボタンを押した時だけ読み込みます）",
       "upstash": "Upstash（レート制限・不正利用防止）"
     },
     "section4": {
