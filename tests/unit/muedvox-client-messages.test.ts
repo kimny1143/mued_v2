@@ -44,8 +44,9 @@ describe("★road 2 — the JS chunks: MUEDvox's words are not in the files clie
     const { cart: _cart, demoForm: _demoForm, ...own } = vox;
     void _cart; void _demoForm;
     // ★`legal.eulaLink` is left out too: it is the name of the public EULA page, and the privacy policy names the same
-    //   document in the same words (privacy.section1.items.purchase, #1310). Pinned to that exact name, so a reworded
-    //   link — which could be MUEDvox's own copy — is back in the population.
+    //   document in the same words (privacy.section1.items.purchase, #1310). Pinned to that exact name: a reworded
+    //   link — which could be MUEDvox's own copy — fails the `toBe` below, and someone decides again whether to keep
+    //   it out (CCO #1314).
     const PUBLIC_DOCUMENT_NAMES: Record<string, string> = { en: "End User License Agreement (EULA)", ja: "使用許諾契約（EULA）" };
     expect(own.legal.eulaLink).toBe(PUBLIC_DOCUMENT_NAMES[_locale]);
     const sentences = strings(own).filter((text) => text.length >= 20 && text !== own.legal.eulaLink);
