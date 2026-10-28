@@ -22,3 +22,10 @@
 - current_task: ★★**(2026-10-28T10:12:22+09:00) #1313（LP 試聴 rev7）を gate で merge（1a58a224）・本番で 4 file が main と sha256 一致。conductor と CCO に報告済み。#1315・#1312 は条件待ち。** 
 
 - current_task: ★★**(2026-10-24T20:43:24+09:00) Chief メモ d79e8c7 の security の 2 本が閉じた: #1303（rate limit をメモリで数える・advisory/slots に 60/分）squash 0b88b6b3・#1304（.npmrc ignore-scripts=true ×6・README に puppeteer の Chrome）squash 8d7f81cf。どちらも kimny の言葉で gate merge。#1304 の Sales path は 10/22 の遅い runner で 25 分の上限切れ→1 回 re-run で緑。** 
+
+
+## 2026-10-28T23:20:02+09:00 に blocked_by から外した 2 件（逐語）
+
+★★**(2026-10-28T08:00:39+09:00) EULA「ご同意いただいた場合に限り」が購入者について合っていない（カートは注記だけで名簿に入れる・kimny 10/6）。直すなら EULA 2026.10.4（注文の eula_version・trial の literal・installer に 2026.10.3）か、カートにチェック欄。kimny に (a) 版上げ／(b) カートにチェック欄／(c) 保留 を確認中（conductor と当課は b を推奨）。答えが来たら別の PR。**
+
+★★**(2026-10-28T07:51:25+09:00) 期限 2026-11-16T04:13Z（Resend の請求期間の区切り＝解約したお知らせ用 plan が効き始める・conductor の推測）: #1310 は本番に出た（ef9a6a91）。残り: kimny が 0065（blob 46137433）を本番に適用 → #1315 merge → #1312 を main に戻して merge。間に合えば取りこぼし 0。10/27 23 時台 UTC の時点で連絡先 1262/5000＝上限はまだ効いていない（conductor が get-usage で確認）。過ぎるとデモの登録は自社のどこにも残らない。**
