@@ -25,7 +25,8 @@ export interface DemoProduct {
   readonly downloadUrl: string;
   /** The Windows build's URL, or null while that product has none. */
   readonly windowsUrl: string | null;
-  sendReceipt(email: string, locale: "ja" | "en"): Promise<{ success: boolean; error?: string }>;
+  /** ★marketingOptIn = the news checkbox: only then does the receipt carry news and the unsubscribe link. */
+  sendReceipt(email: string, locale: "ja" | "en", marketingOptIn: boolean): Promise<{ success: boolean; error?: string }>;
 }
 
 export const MASTERCHAIN_DEMO: DemoProduct = {
@@ -34,14 +35,14 @@ export const MASTERCHAIN_DEMO: DemoProduct = {
   get downloadUrl() { return MASTERCHAIN_DOWNLOAD_URL; },
   // ★windowsDownloadUrl only once masterchain for Windows ships; until then the response is exactly as before.
   get windowsUrl() { return masterchainWindowsBuild(MASTERCHAIN_WINDOWS_LIVE, MASTERCHAIN_WINDOWS_URL, MASTERCHAIN_WINDOWS_VERSION)?.url ?? null; },
-  sendReceipt: (email, locale) => emailService.sendMasterchainDemoDownload({ email }, { locale, marketingOptIn: true }),
+  sendReceipt: (email, locale, marketingOptIn) => emailService.sendMasterchainDemoDownload({ email }, { locale, marketingOptIn }),
 };
 
 const schema = z.object({
   email: z.string().trim().toLowerCase().email(),
   locale: z.enum(["ja", "en"]).default("en"),
-  // Compatibility only: ignore client value. kimny 2026-10-04 reverted #1166 to "tell and send".
-  marketingOptIn: z.boolean().optional(),
+  // The form's news checkbox (default off — kimny 2026-10-28 「B」). Only `true` is consent.
+  marketingOptIn: z.boolean().default(false),
   website: z.string().optional(),
   utm_source: z.string().optional(),
   utm_medium: z.string().optional(),
@@ -71,7 +72,7 @@ export async function handlePaidDemo(request: NextRequest, product: DemoProduct)
   const { downloadUrl, windowsUrl } = product;
   const success = () =>
     NextResponse.json(windowsUrl ? { ok: true, downloadUrl, windowsDownloadUrl: windowsUrl } : { ok: true, downloadUrl });
-  const { email, locale, website } = parsed.data;
+  const { email, locale, website, marketingOptIn } = parsed.data;
   if (isHoneypotTripped(website)) {
     // warn, not info: info is a no-op in production, and a real user caught here must leave a trace.
     logger.warn(`[${product.tag}] honeypot tripped — demo link not sent`);
@@ -82,19 +83,19 @@ export async function handlePaidDemo(request: NextRequest, product: DemoProduct)
   const emailLimit = await checkRateLimit("plugin-email", `plugin-email:${email}`).catch(() => null);
   if (emailLimit && !emailLimit.success) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
-  // Form notice + news and unsubscribe in every mail (kimny 2026-10-04).
-  const captured = await addDemoContact(email, product.tag);
+  // On the list only with the news checkbox ticked; without it, the receipt is the only mail.
+  const captured = marketingOptIn === true ? await addDemoContact(email, product.tag) : false;
   // ★A subscriber who did not reach the list is a lost lead AND a promise we did not keep — alert
   //   the operator, like the free three (lib/plugins/subscribe-handler.ts). Configured-only: without the
   //   Resend key there is no list to reach, which is not a failure worth waking anyone for.
   //   ★Every failure is logged here; the operator email is capped at one a day (lib/plugins/audience-alert.ts).
-  if (!captured && process.env.RESEND_API_KEY) {
+  if (marketingOptIn === true && !captured && process.env.RESEND_API_KEY) {
     logger.error(`[${product.tag}] audience add failed — lead not captured to Resend`);
     void alertAudienceAddFailed(product.tag);
   }
   // The browser receives the download directly; the receipt is best-effort, never an entitlement.
   try {
-    const result = await product.sendReceipt(email, locale);
+    const result = await product.sendReceipt(email, locale, marketingOptIn);
     if (!result.success) logger.error(`[${product.tag}] receipt failed`, { error: result.error });
   } catch (error) {
     logger.error(`[${product.tag}] receipt threw`, { error: String(error) });

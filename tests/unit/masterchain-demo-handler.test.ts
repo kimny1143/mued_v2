@@ -63,8 +63,19 @@ describe("masterchain demo", () => {
     expect(m.create).not.toHaveBeenCalled();
     expect(m.send).not.toHaveBeenCalled();
   });
-  it.each([false, undefined])("adds to the audience and sends an unsubscribe-enabled receipt with legacy value %s", async (marketingOptIn) => {
+  // kimny 2026-10-28 「B」: the list and news only with the checkbox; the download and the receipt either way.
+  it.each([false, undefined])("not ticked (%s): the download and a receipt without news — no list, no alert", async (marketingOptIn) => {
     const res = await handleMasterchainDemo(request({ email: " Person@Example.com ", marketingOptIn }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(success);
+    expect(m.get).not.toHaveBeenCalled();
+    expect(m.create).not.toHaveBeenCalled();
+    expect(m.alert).not.toHaveBeenCalled();
+    expect(m.error).not.toHaveBeenCalled();
+    expect(m.send).toHaveBeenCalledExactlyOnceWith({ email: "person@example.com" }, { locale: "en", marketingOptIn: false });
+  });
+  it("ticked: on the list, and the receipt carries news and the way off the list", async () => {
+    const res = await handleMasterchainDemo(request({ email: " Person@Example.com ", marketingOptIn: true }));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(success);
     expect(m.create).toHaveBeenCalledExactlyOnceWith({ audienceId: MUEDSP_AUDIENCE_ID, email: "person@example.com", unsubscribed: false });
@@ -142,7 +153,7 @@ it("★with masterchain for Windows off, the response is exactly the Mac-only on
 describe("an existing contact is never touched (CCO #1221)", () => {
   it.each([true, false])("already on the list (unsubscribed: %s) → no create, no alert, the receipt still goes", async (unsubscribed) => {
     m.get.mockResolvedValue({ data: { id: "c1", email: "person@example.com", unsubscribed }, error: null });
-    const res = await handleMasterchainDemo(request({ email: "person@example.com" }));
+    const res = await handleMasterchainDemo(request({ email: "person@example.com", marketingOptIn: true }));
     expect(await res.json()).toEqual(success);
     expect(m.get).toHaveBeenCalledExactlyOnceWith({ audienceId: MUEDSP_AUDIENCE_ID, email: "person@example.com" });
     expect(m.create).not.toHaveBeenCalled();
@@ -151,7 +162,7 @@ describe("an existing contact is never touched (CCO #1221)", () => {
   });
   it("a lookup error other than not_found → no create (never risk re-subscribing), logged + alerted", async () => {
     m.get.mockResolvedValue({ data: null, error: { statusCode: 500, name: "internal_server_error", message: "boom" } });
-    await handleMasterchainDemo(request({ email: "person@example.com" }));
+    await handleMasterchainDemo(request({ email: "person@example.com", marketingOptIn: true }));
     expect(m.create).not.toHaveBeenCalled();
     expect(m.error).toHaveBeenCalled();
     expect(m.alert).toHaveBeenCalledTimes(1);
@@ -173,9 +184,9 @@ describe("★the demo entrance takes its product (C9 PR-C) — nothing of master
   });
 
   it("★answers with its own installer and sends its own receipt — not masterchain's URL, not masterchain's mail", async () => {
-    const res = await handlePaidDemo(request({ email: "person@example.com", locale: "ja" }), other());
+    const res = await handlePaidDemo(request({ email: "person@example.com", locale: "ja", marketingOptIn: true }), other());
     expect(await res.json()).toEqual({ ok: true, downloadUrl: "https://mued.jp/downloads/Other-1.0.0-installer.pkg" });
-    expect(receipt).toHaveBeenCalledExactlyOnceWith("person@example.com", "ja");
+    expect(receipt).toHaveBeenCalledExactlyOnceWith("person@example.com", "ja", true);
     expect(m.send).not.toHaveBeenCalled();
     // The list is the one shared MUEDsp list (kimny 8/27: one audience for the whole family).
     expect(m.create).toHaveBeenCalledExactlyOnceWith({ audienceId: MUEDSP_AUDIENCE_ID, email: "person@example.com", unsubscribed: false });

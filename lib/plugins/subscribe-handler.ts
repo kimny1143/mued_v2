@@ -1,7 +1,7 @@
 //
 // Shared email-gate subscribe handler for the MUEDsp free-download plugin family (案A / registry).
 // Per-plugin routes share validation, rate limits, transactional delivery, and entitlement recording.
-// Form notice + news and unsubscribe in every mail (kimny 2026-10-04).
+// MUEDsp news only with the form's checkbox (default off — kimny 2026-10-28 「B」); the download link always.
 //
 // Delivery is HONEST, not fake-open: the welcome email carries the download link (= the deliverable),
 // so it is sent synchronously and its failure returns a non-200 (the UI shows a retry path instead of
@@ -23,8 +23,8 @@ function schemaFor(plugin: PluginKey) {
   return z.object({
     email: z.string().email().transform((e) => e.toLowerCase().trim()),
     locale: z.enum(["ja", "en"]).default("en"),
-    // Compatibility only: ignore client value. kimny 2026-10-04 reverted #1166 to "tell and send".
-    marketingOptIn: z.boolean().optional(),
+    // The form's news checkbox. Only `true` is consent: missing, false or anything else is not.
+    marketingOptIn: z.boolean().default(false),
     source: z.string().max(64).default(PLUGIN_DIST[plugin].source),
     utm_source: z.string().max(128).nullable().optional(),
     utm_medium: z.string().max(128).nullable().optional(),
@@ -84,7 +84,7 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
   }
 
   // `source` is kept here (from P-1) for the portal entitlement record below.
-  const { email, locale, source } = parsed.data;
+  const { email, locale, source, marketingOptIn } = parsed.data;
 
   // Per-EMAIL rate limit (complements the IP-keyed bucket above). Caps welcome sends for a single
   // address so a retry-storm or single-address abuser can't burn the shared Resend send quota one
@@ -112,19 +112,21 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
     return apiSuccess({ subscribed: false });
   }
 
-  // 1) Lead capture — add every subscriber to the plugin's Resend audience after the form notice.
+  // 1) Lead capture — add to the plugin's Resend audience only with the news checkbox ticked.
   //    Best-effort + no-op-safe while staged. A configured-but-failed add must be VISIBLE (logged +
   //    operator-alerted), never silent. It does NOT fail the request — the user still gets their
   //    download below, which is the honest thing to report.
-  const audienceConfigured = isPluginAudienceEnabled(plugin);
-  const listCaptured = await addPluginSubscriber(plugin, { email, locale }).catch((err) => {
-    logger.error(`[${plugin}/subscribe] audience add threw`, { error: String(err) });
-    return false;
-  });
-  if (audienceConfigured && !listCaptured) {
-    logger.error(`[${plugin}/subscribe] audience add failed — lead not captured to Resend`, { plugin });
-    // Best-effort operator alert, at most once a day (every failure is in the log line above) — never blocks.
-    void alertAudienceAddFailed(`${plugin}/subscribe`);
+  if (marketingOptIn === true) {
+    const audienceConfigured = isPluginAudienceEnabled(plugin);
+    const listCaptured = await addPluginSubscriber(plugin, { email, locale }).catch((err) => {
+      logger.error(`[${plugin}/subscribe] audience add threw`, { error: String(err) });
+      return false;
+    });
+    if (audienceConfigured && !listCaptured) {
+      logger.error(`[${plugin}/subscribe] audience add failed — lead not captured to Resend`, { plugin });
+      // Best-effort operator alert, at most once a day (every failure is in the log line above) — never blocks.
+      void alertAudienceAddFailed(`${plugin}/subscribe`);
+    }
   }
 
   // 2) Deliver the download-link email SYNCHRONOUSLY — it carries the DL link (= the deliverable), so
@@ -137,7 +139,7 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
       status: 502,
     });
   }
-  const emailResult: EmailResult = await sendWelcome(plugin, email, locale, true).catch((err) => {
+  const emailResult: EmailResult = await sendWelcome(plugin, email, locale, marketingOptIn).catch((err) => {
     logger.error(`[${plugin}/subscribe] welcome email threw`, { error: String(err) });
     return { success: false, error: String(err) };
   });

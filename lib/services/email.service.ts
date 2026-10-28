@@ -1864,17 +1864,19 @@ class EmailService {
 
   async sendMuedvoxDemoDownload(
     to: EmailRecipient,
-    data: { locale: 'ja' | 'en' }
+    data: { locale: 'ja' | 'en'; marketingOptIn?: boolean }
   ): Promise<EmailResult> {
-    // ★The demo adds the person to the shared MUEDsp list (told on the form), so the receipt always carries the
-    //   way off it. The unsubscribe scope "masterchain" means "the shared MUEDsp list" (lib/plugins/unsubscribe-token.ts)
-    //   — it is the same list for every paid product's demo, so the same scope withdraws from it.
-    const unsubscribeUrl = pluginUnsubscribeUrl('masterchain', to.email, data.locale);
+    // ★Same rule as masterchain's receipt: consented → on the shared MUEDsp list → a working way off it. Not consented
+    //   → on no list, nothing to unsubscribe from. The unsubscribe scope "masterchain" means "the shared MUEDsp list"
+    //   (lib/plugins/unsubscribe-token.ts) — it is the same list for every paid product's demo.
+    const unsubscribeUrl = data.marketingOptIn === true ? pluginUnsubscribeUrl('masterchain', to.email, data.locale) : undefined;
     return this.send({
       to,
       ...emailTemplates.muedvoxDemoDownload({ locale: data.locale, unsubscribeUrl }),
       tags: [{ name: 'type', value: 'muedvox_demo_download' }],
-      headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+      ...(unsubscribeUrl
+        ? { headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } }
+        : {}),
     });
   }
 
