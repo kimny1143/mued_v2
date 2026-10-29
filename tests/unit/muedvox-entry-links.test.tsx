@@ -5,8 +5,10 @@
  * This renders the three real components with the real message files and reads the hrefs and the words off the
  * markup, so removing a link (or its LIVE gate opening onto a missing key) fails here rather than on a phone.
  */
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import enMain from "@/messages/en.json";
 import jaMain from "@/messages/ja.json";
 import enVox from "@/messages/muedvox.en.json";
@@ -53,6 +55,8 @@ vi.mock("next/navigation", () => ({
 import { StudioShowroom } from "@/components/features/landing/studio-showroom";
 import { MuedspLandingContent } from "@/components/features/muedsp-landing/muedsp-landing-content";
 import { MuedvoxLandingContent } from "@/components/features/muedvox-landing/muedvox-landing-content";
+import { MUEDVOX_VIDEO_ID } from "@/lib/muedvox/config";
+import { contentSecurityPolicy } from "@/lib/security/content-security-policy";
 
 beforeEach(() => {
   (globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = class {
@@ -104,5 +108,32 @@ describe.each(["en", "ja"] as const)("%s", (l) => {
     expect(hrefs(container.querySelector("footer")!)).toContain(`/${l}/eula`);
     expect(container.querySelector("footer")!.textContent).toContain(MESSAGES[l].muedvox.legal.thirdParty);
     expect(container.querySelector("#legal")).toBeNull();
+  });
+
+  it("/muedvox shows the how-to video as a still until play — then the youtube-nocookie player, and the CSP allows both", () => {
+    const { getByTestId } = render(<MuedvoxLandingContent />);
+    const box = getByTestId("muedvox-video");
+    // ★Before play: nothing from YouTube at all — the still is our own file (CCO #1319) — and it is a real link (no JS).
+    expect(box.querySelector("iframe")).toBeNull();
+    expect(box.querySelector("a")!.getAttribute("href")).toBe(`https://youtu.be/${MUEDVOX_VIDEO_ID}`);
+    const still = decodeURIComponent(box.querySelector("img")!.getAttribute("src")!);
+    expect(still).toContain(`/muedvox/video-${MUEDVOX_VIDEO_ID}.webp`);
+    expect(still).not.toMatch(/^https?:\/\//);
+    expect(existsSync(join(process.cwd(), "public", "muedvox", `video-${MUEDVOX_VIDEO_ID}.webp`)), "the still for this ID is in public/").toBe(true);
+    fireEvent.click(box.querySelector("a")!);
+    const frame = box.querySelector("iframe")!;
+    expect(new URL(frame.getAttribute("src")!).origin).toBe("https://www.youtube-nocookie.com");
+    expect(frame.getAttribute("src")).toContain(`/embed/${MUEDVOX_VIDEO_ID}`);
+    expect(frame.getAttribute("title")).toBe(MESSAGES[l].muedvox.video.title);
+    const csp = contentSecurityPolicy({ isProduction: true });
+    expect(csp).toMatch(/frame-src [^;]*https:\/\/www\.youtube-nocookie\.com/);
+    expect(csp).not.toMatch(/ytimg|img-src [^;]*youtube/);
+    expect(csp).not.toMatch(/frame-src [^;]*https:\/\/www\.youtube\.com/);
+  });
+
+  it("the privacy policy names YouTube in section 3, and the page renders that line (CCO #1319)", () => {
+    const section3 = MESSAGES[l].privacy.section3 as Record<string, string>;
+    expect(section3.youtube).toMatch(/^YouTube ?[（(]Google LLC[）)]/);
+    expect(readFileSync(join(process.cwd(), "app/[locale]/privacy/page.tsx"), "utf8")).toContain('t("section3.youtube")');
   });
 });

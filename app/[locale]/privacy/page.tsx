@@ -157,6 +157,12 @@ function PrivacyContent({ locale }: { locale: string }) {
                 </a>
               </li>
               <li>
+                <strong>{t("section3.youtube")}</strong>:{" "}
+                <a href="https://policies.google.com/privacy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://policies.google.com/privacy
+                </a>
+              </li>
+              <li>
                 <strong>{t("section3.upstash")}</strong>:{" "}
                 <a href="https://upstash.com/trust/privacy.pdf" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
                   https://upstash.com/trust/privacy.pdf

@@ -10,6 +10,10 @@
     "hear": "音を聴く",
     "demo": "デモを試す"
   },
+  "video": {
+    "title": "MUEDvox の使い方（動画・英語）",
+    "play": "動画を再生"
+  },
   "beforeAfter": {
     "heading": "同じボーカルを、まず1本で。次にハモリ付きで。",
     "caption": "Before と After は同じ音量に揃えています。",
@@ -96,6 +100,7 @@
   "manual": {
     "description": "MUEDvox の使い方。インストールとライセンス、Mode、声部、スケールとコード、FX、プリセット、困った時。",
     "back": "← MUEDvox のページへ",
+    "videoLink": "使い方の動画（英語）を見る",
     "link": "ユーザーマニュアル",
     "faqLink": "詳しい使い方は、ユーザーマニュアルにあります。"
   },
