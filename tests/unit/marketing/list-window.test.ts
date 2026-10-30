@@ -154,12 +154,33 @@ describe("trimToLimit", () => {
     }
   });
 
+  it("★a recipient whose contact was deleted (contact_id null — measured in prod 10/30) is skipped, not a failure", async () => {
+    const acct = fakeAccount(people(LIST_WINDOW_LIMIT + 1), { opened: ["c0000"] });
+    const http: ResendHttp = async (m, p) => {
+      const res = await acct.http(m, p);
+      if (p.includes("type=opened")) {
+        const body = res.body as { data: Array<Record<string, unknown>> };
+        body.data.push({ id: "r_gone", contact_id: null, email: "x", count: 1 });
+      }
+      return res;
+    };
+    await expect(trimToLimit(http, "t", opts0)).resolves.toMatchObject({ outcome: "trimmed", noEngagement: 1 });
+    expect(acct.live.some((c) => c.id === "c0000")).toBe(true); // the one who opened — kept
+    expect(acct.live.some((c) => c.id === "c0001")).toBe(false);
+  });
+
   it("a contact without a string id or created_at fails closed (no DELETE /contacts/undefined)", async () => {
     const cs = people(LIST_WINDOW_LIMIT + 1) as Array<Record<string, unknown>>;
     delete cs[0].id;
     const acct = fakeAccount(cs as Contact[], { opened: ["c0500"] }); // engagement reads fine — only the id is bad
     await expect(trimToLimit(acct.http, "t", opts0)).resolves.toEqual({ outcome: "failed" });
     expect(acct.calls.some((c) => c.startsWith("DELETE"))).toBe(false);
+    // …and created_at (CCO #1320 note: that guard had no test). Without it the age order is meaningless.
+    const noDate = people(LIST_WINDOW_LIMIT + 1) as Array<Record<string, unknown>>;
+    delete noDate[0].created_at;
+    const acct2 = fakeAccount(noDate as Contact[], { opened: ["c0500"] });
+    await expect(trimToLimit(acct2.http, "t", opts0)).resolves.toEqual({ outcome: "failed" });
+    expect(acct2.calls.some((c) => c.startsWith("DELETE"))).toBe(false);
   });
 
   it("DELETE 404 (already removed by another sign-up's trim) counts as removed, not as a failure", async () => {

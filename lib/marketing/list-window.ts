@@ -136,6 +136,10 @@ export async function trimToLimit(
       for (const b of sent) {
         for (const type of ["opened", "clicked"] as const) {
           for (const r of await listAll(http, `/broadcasts/${requireString(b.id, "broadcast id")}/recipients?type=${type}`, gap)) {
+            // ★null = that recipient's contact has since been deleted (measured 2026-10-30 14:3xZ, after the 277
+            //   deletes: 163 of 1,958 records null, 0 with the key missing). They are not on the list, so there is
+            //   no one to keep — skip. A MISSING key or any other non-string still fails closed (CCO #1320).
+            if (r.contact_id === null) continue;
             engaged.add(requireString(r.contact_id, "recipient contact_id"));
           }
         }
