@@ -16,6 +16,9 @@ vi.mock('@/lib/utils/logger', () => ({ logger: { warn: vi.fn() } }));
 const mockContactsCreate = vi.fn().mockResolvedValue({});
 const mockContactsUpdate = vi.fn().mockResolvedValue({});
 const mockSegmentsAdd = vi.fn().mockResolvedValue({});
+// ★The 1,000 window's trim is scheduled after a new contact is created (kimny 10/30).
+const { mockScheduleTrim } = vi.hoisted(() => ({ mockScheduleTrim: vi.fn() }));
+vi.mock('@/lib/marketing/list-window', () => ({ scheduleListTrim: mockScheduleTrim }));
 vi.mock('resend', () => ({
   Resend: vi.fn(() => ({
     contacts: {
@@ -86,6 +89,17 @@ describe('audience-sync — configured', () => {
         segments: [{ id: 'seg_test' }],
       }),
     );
+  });
+
+  it('★granted: a NEW contact (create succeeds) schedules the 1,000 trim; an existing one (create errors) does not', async () => {
+    mockContactsCreate.mockResolvedValueOnce({ data: { id: 'c_1' }, error: null });
+    const mod = await freshModule({ segment: 'seg_test' });
+    await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
+    expect(mockScheduleTrim).toHaveBeenCalledWith('audience-sync');
+    mockScheduleTrim.mockClear();
+    mockContactsCreate.mockResolvedValueOnce({ data: null, error: { name: 'validation_error', message: 'Contact already exists' } });
+    await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
+    expect(mockScheduleTrim).not.toHaveBeenCalled();
   });
 
   it('withdrawn → contacts.update global unsubscribe (no audienceId)', async () => {

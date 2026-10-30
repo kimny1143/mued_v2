@@ -25,3 +25,21 @@ export async function alertAudienceAddFailed(tag: string): Promise<void> {
     )
     .catch((err) => logger.error(`[${tag}] operator alert failed`, { error: String(err) }));
 }
+
+/**
+ * Tell the operator the 1,000-contact window could not be kept (lib/marketing/list-window.ts) — at most once a day,
+ * the same cap as above in its own bucket. The log line before it has the counts. Never throws, never blocks.
+ */
+export async function alertListTrimFailed(tag: string): Promise<void> {
+  const alertEmail = process.env.OPERATOR_ALERT_EMAIL;
+  if (!alertEmail || !emailService.isConfigured()) return;
+  const slot = await checkRateLimit("operator-alert-daily", "operator-alert:list-trim").catch(() => null);
+  if (slot && !slot.success) return;
+  await emailService
+    .sendAdminAlert(
+      alertEmail,
+      `[${tag}] The Resend list could not be kept at 1,000 contacts (failed, or no one left to remove). Check the Vercel log for [list-window]. ` +
+        "This alert is sent at most once a day.",
+    )
+    .catch((err) => logger.error(`[${tag}] operator alert failed`, { error: String(err) }));
+}

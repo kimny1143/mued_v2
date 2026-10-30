@@ -14,6 +14,7 @@
 // addMuedsatSubscriber (proven in tests/unit/plugin-subscribe.test.ts).
 import { Resend } from "resend";
 import { logger } from "@/lib/utils/logger";
+import { makeRoomAfterRejection, scheduleListTrim, type RoomAfterRejection } from "@/lib/marketing/list-window";
 import { PLUGIN_DIST, MUEDSP_AUDIENCE_ID, type PluginKey } from "@/lib/plugins/registry";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
@@ -102,6 +103,10 @@ export async function addContactIfAbsent(
   audienceId: string,
   email: string,
   tag: string,
+  // ★Runs after a NEW contact is created: the 1,000 window's trim, after the response (tests inject a spy).
+  onCreated: (tag: string) => void = scheduleListTrim,
+  // ★Runs when Resend REFUSES the create: make room for one, so the add can be tried once more (tests inject a fake).
+  makeRoom: (tag: string) => Promise<RoomAfterRejection> = makeRoomAfterRejection,
 ): Promise<boolean> {
   try {
     const found = await resend.contacts.get({ audienceId, email });
@@ -115,9 +120,29 @@ export async function addContactIfAbsent(
     // ★The SDK RETURNS `{ data, error }` on an API failure rather than throwing (resend@6.12.4).
     const { error } = await resend.contacts.create({ audienceId, email, unsubscribed: false });
     if (error) {
+      // ★What Resend does to a create past the free tier's 1,000 is unmeasured (conductor 10/30: the 1,277 seen
+      //   accepted were inside the old 5,000 plan). So a refused create makes room for one and tries ONCE more —
+      //   otherwise a full list would refuse every new person forever, and the after-the-add trim never runs.
+      //   ★The log lines name the path, so the first sign-up after 11/16 shows which one Resend takes:
+      //     "accepted over the limit" → [list-window …] over the limit — removed N   (scheduleListTrim)
+      //     "refused at the limit"    → REJECTED … made room (removed 1) — retrying once → retry accepted / REJECTED again
       logger.error(`[${tag}] Resend REJECTED the subscribe`, { error: error.message ?? String(error) });
-      return false;
+      const room = await makeRoom(tag);
+      if (room.removed === 0) {
+        logger.error(`[${tag}] no room was made (${room.outcome}) — not retrying`, { total: room.total ?? null });
+        return false;
+      }
+      logger.warn(`[${tag}] made room (removed ${room.removed}) after the rejection — retrying the subscribe once`, { total: room.total ?? null });
+      const retry = await resend.contacts.create({ audienceId, email, unsubscribed: false });
+      if (retry.error) {
+        logger.error(`[${tag}] Resend REJECTED the subscribe again after making room`, { error: retry.error.message ?? String(retry.error) });
+        return false;
+      }
+      logger.warn(`[${tag}] retry accepted after making room`);
+      return true;
     }
+    // ★A new person is on — keep the list at 1,000 after the response (lib/marketing/list-window.ts).
+    onCreated(tag);
     return true;
   } catch (err) {
     logger.error(`[${tag}] could not reach Resend to subscribe`, { err: String(err) });
