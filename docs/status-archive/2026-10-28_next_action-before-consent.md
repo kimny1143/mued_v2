@@ -18,3 +18,8 @@
 ## next_action から退避（2026-10-30T23:35:06+09:00）
 
 ★★**(手番 2026-10-30T22:17:34+09:00) ⓪ Resend の 1,000 人の窓: 手順 1〜3 済み＝kimny が削除 2 行を打った（unsubscribed 86 deleted・無開封無クリック古い順 191 deleted）→ 当課が GET /contacts で測定 13:14:56Z total 1,000・unsubscribed 0（前 13:02Z 1,277・86）。手順 3 の結果 file は誰かの 2 回目の実行（404 だけ）で上書き＝conductor に伝えた。手順 4＝PR #1320 head 65c18eaf（trim は after()・追加は同期／拒否された追加は 1 人外して 1 回だけ再追加〔1,000 超の Resend の挙動は未測定・conductor 訂正〕・ログの文言で 2 つの経路を区別／CCO FAIL 5712834755 を直した＝開封の読み取りが空なら failed で 0 人）＝CCO の再レビュー待ち → CI 緑で gate merge → 本番で陽性 control（1,000 で 1 件チェックして登録 → 数秒後 total 1,000・log に removed 1）→ 翌日の funnel で net_new_day ≈ その日チェックした人。segment は conductor が 2 つに減らした（MUEDsp・General・4 つの id を見るコードは 0）。11/16 以降の初めての登録の log でどちらの経路かを conductor が見る。次の依頼（受けた・窓の後）: DB にチェック欄の値と配信停止を書く（Tier 2・migration は kimny）。** ★前の手番の全文＝docs/status-archive/2026-10-28_next_action-before-consent.md。
+
+
+## next_action から退避（2026-10-31T00:24:26+09:00）
+
+★★**(手番 2026-10-30T23:35:06+09:00) ⓪ #1320 は merge 済み（cef6a4e7・14:29Z・CCO PASS 5712955209）。本番の陽性 control（14:31:37Z・kimny1143+listwindow@gmail.com・source=smoke-test）＝追加は 200 で入った・trim は failed closed（recipient の contact_id が null＝今日消した人の記録 163/1,958）＝0 人外れた・名簿は 1,001（14:32:17Z 測定）・警告メール 1 通。直しは PR #1321（null は飛ばす・key 無しは今までどおり止める・Tier 2・CCO にレビュー依頼）→ CI 緑で gate merge → 同じ alias で陽性 control をもう一度（1,002 → 1,000・log に removed 2）→ 結果 3 つ（前後の total・log 1 行・外れた人数）を conductor へ（誰かは送らない）→ 翌日の funnel（smoke-test 1 件を差し引く）。11/16 以降の初めての登録の log で経路（accepted over / refused）を conductor が見る。次の依頼（受けた・窓の後）: DB にチェック欄の値と配信停止を書く（Tier 2・migration は kimny）。** ★前の手番の全文＝docs/status-archive/2026-10-28_next_action-before-consent.md。
