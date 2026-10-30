@@ -14,6 +14,7 @@
 // addMuedsatSubscriber (proven in tests/unit/plugin-subscribe.test.ts).
 import { Resend } from "resend";
 import { logger } from "@/lib/utils/logger";
+import { makeRoomForOne, resendHttp, type ResendHttp } from "@/lib/marketing/list-window";
 import { PLUGIN_DIST, MUEDSP_AUDIENCE_ID, type PluginKey } from "@/lib/plugins/registry";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
@@ -102,6 +103,8 @@ export async function addContactIfAbsent(
   audienceId: string,
   email: string,
   tag: string,
+  // ★The list window's HTTP (tests inject a fake). null = skip the window (no key configured).
+  windowHttp: ResendHttp | null = RESEND_API_KEY ? resendHttp(RESEND_API_KEY) : null,
 ): Promise<boolean> {
   try {
     const found = await resend.contacts.get({ audienceId, email });
@@ -112,6 +115,9 @@ export async function addContactIfAbsent(
       });
       return false;
     }
+    // ★Only a NEW contact needs room: at 1,000 one person comes off first (lib/marketing/list-window.ts).
+    //   Its outcome is logged there; whatever it is, the add below still runs.
+    if (windowHttp) await makeRoomForOne(windowHttp, tag);
     // ★The SDK RETURNS `{ data, error }` on an API failure rather than throwing (resend@6.12.4).
     const { error } = await resend.contacts.create({ audienceId, email, unsubscribed: false });
     if (error) {

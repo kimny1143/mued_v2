@@ -18,6 +18,7 @@
  */
 import { Resend } from 'resend';
 import { logger } from '@/lib/utils/logger';
+import { makeRoomForOne, resendHttp } from '@/lib/marketing/list-window';
 
 // audienceId === segmentId (same Resend id space). Prefer the new env name, fall back to the legacy
 // one so a value already set under RESEND_MARKETING_AUDIENCE_ID keeps working without a re-set.
@@ -58,6 +59,10 @@ export async function syncConsentToAudience(opts: {
   //   ledger は granted なのに配信対象に入らない (product課 検出 2026-08-05)。
   try {
     if (opts.status === 'granted') {
+      // ★A NEW contact needs room in the 1,000 window first (lib/marketing/list-window.ts). An existing
+      //   one does not — so look it up, and only `not_found` makes room. The add runs whatever happens.
+      const found = await resend.contacts.get({ email: opts.email });
+      if (found.error?.name === 'not_found') await makeRoomForOne(resendHttp(RESEND_API_KEY!), 'audience-sync');
       // New contact → create it directly into the segment.
       const created = await resend.contacts.create({
         email: opts.email,

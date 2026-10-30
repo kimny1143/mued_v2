@@ -16,9 +16,14 @@ vi.mock('@/lib/utils/logger', () => ({ logger: { warn: vi.fn() } }));
 const mockContactsCreate = vi.fn().mockResolvedValue({});
 const mockContactsUpdate = vi.fn().mockResolvedValue({});
 const mockSegmentsAdd = vi.fn().mockResolvedValue({});
+// ★Lookup before create (the 1,000 window, kimny 10/30): default = a new person (Resend's measured not_found).
+const mockContactsGet = vi.fn(async () => ({ data: null, error: { statusCode: 404, name: 'not_found', message: 'Contact not found' } }));
+const { mockMakeRoom } = vi.hoisted(() => ({ mockMakeRoom: vi.fn(async () => 'room') }));
+vi.mock('@/lib/marketing/list-window', () => ({ makeRoomForOne: mockMakeRoom, resendHttp: vi.fn(() => 'http') }));
 vi.mock('resend', () => ({
   Resend: vi.fn(() => ({
     contacts: {
+      get: mockContactsGet,
       create: mockContactsCreate,
       update: mockContactsUpdate,
       segments: { add: mockSegmentsAdd },
@@ -86,6 +91,18 @@ describe('audience-sync — configured', () => {
         segments: [{ id: 'seg_test' }],
       }),
     );
+  });
+
+  it('★granted, new person → room is made in the 1,000 window BEFORE the create; an existing person → no room made', async () => {
+    const mod = await freshModule({ segment: 'seg_test' });
+    await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
+    expect(mockMakeRoom).toHaveBeenCalledTimes(1);
+    expect(mockMakeRoom.mock.invocationCallOrder[0]).toBeLessThan(mockContactsCreate.mock.invocationCallOrder[0]);
+    mockMakeRoom.mockClear();
+    mockContactsGet.mockResolvedValueOnce({ data: { id: 'c_1' }, error: null } as never);
+    await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
+    expect(mockMakeRoom).not.toHaveBeenCalled();
+    expect(mockContactsCreate).toHaveBeenCalledTimes(2); // the existing path (create → re-grant) is unchanged
   });
 
   it('withdrawn → contacts.update global unsubscribe (no audienceId)', async () => {
