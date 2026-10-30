@@ -35,6 +35,7 @@ import { emailService } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
+import { checkboxStatus, recordNewsListEvent } from "@/lib/marketing/news-list-events";
 
 // ── safe JSON access (lint-clean, no `any`) for the untyped external payload ───────────────────────
 type Json = Record<string, unknown>;
@@ -448,6 +449,13 @@ export async function handleFastspringOrderCompleted(
   //   transaction, or widen the window in which a FastSpring retry could re-send. Awaited (a fire-and-forget call
   //   can be cut off when the function returns) but capped at AUDIENCE_ADD_TIMEOUT_MS; a timeout counts as "not
   //   added", is logged, and changes nothing else. On a retry the adds run again — harmless, they look up first.
+  // ★The cart's checkbox as answered, ticked or not (0066 news_list_events). AFTER the delivery, outside the
+  //   transaction, best-effort: it can never roll back or delay a purchase. `source` carries the order id so a
+  //   FastSpring retry's duplicate row is recognisable.
+  await recordNewsListEvent({
+    email: parsed.email, status: checkboxStatus(parsed.marketingConsent), surface: "cart",
+    productKey: product.key, source: `order:${parsed.orderId}`,
+  }).catch(() => false);
   if (parsed.marketingConsent) {
     const [news, buyers] = await Promise.all([
       withTimeout(addBuyerToMuedspNews(parsed.email), AUDIENCE_ADD_TIMEOUT_MS),

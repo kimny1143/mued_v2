@@ -30,6 +30,13 @@ vi.mock("@/lib/plugins/entitlements", () => ({
   recordPluginEntitlement: (...a: unknown[]) => mockRecord(...a),
 }));
 
+// The news ledger (0066) — mocked like the entitlement recorder; the answer, ticked or not, is recorded on a served download.
+const mockNewsEvent = vi.fn();
+vi.mock("@/lib/marketing/news-list-events", () => ({
+  recordNewsListEvent: (...a: unknown[]) => mockNewsEvent(...a),
+  checkboxStatus: (t: unknown) => (t === true ? "granted" : "not_granted"),
+}));
+
 const mockSendLim = vi.fn();
 const mockSendSat = vi.fn();
 const mockSendDrive = vi.fn();
@@ -77,6 +84,7 @@ beforeEach(() => {
   mockSendSat.mockResolvedValue({ success: true, messageId: "m2" });
   mockAlert.mockResolvedValue(undefined);
   mockRecord.mockResolvedValue(true); // portal entitlement recorded
+  mockNewsEvent.mockResolvedValue(true); // news ledger row written
   process.env.OPERATOR_ALERT_EMAIL = "ops@mued.jp";
 });
 
@@ -255,6 +263,9 @@ describe.each([
     expect(send).toHaveBeenCalledExactlyOnceWith({ email: "a@b.com" }, { locale: "ja", marketingOptIn: true });
     expect(mockAdd).toHaveBeenCalledExactlyOnceWith(plugin, { email: "a@b.com", locale: "ja" });
     expect(mockEnabled).toHaveBeenCalledWith(plugin);
+    expect(mockNewsEvent).toHaveBeenCalledExactlyOnceWith({
+      email: "a@b.com", status: "granted", surface: "download", productKey: plugin, source: `${plugin}_lp`, locale: "ja",
+    });
     expect(mockAlert).not.toHaveBeenCalled();
     expect(logger.error).not.toHaveBeenCalled();
   });
@@ -269,6 +280,10 @@ describe.each([
       email: "a@b.com", source: `${plugin}_lp`, firstTouch: null, locale: "ja",
     });
     expect(mockAdd).not.toHaveBeenCalled();
+    // ★Not ticking is recorded too (0066): "submitted, did not agree" is a fact a later rebuild needs.
+    expect(mockNewsEvent).toHaveBeenCalledExactlyOnceWith({
+      email: "a@b.com", status: "not_granted", surface: "download", productKey: plugin, source: `${plugin}_lp`, locale: "ja",
+    });
     // ★Not being on the list is not a failed add: no alert, no error line.
     expect(mockAlert).not.toHaveBeenCalled();
     expect(logger.error).not.toHaveBeenCalled();
@@ -282,6 +297,7 @@ describe.each([
     expect(mockSendLim).not.toHaveBeenCalled();
     expect(mockSendDrive).not.toHaveBeenCalled();
     expect(mockRecord).not.toHaveBeenCalled();
+    expect(mockNewsEvent).not.toHaveBeenCalled();
     expect(mockAlert).not.toHaveBeenCalled();
   });
 });

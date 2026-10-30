@@ -363,3 +363,4 @@ export * from './schema/masterchain';
 // ========================================
 export * from './schema/plugin-entitlements';
 export * from './schema/demo-signups';
+export * from './schema/news-list-events';

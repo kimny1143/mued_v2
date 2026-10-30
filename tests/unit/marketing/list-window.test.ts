@@ -73,9 +73,17 @@ const people = (n: number): Contact[] =>
     created_at: day(i),
     unsubscribed: false,
   }));
-const opts0 = { gapMs: 0 };
+const recorded: string[] = [];
+const okRecord = async (email: string) => {
+  recorded.push(email);
+  return true;
+};
+const opts0 = { gapMs: 0, recordWithdrawal: okRecord };
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  recorded.length = 0;
+});
 
 describe("pickEvictions — the order", () => {
   it("unsubscribed first (oldest), then no open/click (oldest); anyone who opened or clicked stays", () => {
@@ -135,6 +143,53 @@ describe("trimToLimit", () => {
     const acct = fakeAccount(people(3), { opened: ["c0000", "c0001"], clicked: ["c0002"] });
     await expect(trimToLimit(acct.http, "t", { ...opts0, limit: 2 })).resolves.toMatchObject({ outcome: "short", total: 3 });
     expect(acct.live).toHaveLength(3);
+  });
+
+  it("★an unsubscribed contact's withdrawal is written to our record BEFORE it is removed (surface resend_footer)", async () => {
+    const cs = people(LIST_WINDOW_LIMIT + 1);
+    cs[300].unsubscribed = true;
+    const acct = fakeAccount(cs);
+    const order: string[] = [];
+    const http: ResendHttp = async (m, p) => {
+      if (m === "DELETE") order.push("delete");
+      return acct.http(m, p);
+    };
+    const rec = async (email: string) => {
+      order.push(`record ${email}`);
+      return true;
+    };
+    await expect(trimToLimit(http, "t", { gapMs: 0, recordWithdrawal: rec })).resolves.toMatchObject({ outcome: "trimmed", unsubscribed: 1, notRecorded: 0 });
+    expect(order).toEqual(["record p300@example.com", "delete"]);
+  });
+
+  it("★a withdrawal that cannot be written keeps that person in Resend; the room comes from a no-open person instead", async () => {
+    const cs = people(LIST_WINDOW_LIMIT + 1);
+    cs[5].unsubscribed = true;
+    const acct = fakeAccount(cs, { opened: ["c0000"] });
+    const result = await trimToLimit(acct.http, "t", { gapMs: 0, recordWithdrawal: async () => false });
+    expect(result).toMatchObject({ outcome: "trimmed", unsubscribed: 0, noEngagement: 1, notRecorded: 1 });
+    expect(acct.live.some((c) => c.id === "c0005")).toBe(true); // the unsubscribed one — not removed, not recorded
+    expect(acct.live.some((c) => c.id === "c0000")).toBe(true); // ★engagement WAS read: the one who opened stays
+    expect(acct.live.some((c) => c.id === "c0001")).toBe(false);
+    // and a throwing recorder is the same as false
+    const acct2 = fakeAccount(people(LIST_WINDOW_LIMIT + 1).map((c, i) => ({ ...c, unsubscribed: i === 5 })), { opened: ["c0000"] });
+    const r2 = await trimToLimit(acct2.http, "t", { gapMs: 0, recordWithdrawal: async () => { throw new Error("db down"); } });
+    expect(r2).toMatchObject({ notRecorded: 1, noEngagement: 1 });
+  });
+
+  it("★CCO #1321: a MIXED read (real ids + null + one record missing the key) fails closed — 0 deleted", async () => {
+    const acct = fakeAccount(people(LIST_WINDOW_LIMIT + 1), { opened: ["c0000", "c0001"] });
+    const http: ResendHttp = async (m, p) => {
+      const res = await acct.http(m, p);
+      if (p.includes("type=opened")) {
+        const body = res.body as { data: Array<Record<string, unknown>> };
+        body.data.push({ id: "r_gone", contact_id: null, email: "x", count: 1 }); // deleted contact — skipped
+        body.data.push({ id: "r_bad", email: "y", count: 1 }); //                    key missing — must stop the run
+      }
+      return res;
+    };
+    await expect(trimToLimit(http, "t", opts0)).resolves.toEqual({ outcome: "failed" });
+    expect(acct.live).toHaveLength(LIST_WINDOW_LIMIT + 1);
   });
 
   it("★fails CLOSED on an engagement read that would make everyone look cold (CCO #1320) — 0 deleted", async () => {

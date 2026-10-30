@@ -30,6 +30,9 @@ vi.mock("@/lib/utils/logger", () => ({
 //   stubbed per-case rather than signed for real (that path has its own test file).
 const verifyUnsubscribeToken = vi.fn();
 vi.mock("@/lib/plugins/unsubscribe-token", () => ({ verifyUnsubscribeToken }));
+// The news ledger (0066): a valid-link withdrawal is recorded whether or not Resend takes the update.
+const recordNewsListEvent = vi.fn(async () => true);
+vi.mock("@/lib/marketing/news-list-events", () => ({ recordNewsListEvent }));
 
 const URL_BASE = "https://mued.jp/api/plugins/unsubscribe?plugin=muedlim&email=a%40b.com&t=tok";
 
@@ -57,6 +60,26 @@ const CLAIMS_DONE = [/今後、この配信は届きません/, /won't receive t
 describe("unsubscribe page — suppression accepted", () => {
   it("says it is done", async () => {
     unsubscribePluginContact.mockResolvedValue(true);
+    const { status, html } = await get();
+    expect(status).toBe(200);
+    expect(html).toMatch(/配信を解除しました/);
+    // ★The withdrawal is in our record (0066)
+    expect(recordNewsListEvent).toHaveBeenCalledExactlyOnceWith({
+      email: "a@b.com", status: "withdrawn", surface: "unsubscribe_link", productKey: "muedlim", source: "link",
+    });
+  });
+
+  it("one-click POST is recorded as source one_click", async () => {
+    unsubscribePluginContact.mockResolvedValue(true);
+    expect(await post()).toBe(200);
+    expect(recordNewsListEvent).toHaveBeenCalledWith(expect.objectContaining({ status: "withdrawn", source: "one_click" }));
+  });
+
+  it("a failed ledger write does not change the page", async () => {
+    unsubscribePluginContact.mockResolvedValue(true);
+    recordNewsListEvent.mockImplementationOnce(async () => {
+      throw new Error("db down");
+    });
     const { status, html } = await get();
     expect(status).toBe(200);
     expect(html).toMatch(/配信を解除しました/);
@@ -93,6 +116,11 @@ describe("★★unsubscribe page — suppression REJECTED by Resend", () => {
     expect(await post()).toBe(200);
   });
 
+  it("★the withdrawal is still recorded in our DB — the person asked with a valid link, Resend just did not take it", async () => {
+    await get();
+    expect(recordNewsListEvent).toHaveBeenCalledWith(expect.objectContaining({ status: "withdrawn", surface: "unsubscribe_link" }));
+  });
+
   it("★a THROWN failure lands in the same place, not in silence", async () => {
     // ★`mockImplementationOnce` and not `mockRejectedValue`: the latter builds the rejected promise
     //   at setup time, so it is unhandled until the route happens to consume it — which vitest
@@ -112,8 +140,9 @@ describe("unsubscribe page — invalid token", () => {
     const { status, html } = await get();
     expect(status).toBe(400);
     expect(html).toMatch(/リンクが無効です/);
-    // ★And the contact API is never called for a bad token — nothing is attempted.
+    // ★And the contact API is never called for a bad token — nothing is attempted, nothing recorded.
     expect(unsubscribePluginContact).not.toHaveBeenCalled();
+    expect(recordNewsListEvent).not.toHaveBeenCalled();
   });
 
   it("POST is 400 for a bad token", async () => {

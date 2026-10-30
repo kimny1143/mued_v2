@@ -30,6 +30,11 @@ const { sendMuedvoxLicenseDelivery, sendMasterchainLicenseDelivery, trackServerP
     addBuyerToMuedspNews: vi.fn(() => Promise.resolve(true)),
   }),
 );
+const { recordNewsListEvent } = vi.hoisted(() => ({ recordNewsListEvent: vi.fn(() => Promise.resolve(true)) }));
+vi.mock("@/lib/marketing/news-list-events", () => ({
+  recordNewsListEvent,
+  checkboxStatus: (t: unknown) => (t === true ? "granted" : "not_granted"),
+}));
 
 vi.mock("@/lib/utils/logger", () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
@@ -111,6 +116,10 @@ describe("★the buyer onto the MUEDsp news list (kimny 10/6 「購入者をメ�
     expect(addBuyerToMuedspNews).toHaveBeenCalledWith("buyer@example.com");
     expect(addMasterchainContact).toHaveBeenCalledWith("buyers", { email: "buyer@example.com" });
     expect(settled).toBe(true); // ★not fire-and-forget: the add finished before the handler returned
+    // ★The cart's answer in the news ledger (0066), with the order id so a retry's duplicate is recognisable
+    expect(recordNewsListEvent).toHaveBeenCalledWith(expect.objectContaining({
+      email: "buyer@example.com", status: "granted", surface: "cart", source: expect.stringMatching(/^order:/),
+    }));
   });
 
   it.each([["\"false\" (an order from before the notice)", "false"], ["no tag", undefined]])("%s → not added", async (_l, tag) => {
@@ -118,6 +127,13 @@ describe("★the buyer onto the MUEDsp news list (kimny 10/6 「購入者をメ�
     await handleFastspringOrderCompleted(tx as any, tagged(tag));
     expect(addBuyerToMuedspNews).not.toHaveBeenCalled();
     expect(addMasterchainContact).not.toHaveBeenCalled();
+    expect(recordNewsListEvent).toHaveBeenCalledWith(expect.objectContaining({ status: "not_granted", surface: "cart" }));
+  });
+
+  it("a failed news-ledger write never fails the order (after the delivery, outside the transaction)", async () => {
+    recordNewsListEvent.mockRejectedValueOnce(new Error("db down"));
+    const { tx } = makeTx([]);
+    await expect(handleFastspringOrderCompleted(tx as any, tagged("true"))).resolves.toBe("ok");
   });
 
   it("★after the delivery (CCO #1238): the license email is sent before either list add starts", async () => {
