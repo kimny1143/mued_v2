@@ -34,3 +34,12 @@
 ## 2026-10-29T01:05:29+09:00 に next_action の先頭から外した段（逐語）
 
 ★★**(手番 2026-10-29T00:56:49+09:00) ⓪ 開いている PR 2 本: #1319（MUEDvox の使い方の動画・ID 5xISWqAEzvE・Tier 2・head e3e75ab9・preview https://muedv2-git-feat-muedvox-howto-video-glasswerks.vercel.app/en/muedvox を conductor に送った）＝CCO PASS＋CI 緑＋kimny が preview を見る → conductor の OK で gate merge。#1317（試験だけ・gate が test の .ts を code と数え --tier1 を拒否＝Tier 2 に変えて CCO に peer review を依頼・CI 緑）＝PASS で gate merge。#1318 は merged cfa55e93（本番: llms.txt の hoo-mcp 0・/connect 307→/・Worker 404・Deploy Hoo MCP は走らず・Chief に 1 行）。**
+
+
+## blocked_by から退避（2026-10-31T00:50:44+09:00・済み: #1316/#1315/#1312・#1317 retention 90 秒・#1318 で旧 Hoo MCP の (1)〜(3)）
+
+★★**(2026-10-28T23:20:02+09:00) 済んで外した 2 件（EULA と購入者＝#1316 のカートのチェック欄で解決・11/16 の期限＝#1315・#1312 が本番・デモの行も確認）は docs/status-archive/2026-10-28_blocked-by-W-items.md の末尾へ逐語で退避。**
+
+★★**(2026-10-27T22:27:12+09:00) tests/unit/plugin-download-retention.test.ts が full run で 30 秒の時間切れで落ちる（当課 1 回・CCO 2 回・単独では 3/3 緑・約 24 秒）＝CI でも落ちうる。別の PR で timeout の見直し（#1308 とは無関係）。**
+
+★★**(2026-10-22T02:51:09+09:00) 旧 Hoo MCP を畳む残り（kimny 10/22「畳む」・conductor 経由・kimny 10/22「なんかどっちも上手くいかない。また後日にしていい？」）: (1) Registry io.github.kimny1143/hoo-mcp 1.0.0・1.1.0 は active のまま＝kimny が `mcp-publisher login github` のデバイスコードを承認 → 当課が `mcp-publisher status --status deprecated --all-versions --message "Retired. See https://mued.jp" io.github.kimny1143/hoo-mcp`。(2) Worker hoo-mcp.glasswerkskimny.workers.dev は動いたまま＝kimny が `cd workers/hoo-mcp && npx wrangler login` をブラウザで許可か、CF の画面で hoo-mcp → Settings → Domains & Routes → workers.dev を Disable → 当課は workers_dev=false（code・鍵の表は消さない）。(3) 止めた後に別の PR: middleware の /connect(.*)・Worker の server.json と server card の mued.jp/connect・app/api/mcp/test-connection（CCO 注記）。(4) 済んだら Registry・Worker・/connect の実測と mcprush の表示を 1 回見て conductor へ。今は古い鍵 2 本（30 日の利用 0）の持ち主だけが Worker に入れる。**
