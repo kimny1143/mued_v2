@@ -40,7 +40,8 @@ function parseLine(line: string): string[] {
 }
 
 export function withdrawnEmails(csv: string): string[] {
-  const [head, ...lines] = csv.trimEnd().split("\n");
+  // ★Either line ending (CCO #1322: a CRLF file split on "\n" alone would leave "true\r" and read 0).
+  const [head, ...lines] = csv.trimEnd().split(/\r?\n/);
   const cols = parseLine(head);
   const iEmail = cols.indexOf("email");
   const iUnsub = cols.indexOf("unsubscribed");

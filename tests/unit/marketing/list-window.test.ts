@@ -15,6 +15,7 @@ vi.mock("@/lib/plugins/audience-alert", () => ({ alertListTrimFailed: alertSpy, 
 import {
   LIST_WINDOW_LIMIT,
   makeRoomAfterRejection,
+  needsAlert,
   pickEvictions,
   scheduleListTrim,
   trimToLimit,
@@ -171,6 +172,10 @@ describe("trimToLimit", () => {
     expect(acct.live.some((c) => c.id === "c0005")).toBe(true); // the unsubscribed one — not removed, not recorded
     expect(acct.live.some((c) => c.id === "c0000")).toBe(true); // ★engagement WAS read: the one who opened stays
     expect(acct.live.some((c) => c.id === "c0001")).toBe(false);
+    // ★CCO #1322: that is an incident — error + the daily alert, not a warn
+    expect(needsAlert(result)).toBe(true);
+    expect(JSON.stringify(vi.mocked(logger.error).mock.calls)).toContain("1 withdrawal(s) NOT recorded");
+    expect(needsAlert({ outcome: "trimmed", total: 1000, unsubscribed: 1, noEngagement: 0, notRecorded: 0 })).toBe(false);
     // and a throwing recorder is the same as false
     const acct2 = fakeAccount(people(LIST_WINDOW_LIMIT + 1).map((c, i) => ({ ...c, unsubscribed: i === 5 })), { opened: ["c0000"] });
     const r2 = await trimToLimit(acct2.http, "t", { gapMs: 0, recordWithdrawal: async () => { throw new Error("db down"); } });

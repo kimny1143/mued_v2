@@ -75,7 +75,11 @@ describe("import-resend-withdrawn-20261030 — which rows it takes", () => {
     ].join("\n");
     expect(withdrawnEmails(csv)).toEqual(["a@example.com", "c@example.com"]);
   });
-  it("refuses a file without the columns it needs", () => {
+  it("reads a CRLF file the same (CCO #1322)", () => {
+    const csv = ["id,email,created_at,unsubscribed", "c1,a@example.com,2026-07-12,true", "c2,b@example.com,2026-07-13,true"].join("\r\n");
+    expect(withdrawnEmails(csv)).toEqual(["a@example.com", "b@example.com"]);
+  });
+    it("refuses a file without the columns it needs", () => {
     expect(() => withdrawnEmails("id,mail\nc1,a@b.c")).toThrow(/no email/);
   });
 });

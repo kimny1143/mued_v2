@@ -201,8 +201,11 @@ export async function trimToLimit(
 
     const total = contacts.length - removed;
     const outcome = total > limit ? "short" : "trimmed";
-    const log = outcome === "short" ? logger.error : logger.warn;
-    log(`[list-window ${tag}] over the limit — removed ${removed}${outcome === "short" ? ", still over" : ""}`, {
+    // ★notRecorded > 0 is an incident even when the room was made (CCO #1322): the withdrawal write is broken (e.g. the
+    //   code is out before 0066), so a no-open subscriber came off in place of the unsubscribed person — the reverse of
+    //   the approved order — and it would repeat on every sign-up. error + alert, not a warn nobody reads.
+    const log = outcome === "short" || notRecorded > 0 ? logger.error : logger.warn;
+    log(`[list-window ${tag}] over the limit — removed ${removed}${outcome === "short" ? ", still over" : ""}${notRecorded > 0 ? `, ${notRecorded} withdrawal(s) NOT recorded — kept in Resend` : ""}`, {
       before: contacts.length,
       total,
       limit,
@@ -215,6 +218,11 @@ export async function trimToLimit(
     logger.error(`[list-window ${tag}] could not trim the list`, { error: String(err instanceof Error ? err.message : err) });
     return { outcome: "failed" };
   }
+}
+
+/** failed, still over, or a withdrawal that could not be recorded (CCO #1322) → the daily alert. */
+export function needsAlert(r: TrimResult): boolean {
+  return r.outcome === "failed" || r.outcome === "short" || (r.outcome === "trimmed" && r.notRecorded > 0);
 }
 
 export type RoomAfterRejection = { outcome: TrimResult["outcome"]; removed: number; total?: number };
@@ -245,7 +253,7 @@ export function scheduleListTrim(tag: string): void {
   if (!apiKey) return;
   const run = async () => {
     const r = await trimToLimit(resendHttp(apiKey), tag);
-    if (r.outcome === "failed" || r.outcome === "short") await alertListTrimFailed(tag).catch(() => undefined);
+    if (needsAlert(r)) await alertListTrimFailed(tag).catch(() => undefined);
   };
   try {
     after(run);
