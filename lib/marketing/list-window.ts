@@ -10,8 +10,9 @@
  *   unsubscribed contact to remove, reads every sent broadcast's opens and clicks (about 30 more):
  *   1–5 s that a person waiting for their download link should not wait (conductor 10/30). The add
  *   itself stays where it was, so its result (the caller's alert, demo_signups.audience_added) is
- *   still known before the response. For a moment the account holds 1,001; Resend kept accepting
- *   creates over the limit (conductor 10/30: POST /contacts 201 at 1,277), so the add is not lost.
+ *   still known before the response. For a moment the account holds 1,001 — IF Resend accepts a create
+ *   past the limit. That is unmeasured (conductor 10/30: the creates seen accepted at 1,277 were inside the
+ *   old 5,000 plan), so a REFUSED create calls makeRoomAfterRejection() and the add is tried once more.
  *
  * trimToLimit() removes contacts until the account is back at LIST_WINDOW_LIMIT (at most
  * MAX_REMOVALS per run), in this order:
@@ -78,6 +79,12 @@ export function pickEvictions(
   return [...unsub, ...cold].slice(0, Math.max(0, count));
 }
 
+/** A field the policy depends on must be a non-empty string — otherwise the run fails closed. */
+function requireString(v: unknown, what: string): string {
+  if (typeof v !== "string" || v === "") throw new Error(`${what} missing or not a string`);
+  return v;
+}
+
 type ListBody = { data?: Array<Record<string, unknown>>; has_more?: boolean };
 
 async function listAll(http: ResendHttp, base: string, gap: () => Promise<void>): Promise<Array<Record<string, unknown>>> {
@@ -106,8 +113,8 @@ export async function trimToLimit(
   const gap = () => (gapMs > 0 ? new Promise<void>((r) => setTimeout(r, gapMs)) : Promise.resolve());
   try {
     const contacts = (await listAll(http, "/contacts", gap)).map((c) => ({
-      id: String(c.id),
-      created_at: String(c.created_at),
+      id: requireString(c.id, "contact id"),
+      created_at: requireString(c.created_at, "contact created_at"),
       unsubscribed: c.unsubscribed === true,
     }));
     const over = contacts.length - limit;
@@ -121,13 +128,19 @@ export async function trimToLimit(
       const { status, body } = await http("GET", "/broadcasts");
       const broadcasts = (body as ListBody | null)?.data;
       if (status !== 200 || !Array.isArray(broadcasts)) throw new Error(`list /broadcasts → ${status}`);
-      for (const b of broadcasts.filter((b) => b.status === "sent")) {
+      const sent = broadcasts.filter((b) => b.status === "sent");
+      // ★Fail CLOSED (CCO #1320): an engagement read that comes back empty makes everyone look cold, and
+      //   then the oldest person who DID open is deleted with no alert. Each way it could come back empty
+      //   is an error here — so the run is "failed" (0 deletes, alerted), never "trimmed".
+      if (broadcasts.length > 0 && sent.length === 0) throw new Error("broadcasts listed, none with status 'sent'");
+      for (const b of sent) {
         for (const type of ["opened", "clicked"] as const) {
-          for (const r of await listAll(http, `/broadcasts/${String(b.id)}/recipients?type=${type}`, gap)) {
-            engaged.add(String(r.contact_id));
+          for (const r of await listAll(http, `/broadcasts/${requireString(b.id, "broadcast id")}/recipients?type=${type}`, gap)) {
+            engaged.add(requireString(r.contact_id, "recipient contact_id"));
           }
         }
       }
+      if (sent.length > 0 && engaged.size === 0) throw new Error("sent broadcasts but no opens or clicks read");
     }
 
     const victims = pickEvictions(contacts, engaged, want);
@@ -158,9 +171,28 @@ export async function trimToLimit(
   }
 }
 
+export type RoomAfterRejection = { outcome: TrimResult["outcome"]; removed: number; total?: number };
+
 /**
- * Trim after the response (next/server after()). Outside a request scope (scripts, some tests) after()
- * throws — then the trim simply runs in the background. Never throws, never blocks the caller.
+ * Resend REFUSED a create: make room for one person now (back to LIMIT − 1), so the caller can try the add once
+ * more. Synchronous on purpose — it runs only on a refusal, and the caller needs the retry's result. Never throws.
+ */
+export async function makeRoomAfterRejection(
+  tag: string,
+  http: ResendHttp | null = process.env.RESEND_API_KEY ? resendHttp(process.env.RESEND_API_KEY) : null,
+  opts: { limit?: number; gapMs?: number } = {},
+): Promise<RoomAfterRejection> {
+  if (!http) return { outcome: "failed", removed: 0 };
+  const r = await trimToLimit(http, tag, { ...opts, limit: (opts.limit ?? LIST_WINDOW_LIMIT) - 1 });
+  if (r.outcome === "failed") return { outcome: "failed", removed: 0 };
+  return { outcome: r.outcome, removed: r.outcome === "within" ? 0 : r.unsubscribed + r.noEngagement, total: r.total };
+}
+
+/**
+ * Trim after the response (next/server after()). Never throws, never blocks the caller.
+ * ★Outside a request scope after() throws — then the trim is SKIPPED (logged), not run loose in the
+ *   background: every production caller is a route handler, and an unowned background run outlives
+ *   its caller (it leaked alerts across unit tests). The next sign-up's trim catches up (≤ 5 per run).
  */
 export function scheduleListTrim(tag: string): void {
   const apiKey = process.env.RESEND_API_KEY;
@@ -172,6 +204,6 @@ export function scheduleListTrim(tag: string): void {
   try {
     after(run);
   } catch {
-    void run();
+    logger.warn(`[list-window ${tag}] no request scope — trim skipped`);
   }
 }
