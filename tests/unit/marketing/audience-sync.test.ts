@@ -16,14 +16,12 @@ vi.mock('@/lib/utils/logger', () => ({ logger: { warn: vi.fn() } }));
 const mockContactsCreate = vi.fn().mockResolvedValue({});
 const mockContactsUpdate = vi.fn().mockResolvedValue({});
 const mockSegmentsAdd = vi.fn().mockResolvedValue({});
-// ★Lookup before create (the 1,000 window, kimny 10/30): default = a new person (Resend's measured not_found).
-const mockContactsGet = vi.fn(async () => ({ data: null, error: { statusCode: 404, name: 'not_found', message: 'Contact not found' } }));
-const { mockMakeRoom } = vi.hoisted(() => ({ mockMakeRoom: vi.fn(async () => 'room') }));
-vi.mock('@/lib/marketing/list-window', () => ({ makeRoomForOne: mockMakeRoom, resendHttp: vi.fn(() => 'http') }));
+// ★The 1,000 window's trim is scheduled after a new contact is created (kimny 10/30).
+const { mockScheduleTrim } = vi.hoisted(() => ({ mockScheduleTrim: vi.fn() }));
+vi.mock('@/lib/marketing/list-window', () => ({ scheduleListTrim: mockScheduleTrim }));
 vi.mock('resend', () => ({
   Resend: vi.fn(() => ({
     contacts: {
-      get: mockContactsGet,
       create: mockContactsCreate,
       update: mockContactsUpdate,
       segments: { add: mockSegmentsAdd },
@@ -93,16 +91,15 @@ describe('audience-sync — configured', () => {
     );
   });
 
-  it('★granted, new person → room is made in the 1,000 window BEFORE the create; an existing person → no room made', async () => {
+  it('★granted: a NEW contact (create succeeds) schedules the 1,000 trim; an existing one (create errors) does not', async () => {
+    mockContactsCreate.mockResolvedValueOnce({ data: { id: 'c_1' }, error: null });
     const mod = await freshModule({ segment: 'seg_test' });
     await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
-    expect(mockMakeRoom).toHaveBeenCalledTimes(1);
-    expect(mockMakeRoom.mock.invocationCallOrder[0]).toBeLessThan(mockContactsCreate.mock.invocationCallOrder[0]);
-    mockMakeRoom.mockClear();
-    mockContactsGet.mockResolvedValueOnce({ data: { id: 'c_1' }, error: null } as never);
+    expect(mockScheduleTrim).toHaveBeenCalledWith('audience-sync');
+    mockScheduleTrim.mockClear();
+    mockContactsCreate.mockResolvedValueOnce({ data: null, error: { name: 'validation_error', message: 'Contact already exists' } });
     await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
-    expect(mockMakeRoom).not.toHaveBeenCalled();
-    expect(mockContactsCreate).toHaveBeenCalledTimes(2); // the existing path (create → re-grant) is unchanged
+    expect(mockScheduleTrim).not.toHaveBeenCalled();
   });
 
   it('withdrawn → contacts.update global unsubscribe (no audienceId)', async () => {

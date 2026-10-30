@@ -3,40 +3,47 @@
  * (kimny 2026-10-30 「どうぞ。OK」・conductor).
  *
  * ★Why: the Resend marketing plan is now the free tier (1,000 contacts, counted across the whole
- *   account, not per segment). What Resend does past the limit — refuse the add or stop the
- *   broadcast — is not documented, so the app makes room BEFORE it adds anyone.
+ *   account, not per segment).
  *
- * Call makeRoomForOne() right before creating a NEW contact (never for an existing one). When the
- * account holds LIST_WINDOW_LIMIT or more contacts, it deletes ONE contact, in this order:
- *   1. an unsubscribed contact, oldest created_at first;
- *   2. a subscribed contact with no open and no click on any sent broadcast, oldest first
+ * ★When: AFTER a new contact is created, and after the response — scheduleListTrim() hands the work
+ *   to next/server's after(). Counting pages through every contact (10 calls at 1,000) and, with no
+ *   unsubscribed contact to remove, reads every sent broadcast's opens and clicks (about 30 more):
+ *   1–5 s that a person waiting for their download link should not wait (conductor 10/30). The add
+ *   itself stays where it was, so its result (the caller's alert, demo_signups.audience_added) is
+ *   still known before the response. For a moment the account holds 1,001; Resend kept accepting
+ *   creates over the limit (conductor 10/30: POST /contacts 201 at 1,277), so the add is not lost.
+ *
+ * trimToLimit() removes contacts until the account is back at LIST_WINDOW_LIMIT (at most
+ * MAX_REMOVALS per run), in this order:
+ *   1. unsubscribed contacts, oldest created_at first;
+ *   2. subscribed contacts with no open and no click on any sent broadcast, oldest first
  *      (GET /broadcasts/{id}/recipients?type=opened|clicked — the per-person record, measured
  *      2026-10-30).
- *   Nobody who opened or clicked is removed. If no one qualifies, nothing is removed and the
- *   caller still tries the add (Resend decides).
+ *   Nobody who opened or clicked is removed. If no one qualifies, nothing is removed (logged).
  *
  * ★Resend only. Nothing here reads or writes the DB.
  * ★Logs carry counts and outcomes only — never an email or a contact id.
- * ★Never throws: every failure resolves to an outcome the caller can log; the caller's add (and the
- *   download email after it) carries on exactly as before.
+ * ★Never throws. A failure is logged at error and alerted at most once a day (the same as a failed add).
  * ★Rate limit: Resend allows 10 req/s per account. Calls here are spaced CALL_GAP_MS apart (≤ 8/s).
- *   Two adds at the same moment can each see 999 and land on 1,001; at ~6 adds a day that is
- *   accepted, and the next add brings the count back under.
+ *   Two sign-ups at the same moment each trim, and each sees the other's contact — at worst one extra
+ *   person comes off; the count still ends at or under the limit.
  */
+import { after } from "next/server";
 import { logger } from "@/lib/utils/logger";
+import { alertListTrimFailed } from "@/lib/plugins/audience-alert";
 
 export const LIST_WINDOW_LIMIT = 1000;
+const MAX_REMOVALS = 5; // one per sign-up is the normal case; a backlog is cleared a few at a time
 const CALL_GAP_MS = 125;
 const PAGE = 100;
 const MAX_PAGES = 50; // 5,000 contacts — far past the limit; stops a runaway cursor
 
 export type WindowContact = { id: string; created_at: string; unsubscribed: boolean };
-export type RoomOutcome =
-  | "room" //            under the limit — nothing removed
-  | "removed_unsubscribed"
-  | "removed_no_engagement"
-  | "full_no_candidate" // at the limit and everyone left has opened or clicked
-  | "failed"; //         could not count, read engagement or delete — nothing (more) removed
+export type TrimResult =
+  | { outcome: "within"; total: number } //                     at or under the limit — nothing removed
+  | { outcome: "trimmed"; total: number; unsubscribed: number; noEngagement: number }
+  | { outcome: "short"; total: number; unsubscribed: number; noEngagement: number } // removed what qualified, still over
+  | { outcome: "failed" };
 
 /** The minimal HTTP surface used here, so tests can drive it without the network. */
 export type ResendHttp = (method: "GET" | "DELETE", path: string) => Promise<{ status: number; body: unknown }>;
@@ -57,16 +64,18 @@ export function resendHttp(apiKey: string): ResendHttp {
 const byAge = (a: WindowContact, b: WindowContact) =>
   a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 
-/** Who goes first. Pure — the order is the whole policy, so it is tested on its own. */
-export function pickEviction(
+/** Who goes first, `count` of them. Pure — the order is the whole policy, so it is tested on its own. */
+export function pickEvictions(
   contacts: WindowContact[],
   engagedIds: ReadonlySet<string>,
-): { id: string; reason: "unsubscribed" | "no_engagement" } | null {
-  const unsub = contacts.filter((c) => c.unsubscribed).sort(byAge);
-  if (unsub.length) return { id: unsub[0].id, reason: "unsubscribed" };
-  const cold = contacts.filter((c) => !c.unsubscribed && !engagedIds.has(c.id)).sort(byAge);
-  if (cold.length) return { id: cold[0].id, reason: "no_engagement" };
-  return null;
+  count: number,
+): Array<{ id: string; reason: "unsubscribed" | "no_engagement" }> {
+  const unsub = contacts.filter((c) => c.unsubscribed).sort(byAge).map((c) => ({ id: c.id, reason: "unsubscribed" as const }));
+  const cold = contacts
+    .filter((c) => !c.unsubscribed && !engagedIds.has(c.id))
+    .sort(byAge)
+    .map((c) => ({ id: c.id, reason: "no_engagement" as const }));
+  return [...unsub, ...cold].slice(0, Math.max(0, count));
 }
 
 type ListBody = { data?: Array<Record<string, unknown>>; has_more?: boolean };
@@ -87,11 +96,11 @@ async function listAll(http: ResendHttp, base: string, gap: () => Promise<void>)
   throw new Error(`list ${base.replace(/\?.*/, "")} did not end`);
 }
 
-export async function makeRoomForOne(
+export async function trimToLimit(
   http: ResendHttp,
   tag: string,
   opts: { limit?: number; gapMs?: number } = {},
-): Promise<RoomOutcome> {
+): Promise<TrimResult> {
   const limit = opts.limit ?? LIST_WINDOW_LIMIT;
   const gapMs = opts.gapMs ?? CALL_GAP_MS;
   const gap = () => (gapMs > 0 ? new Promise<void>((r) => setTimeout(r, gapMs)) : Promise.resolve());
@@ -101,10 +110,13 @@ export async function makeRoomForOne(
       created_at: String(c.created_at),
       unsubscribed: c.unsubscribed === true,
     }));
-    if (contacts.length < limit) return "room";
+    const over = contacts.length - limit;
+    if (over <= 0) return { outcome: "within", total: contacts.length };
+    const want = Math.min(over, MAX_REMOVALS);
 
+    // Engagement is read only when the unsubscribed contacts alone cannot make the room.
     const engaged = new Set<string>();
-    if (!contacts.some((c) => c.unsubscribed)) {
+    if (contacts.filter((c) => c.unsubscribed).length < want) {
       await gap();
       const { status, body } = await http("GET", "/broadcasts");
       const broadcasts = (body as ListBody | null)?.data;
@@ -118,19 +130,48 @@ export async function makeRoomForOne(
       }
     }
 
-    const victim = pickEviction(contacts, engaged);
-    if (!victim) {
-      logger.warn(`[list-window ${tag}] at the limit and no one qualifies to remove — adding anyway`, { total: contacts.length, limit });
-      return "full_no_candidate";
+    const victims = pickEvictions(contacts, engaged, want);
+    let unsubscribed = 0;
+    let noEngagement = 0;
+    for (const v of victims) {
+      await gap();
+      const { status } = await http("DELETE", `/contacts/${v.id}`);
+      // 404 = removed in the meantime (another sign-up's trim) — it is gone either way.
+      if (status !== 200 && status !== 404) throw new Error(`delete → ${status}`);
+      if (v.reason === "unsubscribed") unsubscribed++;
+      else noEngagement++;
     }
-    await gap();
-    const { status } = await http("DELETE", `/contacts/${victim.id}`);
-    // 404 = someone else removed it in the meantime — the room is there either way.
-    if (status !== 200 && status !== 404) throw new Error(`delete → ${status}`);
-    logger.warn(`[list-window ${tag}] at the limit — removed 1 (${victim.reason})`, { total: contacts.length, limit });
-    return victim.reason === "unsubscribed" ? "removed_unsubscribed" : "removed_no_engagement";
+    const total = contacts.length - victims.length;
+    const outcome = total > limit ? "short" : "trimmed";
+    const log = outcome === "short" ? logger.error : logger.warn;
+    log(`[list-window ${tag}] over the limit — removed ${victims.length}${outcome === "short" ? ", still over" : ""}`, {
+      before: contacts.length,
+      total,
+      limit,
+      unsubscribed,
+      noEngagement,
+    });
+    return { outcome, total, unsubscribed, noEngagement };
   } catch (err) {
-    logger.error(`[list-window ${tag}] could not make room — adding anyway`, { error: String(err instanceof Error ? err.message : err) });
-    return "failed";
+    logger.error(`[list-window ${tag}] could not trim the list`, { error: String(err instanceof Error ? err.message : err) });
+    return { outcome: "failed" };
+  }
+}
+
+/**
+ * Trim after the response (next/server after()). Outside a request scope (scripts, some tests) after()
+ * throws — then the trim simply runs in the background. Never throws, never blocks the caller.
+ */
+export function scheduleListTrim(tag: string): void {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  const run = async () => {
+    const r = await trimToLimit(resendHttp(apiKey), tag);
+    if (r.outcome === "failed" || r.outcome === "short") await alertListTrimFailed(tag).catch(() => undefined);
+  };
+  try {
+    after(run);
+  } catch {
+    void run();
   }
 }
