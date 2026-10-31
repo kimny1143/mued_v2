@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MUEDSP_AUDIENCE_ID } from "@/lib/plugins/registry";
 import { MASTERCHAIN_DOWNLOAD_URL, MASTERCHAIN_WINDOWS_URL } from "@/lib/masterchain/config";
 
-const m = vi.hoisted(() => ({ live: true, windows: true, create: vi.fn(), get: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn(), warn: vi.fn(), alert: vi.fn(), record: vi.fn() }));
+const m = vi.hoisted(() => ({ live: true, windows: true, create: vi.fn(), get: vi.fn(), send: vi.fn(), ip: vi.fn(), emailLimit: vi.fn(), error: vi.fn(), warn: vi.fn(), alert: vi.fn(), record: vi.fn(), news: vi.fn() }));
 vi.mock("@/lib/masterchain/config", async (original) => ({
   ...await original<typeof import("@/lib/masterchain/config")>(),
   get MASTERCHAIN_DEMO_LIVE() { return m.live; },
@@ -17,6 +17,10 @@ vi.mock("@/lib/middleware/rate-limit", () => ({ rateLimit: m.ip, checkRateLimit:
 vi.mock("@/lib/utils/logger", () => ({ logger: { error: m.error, warn: m.warn } }));
 // ★The handler itself still never imports the DB: its one write (0065) goes through recordDemoSignup, mocked here.
 vi.mock("@/lib/masterchain/demo-signups", () => ({ recordDemoSignup: m.record }));
+vi.mock("@/lib/marketing/news-list-events", () => ({
+  recordNewsListEvent: m.news,
+  checkboxStatus: (t: unknown) => (t === true ? "granted" : "not_granted"),
+}));
 vi.mock("@/db", () => { throw new Error("Demo must not import DB"); });
 vi.mock("@/lib/plugins/entitlements", () => { throw new Error("Demo must not record ownership"); });
 import { handleMasterchainDemo, handlePaidDemo, type DemoProduct } from "@/lib/masterchain/demo-handler";
@@ -38,6 +42,7 @@ beforeEach(() => {
   m.alert.mockResolvedValue({ success: true });
   m.record.mockReset();
   m.record.mockResolvedValue(true);
+  m.news.mockResolvedValue(true);
   vi.stubEnv("OPERATOR_ALERT_EMAIL", "ops@example.com");
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -147,6 +152,10 @@ describe("masterchain demo", () => {
       audienceAdded: true,
     });
     expect(m.send.mock.invocationCallOrder[0]).toBeLessThan(m.record.mock.invocationCallOrder[0]);
+    // ★…and the answer in the news ledger (0066)
+    expect(m.news).toHaveBeenCalledExactlyOnceWith({
+      email: "person@example.com", status: "granted", surface: "demo", productKey: "masterchain", source: "muedsp_lp", locale: "ja",
+    });
   });
   it("records audienceAdded: false when a consenting person's list add failed — the record is how a re-import finds them", async () => {
     m.create.mockResolvedValue({ data: null, error: { message: "contact limit" } });
@@ -157,6 +166,13 @@ describe("masterchain demo", () => {
     await handleMasterchainDemo(request());
     expect(m.create).not.toHaveBeenCalled();
     expect(m.record).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ newsConsent: false, audienceAdded: false }));
+    expect(m.news).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ status: "not_granted", surface: "demo" }));
+  });
+  it("a failed news-ledger write (rejection) does not block the download", async () => {
+    m.news.mockRejectedValue(new Error("db down"));
+    const res = await handleMasterchainDemo(request({ email: "person@example.com", marketingOptIn: true }));
+    expect(res.status).toBe(200);
+    expect(m.send).toHaveBeenCalledTimes(1);
   });
   it.each(["rejection", "false"])("a failed DB record (%s) does not block the download or the receipt", async (mode) => {
     if (mode === "rejection") m.record.mockRejectedValue(new Error("db down"));

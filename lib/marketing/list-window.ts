@@ -22,7 +22,10 @@
  *      2026-10-30).
  *   Nobody who opened or clicked is removed. If no one qualifies, nothing is removed (logged).
  *
- * ★Resend only. Nothing here reads or writes the DB.
+ * ★The DB, once: before an UNSUBSCRIBED contact is removed, its withdrawal is written to news_list_events
+ *   (surface 'resend_footer', occurred_at NULL — Resend does not say when they unsubscribed; conductor 10/30). If that
+ *   write fails, that person is NOT removed (the next run tries again) — so a withdrawal never leaves Resend before it
+ *   is in our record. Nothing else here touches the DB; the no-engagement removals write nothing.
  * ★Logs carry counts and outcomes only — never an email or a contact id.
  * ★Never throws. A failure is logged at error and alerted at most once a day (the same as a failed add).
  * ★Rate limit: Resend allows 10 req/s per account. Calls here are spaced CALL_GAP_MS apart (≤ 8/s).
@@ -39,11 +42,19 @@ const CALL_GAP_MS = 125;
 const PAGE = 100;
 const MAX_PAGES = 50; // 5,000 contacts — far past the limit; stops a runaway cursor
 
-export type WindowContact = { id: string; created_at: string; unsubscribed: boolean };
+export type WindowContact = { id: string; created_at: string; unsubscribed: boolean; email?: string };
+/** Writes a found-in-Resend withdrawal to our record; true = written. Injected in tests. */
+export type RecordWithdrawal = (email: string) => Promise<boolean>;
+
+// ★Imported lazily so that loading this module (every add path) does not load the DB client.
+const recordFooterWithdrawal: RecordWithdrawal = async (email) => {
+  const { recordNewsListEvent } = await import("@/lib/marketing/news-list-events");
+  return recordNewsListEvent({ email, status: "withdrawn", surface: "resend_footer", source: "list_trim", occurredAt: null });
+};
 export type TrimResult =
   | { outcome: "within"; total: number } //                     at or under the limit — nothing removed
-  | { outcome: "trimmed"; total: number; unsubscribed: number; noEngagement: number }
-  | { outcome: "short"; total: number; unsubscribed: number; noEngagement: number } // removed what qualified, still over
+  | { outcome: "trimmed"; total: number; unsubscribed: number; noEngagement: number; notRecorded: number }
+  | { outcome: "short"; total: number; unsubscribed: number; noEngagement: number; notRecorded: number } // still over
   | { outcome: "failed" };
 
 /** The minimal HTTP surface used here, so tests can drive it without the network. */
@@ -79,6 +90,11 @@ export function pickEvictions(
   return [...unsub, ...cold].slice(0, Math.max(0, count));
 }
 
+/** Every candidate, in removal order (the caller stops when it has made enough room). */
+export function evictionOrder(contacts: WindowContact[], engagedIds: ReadonlySet<string>) {
+  return pickEvictions(contacts, engagedIds, contacts.length);
+}
+
 /** A field the policy depends on must be a non-empty string — otherwise the run fails closed. */
 function requireString(v: unknown, what: string): string {
   if (typeof v !== "string" || v === "") throw new Error(`${what} missing or not a string`);
@@ -106,9 +122,10 @@ async function listAll(http: ResendHttp, base: string, gap: () => Promise<void>)
 export async function trimToLimit(
   http: ResendHttp,
   tag: string,
-  opts: { limit?: number; gapMs?: number } = {},
+  opts: { limit?: number; gapMs?: number; recordWithdrawal?: RecordWithdrawal } = {},
 ): Promise<TrimResult> {
   const limit = opts.limit ?? LIST_WINDOW_LIMIT;
+  const recordWithdrawal = opts.recordWithdrawal ?? recordFooterWithdrawal;
   const gapMs = opts.gapMs ?? CALL_GAP_MS;
   const gap = () => (gapMs > 0 ? new Promise<void>((r) => setTimeout(r, gapMs)) : Promise.resolve());
   try {
@@ -116,14 +133,44 @@ export async function trimToLimit(
       id: requireString(c.id, "contact id"),
       created_at: requireString(c.created_at, "contact created_at"),
       unsubscribed: c.unsubscribed === true,
+      email: typeof c.email === "string" ? c.email : undefined,
     }));
     const over = contacts.length - limit;
     if (over <= 0) return { outcome: "within", total: contacts.length };
     const want = Math.min(over, MAX_REMOVALS);
 
-    // Engagement is read only when the unsubscribed contacts alone cannot make the room.
-    const engaged = new Set<string>();
-    if (contacts.filter((c) => c.unsubscribed).length < want) {
+    const byId = new Map(contacts.map((c) => [c.id, c]));
+    let removed = 0;
+    let unsubscribed = 0;
+    let noEngagement = 0;
+    let notRecorded = 0;
+    const remove = async (id: string) => {
+      await gap();
+      const { status } = await http("DELETE", `/contacts/${id}`);
+      // 404 = removed in the meantime (another sign-up's trim) — it is gone either way.
+      if (status !== 200 && status !== 404) throw new Error(`delete → ${status}`);
+      removed++;
+    };
+
+    // 1. Unsubscribed, oldest first — each one's withdrawal goes into our record first; if it cannot, they stay
+    //    in Resend (and in the next run's list).
+    for (const v of evictionOrder(contacts.filter((c) => c.unsubscribed), new Set())) {
+      if (removed >= want) break;
+      const email = byId.get(v.id)?.email;
+      const recorded = email ? await recordWithdrawal(email).catch(() => false) : false;
+      if (!recorded) {
+        notRecorded++;
+        continue;
+      }
+      await remove(v.id);
+      unsubscribed++;
+    }
+
+    // 2. Still short: no open and no click, oldest first. ★Engagement is read HERE, right before anyone subscribed is
+    //    considered — never skipped because unsubscribed contacts existed (a failed withdrawal write must not turn
+    //    into "nobody opened").
+    if (removed < want) {
+      const engaged = new Set<string>();
       await gap();
       const { status, body } = await http("GET", "/broadcasts");
       const broadcasts = (body as ListBody | null)?.data;
@@ -131,7 +178,7 @@ export async function trimToLimit(
       const sent = broadcasts.filter((b) => b.status === "sent");
       // ★Fail CLOSED (CCO #1320): an engagement read that comes back empty makes everyone look cold, and
       //   then the oldest person who DID open is deleted with no alert. Each way it could come back empty
-      //   is an error here — so the run is "failed" (0 deletes, alerted), never "trimmed".
+      //   is an error here — so the run is "failed" (0 more deletes, alerted), never "trimmed".
       if (broadcasts.length > 0 && sent.length === 0) throw new Error("broadcasts listed, none with status 'sent'");
       for (const b of sent) {
         for (const type of ["opened", "clicked"] as const) {
@@ -145,34 +192,37 @@ export async function trimToLimit(
         }
       }
       if (sent.length > 0 && engaged.size === 0) throw new Error("sent broadcasts but no opens or clicks read");
+      for (const v of evictionOrder(contacts.filter((c) => !c.unsubscribed), engaged)) {
+        if (removed >= want) break;
+        await remove(v.id);
+        noEngagement++;
+      }
     }
 
-    const victims = pickEvictions(contacts, engaged, want);
-    let unsubscribed = 0;
-    let noEngagement = 0;
-    for (const v of victims) {
-      await gap();
-      const { status } = await http("DELETE", `/contacts/${v.id}`);
-      // 404 = removed in the meantime (another sign-up's trim) — it is gone either way.
-      if (status !== 200 && status !== 404) throw new Error(`delete → ${status}`);
-      if (v.reason === "unsubscribed") unsubscribed++;
-      else noEngagement++;
-    }
-    const total = contacts.length - victims.length;
+    const total = contacts.length - removed;
     const outcome = total > limit ? "short" : "trimmed";
-    const log = outcome === "short" ? logger.error : logger.warn;
-    log(`[list-window ${tag}] over the limit — removed ${victims.length}${outcome === "short" ? ", still over" : ""}`, {
+    // ★notRecorded > 0 is an incident even when the room was made (CCO #1322): the withdrawal write is broken (e.g. the
+    //   code is out before 0066), so a no-open subscriber came off in place of the unsubscribed person — the reverse of
+    //   the approved order — and it would repeat on every sign-up. error + alert, not a warn nobody reads.
+    const log = outcome === "short" || notRecorded > 0 ? logger.error : logger.warn;
+    log(`[list-window ${tag}] over the limit — removed ${removed}${outcome === "short" ? ", still over" : ""}${notRecorded > 0 ? `, ${notRecorded} withdrawal(s) NOT recorded — kept in Resend` : ""}`, {
       before: contacts.length,
       total,
       limit,
       unsubscribed,
       noEngagement,
+      notRecorded,
     });
-    return { outcome, total, unsubscribed, noEngagement };
+    return { outcome, total, unsubscribed, noEngagement, notRecorded };
   } catch (err) {
     logger.error(`[list-window ${tag}] could not trim the list`, { error: String(err instanceof Error ? err.message : err) });
     return { outcome: "failed" };
   }
+}
+
+/** failed, still over, or a withdrawal that could not be recorded (CCO #1322) → the daily alert. */
+export function needsAlert(r: TrimResult): boolean {
+  return r.outcome === "failed" || r.outcome === "short" || (r.outcome === "trimmed" && r.notRecorded > 0);
 }
 
 export type RoomAfterRejection = { outcome: TrimResult["outcome"]; removed: number; total?: number };
@@ -203,7 +253,7 @@ export function scheduleListTrim(tag: string): void {
   if (!apiKey) return;
   const run = async () => {
     const r = await trimToLimit(resendHttp(apiKey), tag);
-    if (r.outcome === "failed" || r.outcome === "short") await alertListTrimFailed(tag).catch(() => undefined);
+    if (needsAlert(r)) await alertListTrimFailed(tag).catch(() => undefined);
   };
   try {
     after(run);

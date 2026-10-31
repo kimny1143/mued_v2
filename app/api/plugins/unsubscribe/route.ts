@@ -13,6 +13,7 @@ import { NextRequest } from "next/server";
 import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
 import { unsubscribeMuedspContact, unsubscribePluginContact } from "@/lib/plugins/audience";
 import { verifyUnsubscribeToken, type UnsubscribeScope } from "@/lib/plugins/unsubscribe-token";
+import { recordNewsListEvent } from "@/lib/marketing/news-list-events";
 import { logger } from "@/lib/utils/logger";
 
 function isPluginKey(v: string | null | undefined): v is PluginKey {
@@ -81,6 +82,11 @@ async function processUnsubscribe(
   //   `{data, error}` rather than throwing (see lib/plugins/audience.ts). The catch is kept for a
   //   genuine transport throw, and both paths land on "failed" rather than on silence.
   const scope = plugin;
+  // ★The withdrawal itself, in our record (0066), whether or not Resend takes the update below: the person asked,
+  //   with a valid link, and a later rebuild of the list from the DB must leave them out. Best-effort, never blocks.
+  await recordNewsListEvent({
+    email, status: "withdrawn", surface: "unsubscribe_link", productKey: scope, source: req.method === "POST" ? "one_click" : "link",
+  }).catch(() => false);
   const suppressed = await (scope === "masterchain"
     ? unsubscribeMuedspContact(email)
     : unsubscribePluginContact(scope, email)

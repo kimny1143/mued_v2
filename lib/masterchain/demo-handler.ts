@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { addContactIfAbsent } from "@/lib/plugins/audience";
+import { checkboxStatus, recordNewsListEvent } from "@/lib/marketing/news-list-events";
 import { alertAudienceAddFailed } from "@/lib/plugins/audience-alert";
 import { z } from "zod";
 import { rateLimit, checkRateLimit } from "@/lib/middleware/rate-limit";
@@ -122,6 +123,10 @@ export async function handlePaidDemo(request: NextRequest, product: DemoProduct)
       : null;
   await recordDemoSignup({
     productKey: product.key, source: product.source, email, locale, firstTouch, newsConsent: marketingOptIn, audienceAdded: captured,
+  }).catch(() => false);
+  // ★The same answer in the news ledger (0066) — demo_signups keeps one row per product, this keeps every answer.
+  await recordNewsListEvent({
+    email, status: checkboxStatus(marketingOptIn), surface: "demo", productKey: product.key, source: product.source, locale,
   }).catch(() => false);
   return success();
 }

@@ -15,6 +15,7 @@ import { rateLimit, checkRateLimit } from "@/lib/middleware/rate-limit";
 import { addPluginSubscriber, isPluginAudienceEnabled } from "@/lib/plugins/audience";
 import { alertAudienceAddFailed } from "@/lib/plugins/audience-alert";
 import { recordPluginEntitlement } from "@/lib/plugins/entitlements";
+import { checkboxStatus, recordNewsListEvent } from "@/lib/marketing/news-list-events";
 import { emailService, type EmailResult } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
 import { PLUGIN_DIST, HONEYPOT_FIELD, isHoneypotTripped, type PluginKey } from "@/lib/plugins/registry";
@@ -174,6 +175,11 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
   await recordPluginEntitlement(plugin, { email, source, firstTouch, locale }).catch(() => {
     /* recordPluginEntitlement already logs + swallows — this is belt-and-suspenders, never blocks 200 */
   });
+  // ★The news checkbox as answered, ticked or not (0066 news_list_events — the record; Resend is the copy).
+  //   Best-effort like the entitlement: never affects the 200.
+  await recordNewsListEvent({
+    email, status: checkboxStatus(marketingOptIn), surface: "download", productKey: plugin, source, locale,
+  }).catch(() => false);
 
   return apiSuccess({ subscribed: true });
 }
