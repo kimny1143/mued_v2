@@ -8,6 +8,9 @@
  * ★Rebuild rule (for whoever recreates the list from the DB): an email is on the list only when its LATEST
  *   granted/not_granted row is `granted` AND there is no `withdrawn` row recorded after that granted row.
  *   ★No row at all = unknown (everything before 2026-10-30) — never treated as consent.
+ *   ★Repeated `withdrawn` rows for one email are normal (measured 2026-11-01: two footer-link GETs 8 s apart — a
+ *   double click or a mail client loading the link). Not de-duplicated on write: under the rule above a second
+ *   withdrawn row changes nothing, so readers judge by the latest row and never count rows.
  *
  * ★Why one append-only table and not columns (conductor (a)): the purchase and download inserts are the deliveries
  *   (license, download link). A column there would make a missing migration break a purchase; a separate best-effort
