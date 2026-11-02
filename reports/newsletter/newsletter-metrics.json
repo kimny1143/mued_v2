@@ -1,6 +1,6 @@
 {
   "schema": "newsletter-metrics/v1",
-  "generated_at": "2026-11-01T10:39:47+09:00",
+  "generated_at": "2026-11-02T10:39:54+09:00",
   "source": "Resend API（/emails/metrics・/broadcasts/{id}/clicked-links）。plugin-funnel-collector が毎朝書き出す（mued_v2 scripts/emit-newsletter-metrics.ts）。",
   "notes": [
     "「押した人」には配信停止のリンクを押した人も入る（Resend の数え方）。製品へのリンクの数は下のリンク別を見る。",
@@ -25,16 +25,16 @@
         "bounced_transient": 21,
         "bounced_permanent": 0,
         "suppressed": 29,
-        "unique_opened": 301,
-        "unique_clicked": 49,
-        "unsubscribed": 10,
+        "unique_opened": 302,
+        "unique_clicked": 50,
+        "unsubscribed": 11,
         "complained": 0
       },
       "rates": {
         "delivery": 98.1,
-        "open": 27.79,
-        "click": 4.52,
-        "unsubscribe": 0.92,
+        "open": 27.89,
+        "click": 4.62,
+        "unsubscribe": 1.02,
         "complaint": 0
       },
       "hourly": [
@@ -201,8 +201,8 @@
           "label": "日本語の製品ページ",
           "lang": "ja",
           "kind": "product",
-          "unique": 7,
-          "clicks": 12
+          "unique": 8,
+          "clicks": 14
         },
         {
           "label": "/en/eula",
@@ -215,8 +215,8 @@
           "label": "配信停止",
           "lang": "",
           "kind": "unsubscribe",
-          "unique": 10,
-          "clicks": 16
+          "unique": 11,
+          "clicks": 18
         }
       ]
     },
