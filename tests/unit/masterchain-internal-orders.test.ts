@@ -50,5 +50,10 @@ it("★today no count under lib/funnel reads masterchain purchases — one that 
   //   make that file leave INTERNAL_ORDER_IDS out (the loop then checks it). The reconcile script
   //   (scripts/ops/reconcile-fastspring-orders.ts) matches fulfilment, not sales, so it rightly keeps every order.
   expect(readsPurchases).toEqual([]);
-  for (const f of readsPurchases) expect(readFileSync(f, "utf8"), f).toMatch(/INTERNAL_ORDER_IDS|LAST_INTERNAL_ORDER_AT/);
+  // ★INTERNAL_ORDER_IDS only (CCO #1327): LAST_INTERNAL_ORDER_AT is masterchain-only (9/30), so a count that also
+  //   reads MUEDvox orders could cut its window with it and still count the 10/13 vox test order. Leave orders
+  //   out by id.
+  for (const f of readsPurchases) expect(readFileSync(f, "utf8"), f).toMatch(/INTERNAL_ORDER_IDS/);
+  // Positive control: a file that only cuts by the date does not pass.
+  expect("where created_at > LAST_INTERNAL_ORDER_AT").not.toMatch(/INTERNAL_ORDER_IDS/);
 });

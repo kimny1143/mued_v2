@@ -48,7 +48,8 @@ export const INTERNAL_ORDER_IDS: readonly string[] = INTERNAL_ORDERS.map((o) => 
 /**
  * The latest internal MASTERCHAIN order time — the masterchain launch window (LAUNCH_AT) must start after it.
  * ★masterchain only: the launch numbers count masterchain purchase emails, so a MUEDvox test order (10/13) is
- * not in that window and must not move this date.
+ * not in that window and must not move this date. ★Not an exclusion for order or sales counts: those leave
+ * internal orders out by INTERNAL_ORDER_IDS (a date cut at 9/30 would still count the 10/13 vox test order).
  */
 export const LAST_INTERNAL_ORDER_AT: string =
   INTERNAL_ORDERS.filter((o) => o.productId === "muedsp_masterchain").map((o) => o.orderedAt).sort().at(-1) ??
