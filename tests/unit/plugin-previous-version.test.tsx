@@ -134,7 +134,7 @@ describe("<PluginVersionNotice> on the product page", () => {
     expect(Array.from(details.querySelectorAll("a")).map((a) => a.getAttribute("href"))).toEqual(["/dashboard/plugins"]);
   });
 
-  it("MUEDlim: the 1:1-on screen sits in the section, with an alt that names the version — and the file exists", () => {
+  it("MUEDlim: the 1:1-on screen sits in the section, with an alt that names the version it was added in — and the file exists", () => {
     const { getByTestId } = render(<PluginVersionDetails plugin="muedlim" previous={FIXTURE} />);
     const img = getByTestId("plugin-version-added-image");
     expect(existsSync(join(ROOT, "public", img.getAttribute("src")!))).toBe(true);
@@ -142,7 +142,10 @@ describe("<PluginVersionNotice> on the product page", () => {
     for (const m of [ja, en]) {
       expect(m.muedlim.versionNotice.addedImageAlt).toContain("MUEDlim {since}");
       expect(m.muedlim.versionNotice.addedImageAlt).toContain("GAIN REDUCTION −2.7 dB");
-      expect(m.muedlim.visuals.faceplateAlt).toContain("MUEDlim 1.0.1"); // the hero image is the 1.0.1 screen too
+      // The hero image was shot on 1.0.1 and shows no version; its alt names none (site audit 2026-11-03) — the
+      // current number would name a build nobody shot, and "1.0.1" read as stale next to the version on sale.
+      expect(m.muedlim.visuals.faceplateAlt).toMatch(/^(The MUEDlim plugin interface|MUEDlim のプラグイン画面)/);
+      expect(m.muedlim.visuals.faceplateAlt).not.toMatch(/\b\d+\.\d+\.\d+\b/);
     }
     // ★A new file name, not an overwrite of faceplate.webp: the image optimizer and browsers cache by URL, so the
     //   same path kept showing the 1.0.0 screen (seen locally 2026-10-09). MUEDsat names its faceplates by version too.
