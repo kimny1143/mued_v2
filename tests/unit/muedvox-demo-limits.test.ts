@@ -9,23 +9,29 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { emailTemplates } from "@/lib/services/email.service";
 
 const ROOT = join(__dirname, "..", "..");
 const load = (l: string) => JSON.parse(readFileSync(join(ROOT, "messages", `muedvox.${l}.json`), "utf8"));
 
-const PLACES = (m: ReturnType<typeof load>): Record<string, string> => ({
-  "demo.body": m.demo.body,
-  "demoForm.demoNote": m.demoForm.demoNote,
-  "faq demo answer": m.faq.items.find((i: { id: string }) => i.id === "demo").answer,
-});
+// ★Four places, not three (CCO #1325): the demo receipt mail states the same limits ("the same as the page").
+const PLACES = (l: "en" | "ja"): Record<string, string> => {
+  const m = load(l);
+  return {
+    "demo.body": m.demo.body,
+    "demoForm.demoNote": m.demoForm.demoNote,
+    "faq demo answer": m.faq.items.find((i: { id: string }) => i.id === "demo").answer,
+    "demo receipt mail (text)": emailTemplates.muedvoxDemoDownload({ locale: l }).text,
+  };
+};
 
 const NEEDS: Record<string, RegExp[]> = {
   en: [/never expires/, /every 45 seconds/, /about 3 seconds/, /Saving presets/, /MIDI files \(Save MIDI…\)/, /need a license/],
   ja: [/期限なし/, /45 秒ごと/, /3 秒ほど/, /プリセットの保存/, /MIDI ファイルの書き出し（Save MIDI…）/, /製品版のみ/],
 };
 
-describe.each(["en", "ja"])("/muedvox demo limits (%s)", (l) => {
-  const places = PLACES(load(l));
+describe.each(["en", "ja"] as const)("/muedvox demo limits (%s)", (l) => {
+  const places = PLACES(l);
 
   it.each(Object.keys(places))("%s states all four limits", (k) => {
     const s = places[k];
