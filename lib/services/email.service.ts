@@ -1096,7 +1096,9 @@ Hoo MCP経由の自動送信
    * MUEDvox 1.0.1's demo does (mued-vox #213; the wording is conductor's 2026-10-15, the same as the page): no time
    * limit, the HARMONY drops out for about 3 s every 45 s of sound while the lead keeps playing, settings save with
    * the session, and saving presets from the plug-in's own menu needs a key (DAW presets still work — the FAQ says
-   * so; the mail keeps the short form). "Buy MUEDvox" inside the plugin is real: the DEMO /
+   * so; the mail keeps the short form). Since 1.1.0, Save MIDI… also needs a key (kimny 2026-11-03; VOX: greyed
+   * out and "(needs a license)" without one) — tests/unit/muedvox-demo-limits.test.ts keeps this line and the page's
+   * three places saying the same four limits. "Buy MUEDvox" inside the plugin is real: the DEMO /
    * LICENSED badge opens the key window, which has it.
    */
   muedvoxDemoDownload(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string; windowsUrl?: string | null }): { subject: string; html: string; text: string } {
@@ -1104,8 +1106,8 @@ Hoo MCP経由の自動送信
     const subject = isJa ? 'MUEDvox デモのダウンロード' : 'Your MUEDvox demo download';
     const intro = isJa ? 'MUEDvox のデモをお試しいただき、ありがとうございます。' : 'Thanks for trying the MUEDvox demo.';
     const limits = isJa
-      ? '体験版は期限なし。45 秒ごとにハモリが 3 秒ほど抜けます（歌は鳴り続けます）。プリセットの保存は製品版のみ。体験版で作ったセッションは、ライセンスを入れた後もそのまま開けます。'
-      : "The demo never expires: every 45 seconds the harmony drops out for about 3 seconds (your lead keeps playing). Saving presets needs a license; sessions made in the demo open unchanged once you add one.";
+      ? '体験版は期限なし。45 秒ごとにハモリが 3 秒ほど抜けます（歌は鳴り続けます）。プリセットの保存と MIDI ファイルの書き出し（Save MIDI…）は製品版のみ。体験版で作ったセッションは、ライセンスを入れた後もそのまま開けます。'
+      : "The demo never expires: every 45 seconds the harmony drops out for about 3 seconds (your lead keeps playing). Saving presets and saving MIDI files (Save MIDI…) need a license; sessions made in the demo open unchanged once you add one.";
     const label = isJa ? 'デモをダウンロード' : 'Download the demo';
     const formats = 'AU · VST3 · AAX (Pro Tools) · macOS';
     const buyUrl = `${APP_URL}/l/vox-demo-mail`;
