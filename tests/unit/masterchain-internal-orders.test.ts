@@ -5,7 +5,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { INTERNAL_ORDERS, INTERNAL_ORDER_IDS } from "@/lib/masterchain/internal-orders";
+import { INTERNAL_ORDERS, INTERNAL_ORDER_IDS, LAST_INTERNAL_ORDER_AT } from "@/lib/masterchain/internal-orders";
 
 it("lists kimny's confirmation purchase by the ids FastSpring gave it", () => {
   expect(INTERNAL_ORDER_IDS).toContain("jrdPficIRayr15KZEyz0gg");
@@ -13,6 +13,23 @@ it("lists kimny's confirmation purchase by the ids FastSpring gave it", () => {
   expect(o.reference).toBe("GLASSWERKSJP260930-7382-30122");
   expect(o.note).toContain("全額返金を確定");
   expect(new Set(INTERNAL_ORDER_IDS).size).toBe(INTERNAL_ORDER_IDS.length);
+});
+
+it("lists the MUEDvox test purchase of 10/13 (kimny 2026-11-03 via conductor), with its product", () => {
+  expect(INTERNAL_ORDER_IDS).toContain("k6D9k0AHQ6GhSBNat7KvFg");
+  const o = INTERNAL_ORDERS.find((x) => x.orderId === "k6D9k0AHQ6GhSBNat7KvFg")!;
+  expect(o.productId).toBe("muedsp_vox");
+  expect(o.orderedAt).toBe("2026-10-13T13:56:41Z");
+  expect(o.note).toContain("全額返金");
+  // ★Every order names its product, so a per-product count can pick its own.
+  for (const x of INTERNAL_ORDERS) expect(["muedsp_masterchain", "muedsp_vox"]).toContain(x.productId);
+});
+
+it("★LAST_INTERNAL_ORDER_AT is the last MASTERCHAIN internal order — the vox test order does not move it", () => {
+  // Positive control: the vox order is later than the masterchain one, so an all-products max would differ.
+  const vox = INTERNAL_ORDERS.find((x) => x.productId === "muedsp_vox")!;
+  expect(Date.parse(vox.orderedAt)).toBeGreaterThan(Date.parse(LAST_INTERNAL_ORDER_AT));
+  expect(LAST_INTERNAL_ORDER_AT).toBe("2026-09-30T20:01:23Z");
 });
 
 it("★today no count under lib/funnel reads masterchain purchases — one that does must leave the internal orders out (CCO #1195)", () => {
@@ -33,5 +50,10 @@ it("★today no count under lib/funnel reads masterchain purchases — one that 
   //   make that file leave INTERNAL_ORDER_IDS out (the loop then checks it). The reconcile script
   //   (scripts/ops/reconcile-fastspring-orders.ts) matches fulfilment, not sales, so it rightly keeps every order.
   expect(readsPurchases).toEqual([]);
-  for (const f of readsPurchases) expect(readFileSync(f, "utf8"), f).toMatch(/INTERNAL_ORDER_IDS|LAST_INTERNAL_ORDER_AT/);
+  // ★INTERNAL_ORDER_IDS only (CCO #1327): LAST_INTERNAL_ORDER_AT is masterchain-only (9/30), so a count that also
+  //   reads MUEDvox orders could cut its window with it and still count the 10/13 vox test order. Leave orders
+  //   out by id.
+  for (const f of readsPurchases) expect(readFileSync(f, "utf8"), f).toMatch(/INTERNAL_ORDER_IDS/);
+  // Positive control: a file that only cuts by the date does not pass.
+  expect("where created_at > LAST_INTERNAL_ORDER_AT").not.toMatch(/INTERNAL_ORDER_IDS/);
 });
