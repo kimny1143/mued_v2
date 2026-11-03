@@ -46,13 +46,13 @@ vi.mock("next/navigation", () => ({
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ host: "mued.jp" }) }));
 afterEach(cleanup);
 
-// ★Copied from mued-vox a8cc05e9 (#236: 1.1.0 + sending chords from Logic Pro in ch.5, two Logic rows in ch.10) with
-//   git show a8cc05e9c594e9a0bb3492e2dc62c526334cc678:docs/manual/MUEDvox-manual.<locale>.md (shasum -a 256,
-//   2026-10-21). Before: badbaae0 (1.1.0, 2026-10-20), eaf37abe (1.0.2, 2026-10-17), e1c88af5 (1.0.1, never shipped).
-//   Update only together with a fresh byte copy.
+// ★Copied from mued-vox 0f718c49 (#246: the license-key section names Save MIDI… as needing a key, line 25 only)
+//   with git show 0f718c495be16925dcf02af9c7337f81ff009aa8:docs/manual/MUEDvox-manual.<locale>.md (shasum -a 256,
+//   2026-11-03). Before: a8cc05e9 (#236, Logic Pro chords, 2026-10-21), badbaae0 (1.1.0, 2026-10-20), eaf37abe
+//   (1.0.2, 2026-10-17), e1c88af5 (1.0.1, never shipped). Update only together with a fresh byte copy.
 const MANUAL_SHA256 = {
-  en: "c50f6a52b3796932358250ff799eddf7f93d8a855a72f9a9ebc0193c6faa4b5c",
-  ja: "1b435b4c57a48ab7cd8440f38f006c868225e56ccfeef43108f07efba39f8121",
+  en: "346f5f76265b9df344cc46775cf90318a3a760ce8bf3e6e5350a8c6737bc145e",
+  ja: "b008fb05c8c3b619bbb3d0f429fbde2bf975c960f8f2fcf28d76aac2ae068f69",
 };
 
 describe("★the text is VOX's, byte for byte", () => {

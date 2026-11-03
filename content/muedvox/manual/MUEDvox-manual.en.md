@@ -22,7 +22,7 @@ To update from 1.0.0, 1.0.1 or 1.0.2, install the new version over it (Mac: open
 Drag the bottom-right corner of the plug-in's screen to scale the whole of it (50 to 400 %). On Windows it opens at a size that fits your display (100, 75, 60 or 50 %). The size you set stays while the plug-in is in place (closing and opening its window keeps it). It is not saved: a newly inserted plug-in, or a session opened again, starts at the first size.
 
 ### License key
-Without a key MUEDvox runs as a demo, with no time limit. **Every 45 seconds of sound the harmonies drop out for about 3 seconds, then come back; the lead goes on.** Exports have the gaps too. Settings made in the demo are saved with the session and open unchanged once you enter a key. Saving presets from MUEDvox's own preset menu (Save preset…) needs a key; presets saved with your DAW's own preset feature work in the demo too (chapter 7). The badge at the bottom right reads **DEMO · ENTER LICENSE**.
+Without a key MUEDvox runs as a demo, with no time limit. **Every 45 seconds of sound the harmonies drop out for about 3 seconds, then come back; the lead goes on.** Exports have the gaps too. Settings made in the demo are saved with the session and open unchanged once you enter a key. Saving presets from MUEDvox's own preset menu (Save preset…) and saving the harmony as a MIDI file (Save MIDI…, chapter 9) need a key; presets saved with your DAW's own preset feature work in the demo too (chapter 7). The badge at the bottom right reads **DEMO · ENTER LICENSE**.
 
 To enter a key, click the DEMO badge at the bottom right of the window and do one of these:
 - drop your license file on the panel
