@@ -8,9 +8,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/utils/logger", () => ({ logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() } }));
-const { afterSpy, alertSpy } = vi.hoisted(() => ({ afterSpy: vi.fn(), alertSpy: vi.fn(async () => undefined) }));
+const { afterSpy, alertSpy, recordEventSpy } = vi.hoisted(() => ({
+  afterSpy: vi.fn(),
+  alertSpy: vi.fn(async () => undefined),
+  recordEventSpy: vi.fn(async (_evt: unknown) => true),
+}));
 vi.mock("next/server", () => ({ after: afterSpy }));
 vi.mock("@/lib/plugins/audience-alert", () => ({ alertListTrimFailed: alertSpy, alertAudienceAddFailed: vi.fn() }));
+// The DEFAULT recorder (used by scheduleListTrim) lazily imports this — the tests that pass their own recorder never reach it.
+vi.mock("@/lib/marketing/news-list-events", () => ({ recordNewsListEvent: recordEventSpy }));
 
 import {
   LIST_WINDOW_LIMIT,
@@ -182,6 +188,21 @@ describe("trimToLimit", () => {
     expect(r2).toMatchObject({ notRecorded: 1, noEngagement: 1 });
   });
 
+  it("★CCO #1322: MIXED writes — the recorded withdrawal is removed, the unrecorded one stays, the rest comes from a no-open person, and it alerts", async () => {
+    const cs = people(LIST_WINDOW_LIMIT + 2);
+    cs[3].unsubscribed = true; //  write fails → stays
+    cs[7].unsubscribed = true; //  write succeeds → removed
+    const acct = fakeAccount(cs, { opened: ["c0000"] });
+    const rec = async (email: string) => email === "p7@example.com";
+    const result = await trimToLimit(acct.http, "t", { gapMs: 0, recordWithdrawal: rec });
+    expect(result).toEqual({ outcome: "trimmed", total: LIST_WINDOW_LIMIT, unsubscribed: 1, noEngagement: 1, notRecorded: 1 });
+    expect(acct.live.some((c) => c.id === "c0003")).toBe(true); //  unrecorded — kept
+    expect(acct.live.some((c) => c.id === "c0007")).toBe(false); // recorded — removed
+    expect(acct.live.some((c) => c.id === "c0000")).toBe(true); //  opened — kept
+    expect(acct.live.some((c) => c.id === "c0001")).toBe(false); // oldest no-open — removed
+    expect(needsAlert(result)).toBe(true);
+  });
+
   it("★CCO #1321: a MIXED read (real ids + null + one record missing the key) fails closed — 0 deleted", async () => {
     const acct = fakeAccount(people(LIST_WINDOW_LIMIT + 1), { opened: ["c0000", "c0001"] });
     const http: ResendHttp = async (m, p) => {
@@ -292,6 +313,35 @@ describe("scheduleListTrim — after the response", () => {
     expect(alertSpy).toHaveBeenCalledWith("t");
     delete process.env.RESEND_API_KEY;
   });
+
+  it("★CCO #1322: the scheduled run with the DEFAULT recorder failing → the room is made AND the daily alert is sent", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    const cs = people(LIST_WINDOW_LIMIT + 1);
+    cs[5].unsubscribed = true;
+    const acct = fakeAccount(cs, { opened: ["c0000"] });
+    vi.mocked(global.fetch).mockImplementation(async (input, init) => {
+      const url = new URL(String(input));
+      const { status, body } = await acct.http((init?.method ?? "GET") as "GET" | "DELETE", url.pathname + url.search);
+      return new Response(body === null ? null : JSON.stringify(body), { status });
+    });
+    recordEventSpy.mockResolvedValue(false); // e.g. the code is out before the table
+    try {
+      scheduleListTrim("t");
+      const run = afterSpy.mock.calls[0][0] as () => Promise<void>;
+      await run();
+      // the default recorder was the one asked, with the footer surface
+      expect(recordEventSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ email: "p5@example.com", status: "withdrawn", surface: "resend_footer", source: "list_trim", occurredAt: null }),
+      );
+      expect(acct.live.some((c) => c.id === "c0005")).toBe(true); //  not recorded → kept
+      expect(acct.live).toHaveLength(LIST_WINDOW_LIMIT); //            the room still came (a no-open person)
+      expect(alertSpy).toHaveBeenCalledWith("t"); //                   ★the wiring: needsAlert → alertListTrimFailed
+    } finally {
+      recordEventSpy.mockResolvedValue(true);
+      vi.mocked(global.fetch).mockReset();
+      delete process.env.RESEND_API_KEY;
+    }
+  }, 15_000);
 
   it("★outside a request scope (after() throws): the trim is skipped and logged — never run loose", () => {
     process.env.RESEND_API_KEY = "re_test";
