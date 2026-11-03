@@ -93,9 +93,6 @@ export function MuedlimLandingContent() {
           </div>
         </section>
 
-        {/* What the current version changes for existing sessions (only while a previous build is kept). */}
-        <PluginVersionDetails plugin="muedlim" />
-
         {/* What it is — one short paragraph (provenance: pulled from the masterchain, made free). */}
         <section className="border-t border-white/5 px-6 py-14">
           <div className="mx-auto max-w-3xl">
@@ -123,6 +120,11 @@ export function MuedlimLandingContent() {
             <p className="mt-5 text-sm leading-relaxed text-white/45">{ta("bypassNote")}</p>
           </div>
         </section>
+
+        {/* What the current version changes for existing sessions (only while a previous build is kept).
+            ★After what the plugin is and its controls (site audit C4, Chief 2026-11-03): a first visit reads the product
+            before the compatibility notes. The hero notice still links here (#version-notes). */}
+        <PluginVersionDetails plugin="muedlim" />
 
         {/* Why it's free — one condensed paragraph, then a text link back to the hero form. No second form. */}
         <section className="border-t border-white/5 px-6 py-14">
