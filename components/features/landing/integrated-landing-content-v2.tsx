@@ -120,8 +120,8 @@ export function IntegratedLandingContentV2() {
           render={RENDER_MASTER}
           renderAlt={
             isJa
-              ? "MUEDsp masterchain 1.0.1 の画面"
-              : "The MUEDsp masterchain 1.0.1 screen"
+              ? "MUEDsp masterchain の画面"
+              : "The MUEDsp masterchain screen"
           }
           renderW={2186}
           renderH={910}

@@ -92,11 +92,25 @@ it("★the masterchain image is the real LICENSED 1.0.1 screen everywhere — ne
     expect(src, f).not.toMatch(/"\/muedsp\/masterchain-(mock|1\.0\.1-demo)\.webp"/);
   }
   // ★The captions say what it is — and no longer "(demo)": the screen is the licensed plugin.
+  // ★No version number (site audit 2026-11-03, conductor): the shot was taken on 1.0.1 and shows no version, while
+  //   the build on sale moved on (1.0.3). "1.0.1" read as stale; the current number would name a build nobody shot.
   for (const m of [ja, en]) {
-    expect(m.muedsp.masterchain.mockLabel).toContain("1.0.1");
-    for (const v of [m.muedsp.masterchain.mockLabel, m.studioShowroom.masterAlt, m.studioShowroom.mockNote]) expect(v).not.toMatch(/デモ|demo/i);
+    expect(m.muedsp.masterchain.mockLabel).toContain("masterchain");
+    for (const v of [m.muedsp.masterchain.mockLabel, m.studioShowroom.masterAlt, m.studioShowroom.mockNote]) {
+      expect(v).not.toMatch(/デモ|demo/i);
+      expect(v).not.toMatch(SEMVER);
+    }
   }
+  for (const f of ["components/features/muedsp-landing/muedsp-landing-content.tsx", "components/features/landing/integrated-landing-content-v2.tsx"]) {
+    const src = readFileSync(f, "utf8");
+    expect(src, f).toContain('"The MUEDsp masterchain screen"');
+    expect(src, f).toContain('"MUEDsp masterchain の画面"');
+  }
+  // ★Positive control: the pattern does match the old caption.
+  expect(SEMVER.test("masterchain 1.0.1 の画面")).toBe(true);
 });
+
+const SEMVER = /\b\d+\.\d+\.\d+\b/;
 
 it("★llms.txt: the price leads and the demo is a footnote; while purchase is closed it still says sales have not started (kimny / CCO 2026-09-30)", () => {
   const src = readFileSync("app/llms.txt/route.ts", "utf8");

@@ -106,4 +106,16 @@ describe("/muedsp#windows — steps only, never a zip link", () => {
     const portal = JSON.parse(readFileSync(join(ROOT, "messages", `${l}.json`), "utf8")).pluginPortal.windows;
     expect(portal.howto).toMatch(/外側のフォルダは入れず|Don't copy that outer folder/);
   });
+
+  // ★The folder example names the zip being served (site audit 2026-11-03: it still said 1.0.1 a release later).
+  it.each(["ja", "en"])("%s copy: the outer-folder example carries the MUEDrive Windows version on offer", (l) => {
+    const m = JSON.parse(readFileSync(join(ROOT, "messages", `${l}.json`), "utf8"));
+    const want = `MUEDrive-${WINDOWS_BETA.muedrive.version}-win-x64-…`;
+    for (const s of [m.muedsp.windows.steps.join("\n"), m.pluginPortal.windows.howto]) {
+      const named = s.match(/MUEDrive-\d+\.\d+\.\d+-win-x64-…/g) ?? [];
+      // ★Positive control: the example is there at all (an empty list would make the next line vacuous).
+      expect(named.length).toBeGreaterThan(0);
+      expect(named.every((n: string) => n === want)).toBe(true);
+    }
+  });
 });

@@ -146,8 +146,8 @@ export function MuedspLandingContent() {
                   src={MASTERCHAIN_MOCK}
                   alt={
                     isJa
-                      ? "MUEDsp masterchain 1.0.1 の画面"
-                      : "The MUEDsp masterchain 1.0.1 screen"
+                      ? "MUEDsp masterchain の画面"
+                      : "The MUEDsp masterchain screen"
                   }
                   width={2186}
                   height={910}

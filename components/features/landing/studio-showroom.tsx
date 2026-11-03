@@ -230,7 +230,12 @@ export async function StudioShowroom({
             )}
 
             <div className={styles.collectionIntro}>
-              <h3>{t("modulesTitle")}</h3>
+              {/* ★The product names lead the heading (site audit C6, Chief 2026-11-03): the free row is what search and
+                  first visits look for by name. Names only, from the cards below — no new copy. */}
+              <h3 data-testid="showroom-modules-heading">
+                <span className={styles.collectionNames}>{modules.map((m) => m.name).join(" · ")}</span>
+                <span className={styles.collectionTitle}>{t("modulesTitle")}</span>
+              </h3>
               <p>{t("modulesBody")}</p>
             </div>
             <div className={styles.modules}>

@@ -484,6 +484,18 @@
   font-weight: 500;
 }
 
+.collectionNames {
+  display: block;
+}
+
+.collectionTitle {
+  display: block;
+  margin-top: 6px;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: #595b53;
+}
+
 .collectionIntro p {
   max-width: 450px;
   font-size: 12px;

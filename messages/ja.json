@@ -30,9 +30,9 @@
     "explore": "制作の道具を見る",
     "hooAlt": "琥珀色の目をしたHooが、スタジオのミキシングコンソールに座っている",
     "pluginCollection": "マスタリング・プラグイン コレクション",
-    "masterAlt": "Hooを背景にしたMUEDsp masterchain 1.0.1 の画面",
+    "masterAlt": "Hooを背景にしたMUEDsp masterchain の画面",
     "inDevelopment": "作曲家のためのマスターチェーン",
-    "mockNote": "masterchain 1.0.1 の画面。製品の提供状況は詳細ページをご覧ください。",
+    "mockNote": "masterchain の画面。製品の提供状況は詳細ページをご覧ください。",
     "modulesTitle": "まずは、ひとつの音から。",
     "modulesBody": "無料のプラグインを、あなたのセッションで。masterchainの段から、独立したエフェクトまで。",
     "freeAlpha": "無料",
@@ -2501,7 +2501,7 @@
       "buyLabelLive": "masterchain を購入",
       "eulaConsentPrefix": "EULA を読み、内容に同意します:",
       "eulaLabel": "使用許諾契約",
-      "mockLabel": "masterchain 1.0.1 の画面",
+      "mockLabel": "masterchain の画面",
       "controlsLead": "こんなふうに使います。",
       "controls": {
         "ceiling": {
@@ -2623,7 +2623,7 @@
       "steps": [
         "各プラグインのページでメールアドレスを登録します（登録済みの方は不要です）。",
         "ポータルにサインインし、「Windows 版（ベータ）」から ZIP をダウンロードします。",
-        "ZIP を展開すると、外側のフォルダ（例: MUEDrive-1.0.1-win-x64-…）ができます。外側のフォルダは入れず、中の「.vst3」フォルダだけを C:\\Program Files\\Common Files\\VST3\\ にコピーします（管理者の許可が要ることがあります）。",
+        "ZIP を展開すると、外側のフォルダ（例: MUEDrive-1.0.2-win-x64-…）ができます。外側のフォルダは入れず、中の「.vst3」フォルダだけを C:\\Program Files\\Common Files\\VST3\\ にコピーします（管理者の許可が要ることがあります）。",
         "DAW で VST3 を再スキャンします。"
       ],
       "note": "署名のないベータ版です。ノブは Shift か Ctrl を押しながら動かすと、細かく調整できます。",
@@ -2680,7 +2680,7 @@
       "bypassNote": "加えて BYPASS トグル（ACTIVE / BYPASS）。素直な A/B のために。1:1 スイッチをオンにすると、INPUT は音量を上げる代わりに、その分だけ CEILING を下げます。"
     },
     "visuals": {
-      "faceplateAlt": "MUEDlim 1.0.1 のプラグイン画面（音が入った状態・1:1 はオフ）。上部にタイトルと、右に ACTIVE のトグル。その下、左に大きな INTEGRATED LUFS 値（−10.1・アンバー）、右に SHORT-TERM −11.7・GR −2.65 dB・RANGE 3.4 LU・CEILING −1.00 dBTP。中央はラウドネスの履歴グラフと TARGET −14 の破線で、グラフの上の縁からゲインリダクションの履歴（朱の線）が下がっている。右は出力の縦メーターが上限 −1.00 を示す。下に INPUT（+8.00 dB）と CEILING（−1.00 dBTP）のノブ、右に 1:1 のスイッチ（オフ）、右下に mued.jp のリンク。"
+      "faceplateAlt": "MUEDlim のプラグイン画面（音が入った状態・1:1 はオフ）。上部にタイトルと、右に ACTIVE のトグル。その下、左に大きな INTEGRATED LUFS 値（−10.1・アンバー）、右に SHORT-TERM −11.7・GR −2.65 dB・RANGE 3.4 LU・CEILING −1.00 dBTP。中央はラウドネスの履歴グラフと TARGET −14 の破線で、グラフの上の縁からゲインリダクションの履歴（朱の線）が下がっている。右は出力の縦メーターが上限 −1.00 を示す。下に INPUT（+8.00 dB）と CEILING（−1.00 dBTP）のノブ、右に 1:1 のスイッチ（オフ）、右下に mued.jp のリンク。"
     },
     "versionNotice": {
       "line": "{previous} のセッションをお持ちの方へ: {version} では CEILING のオートメーションの値が変わります。",
@@ -2778,7 +2778,7 @@
       }
     },
     "visuals": {
-      "faceplateAlt": "MUEDrive 1.0.1 のプラグイン画面。左上に MUED（明るい字）と rive（暗い字）を並べたワードマーク、その下に THREE-CHARACTER DRIVE の小見出し、右端に BYPASS トグル。左は CHARACTER の3位置セレクタで、つまみは TUBE（アンバーで点灯）を指し、他の位置に WARM と CONSOLE、下に 3-POSITION · DETENTED の注記。中央は大きな DRIVE ノブがアンバーの弧を描いて 50 %。右は上から MIX 100 %、OUTPUT 0.00 dB、FOCUS 600 Hz の3つのノブ。最下部の左に TUBE · WARM · CONSOLE、右に mued.jp のリンク。"
+      "faceplateAlt": "MUEDrive のプラグイン画面。左上に MUED（明るい字）と rive（暗い字）を並べたワードマーク、その下に THREE-CHARACTER DRIVE の小見出し、右端に BYPASS トグル。左は CHARACTER の3位置セレクタで、つまみは TUBE（アンバーで点灯）を指し、他の位置に WARM と CONSOLE、下に 3-POSITION · DETENTED の注記。中央は大きな DRIVE ノブがアンバーの弧を描いて 50 %。右は上から MIX 100 %、OUTPUT 0.00 dB、FOCUS 600 Hz の3つのノブ。最下部の左に TUBE · WARM · CONSOLE、右に mued.jp のリンク。"
     },
     "whyFree": {
       "heading": "無料の理由と、メールをいただく理由",
@@ -2873,8 +2873,8 @@
     "visuals": {
       "idleLabel": "無信号（ドライ）",
       "hotLabel": "飽和中（ドライブ）",
-      "faceplateAlt": "MUEDsat 1.0.1 のプラグイン画面（音が入った状態・DRIVE を 85 に上げたところ）。大きな DRIVE ノブがエンバー色に発光し、右側の黒ガラス窓に伝達カーブと THD 1.66 %（実際に測った値）が表示されている。白い点は入力のピークを曲線上に示し、音が大きい所ほど右へ振れる。下に MIX・AIR・OUTPUT の3つのノブ、最下部の右に mued.jp のリンク。",
-      "compareAlt": "MUEDsat 1.0.1 の同じ画面を並べた比較（どちらも音が入った状態）。左は DRIVE 30（既定。伝達カーブはゆるやかに曲がり、THD 0.41 %）、右は DRIVE 85（カーブが強く曲がり、DRIVE が発光、THD 1.66 %）。THD は実際に測った値で、白い点は入力のピークを曲線上に示す。",
+      "faceplateAlt": "MUEDsat のプラグイン画面（音が入った状態・DRIVE を 85 に上げたところ）。大きな DRIVE ノブがエンバー色に発光し、右側の黒ガラス窓に伝達カーブと THD 1.66 %（実際に測った値）が表示されている。白い点は入力のピークを曲線上に示し、音が大きい所ほど右へ振れる。下に MIX・AIR・OUTPUT の3つのノブ、最下部の右に mued.jp のリンク。",
+      "compareAlt": "MUEDsat の同じ画面を並べた比較（どちらも音が入った状態）。左は DRIVE 30（既定。伝達カーブはゆるやかに曲がり、THD 0.41 %）、右は DRIVE 85（カーブが強く曲がり、DRIVE が発光、THD 1.66 %）。THD は実際に測った値で、白い点は入力のピークを曲線上に示す。",
       "driveAlt": "DRIVE ノブのクローズアップ。基部にエンバーの熱リングが灯っている。",
       "meterAlt": "伝達カーブ・メーターのクローズアップ。TRANSFER ラベル、点線の基準線、エンバーのサチュレーション曲線、入力のピークを示す白い点、THD（出力の中の倍音の割合を実際に測った値）。",
       "knobsAlt": "MIX・AIR・OUTPUT の3つの小ノブ。",
@@ -2896,7 +2896,7 @@
     "download": "最新版をダウンロード",
     "windows": {
       "download": "Windows 版（ベータ）",
-      "howto": "Windows 版（VST3・ベータ）: ZIP を展開すると、外側のフォルダ（例: MUEDrive-1.0.1-win-x64-…）ができます。外側のフォルダは入れず、中の「.vst3」フォルダだけを C:\\Program Files\\Common Files\\VST3\\ にコピーしてください（管理者の許可が要ることがあります）。そのあと DAW で VST3 を再スキャンします。署名のないベータ版です。",
+      "howto": "Windows 版（VST3・ベータ）: ZIP を展開すると、外側のフォルダ（例: MUEDrive-1.0.2-win-x64-…）ができます。外側のフォルダは入れず、中の「.vst3」フォルダだけを C:\\Program Files\\Common Files\\VST3\\ にコピーしてください（管理者の許可が要ることがあります）。そのあと DAW で VST3 を再スキャンします。署名のないベータ版です。",
       "masterchainDownload": "Windows 版",
       "masterchainSameKey": "Windows 版（VST3）も、同じライセンスキーで使えます。"
     },
