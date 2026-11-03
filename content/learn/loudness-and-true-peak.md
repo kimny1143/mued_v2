@@ -1,8 +1,8 @@
 ---
 slug: loudness-and-true-peak
 title: "Loudness and true peak: a practical guide for mixing and mastering"
-seoTitle: "Loudness and True Peak: A Practical Guide (LUFS & dBTP) | MUED"
-description: "How loudness (LUFS) and true peak (dBTP) decide whether your master translates on streaming — the whole picture, with deep-dives on each part."
+seoTitle: "Peak, True Peak and LUFS: What a Master Needs for Streaming | MUED"
+description: "A master that peaks at −0.1 dB can still clip after MP3/AAC encoding. How LUFS and true peak (dBTP) split the job, and why −1 dBTP is the usual ceiling."
 tags: [loudness, true peak, LUFS, dBTP, mastering]
 publishDate: null   # set at go-live (kimny LEARN_LIVE flip) — pillar + cluster publish together
 lastUpdated: null

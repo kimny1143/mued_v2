@@ -1,8 +1,8 @@
 ---
 slug: limiter-release-and-lookahead
 title: "Limiter release and lookahead: what the controls actually change"
-seoTitle: "Limiter Release and Lookahead: A Practical Mastering Guide | MUED"
-description: "What limiter release and lookahead do to transients, pumping and distortion — and a practical way to set them without copying a universal preset."
+seoTitle: "How to Set Limiter Release and Lookahead for Mastering | MUED"
+description: "Too-fast release sounds rough; too slow holds the mix down. Six steps to set limiter release and lookahead by ear, and why lookahead isn't true-peak protection."
 tags: [limiter, release, lookahead, mastering]
 publishDate: null   # set at publish
 lastUpdated: null
