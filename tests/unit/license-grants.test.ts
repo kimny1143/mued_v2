@@ -84,9 +84,9 @@ describe("★who may issue: kimny as admin — everyone else gets 404 and nothin
     expect(dbState.inserted).toEqual([]);
   });
 
-  it("the two ids are the ones conductor pinned on 2026-10-07 (#1245), and only MUEDvox can be granted", () => {
+  it("the two ids are the ones conductor pinned on 2026-10-07 (#1245); MUEDvox (the default) and masterchain (2026-10-15) can be granted", () => {
     expect(GRANT_ISSUER_USER_IDS).toEqual(["user_38Ke5H6xPB9tm7M2J2fxP082fP5", "user_33EiZv982KTQ6s6AfTCkbaYqkpR"]);
-    expect(GRANTABLE_PRODUCTS).toEqual(["muedvox"]);
+    expect(GRANTABLE_PRODUCTS).toEqual(["muedvox", "masterchain"]);
   });
 });
 
@@ -141,6 +141,21 @@ describe("★a grant is a MUEDvox key that expires", () => {
     expect(log.warn).toHaveBeenCalledTimes(1);
   });
 
+  it("★masterchain (2026-10-15): a masterchain-scoped key that expires — accepted by masterchain until then, never by MUEDvox", async () => {
+    const MC = { product: "MUEDsp", scope: "masterchain" };
+    await post({ ...GOOD, product: "masterchain", days: undefined, minutes: 3 });
+    const [row] = dbState.inserted;
+    expect(row).toMatchObject({ productId: "muedsp_masterchain" });
+    expect(String(row.orderRef)).toMatch(/^grant-masterchain-[0-9a-f-]{36}$/);
+    const key = String(row.licenseKey);
+    const now = Date.now();
+    expect(evaluateLicense(key, PUB, MC, new Date(now + 2 * 60_000)).verdict).toBe("accept");
+    expect(evaluateLicense(key, PUB, MC, new Date(now + 3 * 60_000 + 1000)).verdict).toBe("unlicensed");
+    expect(evaluateLicense(key, PUB, VOX).verdict).toBe("reject");
+    // ★The same cap as MUEDvox (conductor 2026-10-15).
+    expect((await post({ ...GOOD, product: "masterchain", days: MAX_GRANT_MINUTES / 1440 + 1 })).status).toBe(400);
+  });
+
   it("an extension is another grant: a second, different key with its own order ref", async () => {
     await post(GOOD);
     await post({ ...GOOD, days: 30, reason: "extension: sent a review" });
@@ -155,7 +170,6 @@ describe("★what is refused", () => {
     ["no email", { ...GOOD, email: "" }, /email/],
     ["two addresses", { ...GOOD, email: "a@example.com, b@example.com" }, /email/],
     ["a newline in the address (would inject a line into the signed file)", { ...GOOD, email: "a@example.com\nexpires_at=" }, /email/],
-    ["masterchain (it has its own trial)", { ...GOOD, product: "masterchain" }, /product/],
     ["an unknown product", { ...GOOD, product: "muedlim" }, /product/],
     ["no period", { ...GOOD, days: undefined }, /exactly one/],
     ["both days and minutes", { ...GOOD, minutes: 5 }, /exactly one/],
