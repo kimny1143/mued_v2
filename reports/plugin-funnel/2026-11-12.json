@@ -1,0 +1,173 @@
+{
+  "date": "2026-11-12",
+  "generated_at": "2026-11-13T01:39:24.698Z",
+  "resend": {
+    "mued_sp_total_contacts": 1000,
+    "mued_sp_net_new_day": 0,
+    "mued_sp_unsubscribed_total": 0,
+    "welcome_delivered_total": 0,
+    "welcome_reached_total": 1,
+    "welcome_ja_delivered": 0,
+    "welcome_ja_reached": 0,
+    "welcome_ja_definition": "その日の welcome email（件名が /download|ダウンロード/i に一致）のうち、件名に日本語文字（/[ぁ-んァ-ヶ一-龠]/）を含み last_event=delivered のもの。★製品軸とは独立: 1通が製品別の集計とここの両方に入る。★shelf() が \"other\" と判定する件名も含む（問いは「日本語面が使われているか」であって「どの製品か」ではないため）。★検出器は毎回 自己検査する（既知の日本語件名が一致し、ASCII のみの件名が一致しないこと）。★自己検査が失敗した日は★この値が null になり anomalies に1行 出る。∴ ★0 は「使われていない」／★null は「測れていない」。0 が両方を意味することはない。★母集団の非対称は SHELF_DEFINITION と同じ（Resend 側の件名分類なので smoke を除外していない）。★welcome_ja_reached は同じ母集団で last_event が delivered / opened / clicked / complained のいずれか（届いた分・download_link_emails の reached と同じ集合）。★2026-09-23 のクリック計測 on 以降、開封・クリックされたメールは delivered から外れるので、「日本語面が使われているか」は welcome_ja_reached で読む（welcome_ja_delivered は意味を据え置き）。自己検査が失敗した日は両方 null。",
+    "broadcast": null
+  },
+  "shelf": {
+    "muedsat": {
+      "db_net_new": 0,
+      "email_delivered": 0,
+      "email_bounced": 0,
+      "email_reached": 0
+    },
+    "muedlim": {
+      "db_net_new": 1,
+      "email_delivered": 0,
+      "email_bounced": 0,
+      "email_reached": 1
+    },
+    "muedrive": {
+      "db_net_new": 0,
+      "email_delivered": 0,
+      "email_bounced": 0,
+      "email_reached": 0
+    }
+  },
+  "shelf_definition": "welcome email を件名で分類。件名が /download|ダウンロード/i に一致し、かつ registry の plugin key (大小無視) を含むものをその製品の棚へ。どちらも満たさなければ \"other\"。★2026-08-28 以前は /download/i のみだったため、日本語件名の welcome は全て \"other\" に落ちていた。★母集団の非対称: db_net_new は source=smoke-test の合成行を除外するが、email_delivered / email_bounced は Resend 側の件名分類なので除外していない（同じ行の2数は別母集団）。★email_delivered は最新状態がちょうど delivered のもの。email_reached は delivered / opened / clicked / complained のいずれか（届いた分）。★2026-09-23 にクリック計測を on にして以降、開封・クリックされたメールは delivered から外れるので、未達の検査は email_reached で行う（2026-09-27 まで email_delivered で検査しており、届いたメールで毎日誤発火していた）。",
+  "db_owner_union_total": 1292,
+  "marketing_contacts_total": 1000,
+  "muedsp_reachable": {
+    "count": 1000,
+    "definition": "MUEDsp segment only; unsubscribed=false; unique. ★North-star denominator (kimny ratified 2026-07-18: 北極星=MUEDsp セグメント10,000人). Single scope → no OR/AND question."
+  },
+  "marketing_contacts_reachable": {
+    "count": 1000,
+    "definition": "union across all audiences (currently MUEDsp+General); reachable = NOT unsubscribed in ANY audience (AND/conservative, Chief ruling 2026-07-23). Org-wide reach — NOT the north-star. total (marketing_contacts_total) = billing exposure incl. unsubscribed."
+  },
+  "portal_registrations": {
+    "cumulative": 163,
+    "day_utc": 0,
+    "counting_since": "2026-07-23",
+    "dashboard_link_since": "2026-09-03",
+    "denominator": "muedsat+muedlim+muedrive",
+    "note": "forward-only; not backfillable (recording shipped 2026-07-23). Portal arrivals before that date are only observable in GA4, not here. ★Second discontinuity — see dashboard_link_since (#964; UTC, measured from git and the Vercel production deployment after it shipped): the dashboard did not link to the portal at all until then — before that deploy the only in-product door was the welcome/announcement email, so a rise after it is NOT by itself evidence that a mail landed. Column and query unchanged; only the inflow widened. ★Expect a one-time STEP, not a change in rate: the write is an UPDATE over existing entitlement rows WHERE portal_registered_at IS NULL, so what the dashboard link newly reaches is the standing backlog of owners who held an entitlement since July and never arrived — a cohort that drains once. Reading the step as campaign lift is the specific misread this note exists to prevent. ★Third discontinuity — see `denominator`: from 2026-09-05 this counts THREE modules (muedsat+muedlim+muedrive), on insight課's decision (#378). ★Expect a one-time STEP again, and again it is not rate: MUEDrive owners who had already reached the portal were being counted by nothing, and now they are counted. ★The value did not change because behaviour changed — the population did. Diff denominator between two ★SNAPSHOTS (the JSON this collector emits) to find the exact day. ★The snapshot is the durable place to diff: it carries every key this collector emits, whatever the downstream renderer happens to do with them. (When this field shipped, the renderer enumerated keys and so omitted it — insight課 #432 changed it to pass everything through. ★Stated as history on purpose: a claim about the renderer's CURRENT behaviour would go stale here, which is the defect this very note exists to warn about.) ★Unlike the first two discontinuities there is no date constant to trust, because the snapshot states what it counted rather than when it changed."
+  },
+  "anomalies": [
+    "★download_link_emails: 取得失敗 — null で出す。0 ではない。email list ended after 1512 mails without reaching 2026-09-23T06:51:00.000Z — counts would be short",
+    "★launch: 集計できず — null で出す。0 ではない。transactional email listing unavailable"
+  ],
+  "newsletters": [
+    {
+      "id": "bac65c0c-7bcf-43fd-b005-2bb9b6e53eaf",
+      "name": "Untitled",
+      "sent_at": "2026-10-20T08:01:36.505Z",
+      "delivered": 1083,
+      "unique_opened": 306,
+      "unique_clicked": 50,
+      "unsubscribed": 11,
+      "bounced": 21,
+      "complained": 0,
+      "open_tracked": true
+    },
+    {
+      "id": "e6e2db80-d3f7-4f3d-ae2d-a6d6db429bfd",
+      "name": "MUEDvox tester call — group of 20 (2026-10-14)",
+      "sent_at": "2026-10-14T08:01:23.643Z",
+      "delivered": 78,
+      "unique_opened": 53,
+      "unique_clicked": 11,
+      "unsubscribed": 0,
+      "bounced": 0,
+      "complained": 0,
+      "open_tracked": true
+    },
+    {
+      "id": "86c01ff0-b9f1-4ef4-b3ce-5ef3960d23f7",
+      "name": "MUEDlim 1.0.1 — CEILING −18 / 1:1 / GR graph (2026-10-09)",
+      "sent_at": "2026-10-09T07:51:44.364Z",
+      "delivered": 1009,
+      "unique_opened": 364,
+      "unique_clicked": 55,
+      "unsubscribed": 4,
+      "bounced": 21,
+      "complained": 0,
+      "open_tracked": true
+    },
+    {
+      "id": "a426831b-88dc-4868-b933-59700ef21585",
+      "name": "masterchain demo — direct links for subscribers / 購読者向け直リンク",
+      "sent_at": "2026-10-05T13:01:03.042Z",
+      "delivered": 73,
+      "unique_opened": 49,
+      "unique_clicked": 13,
+      "unsubscribed": 3,
+      "bounced": 0,
+      "complained": 0,
+      "open_tracked": true
+    },
+    {
+      "id": "6ff80645-34af-4cd7-8d1f-d20a16e863b6",
+      "name": "MUEDsp on Windows — masterchain + free 3 (2026-10-01)",
+      "sent_at": "2026-10-01T08:31:35.053Z",
+      "delivered": 982,
+      "unique_opened": 307,
+      "unique_clicked": 54,
+      "unsubscribed": 12,
+      "bounced": 29,
+      "complained": 0,
+      "open_tracked": true
+    },
+    {
+      "id": "a615f3f2-4bd5-4e52-9e74-32a2ec67cbef",
+      "name": "Untitled",
+      "sent_at": "2026-09-30T22:13:13.198Z",
+      "delivered": 1000,
+      "unique_opened": 298,
+      "unique_clicked": 59,
+      "unsubscribed": 12,
+      "bounced": 21,
+      "complained": 0,
+      "open_tracked": true
+    },
+    {
+      "id": "1f07ebe9-5a78-496b-b215-30deac2d5825",
+      "name": "MUEDsp NL #1 — The −0.3 dB (2026-09-16)",
+      "sent_at": "2026-09-16T05:24:27.479Z",
+      "delivered": 866,
+      "unique_opened": 358,
+      "unique_clicked": 0,
+      "unsubscribed": 27,
+      "bounced": 27,
+      "complained": 1,
+      "open_tracked": true
+    },
+    {
+      "id": "908ead08-170a-4159-8bd2-9339f66cc5a4",
+      "name": "MUEDrive launch — third free plugin announcement (2026-08-29)",
+      "sent_at": "2026-08-29T05:10:26.842Z",
+      "delivered": 641,
+      "unique_opened": 0,
+      "unique_clicked": 0,
+      "unsubscribed": 1,
+      "bounced": 11,
+      "complained": 1,
+      "open_tracked": null
+    },
+    {
+      "id": "a9b8951c-6608-42c7-98a7-607d9b0856ff",
+      "name": "MUEDsp Portal Launch — plugin owners announcement (2026-07-18)",
+      "sent_at": "2026-07-18T10:21:52.583Z",
+      "delivered": 315,
+      "unique_opened": 0,
+      "unique_clicked": 0,
+      "unsubscribed": 2,
+      "bounced": 0,
+      "complained": 0,
+      "open_tracked": null
+    }
+  ],
+  "newsletters_definition": "Sent broadcasts with non-null sent_at, newest first; cumulative counts matched by broadcast_id through collection time (generated_at), with missing rows/fields or non-finite/non-number values as null, never assumed zero; open_tracked is true only when unique_opened > 0, otherwise null (unknown), never false; no rates.",
+  "download_link_emails": null,
+  "download_link_emails_definition": "登録直後に自動で届くダウンロードリンクメール（Resend の transactional・broadcast は含まない）。件名が /download|ダウンロード/i に一致し、かつ製品キー（muedlim / muedsat / muedrive・大小無視）を含むものを、その製品に数える。リンクの無い代替件名（「〜をありがとうございます」）は含まない。all_time は since（クリック計測 on・2026-09-23T06:51Z）から until まで、last_24h は until の 24 時間前から until まで。until は集計時刻。状態は各メールの最新の 1 つ（last_event）: clicked / opened / delivered / bounced / complained、それ以外は other。reached = clicked + opened + delivered + complained（届いた分）。unique_recipients は届いた分の宛先の重複を除いた人数、unique_clicked_recipients はそのうち 1 通でも clicked の人数、unique_opened_or_clicked_recipients は 1 通でも opened か clicked の人数（宛先アドレスは出力しない）。後から押されると delivered/opened が clicked に変わるので、同じ期間でも後で数えると clicked は増えうる。delivered は「開いていない」ではない（画像を読まないメールソフトでは開封が記録されない）。リンク確認の自動スキャンで clicked になる場合がある。クリックはダウンロードページへの到達で、インストール完了ではない。取得が失敗した日、または since より前まで一覧を遡れなかった日は null（0 ではない）。",
+  "launch": null,
+  "launch_definition": "起点は発売便の送信時刻（launch_at）。all_time は起点から集計時刻まで、last_24h は集計時刻の 24 時間前から（起点より前は含まない）。demo_downloads は masterchain のデモの控えのメール（件名で判別）を送った宛先の人数（重複を除く）＝デモの入口で DL が始まった人数。インストール完了ではない。控えのメールの送信に失敗した人、honeypot・rate limit で弾いた人は含まない。purchases は masterchain の購入の案内メール（件名で判別・webhook から送られる）の通数＝注文数（人数ではない）。launch_newsletter は起点以降に送った最初の broadcast の unique_opened / unique_clicked（Resend の値のまま・無い時は null）。launch_at が null の間は started=false で、何も数えない（0 ではない）。取得が失敗した日は null。"
+}
