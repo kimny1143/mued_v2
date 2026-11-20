@@ -5,10 +5,10 @@
   "remaining_to_target": 4000,
   "remaining_to_1000": 0,
   "portal_registrations": 167,
-  "measured_at": "2026-11-19T01:40:04.022Z",
+  "measured_at": "2026-11-20T01:39:49.080Z",
   "trigger": "schedule",
-  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/44438445986",
-  "source_report": "reports/plugin-funnel/2026-11-18.json",
+  "workflow_run": "https://github.com/kimny1143/mued_v2/actions/runs/44655087535",
+  "source_report": "reports/plugin-funnel/2026-11-19.json",
   "newsletters": [
     {
       "id": "bac65c0c-7bcf-43fd-b005-2bb9b6e53eaf",
@@ -122,10 +122,10 @@
   "download_link_emails": null,
   "launch": null,
   "denominator_trend": {
-    "as_of": "2026-11-18",
-    "last7_avg": 1,
-    "prior14_avg": 1.21,
-    "ratio": 0.83,
+    "as_of": "2026-11-19",
+    "last7_avg": 1.14,
+    "prior14_avg": 1.14,
+    "ratio": 1,
     "alert": false,
     "reason": null,
     "threshold": 0.5,
